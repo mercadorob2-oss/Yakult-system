@@ -1,0 +1,172 @@
+<Window x:Class="Yakult.Inventory.App.Wpf.RepairPortal.Detail.Views.TimelineViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="680" Height="620" MinWidth="480" MinHeight="360"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        Background="#F1F5F9">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ── Header: title + Graph/Table view switcher ─────────────────── -->
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock x:Name="TitleText" Grid.Column="0" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+
+            <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="3">
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="GraphToggle" Content="Graph" GroupName="TimelineViewMode"
+                                 Style="{StaticResource ViewSwitchButtonStyle}" IsChecked="True" Checked="GraphToggle_Checked"/>
+                    <RadioButton x:Name="TableToggle" Content="Table" GroupName="TimelineViewMode"
+                                 Style="{StaticResource ViewSwitchButtonStyle}" Checked="TableToggle_Checked"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ── Graph view — fishbone diagram: a horizontal spine with events branching
+             alternately above/below it (like an Ishikawa diagram). ─────────────────────── -->
+        <Border x:Name="GraphPanel" Grid.Row="1" Background="White" CornerRadius="10" Padding="16">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                <ItemsControl x:Name="GraphList" AlternationCount="2">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="220">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="110"/>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="8"/>
+                                    <RowDefinition Height="30"/>
+                                    <RowDefinition Height="110"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Spine: every item contributes a segment, forming one continuous line.
+                                     Split into two half-rows (2/3) so each bone's RowSpan can end exactly
+                                     at the dot's center instead of overshooting past it. -->
+                                <Border Grid.Row="2" Grid.RowSpan="2" Height="2" Background="#CBD5E1" VerticalAlignment="Center"/>
+
+                                <!-- Top branch (even-indexed entries) -->
+                                <Border Grid.Row="0" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="6,0,6,0"
+                                        HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                                        Visibility="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternationIndexToVisibilityConverter}, ConverterParameter=Top}">
+                                    <StackPanel>
+                                        <TextBlock FontSize="12" FontWeight="SemiBold">
+                                            <Run Text="{Binding FieldName, Mode=OneWay}"/>
+                                            <Run Text=" changed" Foreground="#94A3B8" FontWeight="Normal"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="#475569" TextWrapping="Wrap">
+                                            <Run Text="{Binding OldValue, Mode=OneWay}"/>
+                                            <Run Text=" -&gt; "/>
+                                            <Run Text="{Binding NewValue, Mode=OneWay}"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="#64748B" TextWrapping="Wrap" Text="{Binding Note}"
+                                                   Visibility="{Binding Note, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                                        <TextBlock FontSize="10" Foreground="#94A3B8" Margin="0,3,0,0">
+                                            <Run Text="{Binding ChangedByName, Mode=OneWay, TargetNullValue='System'}"/>
+                                            <Run Text=" · "/>
+                                            <Run Text="{Binding ChangedAt, StringFormat='{}{0:MMM d, yyyy h:mm tt}'}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+                                <!-- Spans the connector row + the near half of the spine row only, so the
+                                     bar's end lands exactly at the dot's center — no gap, no overshoot. -->
+                                <Border Grid.Row="1" Grid.RowSpan="2" Width="2" Background="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                                        Visibility="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternationIndexToVisibilityConverter}, ConverterParameter=Top}"/>
+
+                                <!-- Bottom branch (odd-indexed entries) -->
+                                <Border Grid.Row="3" Grid.RowSpan="2" Width="2" Background="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Stretch"
+                                        Visibility="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternationIndexToVisibilityConverter}, ConverterParameter=Bottom}"/>
+                                <Border Grid.Row="5" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="6,0,6,0"
+                                        HorizontalAlignment="Stretch" VerticalAlignment="Top"
+                                        Visibility="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=(ItemsControl.AlternationIndex), Converter={StaticResource AlternationIndexToVisibilityConverter}, ConverterParameter=Bottom}">
+                                    <StackPanel>
+                                        <TextBlock FontSize="12" FontWeight="SemiBold">
+                                            <Run Text="{Binding FieldName, Mode=OneWay}"/>
+                                            <Run Text=" changed" Foreground="#94A3B8" FontWeight="Normal"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="#475569" TextWrapping="Wrap">
+                                            <Run Text="{Binding OldValue, Mode=OneWay}"/>
+                                            <Run Text=" -&gt; "/>
+                                            <Run Text="{Binding NewValue, Mode=OneWay}"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="11" Foreground="#64748B" TextWrapping="Wrap" Text="{Binding Note}"
+                                                   Visibility="{Binding Note, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                                        <TextBlock FontSize="10" Foreground="#94A3B8" Margin="0,3,0,0">
+                                            <Run Text="{Binding ChangedByName, Mode=OneWay, TargetNullValue='System'}"/>
+                                            <Run Text=" · "/>
+                                            <Run Text="{Binding ChangedAt, StringFormat='{}{0:MMM d, yyyy h:mm tt}'}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Dot drawn last so it paints over the bars' small overlap into this row -->
+                                <Ellipse Grid.Row="2" Grid.RowSpan="2" Width="10" Height="10" Fill="{StaticResource RepairAccentBrush}"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ── Table view ──────────────────────────────────────────────────── -->
+        <Border x:Name="TablePanel" Grid.Row="1" Background="White" CornerRadius="10" Padding="8" Visibility="Collapsed">
+            <DataGrid x:Name="TableGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                      CanUserResizeRows="False" HeadersVisibility="Column"
+                      Style="{StaticResource ListDataGridChrome}" HorizontalScrollBarVisibility="Disabled">
+                <DataGrid.Resources>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                </DataGrid.Resources>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Date" Width="150" ElementStyle="{StaticResource WrapCellText}"
+                                         Binding="{Binding ChangedAt, StringFormat='{}{0:MMM d, yyyy h:mm tt}'}"/>
+                    <DataGridTextColumn Header="Field" Width="110" ElementStyle="{StaticResource WrapCellText}"
+                                         Binding="{Binding FieldName}" FontWeight="SemiBold"/>
+                    <DataGridTemplateColumn Header="Change" Width="*">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock TextWrapping="Wrap" Margin="4">
+                                    <Run Text="{Binding OldValue, Mode=OneWay}" Foreground="#94A3B8"/>
+                                    <Run Text=" -&gt; " Foreground="#94A3B8"/>
+                                    <Run Text="{Binding NewValue, Mode=OneWay}" Foreground="{StaticResource RepairAccentBrush}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Note" Width="160">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Note}" TextWrapping="Wrap" Margin="4" FontWeight="SemiBold" Foreground="#1E293B"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="By" Width="100" ElementStyle="{StaticResource WrapCellText}"
+                                         Binding="{Binding ChangedByName, TargetNullValue='System'}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</Window>

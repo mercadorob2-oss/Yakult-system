@@ -1,0 +1,3 @@
+﻿CREATE SCHEMA [IIS APPPOOL\yakult_api_dev]
+    AUTHORIZATION [dbo];
+

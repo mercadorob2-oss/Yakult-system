@@ -1,0 +1,139 @@
+@model Inventory.RequestPortal.Models.ViewModels.FulfillCartridgeFormViewModel
+@{
+    ViewData["Title"] = "Fulfill Cartridge Exchange";
+}
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <a class="btn btn-link text-white p-0 lh-1" asp-action="Unfulfilled"
+       style="font-size:1.4rem; text-decoration:none;" title="Back">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h1>Fulfill Cartridge Exchange</h1>
+        <p class="subtitle mb-0">
+            @(Model.SetId.HasValue ? $"Set #{Model.SetId}" : "Single request")
+            — @(Model.RequesterName ?? "—")
+        </p>
+    </div>
+</div>
+
+<div class="content-padded">
+    <div class="card request-card request-card-wide">
+        <div class="card-body">
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Count > 0))
+            {
+                <div class="alert alert-danger" role="alert">
+                    <div asp-validation-summary="All" class="mb-0"></div>
+                </div>
+            }
+
+            <form asp-action="Fulfill" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="SetId" />
+                <input type="hidden" asp-for="RequesterName" />
+                <input type="hidden" asp-for="BranchName" />
+                <input type="hidden" asp-for="DepartmentName" />
+
+                @for (int i = 0; i < Model.Lines.Count; i++)
+                {
+                    var line = Model.Lines[i];
+                    <div class="border rounded p-3 mb-3">
+                        <input type="hidden" asp-for="Lines[i].UnfulfilledId" />
+                        <input type="hidden" asp-for="Lines[i].CartridgeModel" />
+                        <input type="hidden" asp-for="Lines[i].ReturnedEmptyQty" />
+                        <input type="hidden" asp-for="Lines[i].IssuedFullQty" />
+                        <input type="hidden" asp-for="Lines[i].UnfulfilledQty" />
+                        <input type="hidden" asp-for="Lines[i].AvailableIssuableStock" />
+                        <input type="hidden" asp-for="Lines[i].AvailBrandNew" />
+                        <input type="hidden" asp-for="Lines[i].AvailRefilled" />
+
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <strong>@line.CartridgeModel</strong>
+                                <div class="text-muted small">
+                                    Req #@Model.Lines[i].UnfulfilledId · Returned: @line.ReturnedEmptyQty · Previously Issued: @line.IssuedFullQty · Still Pending: @line.UnfulfilledQty
+                                </div>
+                            </div>
+                            <span class="badge @(line.AvailableIssuableStock > 0 ? "bg-success" : "bg-danger")">
+                                @line.AvailableIssuableStock available
+                            </span>
+                        </div>
+
+                        <div class="row g-2 align-items-end">
+                            <div class="col-auto">
+                                <label class="form-label small mb-1">
+                                    Brand New <span class="text-muted">(@line.AvailBrandNew available)</span>
+                                </label>
+                                <input type="number" class="form-control cartridge-bn-input" style="width:110px;"
+                                       asp-for="Lines[i].BrandNewQty" min="0" max="@line.MaxBrandNew"
+                                       data-row="@i" data-avail-bn="@line.AvailBrandNew" data-avail-rf="@line.AvailRefilled"
+                                       data-requested="@line.UnfulfilledQty" />
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label small mb-1">
+                                    Refilled <span class="text-muted">(@line.AvailRefilled available)</span>
+                                </label>
+                                <input type="number" class="form-control cartridge-rf-input" style="width:110px;"
+                                       asp-for="Lines[i].RefilledQty" min="0" max="@line.MaxRefilled"
+                                       data-row="@i" data-avail-bn="@line.AvailBrandNew" data-avail-rf="@line.AvailRefilled"
+                                       data-requested="@line.UnfulfilledQty" />
+                            </div>
+                            <div class="col-auto text-center">
+                                <label class="form-label small mb-1 d-block">Total to Issue</label>
+                                <div class="fw-bold fs-5" id="cfTotal_@i">0</div>
+                            </div>
+                            <div class="col">
+                                <label class="form-label small mb-1">Remarks (optional — auto-generated if left blank)</label>
+                                <input type="text" class="form-control" asp-for="Lines[i].Remarks" />
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-check2-circle"></i> Confirm Fulfillment
+                </button>
+                <a class="btn btn-outline-secondary" asp-action="Unfulfilled">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Cross-clamps the Brand New / Refilled inputs per line so BN + RF never exceeds Still
+    // Pending, and each is independently capped by its own available stock — mirrors desktop's
+    // FulfillRowStateViewModel (Wpf/CartridgeManagement/ViewModels). Server re-caps against fresh
+    // DB state on submit regardless (CartridgeFulfillmentController.Fulfill POST); this is purely
+    // a UX guard.
+    (function () {
+        function clampPair(bnInput, rfInput) {
+            var requested = parseInt(bnInput.getAttribute('data-requested'), 10) || 0;
+            var availBn = parseInt(bnInput.getAttribute('data-avail-bn'), 10) || 0;
+            var availRf = parseInt(bnInput.getAttribute('data-avail-rf'), 10) || 0;
+
+            var bn = parseInt(bnInput.value, 10); if (isNaN(bn) || bn < 0) bn = 0;
+            var rf = parseInt(rfInput.value, 10); if (isNaN(rf) || rf < 0) rf = 0;
+
+            var maxBn = Math.max(0, Math.min(requested - rf, availBn));
+            var maxRf = Math.max(0, Math.min(requested - bn, availRf));
+
+            if (bn > maxBn) { bn = maxBn; bnInput.value = bn; }
+            if (rf > maxRf) { rf = maxRf; rfInput.value = rf; }
+
+            var row = bnInput.getAttribute('data-row');
+            var totalEl = document.getElementById('cfTotal_' + row);
+            if (totalEl) totalEl.textContent = (bn + rf);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.cartridge-bn-input').forEach(function (bnInput) {
+                var row = bnInput.getAttribute('data-row');
+                var rfInput = document.querySelector('.cartridge-rf-input[data-row="' + row + '"]');
+                if (!rfInput) return;
+                bnInput.addEventListener('input', function () { clampPair(bnInput, rfInput); });
+                rfInput.addEventListener('input', function () { clampPair(bnInput, rfInput); });
+                clampPair(bnInput, rfInput);
+            });
+        });
+    })();
+</script>

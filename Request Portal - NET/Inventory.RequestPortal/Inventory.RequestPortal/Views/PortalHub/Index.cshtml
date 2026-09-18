@@ -1,0 +1,371 @@
+@{
+    Layout = null; // Full-page dashboard — no layout wrapper
+    ViewData["Title"] = "Home";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home - Yakult Portal</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/root.css" asp-append-version="true" />
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    </style>
+</head>
+<body>
+
+<style>
+    .dashboard-page {
+        position: relative;
+        z-index: 0; /* establishes a stacking context so the ::before pattern below stays contained here */
+        min-height: 100vh;
+        background: var(--surface-muted);
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Faint diagonal bottle watermark behind the dashboard content. */
+    .dashboard-page::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: url('/images/yakult-bottles-repeating-pattern.png');
+        background-repeat: repeat;
+        background-size: 220px 210px;
+        opacity: 0.05;
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    /* Dashboard banner — one of the few spots decorative artwork is
+       allowed. Subtle: soft cream base + faint blue/red blobs, not a
+       loud promotional graphic. */
+    .dashboard-header {
+        position: relative;
+        overflow: hidden;
+        background: var(--surface-cream);
+        padding: 22px 32px;
+        height: var(--header-height);
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+        flex-wrap: nowrap;
+        gap: 8px;
+        border-bottom: 3px solid var(--yakult-red);
+    }
+
+    .dashboard-header .banner-art {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .dashboard-header .brand,
+    .dashboard-header .header-actions {
+        position: relative;
+        z-index: 1;
+    }
+
+    .dashboard-header .brand {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--yakult-red);
+        letter-spacing: -0.3px;
+    }
+
+    .dashboard-header .brand small {
+        display: block;
+        font-size: .8rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        letter-spacing: 0;
+    }
+
+    .dashboard-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 28px 24px 24px;
+    }
+
+    .dashboard-body h6 {
+        color: var(--text-muted);
+        font-weight: 400;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .module-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        width: 100%;
+        max-width: 720px;
+    }
+
+    .module-card {
+        position: relative;
+        width: 320px;
+        min-height: 200px;
+        background: var(--surface);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        cursor: pointer;
+        text-decoration: none !important;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+        border: 1px solid var(--border-muted);
+    }
+
+    .module-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--yakult-blue);
+    }
+
+    .module-card.disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+    }
+
+    .module-card.disabled:hover {
+        transform: none;
+        box-shadow: var(--shadow-sm);
+        border-color: var(--border-muted);
+    }
+
+    .module-card .accent-bar {
+        height: 4px;
+        width: 100%;
+        flex-shrink: 0;
+    }
+
+    .module-card .card-inner {
+        flex: 1;
+        padding: 18px 20px 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .module-card .watermark {
+        position: absolute;
+        right: -10px;
+        bottom: 20px;
+        font-size: 90px;
+        line-height: 1;
+        opacity: 0.10;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .module-card .card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text-strong);
+        margin: 0 0 8px;
+        padding-right: 55px;
+        word-wrap: break-word;
+    }
+
+    .module-card .card-desc {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        line-height: 1.45;
+        margin: 0;
+        max-width: 240px;
+    }
+
+    .module-card .card-action {
+        display: inline-block;
+        margin-top: 22px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .dashboard-footer {
+        background: var(--surface);
+        border-top: 1px solid var(--border-muted);
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    @@media (min-width: 576px) and (max-width: 767.98px) {
+        .module-grid { gap: 14px; max-width: 100%; }
+        .module-card { width: calc(50% - 7px); min-height: 0; }
+        .module-card .card-desc { max-width: 100%; }
+        .module-card .watermark { font-size: 60px; }
+    }
+
+    @@media (max-width: 575.98px) {
+        .dashboard-body { padding: 16px 16px 16px; }
+        .module-grid { gap: 12px; }
+        .module-card { width: 100%; min-height: 0; }
+        .module-card .card-desc { max-width: 100%; }
+        .module-card .watermark { font-size: 60px; }
+    }
+</style>
+
+<div class="dashboard-page">
+
+    <div class="dashboard-header">
+        <svg class="banner-art" viewBox="0 0 1200 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#3aa0e0" opacity="0.14" d="M 700 0 C 820 60, 900 140, 1050 90 C 1150 60, 1200 90, 1200 90 L 1200 0 Z" />
+            <path fill="#d50032" opacity="0.10" d="M 950 200 C 1020 120, 1120 130, 1200 170 L 1200 200 Z" />
+        </svg>
+        <div class="brand">
+            YAKULT PORTAL
+            <small>Request &amp; Consumable Management</small>
+        </div>
+        @if (ViewBag.IsLoggedIn == true)
+        {
+            <div class="header-actions d-flex align-items-center gap-3 ms-auto">
+                <span class="small text-muted">@ViewBag.CurrentUserName</span>
+                <button type="button" class="btn btn-link p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#hubNavSidebar"
+                        style="font-size:1.4rem; text-decoration:none; color:var(--yakult-red);" title="Menu">
+                    <i class="bi bi-list"></i>
+                </button>
+            </div>
+        }
+    </div>
+
+    <div style="width:100%;max-width:720px;margin: 20px auto 0; padding: 0 24px;">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+    </div>
+
+    <div class="dashboard-body">
+        <h6>What would you like to do today?</h6>
+
+        <div class="module-grid">
+
+            <a asp-controller="Authorization" asp-action="Landing" class="module-card">
+                <div class="accent-bar" style="background:#d50032;"></div>
+                <div class="card-inner">
+                    <div class="watermark">📋</div>
+                    <p class="card-title">Request Portal</p>
+                    <p class="card-desc">
+                        Submit and track cartridge, ink, toner, and print head requests.
+                    </p>
+                    <span class="card-action" style="color:#d50032;">Open →</span>
+                </div>
+            </a>
+
+            @if (ViewBag.IsITDepartment == true)
+            {
+                <a asp-controller="ConsumableManagement" asp-action="Index" class="module-card">
+                    <div class="accent-bar" style="background:#3aa0e0;"></div>
+                    <div class="card-inner">
+                        <div class="watermark">🖨️</div>
+                        <p class="card-title">Consumable Management</p>
+                        <p class="card-desc">
+                            Fulfill unfulfilled and partially fulfilled requests for cartridges, ink, toner, and print heads.
+                        </p>
+                        <span class="card-action" style="color:#2c86bf;">Open →</span>
+                    </div>
+                </a>
+            }
+            else
+            {
+                <div class="module-card disabled" title="IT staff only">
+                    <div class="accent-bar" style="background:#94a3b8;"></div>
+                    <div class="card-inner">
+                        <div class="watermark">🖨️</div>
+                        <p class="card-title">Consumable Management</p>
+                        <p class="card-desc">
+                            IT staff only — fulfillment tools for cartridge, ink, toner, and print head requests.
+                        </p>
+                        <span class="card-action" style="color:#94a3b8;">Restricted</span>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <div class="dashboard-footer">
+        &copy; @DateTime.Now.Year &nbsp;&#8226;&nbsp; Yakult Information Technology Department
+    </div>
+
+</div>
+
+@* ── Hub menu — trimmed version of _MasterNav.cshtml's offcanvas: this is the top-level
+     landing page (before picking Request Portal or Consumable Management), so it only
+     needs account/notifications/logout, not the full per-section link list. Same visual
+     format (white header, red bottom border, blue hover) as the rest of the portal. ── *@
+<style>
+    #hubNavSidebar .offcanvas-body a:hover {
+        background: var(--yakult-blue-light);
+    }
+</style>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="hubNavSidebar">
+    <div class="offcanvas-header" style="background:#fff; color:var(--yakult-red); border-bottom:3px solid var(--yakult-red); height:var(--header-height); overflow:hidden; box-sizing:border-box;">
+        <h6 class="offcanvas-title fw-bold mb-0">Menu</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0 d-flex flex-column">
+        <ul class="list-unstyled mb-0">
+            <li>
+                <a class="d-flex align-items-center gap-3 px-4 py-3 text-decoration-none text-dark border-bottom"
+                   href="/Account/MyAccount">
+                    <i class="bi bi-person-circle fs-5"></i>
+                    <span>Account</span>
+                </a>
+            </li>
+            <li>
+                <a class="d-flex align-items-center gap-3 px-4 py-3 text-decoration-none text-dark border-bottom"
+                   asp-controller="NotificationSettings" asp-action="Index">
+                    <i class="bi bi-bell-fill fs-5"></i>
+                    <span>Notifications</span>
+                </a>
+            </li>
+        </ul>
+        @if (ViewBag.IsLoggedIn == true)
+        {
+            <div class="mt-auto border-top px-4 py-3">
+                <p class="text-muted small mb-1">Logged in as</p>
+                <p class="fw-bold mb-2">@ViewBag.CurrentUserName</p>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                    </button>
+                </form>
+            </div>
+        }
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

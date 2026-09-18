@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      The theme name here ("Theme.YakultScanner") must match what is used
+      in the AndroidManifest.xml file.
+    -->
+    <style name="Theme.YakultScanner" parent="Theme.Material3.DayNight.NoActionBar">
+        <!--
+        You can customize your theme colors and other attributes here for the
+        XML-based parts of your app, like the initial splash screen.
+        -->
+    </style>
+</resources>

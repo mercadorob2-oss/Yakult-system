@@ -1,0 +1,259 @@
+<Window
+    x:Class="Yakult.Inventory.App.WPF.RequestPortal.WalkThrough.WpfPortalTourWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    AllowsTransparency="True"
+    WindowStyle="None"
+    Background="Transparent"
+    ShowInTaskbar="False"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+    KeyDown="Window_KeyDown">
+
+    <Canvas x:Name="RootCanvas" ClipToBounds="True">
+
+        <!-- ── Dark spotlight overlay (geometry set from code-behind) ──────── -->
+        <Path x:Name="OverlayPath"
+              Fill="#BB000000"
+              IsHitTestVisible="True"
+              MouseDown="Overlay_MouseDown"/>
+
+        <!-- ── Highlight ring around target ───────────────────────────────── -->
+        <Rectangle x:Name="HighlightRing"
+                   Stroke="#4E9AFC"
+                   StrokeThickness="2.5"
+                   RadiusX="6"
+                   RadiusY="6"
+                   IsHitTestVisible="False"
+                   Visibility="Collapsed"/>
+
+        <!-- ── Popover card ───────────────────────────────────────────────── -->
+        <Border x:Name="PopoverBorder"
+                Width="400"
+                Background="White"
+                BorderBrush="#DDE3EC"
+                BorderThickness="1"
+                CornerRadius="10"
+                Padding="24,20,24,18"
+                IsHitTestVisible="True">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="20"
+                                  ShadowDepth="4"
+                                  Opacity="0.18"
+                                  Color="#0A1A2A"
+                                  Direction="270"/>
+            </Border.Effect>
+
+            <StackPanel>
+                <!-- Header row: title + step counter -->
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="TitleText"
+                               Grid.Column="0"
+                               FontFamily="Segoe UI"
+                               FontSize="14"
+                               FontWeight="Bold"
+                               Foreground="#2272D9"
+                               TextWrapping="Wrap"/>
+
+                    <Border Grid.Column="1"
+                            Background="#EBF5FB"
+                            CornerRadius="10"
+                            Padding="10,3"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Top">
+                        <TextBlock x:Name="StepCounterText"
+                                   FontFamily="Segoe UI"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="#2272D9"/>
+                    </Border>
+                </Grid>
+
+                <!-- Divider -->
+                <Border Background="#E2E8F0"
+                        Height="1"
+                        Margin="0,0,0,12"/>
+
+                <!-- Description -->
+                <TextBlock x:Name="DescriptionText"
+                           FontFamily="Segoe UI"
+                           FontSize="12.5"
+                           Foreground="#334155"
+                           TextWrapping="Wrap"
+                           LineHeight="19"
+                           Margin="0,0,0,10"/>
+
+                <!-- Colored bullet list (status legend steps) -->
+                <ItemsControl x:Name="BulletList"
+                              Margin="0,0,0,12"
+                              Visibility="Collapsed">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,5,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Ellipse Grid.Column="0"
+                                         Width="10" Height="10"
+                                         Fill="{Binding Dot}"
+                                         VerticalAlignment="Top"
+                                         Margin="0,3,0,0"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Text}"
+                                           FontFamily="Segoe UI"
+                                           FontSize="12"
+                                           Foreground="#334155"
+                                           TextWrapping="Wrap"
+                                           LineHeight="18"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Demo data banner (shown on empty-state steps) -->
+                <Border x:Name="DemoBanner"
+                        Background="#FFF3CD"
+                        BorderBrush="#FFE082"
+                        BorderThickness="1"
+                        CornerRadius="5"
+                        Padding="10,7"
+                        Margin="0,0,0,12"
+                        Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="ℹ  "
+                                   FontFamily="Segoe UI"
+                                   FontSize="11"
+                                   Foreground="#856404"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="Demo data shown for this tour."
+                                   FontFamily="Segoe UI"
+                                   FontSize="11"
+                                   FontStyle="Italic"
+                                   Foreground="#856404"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Navigation row -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Previous -->
+                    <Button x:Name="PrevButton"
+                            Grid.Column="0"
+                            Content="← Previous"
+                            Click="PrevButton_Click"
+                            Cursor="Hand"
+                            Padding="14,8"
+                            FontFamily="Segoe UI"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Foreground="#64748B"
+                            Background="White"
+                            BorderBrush="#DDE3EC"
+                            BorderThickness="1">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="root"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="6"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="root" Property="Background" Value="#F1F5F9"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter TargetName="root" Property="Opacity" Value="0.35"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <!-- Close Guide (center) -->
+                    <Button x:Name="SkipButton"
+                            Grid.Column="2"
+                            Content="Close"
+                            Click="SkipButton_Click"
+                            Cursor="Hand"
+                            Padding="14,8"
+                            Margin="8,0"
+                            FontFamily="Segoe UI"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Foreground="#64748B"
+                            Background="White"
+                            BorderBrush="#DDE3EC"
+                            BorderThickness="1">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="root"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="6"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="root" Property="Background" Value="#F1F5F9"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <!-- Next / Finish -->
+                    <Button x:Name="NextButton"
+                            Grid.Column="3"
+                            Content="Next →"
+                            Click="NextButton_Click"
+                            Cursor="Hand"
+                            Padding="18,8"
+                            FontFamily="Segoe UI"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Foreground="White"
+                            Background="#3A8EF6"
+                            BorderThickness="0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="root"
+                                        Background="{TemplateBinding Background}"
+                                        CornerRadius="6"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="root" Property="Opacity" Value="0.88"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="root" Property="Opacity" Value="0.72"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+    </Canvas>
+</Window>

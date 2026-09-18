@@ -1,0 +1,195 @@
+<Window x:Class="Yakult.Inventory.App.Wpf.RepairPortal.NewTicketIntake.Views.NewRepairTicketDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="New Repair Ticket" Height="760" Width="1040" WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" Background="#F0F2F6">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <!-- Scrollable wrapper kept as a safety net (e.g. larger system font scaling) even though the
+         two-column layout below should comfortably fit without scrolling at the default size. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+        <StackPanel Margin="20">
+            <TextBlock Text="Log a New Repair Ticket" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ── Left column: item picker, priority/date, problem ─────────── -->
+                <StackPanel Grid.Column="0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Item (search by name / serial / model)" Style="{StaticResource FilterLabel}"/>
+                        <Button Grid.Column="1" Content="+ Add Item" Style="{StaticResource RepairSecondaryBtn}" FontSize="10" Padding="8,2"
+                                Click="AddItemButton_Click" ToolTip="Log a damaged item that isn't in the system yet"/>
+                    </Grid>
+                    <TextBox Style="{StaticResource SearchBox}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,2"/>
+
+                    <!-- Independent checkboxes (not mutually exclusive) — "Both" is a convenience
+                         that checks the other two together; checking/unchecking either of the other
+                         two re-derives whether "Both" shows checked. Neither checked behaves the
+                         same as both checked (no restriction), rather than showing nothing. -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <CheckBox Content="In a Lot (Set)" IsChecked="{Binding ScopeInLot}" Margin="0,0,14,0"
+                                  ToolTip="Only items currently in an active Set"/>
+                        <CheckBox Content="An Item (Inventory)" IsChecked="{Binding ScopeAnItem}" Margin="0,0,14,0"
+                                  ToolTip="Only items not currently in any Set — e.g. one just added via + Add Item that hasn't been assigned to a Dept/Employee yet"/>
+                        <CheckBox Content="Both" IsChecked="{Binding ScopeBoth}"/>
+                    </StackPanel>
+
+                    <TextBlock FontSize="10" Foreground="#94A3B8" Margin="0,0,0,4">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="Showing items previously repaired or currently marked Damaged. Type to search all items."/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsShowingCandidates}" Value="False">
+                                        <Setter Property="Text" Value="Search results"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <Border Height="220" BorderThickness="1" BorderBrush="#DDE3EC" Background="White" CornerRadius="6" Margin="0,0,0,4">
+                        <ListBox ItemsSource="{Binding SearchResults}" SelectedItem="{Binding SelectedItem}" BorderThickness="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="6" PreviewMouseLeftButtonDown="ItemRow_PreviewMouseLeftButtonDown">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="16"/>
+                                            <ColumnDefinition Width="220"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Column 0: item identity -->
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap"/>
+                                            <TextBlock FontSize="10" Foreground="#64748B" TextWrapping="Wrap">
+                                                <Run Text="Serial: "/><Run Text="{Binding SerialNumber, Mode=OneWay}"/>
+                                            </TextBlock>
+                                            <TextBlock FontSize="10" Foreground="#64748B" TextWrapping="Wrap">
+                                                <Run Text="Model: "/><Run Text="{Binding ModelNumber, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <!-- Column 2: which Set it belongs to and who currently has it —
+                                             a separate column (not stacked under the item identity) so
+                                             this, the actual information needed to disambiguate which
+                                             physical unit is which, doesn't get squeezed by long item names. -->
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock FontSize="11" FontWeight="Bold" Foreground="#2563EB" TextWrapping="Wrap">
+                                                <Run Text="Set: "/><Run Text="{Binding SetCode, Mode=OneWay}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding CompanyName, Mode=OneWay}" FontSize="10" Foreground="#334155" TextWrapping="Wrap" Margin="0,3,0,0"
+                                                       Visibility="{Binding CompanyName, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                                            <TextBlock Text="{Binding DeptName, Mode=OneWay}" FontSize="10" Foreground="#334155" TextWrapping="Wrap"
+                                                       Visibility="{Binding DeptName, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                                            <TextBlock Text="{Binding BranchName, Mode=OneWay}" FontSize="10" Foreground="#334155" TextWrapping="Wrap"
+                                                       Visibility="{Binding BranchName, Converter={StaticResource EmptyStringToVisibilityConverter}}"/>
+                                            <TextBlock FontSize="10" Foreground="#64748B" TextWrapping="Wrap" Margin="0,3,0,0">
+                                                <Run Text="Recipient: " FontWeight="SemiBold"/><Run Text="{Binding RequestedByEmpName, Mode=OneWay, TargetNullValue='(Department-level)'}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <!-- The blue row highlight alone was easy to miss — an explicit
+                                             "Selected" badge makes the current pick unambiguous. -->
+                                        <Border Grid.Column="3" Background="{StaticResource RepairAccentBrush}" CornerRadius="10"
+                                                Padding="8,3" VerticalAlignment="Top" Margin="8,0,0,0"
+                                                Visibility="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <TextBlock Text="✓ Selected" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <StackPanel Margin="0,0,16,0">
+                            <TextBlock Text="Priority" Style="{StaticResource FilterLabel}"/>
+                            <ComboBox Style="{StaticResource FilterCombo}" ItemsSource="{Binding PriorityOptions}" SelectedItem="{Binding SelectedPriority}" Margin="0,4,0,0" Width="140" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Date Received" Style="{StaticResource FilterLabel}"/>
+                            <!-- WPF's DatePicker has no time component at all, and this needs one (intake time
+                                 matters, not just the day) — hosted as a WinForms DateTimePicker instead
+                                 (built in code-behind), matching the same control/format already used for
+                                 Completion Date in CompletionDatePromptForm.cs. -->
+                            <Border x:Name="DateReceivedHost" Margin="0,4,0,0" Width="190" Height="26" HorizontalAlignment="Left"/>
+                            <!-- Defaults to the moment Create Ticket is clicked (see
+                                 NewRepairTicketViewModel.SaveAsync) — only edit this if the item
+                                 actually arrived earlier and is only being logged now. -->
+                            <TextBlock Text="Defaults to now — only change if this item arrived earlier"
+                                       FontSize="10" FontStyle="Italic" Foreground="#94A3B8" Margin="0,3,0,0"
+                                       Width="190" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Margin="0,12,0,0">
+                        <TextBlock Text="Problem" Style="{StaticResource FilterLabel}"/>
+                        <TextBox Text="{Binding Problem, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto" Height="100" Margin="0,4,0,0" Padding="6"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- ── Right column: Requested By ────────────────────────────────── -->
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Requested By" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+
+                    <TextBlock Text="Company" Style="{StaticResource FilterLabel}"/>
+                    <ComboBox Style="{StaticResource FilterCombo}" ItemsSource="{Binding RequestedCompanyOptions}" DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedRequestedCompany}" HorizontalAlignment="Stretch" Margin="0,4,0,10"
+                              IsEditable="True" IsTextSearchEnabled="True" TextSearch.TextPath="Name" StaysOpenOnEdit="True"
+                              IsEnabled="{Binding IsRequestedByEditable}"/>
+
+                    <TextBlock Text="Branch" Style="{StaticResource FilterLabel}"/>
+                    <ComboBox Style="{StaticResource FilterCombo}" ItemsSource="{Binding RequestedBranchOptions}" DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedRequestedBranch}" HorizontalAlignment="Stretch" Margin="0,4,0,10"
+                              IsEditable="True" IsTextSearchEnabled="True" TextSearch.TextPath="Name" StaysOpenOnEdit="True"
+                              IsEnabled="{Binding IsRequestedByEditable}"/>
+
+                    <TextBlock Text="Department" Style="{StaticResource FilterLabel}"/>
+                    <ComboBox Style="{StaticResource FilterCombo}" ItemsSource="{Binding DepartmentOptions}" DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedRequestedDept}" HorizontalAlignment="Stretch" Margin="0,4,0,10"
+                              IsEditable="True" IsTextSearchEnabled="True" TextSearch.TextPath="Name" StaysOpenOnEdit="True"
+                              IsEnabled="{Binding IsRequestedByEditable}"/>
+
+                    <TextBlock Text="Employee" Style="{StaticResource FilterLabel}"/>
+                    <ComboBox Style="{StaticResource FilterCombo}" ItemsSource="{Binding EmployeeOptions}" DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedRequestedEmployee}" HorizontalAlignment="Stretch" Margin="0,4,0,10"
+                              IsEditable="True" IsTextSearchEnabled="True" TextSearch.TextPath="Name" StaysOpenOnEdit="True"
+                              IsEnabled="{Binding CanEditRequestedByEmployee}"/>
+
+                    <CheckBox Content="Department-level request (no specific employee)" IsChecked="{Binding IsDeptLevelRequest}"
+                              VerticalAlignment="Center" Margin="0,4,0,0"
+                              IsEnabled="{Binding IsRequestedByEditable}"/>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                <Button Content="Cancel" Style="{StaticResource RepairSecondaryBtn}" Command="{Binding CancelCommand}" Margin="0,0,8,0"/>
+                <Button Content="Create Ticket" Style="{StaticResource RepairPrimaryBtn}" Command="{Binding SaveCommand}"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

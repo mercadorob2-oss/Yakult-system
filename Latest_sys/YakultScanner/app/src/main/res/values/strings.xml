@@ -1,0 +1,66 @@
+<resources>
+    <string name="app_name">YakultScanner</string>
+    
+    <!-- Batch Entry Screen -->
+    <string name="batch_entry_title">Batch Entry</string>
+    <string name="batch_entry_subtitle">Add multiple items at once</string>
+    <string name="item_details_header">Item Details</string>
+    <string name="purchase_details_header">Purchase Details</string>
+    <string name="serial_numbers_header">Serial Numbers *</string>
+    <string name="item_name_label">Item name *</string>
+    <string name="description_label">Description</string>
+    <string name="type_label">Type *</string>
+    <string name="start_date_label">Start Date</string>
+    <string name="end_date_label">End Date</string>
+    <string name="model_number_label">Model number *</string>
+    <string name="category_label">Category *</string>
+    <string name="condition_label">Condition *</string>
+    <string name="unit_label">Unit</string>
+    <string name="amount_label">Amount</string>
+    <string name="vendor_label">Vendor</string>
+    <string name="warranty_label">Warranty (Years)</string>
+    <string name="date_purchased_label">Date Purchased</string>
+    <string name="remarks_label">Remarks</string>
+    <string name="save_items_button_text">Save Items (%1$d)</string>
+    <string name="save_to_system">SAVE TO SYSTEM</string>
+    <string name="enter_serial_placeholder">Enter serial number</string>
+    <string name="ready_to_add_serials">Ready to add serials...</string>
+    
+    <!-- Dispatch Details -->
+    <string name="dispatch_details_title">Dispatch Details</string>
+    <string name="requester_sig_label">Requester / Employee signature</string>
+    <string name="handler_sig_label">Handler\'s Signature</string>
+    <string name="set_info_header">SET INFORMATION</string>
+    <string name="set_code_label">Set Code:</string>
+    <string name="department_label">Department:</string>
+    <string name="created_by_label">Created By:</string>
+    <string name="mobile_user_label">Mobile User:</string>
+    <string name="employee_label">Employee:</string>
+    <string name="branch_label">Branch:</string>
+    <string name="released_label">Released:</string>
+    <string name="created_label">Created:</string>
+    <string name="items_header_count">ITEMS IN THIS SET (%1$d)</string>
+    <string name="legend_repair">Legend: R = item has repair history</string>
+    <string name="report_issue_button">Report Issue / Update Status</string>
+    <string name="report_issue_swipe_hint">Swipe left on an item to report an issue or update its status.</string>
+    <string name="report_issue_swipe_card_hint">Swipe left to report an issue</string>
+    <string name="pending_edits_label">Updated by mobile (not uploaded yet)</string>
+    
+    <!-- Image Upload -->
+    <string name="attach_photo_title">Attach Photo to Set</string>
+    <string name="add_photo_button">Add Photo</string>
+    <string name="select_photo_button">Select Photo from Gallery</string>
+    <string name="take_picture_button">Take Picture</string>
+    <string name="scan_document_button">Scan Document(s)</string>
+    <string name="select_image_source_title">Select Image Source</string>
+    <string name="upload_image_button">Upload Image</string>
+    <string name="upload_photo_hint">Upload photos to attach to this set\'s documentation</string>
+    <string name="image_upload_success">Image uploaded successfully!</string>
+    <string name="image_upload_failed">Failed to upload image</string>
+    
+    <!-- General -->
+    <string name="back">Back</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="select_option">Select option</string>
+</resources>

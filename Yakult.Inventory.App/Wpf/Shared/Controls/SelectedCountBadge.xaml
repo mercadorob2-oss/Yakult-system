@@ -1,0 +1,17 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Shared.Controls.SelectedCountBadge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             VerticalAlignment="Center"
+             Visibility="Collapsed">
+    <Border Background="#EBF5FF" CornerRadius="10" Padding="10,5"
+            Cursor="Hand"
+            MouseLeftButtonUp="Root_MouseLeftButtonUp">
+        <Border.ToolTip>
+            <ToolTip x:Name="RootToolTip" Content="Click to view and unselect rows"/>
+        </Border.ToolTip>
+        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#4E9AFC" TextDecorations="Underline">
+            <Run x:Name="RunCount" Text="0"/>
+            <Run Text=" Selected"/>
+        </TextBlock>
+    </Border>
+</UserControl>

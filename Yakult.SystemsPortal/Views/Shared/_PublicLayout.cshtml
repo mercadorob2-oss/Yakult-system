@@ -1,0 +1,144 @@
+@using Yakult.SystemsPortal.Services
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var currentUser = User.Identity?.Name;
+    var isSignedIn = User.Identity?.IsAuthenticated == true;
+    var demoMode = Context.RequestServices.GetRequiredService<IDemoModeService>();
+    var canUseDemoMode = demoMode.CanUse(Context);
+    var isDemoModeAvailable = demoMode.IsAvailable;
+    var isDemoModeEnabled = demoMode.IsEnabled(Context);
+    var returnUrl = Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString;
+    string Current(params string[] actions) => actions.Contains(currentAction, StringComparer.OrdinalIgnoreCase) ? "page" : "false";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Yakult employee information, resources, learning, services, and business portals." />
+    <title>@ViewData["Title"] - Yakult Employee Portal</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public-portal.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/employee-resources.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/demo-data.css" asp-append-version="true" />
+</head>
+<body class="employee-portal">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="portal-utility">
+        <div class="portal-container portal-utility__inner">
+            <span>Yakult Philippines Incorporated</span>
+            <span>Employee information and services</span>
+        </div>
+    </div>
+    <header class="portal-header">
+        <div class="portal-container portal-header__inner">
+            <a class="portal-brand" asp-controller="Public" asp-action="Index" aria-label="Yakult Employee Portal home">
+                <span class="portal-brand__mark" aria-hidden="true">Y</span>
+                <span><strong>Yakult</strong><small>Employee Portal</small></span>
+            </a>
+            <button class="portal-menu-button" id="portalMenuButton" type="button" aria-label="Open navigation" aria-controls="portalNavigation" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="portal-navigation" id="portalNavigation" aria-label="Main navigation">
+                <a asp-controller="Public" asp-action="Company" aria-current="@Current("Company")">Company</a>
+                <a href="/EmployeeResources" aria-current="@Current("Resources", "Faqs", "EmployeeResources", "EmployeeResourceDetails")">Employee Resources</a>
+                <details class="portal-navigation__group">
+                    <summary class="@(Current("Learning", "Cybersecurity") == "page" ? "is-current" : null)">Learning</summary>
+                    <div class="portal-navigation__menu">
+                        @if (isSignedIn)
+                        {
+                            <a asp-controller="Public" asp-action="MyLearning"><strong>My Learning</strong><span>Track your progress and completion.</span></a>
+                        }
+                        <a asp-controller="Public" asp-action="Learning"><strong>All IT learning</strong><span>Browse every learning and awareness resource.</span></a>
+                        <a asp-controller="Public" asp-action="Learning" asp-route-track="cybersecurity"><strong>IT Cybersecurity</strong><span>Phishing, passwords, MFA, device safety, and data handling.</span></a>
+                        <a asp-controller="Public" asp-action="Learning" asp-route-track="technical"><strong>IT Technical</strong><span>System learning, technical references, and access basics.</span></a>
+                        <a asp-controller="Public" asp-action="Learning" asp-route-track="support"><strong>IT Support</strong><span>Help desk guidance, troubleshooting, and account support.</span></a>
+                    </div>
+                </details>
+                <a asp-controller="Public" asp-action="Services" aria-current="@Current("Services")">Services &amp; Portals</a>
+                <a asp-controller="Public" asp-action="Help" aria-current="@Current("Help")">IT Help</a>
+                @if (isDemoModeAvailable && isSignedIn && canUseDemoMode)
+                {
+                    <form asp-controller="Public" asp-action="SetDemoMode" method="post" class="portal-demo-toggle-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        <input type="hidden" name="enabled" value="@(isDemoModeEnabled ? "false" : "true")" />
+                        <button type="submit" class="portal-demo-toggle" aria-pressed="@isDemoModeEnabled">
+                            @(isDemoModeEnabled ? "Exit demo view" : "View demo data")
+                        </button>
+                    </form>
+                }
+                @if (isSignedIn)
+                {
+                    <details class="portal-account-menu">
+                        <summary title="Signed in user">
+                            <span>Signed in</span>
+                            <strong>@(string.IsNullOrWhiteSpace(currentUser) ? "User" : currentUser)</strong>
+                        </summary>
+                        <div class="portal-account-menu__panel">
+                            <a asp-controller="Public" asp-action="MyLearning">My Learning</a>
+                            @if (User.HasClaim("IsDeveloper", "true"))
+                            {
+                                <a asp-controller="Admin" asp-action="Dashboard">Admin dashboard</a>
+                            }
+                            <form asp-controller="Home" asp-action="Logout" method="post" class="portal-logout-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="portal-logout-button">Logout</button>
+                            </form>
+                        </div>
+                    </details>
+                }
+                else
+                {
+                    <a class="portal-admin-link" asp-controller="Home" asp-action="Login">Login</a>
+                    <a class="portal-admin-link" asp-controller="Home" asp-action="Register">Register</a>
+                }
+            </nav>
+        </div>
+    </header>
+    <div class="portal-token" hidden>@Html.AntiForgeryToken()</div>
+    <main id="main-content" class="portal-main">@RenderBody()</main>
+    <footer class="portal-footer">
+        <div class="portal-container portal-footer__grid">
+            <section>
+                <a class="portal-brand portal-brand--footer" asp-controller="Public" asp-action="Index">
+                    <span class="portal-brand__mark" aria-hidden="true">Y</span>
+                    <span><strong>Yakult</strong><small>Employee Portal</small></span>
+                </a>
+                <p>A central source for employee information, workplace resources, learning, and Yakult business systems.</p>
+            </section>
+            <section><h2>Employee information</h2><a asp-controller="Public" asp-action="Company">Company</a><a href="/EmployeeResources">Employee resources</a></section>
+            <section><h2>Services and support</h2><a asp-controller="Public" asp-action="Services">Services &amp; portals</a><a asp-controller="Public" asp-action="Learning">Learning &amp; awareness</a><a asp-controller="Public" asp-action="Help">IT Help Center</a><a asp-controller="Home" asp-action="Register">Request an account</a></section>
+        </div>
+        <div class="portal-footer__bottom"><div class="portal-container"><span>&copy; @DateTime.Now.Year Yakult Philippines Incorporated</span><span>For authorized employee use</span></div></div>
+    </footer>
+    <script>
+        (() => {
+            const button = document.getElementById('portalMenuButton');
+            const navigation = document.getElementById('portalNavigation');
+            if (button && navigation) button.addEventListener('click', () => {
+                const open = navigation.classList.toggle('is-open');
+                button.setAttribute('aria-expanded', String(open));
+                button.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+            });
+            document.addEventListener('click', event => {
+                document.querySelectorAll('.portal-navigation__group[open], .portal-account-menu[open]').forEach(menu => {
+                    if (!menu.contains(event.target)) menu.removeAttribute('open');
+                });
+                const target = event.target.closest('[data-track]');
+                if (!target) return;
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                if (!token) return;
+                fetch('/Public/Track', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token }, body: JSON.stringify({ eventType: 'Click', targetType: target.dataset.track, targetKey: target.dataset.trackKey || target.href }) }).catch(() => {});
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key !== 'Escape') return;
+                document.querySelectorAll('.portal-navigation__group[open], .portal-account-menu[open]').forEach(menu => menu.removeAttribute('open'));
+                navigation?.classList.remove('is-open');
+                button?.setAttribute('aria-expanded', 'false');
+            });
+        })();
+    </script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

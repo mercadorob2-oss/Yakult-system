@@ -1,0 +1,175 @@
+@model PublicHomeViewModel
+@{ Layout = "_PublicLayout"; ViewData["Title"] = "Home"; }
+
+<section class="portal-hero">
+    <div class="portal-container portal-hero__grid">
+        <div class="portal-hero__content">
+            <span class="portal-eyebrow">Official employee intranet</span>
+            <h1>Yakult employee portal</h1>
+            <p>Start here for company information, workplace resources, learning materials, support guidance, and access details for Yakult systems.</p>
+            <form class="portal-search" asp-controller="Public" asp-action="Search" method="get" role="search">
+                <label class="sr-only" for="portalSearch">Search the employee portal</label>
+                <input id="portalSearch" name="q" type="search" minlength="2" placeholder="Search policies, guides, systems, and help topics" />
+                <button type="submit">Search portal</button>
+            </form>
+            <div class="portal-search__hints" aria-label="Common search topics">
+                <a asp-controller="Public" asp-action="Search" asp-route-q="Policies">Policies</a>
+                <a asp-controller="Public" asp-action="Search" asp-route-q="Forms">Forms</a>
+                <a asp-controller="Public" asp-action="Search" asp-route-q="System access">System access</a>
+                <a asp-controller="Public" asp-action="Search" asp-route-q="IT support">IT support</a>
+            </div>
+            <div class="portal-hero__links">
+                <a asp-controller="Public" asp-action="Services">Browse services &amp; portals</a>
+                <a asp-route="EmployeeResourcesIndex">Find employee resources</a>
+                <a asp-controller="Public" asp-action="Help">Get IT help</a>
+            </div>
+        </div>
+        <aside class="portal-hero__panel">
+            <span class="portal-eyebrow">Employee access</span>
+            <h2>Use the right access path for each system</h2>
+            <p>Some systems keep separate sign-in pages. Use Services &amp; Portals to confirm the correct access instructions before opening a system.</p>
+            <ul class="portal-hero__panel-list">
+                <li>Yakult Inventory access remains unchanged.</li>
+                <li>Cadena and YDS keep their independent logins.</li>
+                <li>Account and device help starts at IT Help Center.</li>
+            </ul>
+            <div class="portal-hero__panel-actions">
+                <a class="portal-button portal-button--light" asp-controller="Public" asp-action="Services">View services <span aria-hidden="true">→</span></a>
+            </div>
+        </aside>
+    </div>
+</section>
+
+@if (Model.Notice.IsActive(DateTime.UtcNow))
+{
+    <section class="portal-container portal-alert" aria-label="Important notice">
+        <span class="portal-alert__label">Important notice</span>
+        <div><strong>@(string.IsNullOrWhiteSpace(Model.Notice.Title) ? "Employee portal notice" : Model.Notice.Title)</strong>@if (!string.IsNullOrWhiteSpace(Model.Notice.Message)){<p>@Model.Notice.Message</p>}</div>
+    </section>
+}
+
+
+<section class="portal-section portal-container portal-section--compact" aria-labelledby="priority-title">
+    <header class="portal-section__header">
+        <div>
+            <span class="portal-eyebrow">Start here</span>
+            <h2 id="priority-title">Common employee needs</h2>
+            <p>Direct paths for the information and support employees most often need.</p>
+        </div>
+    </header>
+    <div class="portal-priority-grid">
+        <a class="portal-priority-card" asp-action="Services">
+            <span class="portal-priority-card__label">Services &amp; portals</span>
+            <strong>Open system access instructions</strong>
+            <p>Find Yakult Inventory, Cadena, YDS, and other employee systems in one directory.</p>
+            <em>View services <span aria-hidden="true">→</span></em>
+        </a>
+        <a class="portal-priority-card" asp-route="EmployeeResourcesIndex">
+            <span class="portal-priority-card__label">Employee resources</span>
+            <strong>Find policies, forms, and references</strong>
+            <p>Use published IT resources for support, system access, cybersecurity, and technology policy needs.</p>
+            <em>Browse resources <span aria-hidden="true">→</span></em>
+        </a>
+        <a class="portal-priority-card" asp-action="Help">
+            <span class="portal-priority-card__label">IT Help Center</span>
+            <strong>Get account and device support</strong>
+            <p>Start troubleshooting or find the right support path for access issues.</p>
+            <em>Get help <span aria-hidden="true">→</span></em>
+        </a>
+    </div>
+</section>
+
+<section class="portal-section portal-container" aria-labelledby="services-title">
+    <header class="portal-section__header"><div><span class="portal-eyebrow">Quick access</span><h2 id="services-title">Popular services and portals</h2><p>Open commonly used Yakult systems and employee services.</p></div><a asp-action="Services">View all services <span aria-hidden="true">→</span></a></header>
+    @if (Model.Services.Count > 0)
+    {
+        <div class="service-shortcuts">
+            @foreach (var service in Model.Services.Take(8))
+            {
+                <a class="service-shortcut" data-track="Service" data-track-key="@service.Name" asp-action="Services">
+                    <span class="service-shortcut__mark" aria-hidden="true">@service.Name.FirstOrDefault()</span>
+                    <span><strong>@service.Name</strong><small>@service.Description</small></span><span aria-hidden="true">→</span>
+                </a>
+            }
+        </div>
+    }
+    else { <div class="portal-empty portal-empty--compact"><p>Service links will appear here when they are available.</p></div> }
+</section>
+
+<section class="portal-section portal-section--soft">
+    <div class="portal-container">
+        <header class="portal-section__header"><div><span class="portal-eyebrow">Explore the portal</span><h2>Employee information and services</h2><p>Choose a section to find the information or service you need.</p></div></header>
+        <div class="portal-directory">
+            @foreach (var portalSection in Model.Sections)
+            {
+                <a class="portal-directory__card" asp-action="@portalSection.Action"><span class="portal-directory__number">@portalSection.Label</span><h3>@portalSection.Name</h3><p>@portalSection.Description</p><strong>Explore section <span aria-hidden="true">→</span></strong></a>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="portal-section portal-section--navy">
+    <div class="portal-container">
+        <header class="portal-section__header"><div><span class="portal-eyebrow">Learning &amp; awareness</span><h2>Build knowledge. Work safely.</h2><p>Watch cybersecurity lessons and access practical employee learning material.</p></div><a asp-action="Learning">Browse learning resources <span aria-hidden="true">→</span></a></header>
+        @if (Model.Learning.Count > 0)
+        {
+            <div class="learning-grid">
+                @foreach (var item in Model.Learning.Take(4))
+                {
+                    <a class="learning-card" asp-action="ContentDetails" asp-route-slug="@item.Slug"><span class="learning-card__type">@(item.ContentType == "Video" ? "▶ Video" : item.ContentType)</span><strong>@item.Title</strong><span>@item.Summary</span><em>Open resource →</em></a>
+                }
+            </div>
+        }
+        else { <div class="portal-empty portal-empty--dark"><h3>Learning resources are being prepared</h3><p>Published cybersecurity videos and employee learning material will appear here.</p></div> }
+    </div>
+</section>
+
+<section class="portal-section portal-container">
+    <div>
+        <header class="portal-section__header"><div><span class="portal-eyebrow">Employee resources</span><h2>Policies, forms, and references</h2></div><a asp-route="EmployeeResourcesIndex">View resources <span aria-hidden="true">→</span></a></header>
+        @if (Model.EmployeeResources.Count > 0)
+        {
+            <div class="compact-list">
+                @foreach (var item in Model.EmployeeResources)
+                {
+                    <a asp-route="EmployeeResourceDetails" asp-route-slug="@item.Slug">
+                        <span>
+                            <small>@item.ResourceType</small>
+                            @if (Model.EmployeeResourcesAreDemo)
+                            {
+                                <span class="dummy-data-badge dummy-data-badge--compact">DUMMY DATA</span>
+                            }
+                            <strong>@item.Title</strong>
+                        </span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                }
+            </div>
+        }
+        else if (Model.Resources.Count > 0)
+        {
+            <div class="compact-list">
+                @foreach (var item in Model.Resources.Take(4))
+                {
+                    <a asp-action="ContentDetails" asp-route-slug="@item.Slug">
+                        <span>
+                            <small>@item.ContentType</small>
+                            @if (item.IsDemo)
+                            {
+                                <span class="dummy-data-badge dummy-data-badge--compact">DUMMY DATA</span>
+                            }
+                            <strong>@item.Title</strong>
+                        </span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                }
+            </div>
+        }
+        else { <div class="portal-empty portal-empty--compact"><p>Published employee resources will appear here.</p></div> }
+    </div>
+</section>
+
+<section class="portal-container portal-help-banner">
+    <div><span class="portal-eyebrow">Need assistance?</span><h2>Start with the IT Help Center</h2><p>Find account guidance, support instructions, and troubleshooting resources.</p></div>
+    <a class="portal-button" asp-action="Help">Get IT help <span aria-hidden="true">→</span></a>
+</section>

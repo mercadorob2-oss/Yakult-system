@@ -1,0 +1,593 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Set.ViewSetDetailPage"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Set Details"
+        Width="1080" Height="740"
+        MinWidth="860" MinHeight="580"
+        MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea}, Path=Height}"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        ResizeMode="CanResizeWithGrip">
+
+    <Window.Resources>
+
+        <!-- ── ReadOnly field ─────────────────────────────────────────────────── -->
+        <Style x:Key="ReadField" TargetType="TextBox">
+            <Setter Property="Height"                   Value="26"/>
+            <Setter Property="FontSize"                 Value="11.5"/>
+            <Setter Property="IsReadOnly"               Value="True"/>
+            <Setter Property="Background"               Value="#F0F0F0"/>
+            <Setter Property="BorderBrush"              Value="#D0D8E0"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Padding"                  Value="6,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Editable field ────────────────────────────────────────────────── -->
+        <Style x:Key="EditField" TargetType="TextBox">
+            <Setter Property="Height"                   Value="26"/>
+            <Setter Property="FontSize"                 Value="11.5"/>
+            <Setter Property="Background"               Value="White"/>
+            <Setter Property="BorderBrush"              Value="#C8D2DC"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Padding"                  Value="6,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3498DB"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Field label ───────────────────────────────────────────────────── -->
+        <Style x:Key="FL" TargetType="TextBlock">
+            <Setter Property="FontSize"          Value="10"/>
+            <Setter Property="FontWeight"        Value="SemiBold"/>
+            <Setter Property="Foreground"        Value="#3A4A5A"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin"            Value="0,0,6,0"/>
+        </Style>
+
+        <!-- ── Section title ─────────────────────────────────────────────────── -->
+        <Style x:Key="ST" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#3498DB"/>
+            <Setter Property="Margin"     Value="0,0,0,8"/>
+        </Style>
+
+        <!-- ── White card ────────────────────────────────────────────────────── -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="6"/>
+            <Setter Property="Padding"         Value="14,10"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.06" Direction="270"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── ComboBox ──────────────────────────────────────────────────────── -->
+        <Style x:Key="FieldCombo" TargetType="ComboBox">
+            <Setter Property="Height"      Value="26"/>
+            <Setter Property="FontSize"    Value="11.5"/>
+            <Setter Property="Background"  Value="White"/>
+            <Setter Property="BorderBrush" Value="#C8D2DC"/>
+            <Setter Property="Padding"     Value="5,0"/>
+        </Style>
+
+        <!-- ── Action button ─────────────────────────────────────────────────── -->
+        <Style x:Key="ActionBtn" TargetType="Button">
+            <Setter Property="Height"          Value="30"/>
+            <Setter Property="Padding"         Value="12,0"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground"      Value="#3C3C3C"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.84"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.68"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.40"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Footer button ─────────────────────────────────────────────────── -->
+        <Style x:Key="FooterBtn" TargetType="Button" BasedOn="{StaticResource ActionBtn}">
+            <Setter Property="Height"  Value="36"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="12"/>
+        </Style>
+
+        <!-- ── DataGrid column header ─────────────────────────────────────────── -->
+        <!-- Height/ColumnHeaderHeight are intentionally NOT fixed here: the header text wraps
+             (see the TextBlock below) and needs to grow to 2+ lines without clipping, e.g.
+             "Fixed Asset" or "Computer Name" in a narrow column. Leaving height unset lets the
+             DataGrid auto-size the header row to whatever the wrapped text needs. -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background"               Value="#3498DB"/>
+            <Setter Property="Foreground"               Value="White"/>
+            <Setter Property="FontWeight"               Value="Bold"/>
+            <Setter Property="FontSize"                 Value="10.5"/>
+            <Setter Property="Padding"                  Value="8,6"/>
+            <Setter Property="MinHeight"                Value="34"/>
+            <Setter Property="BorderBrush"              Value="#5AAFE5"/>
+            <Setter Property="BorderThickness"          Value="0,0,1,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       TextWrapping="Wrap"
+                                       TextAlignment="Center"
+                                       HorizontalAlignment="Stretch"
+                                       VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- MinHeight (not a fixed Height) so rows can grow to fit wrapped multi-line cell text
+             while still keeping a sensible minimum for short content. -->
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="MinHeight"  Value="34"/>
+            <Style.Triggers>
+                <Trigger Property="AlternationIndex" Value="1">
+                    <Setter Property="Background" Value="#F0F8FF"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#5DADE2"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderThickness"          Value="0"/>
+            <Setter Property="FocusVisualStyle"         Value="{x:Null}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="{TemplateBinding Background}" Padding="5,2">
+                            <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Cell text wraps instead of clipping; only DataGridTextColumn cells (rendered as a
+             plain TextBlock) are affected — buttons/other controls elsewhere are untouched since
+             this style only lives in the DataGrid's own resource scope (see DataGrid.Resources). -->
+        <Style x:Key="WrappedCellText" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+    </Window.Resources>
+
+    <Border CornerRadius="10" Background="#FAFAFA" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="44"/>    <!-- Title bar           -->
+                <RowDefinition Height="Auto"/>  <!-- Header card         -->
+                <RowDefinition Height="*"/>     <!-- Body (DataGrid)     -->
+                <RowDefinition Height="Auto"/>  <!-- Financial (hidden)  -->
+                <RowDefinition Height="58"/>    <!-- Footer buttons      -->
+            </Grid.RowDefinitions>
+
+            <!-- ═══ TITLE BAR ═══ -->
+            <Border Grid.Row="0" Background="#3498DB" CornerRadius="10,10,0,0"
+                    MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
+                <DockPanel Margin="14,0,8,0" VerticalAlignment="Center">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center"
+                                Cursor="Arrow">
+                        <TextBlock Text="─" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF"
+                                   Cursor="Hand" VerticalAlignment="Center" Padding="8,0"
+                                   MouseLeftButtonDown="OnMinimizeClick"/>
+                        <TextBlock x:Name="BtnMaximizeGlyph" Text="□" FontSize="13" FontWeight="Bold"
+                                   Foreground="#BDD9FF" Cursor="Hand" VerticalAlignment="Center"
+                                   Padding="8,0" MouseLeftButtonDown="OnMaximizeClick"/>
+                        <TextBlock Text="✕" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF"
+                                   Cursor="Hand" VerticalAlignment="Center" Padding="8,0"
+                                   MouseLeftButtonDown="OnCloseClick"/>
+                    </StackPanel>
+                    <TextBlock x:Name="TitleText" Text="📋 Set Details" FontSize="13" FontWeight="Bold"
+                               Foreground="White" VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <!-- ═══ HEADER CARD ═══ -->
+            <Border Grid.Row="1" Style="{StaticResource Card}" Margin="10,8,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>  <!-- Section title       -->
+                        <RowDefinition Height="Auto"/>  <!-- Set Code / Created  -->
+                        <RowDefinition Height="Auto"/>  <!-- Created At / QR     -->
+                        <RowDefinition Height="Auto"/>  <!-- Date Requested      -->
+                        <RowDefinition Height="Auto"/>  <!-- Remarks             -->
+                        <RowDefinition Height="Auto"/>  <!-- Action buttons      -->
+                        <RowDefinition Height="6"/>     <!-- Spacer              -->
+                        <RowDefinition Height="Auto"/>  <!-- Employee            -->
+                        <RowDefinition Height="Auto"/>  <!-- Company / Branch    -->
+                        <RowDefinition Height="Auto"/>  <!-- Department / RecvBy -->
+                        <RowDefinition Height="Auto"/>  <!-- Hardware (hidden)   -->
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Section title spanning all columns -->
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="4" Style="{StaticResource ST}"
+                               Text="📋 Set Information"/>
+
+                    <!-- Row 1: Set Code | Created By -->
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Set Code:"      Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <TextBox   Grid.Row="1" Grid.Column="1" x:Name="TxtSetCode"   Style="{StaticResource ReadField}" Margin="0,3,8,3"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Created By:"    Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <TextBox   Grid.Row="1" Grid.Column="3" x:Name="TxtCreatedBy" Style="{StaticResource ReadField}" Margin="0,3,0,3"/>
+
+                    <!-- Row 2: Created At (editable calendar + Save) | QR Image + buttons -->
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Created At:"    Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,2,8,2">
+                        <DatePicker x:Name="DtpCreatedAt" Width="130" Height="26" Margin="0,0,6,0"
+                                    BorderBrush="#C8D2DC" BorderThickness="1"/>
+                        <Button x:Name="BtnSaveCreatedAt" Content="💾 Save" Style="{StaticResource ActionBtn}"
+                                Background="#A9DFC2" Click="BtnSaveCreatedAt_Click"
+                                ToolTip="Correct the date this Set was created/encoded"/>
+                    </StackPanel>
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="QR Image:"      Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Horizontal" Margin="0,2,0,2">
+                        <TextBox x:Name="TxtQRImage" Style="{StaticResource ReadField}" Width="160" Margin="0,0,4,0"/>
+                        <Button  x:Name="BtnViewQR" Content="👁️ View" Style="{StaticResource ActionBtn}"
+                                 Background="#E8F5E9" Margin="0,0,4,0" Click="BtnViewQR_Click"
+                                 Visibility="Collapsed" ToolTip="View the QR code image stored in the database"/>
+                        <Button  x:Name="BtnGenerateQR"  Content="QR Code" Style="{StaticResource ActionBtn}"
+                                 Background="#ADD8E6" Margin="0,0,4,0" Click="BtnGenerateQR_Click"/>
+                        <!-- Commented out at user request (2026-07-29); kept in code-behind, hidden from the UI -->
+                        <Button  x:Name="BtnGeneratePDF" Content="📄 PDF"  Style="{StaticResource ActionBtn}"
+                                 Background="#A9DFC2" Click="BtnGeneratePDF_Click" Visibility="Collapsed"/>
+                    </StackPanel>
+
+                    <!-- Row 3: Date Requested (read-only; auto-derived from the Set's Requests) -->
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Date Requested:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <TextBox   Grid.Row="3" Grid.Column="1" x:Name="TxtDateRequested" Style="{StaticResource ReadField}" Margin="0,3,8,3"/>
+
+                    <!-- Row 4: Remarks (multiline, spans columns 1-3, with Save) -->
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Remarks:" Style="{StaticResource FL}" Margin="0,3,6,3" VerticalAlignment="Top"/>
+                    <Grid Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,3,0,3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="TxtRemarks" Grid.Column="0" Style="{StaticResource EditField}"
+                                 Height="60" Margin="0,0,6,0"
+                                 TextWrapping="Wrap" AcceptsReturn="True"
+                                 VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"/>
+                        <Button x:Name="BtnSaveRemarks" Grid.Column="1" Content="💾 Save" Style="{StaticResource ActionBtn}"
+                                Background="#A9DFC2" Click="BtnSaveRemarks_Click"
+                                VerticalAlignment="Bottom"
+                                ToolTip="Save remarks for this Set"/>
+                    </Grid>
+
+                    <!-- Row 5: Action buttons + Item Count -->
+                    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+                                Orientation="Horizontal" Margin="0,4,0,4">
+                        <Button x:Name="BtnRefresh"          Content="🔄 Refresh"           Style="{StaticResource ActionBtn}" Background="#B0E0E6" Margin="0,0,6,0" Click="BtnRefresh_Click"/>
+                        <Button x:Name="BtnUpgradeLifecycle" Content="🔄 Upgrade Lifecycle"  Style="{StaticResource ActionBtn}" Background="#DDA0DD" Margin="0,0,6,0" Click="BtnUpgradeLifecycle_Click"/>
+                        <Button x:Name="BtnReceipts"         Content="📄 Docs"               Style="{StaticResource ActionBtn}" Background="#FFDAB9" Margin="0,0,6,0" Click="BtnDocumentImages_Click"/>
+                        <Button x:Name="BtnRequisitionForm"  Content="🧾 Requisition"        Style="{StaticResource ActionBtn}" Background="#FFE4A1" Click="BtnRequisitionForm_Click"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="2"
+                                Orientation="Horizontal" Margin="0,4,0,4">
+                        <TextBlock Text="Item Count:" Style="{StaticResource FL}"/>
+                        <TextBox x:Name="TxtItemCount" Style="{StaticResource ReadField}" Width="65"
+                                 Background="#E6F7FF" FontWeight="Bold" TextAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Separator -->
+                    <Border Grid.Row="6" Grid.ColumnSpan="4" Background="#DCDCDC" Height="1" Margin="0,2,0,2"/>
+
+                    <!-- Row 7: Employee (+ Save Transfer) | Employee # -->
+                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Employee:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" Margin="0,2,8,2">
+                        <ComboBox x:Name="CmbEmployee"   Style="{StaticResource FieldCombo}" Width="160" Margin="0,0,6,0"
+                                  IsEditable="True" IsTextSearchEnabled="True" TextSearch.TextPath="DisplayText" StaysOpenOnEdit="True"/>
+                        <Button   x:Name="BtnSaveTransfer" Content="💾 Save" Style="{StaticResource ActionBtn}"
+                                  Background="#A9DFC2" Margin="0,0,6,0" Click="BtnSave_Click"
+                                  ToolTip="Save Transfer"/>
+                        <TextBlock x:Name="LblDeptLevelTag" Text="(Dept.)"
+                                   Foreground="#2980B9" FontStyle="Italic" FontSize="10"
+                                   VerticalAlignment="Center" Margin="2,0,6,0" Visibility="Collapsed"/>
+                        <Button   x:Name="BtnSwitchMode" Content="⇄ Dept." Style="{StaticResource ActionBtn}"
+                                  Background="#3498DB" Foreground="White" Click="BtnSwitchMode_Click"
+                                  ToolTip="Switch to Department-level assignment"/>
+                    </StackPanel>
+                    <TextBlock Grid.Row="7" Grid.Column="2" Text="Employee #:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <TextBox   Grid.Row="7" Grid.Column="3" x:Name="TxtEmployeeNumber" Style="{StaticResource ReadField}" Margin="0,3,0,3"/>
+
+                    <!-- Row 8: Company / Branch (each has a read-only text and editable combo) -->
+                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Company:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <Grid Grid.Row="8" Grid.Column="1" Margin="0,3,8,3">
+                        <TextBox  x:Name="TxtCompany"     Style="{StaticResource ReadField}"/>
+                        <ComboBox x:Name="CmbCompanyEdit" Style="{StaticResource FieldCombo}"
+                                  Visibility="Collapsed" IsEditable="True"/>
+                    </Grid>
+                    <TextBlock Grid.Row="8" Grid.Column="2" Text="Branch:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <Grid Grid.Row="8" Grid.Column="3" Margin="0,3,0,3">
+                        <TextBox  x:Name="TxtBranch"     Style="{StaticResource ReadField}"/>
+                        <ComboBox x:Name="CmbBranchEdit" Style="{StaticResource FieldCombo}"
+                                  Visibility="Collapsed" IsEditable="True"/>
+                    </Grid>
+
+                    <!-- Row 9: Department / Received By -->
+                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Department:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <Grid Grid.Row="9" Grid.Column="1" Margin="0,3,8,3">
+                        <TextBox  x:Name="TxtDepartment" Style="{StaticResource ReadField}"/>
+                        <ComboBox x:Name="CmbDeptEdit"   Style="{StaticResource FieldCombo}"
+                                  Visibility="Collapsed" IsEditable="True"/>
+                    </Grid>
+                    <TextBlock Grid.Row="9" Grid.Column="2" Text="Received By:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <StackPanel Grid.Row="9" Grid.Column="3" Orientation="Horizontal" Margin="0,2,0,2">
+                        <ComboBox x:Name="CmbReceivedBy" Style="{StaticResource FieldCombo}" Width="210" Margin="0,0,6,0"/>
+                        <Button   x:Name="BtnSaveReceivedBy" Content="💾 Save" Style="{StaticResource ActionBtn}"
+                                  Background="#3498DB" Foreground="White" Click="BtnSaveReceivedBy_Click"/>
+                    </StackPanel>
+
+                    <!-- Row 10: Hardware info section (hidden unless CPU set) -->
+                    <Border x:Name="HwSectionPanel" Grid.Row="10" Grid.ColumnSpan="4"
+                            Visibility="Collapsed" Margin="0,6,0,0"
+                            Background="#F8FAFC" BorderBrush="#DDE3EC" BorderThickness="1"
+                            CornerRadius="4" Padding="8,6">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.ColumnSpan="5" Text="Hardware Assignment"
+                                       FontWeight="Bold" FontSize="10" Foreground="#3A4A5A" Margin="0,0,0,4"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Computer Name:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                            <TextBox   Grid.Row="1" Grid.Column="1" x:Name="TxtComputerName" Style="{StaticResource EditField}" Margin="0,3,8,3"/>
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="IP Address:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                            <TextBox   Grid.Row="1" Grid.Column="3" x:Name="TxtIPAddress" Style="{StaticResource EditField}" Width="190" Margin="0,3,8,3"/>
+                            <Button    Grid.Row="1" Grid.Column="4" x:Name="BtnSaveHardwareInfo"
+                                       Content="💾 Save Hardware Info" Style="{StaticResource ActionBtn}"
+                                       Background="#9BC5E6" Click="BtnSaveHardwareInfo_Click"/>
+                        </Grid>
+                    </Border>
+
+                </Grid>
+            </Border>
+
+            <!-- ═══ BODY CARD (Requests DataGrid) ═══ -->
+            <Border Grid.Row="2" Style="{StaticResource Card}" Margin="10,8,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="📦 Requests in this Set"
+                               FontSize="11" FontWeight="Bold" Foreground="#3498DB"
+                               Margin="0,0,0,6"/>
+
+                    <DataGrid Grid.Row="1" x:Name="DgvRequests"
+                              Background="White"
+                              BorderBrush="#DDE3EC" BorderThickness="1"
+                              GridLinesVisibility="None"
+                              AlternationCount="2"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              HeadersVisibility="Column"
+                              CanUserSortColumns="True"
+                              CanUserReorderColumns="False"
+                              CanUserResizeRows="False"
+                              CanUserResizeColumns="True"
+                              AutoGenerateColumns="False"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Auto"
+                              IsReadOnly="True">
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Req ID"       Binding="{Binding ReqId}"        Width="65"  MinWidth="55"  SortMemberPath="ReqId"      ElementStyle="{StaticResource WrappedCellText}"/>
+                            <DataGridTextColumn Header="Item"         Binding="{Binding ItemName}"      Width="190" MinWidth="110" SortMemberPath="ItemName"   ElementStyle="{StaticResource WrappedCellText}"/>
+                            <DataGridTextColumn Header="Category"     Binding="{Binding Category}"      Width="110" MinWidth="80"  SortMemberPath="Category"   ElementStyle="{StaticResource WrappedCellText}"/>
+                            <DataGridTextColumn Header="Fixed Asset"  Binding="{Binding FixedAsset}"    Width="84"  MinWidth="70"  SortMemberPath="FixedAsset" ElementStyle="{StaticResource WrappedCellText}"/>
+                            <DataGridTextColumn Header="Model #"      Binding="{Binding ModelNumber}"   Width="115" MinWidth="80"  SortMemberPath="ModelNumber" ElementStyle="{StaticResource WrappedCellText}"/>
+                            <DataGridTextColumn Header="Serial #"     Binding="{Binding SerialNumber}"  Width="115" MinWidth="80"  SortMemberPath="SerialNumber" ElementStyle="{StaticResource WrappedCellText}"/>
+                            <DataGridTextColumn x:Name="ColComputerName"
+                                               Header="Computer Name" Binding="{Binding ComputerName}" Width="150" MinWidth="100"
+                                               ElementStyle="{StaticResource WrappedCellText}"
+                                               Visibility="Collapsed"/>
+                            <DataGridTextColumn x:Name="ColIPAddress"
+                                               Header="IP Address"    Binding="{Binding IPAddress}"    Width="130" MinWidth="90"
+                                               ElementStyle="{StaticResource WrappedCellText}"
+                                               Visibility="Collapsed"/>
+                            <DataGridTextColumn Header="Qty"          Binding="{Binding Quantity}"      Width="55"  MinWidth="50"  SortMemberPath="Quantity"   ElementStyle="{StaticResource WrappedCellText}"/>
+                            <DataGridTextColumn Header="Status"       Binding="{Binding Status}"        Width="115" MinWidth="85"  SortMemberPath="Status"     ElementStyle="{StaticResource WrappedCellText}"/>
+                            <DataGridTextColumn Header="Description"  Binding="{Binding Description}"   Width="190" MinWidth="110" SortMemberPath="Description" ElementStyle="{StaticResource WrappedCellText}"/>
+                            <DataGridTextColumn Header="Remarks"      Binding="{Binding Remarks}"       Width="*"   MinWidth="140" SortMemberPath="Remarks"    ElementStyle="{StaticResource WrappedCellText}"/>
+                        </DataGrid.Columns>
+
+                    </DataGrid>
+
+                    <!-- Shown instead of a blank grid when this Set has items but no Request
+                         rows (e.g. a Set created by the Renew Items feature, which writes
+                         directly to SetItem and never creates Requests). -->
+                    <Border Grid.Row="1" x:Name="PnlNoRequestsNote"
+                            Background="#F0F8FF" BorderBrush="#AADDFF" BorderThickness="1"
+                            CornerRadius="6" Padding="14,10" VerticalAlignment="Top"
+                            Visibility="Collapsed">
+                        <TextBlock TextWrapping="Wrap" FontSize="11.5" Foreground="#1A6DD0">
+                            This Set's items were created via renewal, not a Request. View them on
+                            <Run FontWeight="Bold">Renewal Details → Manage Items</Run> instead.
+                        </TextBlock>
+                    </Border>
+
+                </Grid>
+            </Border>
+
+            <!-- ═══ FINANCIAL CARD (hidden by default) ═══ -->
+            <Border x:Name="FinancialSection" Grid.Row="3" Style="{StaticResource Card}"
+                    Margin="10,8,10,0" Visibility="Collapsed">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="💰 Financial Calculations"
+                               FontSize="12" FontWeight="Bold" Foreground="#4CAF50" Margin="0,0,0,8"/>
+
+                    <!-- Input fields row -->
+                    <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                        <!-- Subtotal -->
+                        <TextBlock Text="Subtotal:" Style="{StaticResource FL}" Foreground="DarkBlue" FontWeight="Bold" Margin="0,0,4,0"/>
+                        <TextBox x:Name="TxtSubtotal" Text="0" Width="140" Style="{StaticResource EditField}" Margin="0,0,20,0"/>
+                        <!-- VAT -->
+                        <TextBlock Text="VAT %:" Style="{StaticResource FL}" Foreground="DarkGreen" Margin="0,0,4,0"/>
+                        <TextBox x:Name="TxtVatPercent" Text="12" Width="60" Style="{StaticResource EditField}" Margin="0,0,6,0"/>
+                        <TextBlock Text="Amt:" Style="{StaticResource FL}" Foreground="DarkGreen" Margin="0,0,4,0"/>
+                        <TextBox x:Name="TxtVatAmount" Width="80" Style="{StaticResource ReadField}" Background="#E8F5E9" Margin="0,0,20,0"/>
+                        <!-- Discount -->
+                        <TextBlock Text="Discount %:" Style="{StaticResource FL}" Foreground="OrangeRed" Margin="0,0,4,0"/>
+                        <TextBox x:Name="TxtDiscountPercent" Text="0" Width="60" Style="{StaticResource EditField}" Margin="0,0,6,0"/>
+                        <TextBlock Text="Amt:" Style="{StaticResource FL}" Foreground="OrangeRed" Margin="0,0,4,0"/>
+                        <TextBox x:Name="TxtDiscountAmount" Width="80" Style="{StaticResource ReadField}" Background="#FFF3E0" Margin="0,0,20,0"/>
+                        <!-- WHT -->
+                        <TextBlock Text="WHT %:" Style="{StaticResource FL}" Foreground="Purple" Margin="0,0,4,0"/>
+                        <TextBox x:Name="TxtWhtPercent" Text="0" Width="60" Style="{StaticResource EditField}" Margin="0,0,6,0"/>
+                        <TextBlock Text="Amt:" Style="{StaticResource FL}" Foreground="Purple" Margin="0,0,4,0"/>
+                        <TextBox x:Name="TxtWhtAmount" Width="80" Style="{StaticResource ReadField}" Background="#F3E5F5" Margin="0,0,0,0"/>
+                    </WrapPanel>
+
+                    <!-- Separator -->
+                    <Border Grid.Row="2" Background="#DCDCDC" Margin="0,8,0,8"/>
+
+                    <!-- Total row + Calculate button -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal">
+                        <TextBlock Text="Total Amount Due:" FontSize="12" FontWeight="Bold"
+                                   Foreground="DarkGreen" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox x:Name="TxtTotalAmountDue" Width="140" Style="{StaticResource ReadField}"
+                                 Background="#FFF9C4" FontWeight="Bold" FontSize="12" Margin="0,0,14,0"/>
+                        <Button x:Name="BtnCalculate" Content="🧮 Calculate"
+                                Style="{StaticResource ActionBtn}" Background="#A9DFC2"
+                                Height="34" FontWeight="SemiBold" Click="BtnCalculate_Click"/>
+                    </StackPanel>
+
+                </Grid>
+            </Border>
+
+            <!-- ═══ FOOTER BUTTONS ═══ -->
+            <Border Grid.Row="4" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0">
+                <DockPanel Margin="12,0" VerticalAlignment="Center" LastChildFill="False">
+                    <!-- Left buttons -->
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                        <Button x:Name="BtnAddRequest"    Content="+ Add Request"
+                                Style="{StaticResource FooterBtn}" Background="#A9DFC2"
+                                Margin="0,0,8,0" Click="BtnAddRequest_Click"/>
+                        <Button x:Name="BtnRemoveRequest" Content="❌ Remove"
+                                Style="{StaticResource FooterBtn}" Background="#FFB6C1"
+                                Margin="0,0,8,0" Click="BtnRemoveRequest_Click"/>
+                        <Button x:Name="BtnGenerateReport" Content="📊 Report"
+                                Style="{StaticResource FooterBtn}" Background="#DDA0DD"
+                                Margin="0,0,8,0" Visibility="Collapsed" Click="BtnGenerateReport_Click"/>
+                        <Button x:Name="BtnDeploy"        Content="🚀 Deploy"
+                                Style="{StaticResource FooterBtn}" Background="#FFC107"
+                                Margin="0,0,8,0" Click="BtnDeploy_Click"/>
+                        <Button x:Name="BtnRecordInvoice" Content="🧾 Record Invoice"
+                                Style="{StaticResource FooterBtn}" Background="#B0E0E6"
+                                Click="BtnRecordInvoice_Click"/>
+                        <Button x:Name="BtnViewInvoice"   Content="📄 View Invoice"
+                                Style="{StaticResource FooterBtn}" Background="#B0E0E6"
+                                Visibility="Collapsed" Click="BtnViewInvoice_Click"/>
+                    </StackPanel>
+                    <!-- Right buttons -->
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="BtnClose" Content="✖ Close"
+                                Style="{StaticResource FooterBtn}" Background="#B0C4DE"
+                                Click="BtnClose_Click"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>

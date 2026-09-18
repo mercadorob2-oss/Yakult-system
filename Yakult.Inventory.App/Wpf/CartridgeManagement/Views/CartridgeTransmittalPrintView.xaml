@@ -1,0 +1,293 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.CartridgeManagement.Views.CartridgeTransmittalPrintView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+             FontFamily="Arial"
+             FontSize="11"
+             Background="White">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <StackPanel Margin="20,16">
+
+        <!-- ── Company header ─────────────────────────────────────────────────── -->
+        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,6">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <CheckBox IsChecked="{Binding IsYakultPhilippines, Mode=OneWay}"
+                          IsHitTestVisible="False" VerticalAlignment="Center"/>
+                <TextBlock Text="  YAKULT PHILIPPINES INC."
+                           FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0">
+                <CheckBox IsChecked="{Binding IsYakultMarketing, Mode=OneWay}"
+                          IsHitTestVisible="False" VerticalAlignment="Center"/>
+                <TextBlock Text="  YAKULT MARKETING CORP."
+                           FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- ── GATEPASS / TRANSMITTAL / FILE ──────────────────────────────────── -->
+        <Grid Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <TextBlock Text="GATEPASS" VerticalAlignment="Center"/>
+                <CheckBox IsChecked="{Binding IsGatepassCopy, Mode=OneWay}"
+                          IsHitTestVisible="False" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="TRANSMITTAL" VerticalAlignment="Center"/>
+                <CheckBox IsChecked="{Binding IsTransmittalCopy, Mode=OneWay}"
+                          IsHitTestVisible="False" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Text="FILE" VerticalAlignment="Center"/>
+                <CheckBox IsChecked="{Binding IsFileCopy, Mode=OneWay}"
+                          IsHitTestVisible="False" VerticalAlignment="Center" Margin="4,0,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ── TO / DATE ──────────────────────────────────────────────────────── -->
+        <Grid Margin="0,0,0,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <TextBlock Text="TO :  " VerticalAlignment="Bottom"/>
+                <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="160">
+                    <TextBlock Text="{Binding To}" VerticalAlignment="Bottom" Padding="0,0,0,1"/>
+                </Border>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Text="DATE :  " VerticalAlignment="Bottom"/>
+                <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="90">
+                    <TextBlock Text="{Binding Date}" VerticalAlignment="Bottom" Padding="0,0,0,1"/>
+                </Border>
+            </StackPanel>
+        </Grid>
+
+        <!-- ── FROM ───────────────────────────────────────────────────────────── -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBlock Text="FROM :  " VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding From}" FontWeight="Bold" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- ── ITEMS header / QUANTITY header ─────────────────────────────────── -->
+        <Grid Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="80"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="ITEMS :" FontWeight="Bold"/>
+            <TextBlock Grid.Column="1" Text="QUANTITY" FontWeight="Bold" HorizontalAlignment="Center"/>
+        </Grid>
+
+        <!-- ── Cartridge Ribbon row ───────────────────────────────────────────── -->
+        <Grid Margin="0,0,0,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="80"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <StackPanel Orientation="Horizontal">
+                    <CheckBox IsChecked="{Binding IsCartridgeRibbon, Mode=OneWay}"
+                              IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  CARTRIDGE RIBBON" VerticalAlignment="Center"/>
+                    <TextBlock Text="          LX300 " VerticalAlignment="Center"/>
+                    <CheckBox IsChecked="{Binding IsLx300, Mode=OneWay}"
+                              IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="          LX310 " VerticalAlignment="Center"/>
+                    <CheckBox IsChecked="{Binding IsLx310, Mode=OneWay}"
+                              IsHitTestVisible="False" VerticalAlignment="Center"/>
+                </StackPanel>
+                <!--
+                    Others row: shown when the model is not in the named-checkbox list.
+                    To add a new named model: add it to KnownNormalizedModels in the VM
+                    and add a checkbox+label in the row above.
+                -->
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding OtherModelVisibility}"
+                            Margin="0,3,0,0">
+                    <CheckBox IsChecked="True" IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  Others: " VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding OtherModelName}"
+                               FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+            <Border Grid.Column="1" BorderBrush="Black" BorderThickness="0,0,0,1"
+                    HorizontalAlignment="Center" VerticalAlignment="Top" MinWidth="30" Margin="0,2">
+                <TextBlock Text="{Binding Quantity}"
+                           HorizontalAlignment="Center" Padding="0,0,0,1"/>
+            </Border>
+        </Grid>
+
+        <!-- ── Future equipment items (Collapsed — enable per row when needed) ── -->
+        <StackPanel Visibility="Collapsed">
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <CheckBox IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  MONITOR" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <CheckBox IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  CPU          FIXED ASSET NO. " VerticalAlignment="Center"/>
+                    <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="90">
+                        <TextBlock VerticalAlignment="Bottom"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <CheckBox IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  MOUSE" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <CheckBox IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  KEYBOARD" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <CheckBox IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  PRINTER" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <CheckBox IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  BACKUP UPS" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <CheckBox IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  AVR" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+            <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="80"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <CheckBox IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  COMPUTER TABLE   FIXED ASSET NO. " VerticalAlignment="Center"/>
+                    <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="80">
+                        <TextBlock VerticalAlignment="Bottom"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <!-- ── OTHERS ─────────────────────────────────────────────────────────── -->
+        <!-- Top margin matches the vertical space the original paper form's full
+             equipment list (Monitor/CPU/Mouse/.../Computer Table) occupied — those
+             rows are Collapsed above since only Cartridge Ribbon is used today, but
+             OTHERS through the signature block must still sit where they do on the
+             original printed form, not ride up against the shortened ITEMS block. -->
+        <StackPanel Orientation="Horizontal" Margin="0,100,0,10">
+            <TextBlock Text="OTHERS :  " VerticalAlignment="Bottom"/>
+            <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="380">
+                <TextBlock Text="{Binding Others}" VerticalAlignment="Bottom" Padding="0,0,0,1"/>
+            </Border>
+        </StackPanel>
+
+        <!-- ── REMARKS ────────────────────────────────────────────────────────── -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,26">
+            <TextBlock Text="REMARKS :  " VerticalAlignment="Bottom"/>
+            <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="370">
+                <TextBlock Text="{Binding Remarks}" VerticalAlignment="Bottom" Padding="0,0,0,1"/>
+            </Border>
+        </StackPanel>
+
+        <!-- ── Signature block: label columns are shared across both rows so the
+             ISSUED BY / NOTED BY and RECEIVED BY/DATE / APPROVED BY/DATE value
+             lines start at the same x position (Grid Auto columns size to the
+             widest cell in that column). ─────────────────────────────────────── -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="ISSUED BY:  " VerticalAlignment="Bottom"/>
+            <Border Grid.Row="0" Grid.Column="1" BorderBrush="Black" BorderThickness="0,0,0,1"
+                    MinWidth="140" Margin="0,0,20,0">
+                <TextBlock Text="{Binding IssuedBy}"
+                           VerticalAlignment="Bottom" Padding="0,0,0,1"/>
+            </Border>
+            <TextBlock Grid.Row="0" Grid.Column="2" Text="RECEIVED BY/DATE :  " VerticalAlignment="Bottom"/>
+            <Border Grid.Row="0" Grid.Column="3" BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="140">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding ReceivedBy}"
+                               VerticalAlignment="Bottom" Padding="0,0,4,1"/>
+                    <TextBlock Text="{Binding ReceivedDate}"
+                               VerticalAlignment="Bottom" Padding="0,0,0,1"
+                               Foreground="#555"/>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="NOTED BY:  " VerticalAlignment="Bottom" Margin="0,16,0,0"/>
+            <Border Grid.Row="1" Grid.Column="1" BorderBrush="Black" BorderThickness="0,0,0,1"
+                    MinWidth="140" Margin="0,16,20,0">
+                <TextBlock Text="{Binding NotedBy}"
+                           VerticalAlignment="Bottom" Padding="0,0,0,1"/>
+            </Border>
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="APPROVED BY/DATE:  " VerticalAlignment="Bottom" Margin="0,16,0,0"/>
+            <Border Grid.Row="1" Grid.Column="3" BorderBrush="Black" BorderThickness="0,0,0,1"
+                    MinWidth="140" Margin="0,16,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding ApprovedBy}"
+                               VerticalAlignment="Bottom" Padding="0,0,4,1"/>
+                    <TextBlock Text="{Binding ApprovalDate}"
+                               VerticalAlignment="Bottom" Padding="0,0,0,1"
+                               Foreground="#555"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+    </StackPanel>
+</UserControl>

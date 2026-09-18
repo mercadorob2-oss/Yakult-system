@@ -1,0 +1,117 @@
+using System;
+using Yakult.Inventory.App.Helpers;
+
+namespace Yakult.Inventory.App.Pages.Update
+{
+    public partial class ViewUpdatesPage
+    {
+        private void InitializeStatePersistence()
+        {
+            if (_stateSaveTimer == null)
+            {
+                _stateSaveTimer = new System.Windows.Forms.Timer { Interval = 500 };
+                _stateSaveTimer.Tick += (s, e) =>
+                {
+                    _stateSaveTimer.Stop();
+                    SaveUiState();
+                };
+            }
+            else
+            {
+                _stateSaveTimer.Interval = 500;
+            }
+        }
+
+        private void RestoreUiState()
+        {
+            _restoringState = true;
+            try
+            {
+                var settings = Yakult.Inventory.App.Properties.Settings.Default;
+
+                ListPageStateHelper.RestoreDateRange(
+                    dtpDateFrom,
+                    dtpDateTo,
+                    settings.ViewUpdates_DateFrom,
+                    settings.ViewUpdates_DateTo,
+                    GetDefaultUpdatesFromDate,
+                    GetDefaultUpdatesToDate);
+
+                if (cmbStatus != null && settings.ViewUpdates_StatusIndex >= 0 && settings.ViewUpdates_StatusIndex < cmbStatus.Items.Count)
+                    cmbStatus.SelectedIndex = settings.ViewUpdates_StatusIndex;
+
+                if (txtSetCode != null)
+                    txtSetCode.Text = settings.ViewUpdates_SetCode ?? string.Empty;
+
+                if (_layout?.SearchBox != null)
+                    _layout.SearchBox.Text = settings.ViewUpdates_Search ?? string.Empty;
+
+                if (_chkProblemsOnly != null)
+                    _chkProblemsOnly.Checked = settings.ViewUpdates_ProblemsOnly;
+
+                if (settings.ViewUpdates_PageSize > 0)
+                    _pageSize = settings.ViewUpdates_PageSize;
+                if (_cmbPageSize != null)
+                {
+                    _cmbPageSize.SelectedItem = _pageSize;
+                    if (_cmbPageSize.SelectedItem == null) _cmbPageSize.SelectedIndex = 0;
+                    if (_cmbPageSize.SelectedItem is int rows && rows > 0) _pageSize = rows;
+                }
+
+                _restoreSortKey = settings.ViewUpdates_SortKey ?? string.Empty;
+                var order = settings.ViewUpdates_SortOrder;
+                _restoreSortOrder = order == (int)System.Windows.Forms.SortOrder.Ascending
+                    ? System.Windows.Forms.SortOrder.Ascending
+                    : order == (int)System.Windows.Forms.SortOrder.Descending
+                        ? System.Windows.Forms.SortOrder.Descending
+                        : System.Windows.Forms.SortOrder.None;
+            }
+            catch (Exception ex)
+            {
+                ListPageStateHelper.LogStateIssue(nameof(ViewUpdatesPage), "restore state", ex);
+                ApplyDefaultDateRange();
+            }
+            finally
+            {
+                _restoringState = false;
+            }
+        }
+
+        private void ScheduleSaveState()
+        {
+            if (_restoringState)
+                return;
+
+            _stateSaveTimer?.Stop();
+            _stateSaveTimer?.Start();
+        }
+
+        private void SaveUiState()
+        {
+            if (_restoringState)
+                return;
+
+            try
+            {
+                var settings = Yakult.Inventory.App.Properties.Settings.Default;
+
+                if (dtpDateFrom != null) settings.ViewUpdates_DateFrom = dtpDateFrom.Value.Date;
+                if (dtpDateTo != null) settings.ViewUpdates_DateTo = dtpDateTo.Value.Date;
+                if (cmbStatus != null) settings.ViewUpdates_StatusIndex = cmbStatus.SelectedIndex;
+                if (txtSetCode != null) settings.ViewUpdates_SetCode = txtSetCode.Text ?? string.Empty;
+                if (_layout?.SearchBox != null) settings.ViewUpdates_Search = _layout.SearchBox.Text ?? string.Empty;
+                if (_chkProblemsOnly != null) settings.ViewUpdates_ProblemsOnly = _chkProblemsOnly.Checked;
+
+                settings.ViewUpdates_PageSize = _pageSize;
+                settings.ViewUpdates_SortKey = GetCurrentSortKey() ?? string.Empty;
+                settings.ViewUpdates_SortOrder = (int)_sortOrder;
+
+                settings.Save();
+            }
+            catch (Exception ex)
+            {
+                ListPageStateHelper.LogStateIssue(nameof(ViewUpdatesPage), "save state", ex);
+            }
+        }
+    }
+}

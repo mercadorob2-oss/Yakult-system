@@ -1,0 +1,642 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Request.RequestSetBuilderDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:local="clr-namespace:Yakult.Inventory.App.Pages.Request"
+        Title="Build Request Set"
+        Width="1500" Height="680"
+        MinWidth="1100" MinHeight="520"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="True"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        ResizeMode="CanResizeWithGrip">
+
+    <Window.Resources>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+        </Style>
+
+        <!-- Primary button (Create Request Set) -->
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Height"          Value="36"/>
+            <Setter Property="Padding"         Value="22,0"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background"      Value="#3498DB"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.72"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.42"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary button (Cancel) -->
+        <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
+            <Setter Property="Background" Value="#E8ECF0"/>
+            <Setter Property="Foreground" Value="#3A4A5A"/>
+        </Style>
+
+        <!-- Outline button (+ Add line) -->
+        <Style x:Key="OutlineBtn" TargetType="Button">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="Padding"         Value="14,0"/>
+            <Setter Property="FontSize"        Value="11.5"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush"     Value="#3498DB"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="Foreground"      Value="#3498DB"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#EEF4FF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Danger outline button (Remove selected) -->
+        <Style x:Key="DangerBtn" TargetType="Button" BasedOn="{StaticResource OutlineBtn}">
+            <Setter Property="BorderBrush" Value="#C0392B"/>
+            <Setter Property="Foreground"  Value="#C0392B"/>
+        </Style>
+
+        <Style x:Key="HdrLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11.5"/>
+            <Setter Property="Foreground" Value="#4A5A6A"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin"     Value="0,0,6,0"/>
+        </Style>
+
+        <Style x:Key="HdrInput" TargetType="Control">
+            <Setter Property="Height"     Value="28"/>
+            <Setter Property="FontSize"   Value="11.5"/>
+            <Setter Property="BorderBrush" Value="#C8D2DC"/>
+            <Setter Property="Background"  Value="White"/>
+        </Style>
+
+        <!-- DataGrid column header -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background"               Value="#3498DB"/>
+            <Setter Property="Foreground"               Value="White"/>
+            <Setter Property="FontWeight"               Value="Bold"/>
+            <Setter Property="FontSize"                 Value="11"/>
+            <Setter Property="Padding"                  Value="8,0"/>
+            <Setter Property="Height"                   Value="36"/>
+            <Setter Property="BorderBrush"              Value="#5AAFE5"/>
+            <Setter Property="BorderThickness"          Value="0,0,1,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- DataGrid row -->
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background"       Value="#E3F2FD"/>
+            <Setter Property="BorderBrush"      Value="White"/>
+            <Setter Property="BorderThickness"  Value="0,0,0,2"/>
+            <Style.Triggers>
+                <Trigger Property="AlternationIndex" Value="1">
+                    <Setter Property="Background" Value="#E8F5E9"/>
+                </Trigger>
+                <!-- Existing-item rows get a light-orange affordance, mirroring
+                     InvoiceBuilderDialog (there the accent marks existing items too). -->
+                <DataTrigger Binding="{Binding IsExistingItem}" Value="True">
+                    <Setter Property="Background" Value="#FFF3E0"/>
+                </DataTrigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#2980B9"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- DataGrid cell -->
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderBrush"              Value="White"/>
+            <Setter Property="BorderThickness"          Value="0,0,2,0"/>
+            <Setter Property="FocusVisualStyle"         Value="{x:Null}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="6,2">
+                            <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsEditing" Value="True">
+                    <Setter Property="BorderBrush" Value="#3498DB"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <x:Array x:Key="StatusOptions" Type="{x:Type sys:String}">
+            <sys:String>Under Review</sys:String>
+            <sys:String>Submitted</sys:String>
+            <sys:String>On Hold</sys:String>
+        </x:Array>
+
+        <!-- New-item-only text cell: greyed out once the row is switched to an existing item
+             (those fields come from the picked item and are locked, mirroring InvoiceBuilderDialog). -->
+        <Style x:Key="NewItemCell" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="4,0"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsExistingItem}" Value="True">
+                    <Setter Property="Foreground" Value="#9AA5B1"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="NewItemCombo" TargetType="ComboBox">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsExistingItem}" Value="True">
+                    <Setter Property="Foreground" Value="#9AA5B1"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+    </Window.Resources>
+
+    <Border CornerRadius="10" Background="White" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="48"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="56"/>
+            </Grid.RowDefinitions>
+
+            <!-- HEADER BAR -->
+            <Border Grid.Row="0" Background="#3498DB" CornerRadius="10,10,0,0"
+                    MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
+                <DockPanel Margin="16,0,10,0" VerticalAlignment="Center">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                                VerticalAlignment="Center" Cursor="Arrow">
+                        <TextBlock Text="─" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF"
+                                   Cursor="Hand" VerticalAlignment="Center" Padding="8,0"
+                                   MouseLeftButtonDown="OnMinimizeClick"/>
+                        <TextBlock x:Name="BtnMaximizeGlyph" Text="□" FontSize="13" FontWeight="Bold"
+                                   Foreground="#BDD9FF" Cursor="Hand" VerticalAlignment="Center"
+                                   Padding="8,0" MouseLeftButtonDown="OnMaximizeClick"/>
+                        <TextBlock Text="✕" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF"
+                                   Cursor="Hand" VerticalAlignment="Center" Padding="8,0"
+                                   MouseLeftButtonDown="OnCloseClick"/>
+                    </StackPanel>
+                    <TextBlock Text="Build Request Set" FontSize="13" FontWeight="Bold"
+                               Foreground="White" VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <!-- BODY -->
+            <Grid Grid.Row="1" Margin="12,8,12,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Info banner -->
+                <Border Grid.Row="0" Background="#EEF4FF" BorderBrush="#BDD0F8"
+                        BorderThickness="1" CornerRadius="5" Padding="10,6" Margin="0,0,0,6">
+                    <TextBlock x:Name="TxtInfoBanner" FontSize="11" Foreground="#2A5BC8"
+                               TextWrapping="Wrap"
+                               Text="Build a Request Set on one page. Add line items — leave &quot;Existing?&quot; unticked to enter a brand-new item; it is created in the system when you press Create Request Set. Nothing is saved until then."/>
+                </Border>
+
+                <!-- Requester / org header -->
+                <Border Grid.Row="1" Background="#F8F9FC" BorderBrush="#DDE3EC"
+                        BorderThickness="1" CornerRadius="4" Padding="10,8" Margin="0,0,0,6">
+                    <StackPanel>
+                        <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Requester:" Style="{StaticResource HdrLabel}"
+                                       FontWeight="SemiBold" MinWidth="70"/>
+                            <StackPanel x:Name="PnlEmployee" Orientation="Horizontal" VerticalAlignment="Center">
+                                <ComboBox x:Name="CmbEmployee" Width="360" Height="28" FontSize="11.5"
+                                          IsEditable="True" IsTextSearchEnabled="False"
+                                          IsSynchronizedWithCurrentItem="False"
+                                          StaysOpenOnEdit="True" MaxDropDownHeight="280"
+                                          BorderBrush="#C8D2DC" Background="White"
+                                          DisplayMemberPath="DisplayText"
+                                          GotFocus="CmbEmployee_GotFocus"
+                                          DropDownClosed="CmbEmployee_DropDownClosed"/>
+                            </StackPanel>
+                            <CheckBox x:Name="ChkNoEmployee" Content="No employee (Dept. level)"
+                                      Margin="16,0,0,0" VerticalAlignment="Center"
+                                      FontSize="11.5" Foreground="#4A5A6A"
+                                      Checked="ChkNoEmployee_Changed" Unchecked="ChkNoEmployee_Changed"/>
+                        </WrapPanel>
+
+                        <WrapPanel x:Name="PnlOrg" Orientation="Horizontal" Margin="0,8,0,0"
+                                   VerticalAlignment="Center" Visibility="Collapsed">
+                            <TextBlock Text="Company:" Style="{StaticResource HdrLabel}" MinWidth="70"/>
+                            <ComboBox x:Name="CmbCompany" Width="200" Height="28" FontSize="11.5"
+                                      BorderBrush="#C8D2DC" Background="White" DisplayMemberPath="Name"/>
+                            <TextBlock Text="Dept:" Style="{StaticResource HdrLabel}" Margin="16,0,6,0"/>
+                            <ComboBox x:Name="CmbDepartment" Width="180" Height="28" FontSize="11.5"
+                                      BorderBrush="#C8D2DC" Background="White" DisplayMemberPath="Name"/>
+                            <TextBlock Text="Branch:" Style="{StaticResource HdrLabel}" Margin="16,0,6,0"/>
+                            <ComboBox x:Name="CmbBranch" Width="160" Height="28" FontSize="11.5"
+                                      BorderBrush="#C8D2DC" Background="White" DisplayMemberPath="Name"/>
+                        </WrapPanel>
+
+                        <WrapPanel Orientation="Horizontal" Margin="0,8,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Set remarks:" Style="{StaticResource HdrLabel}" MinWidth="70"/>
+                            <TextBox x:Name="TxtSetRemarks" Width="360" Height="28" FontSize="11.5"
+                                     VerticalContentAlignment="Center" Padding="6,0"
+                                     BorderBrush="#C8D2DC"/>
+                            <TextBlock Text="Dispatch date:" Style="{StaticResource HdrLabel}" Margin="16,0,6,0"/>
+                            <DatePicker x:Name="DpDispatchDate" Width="140" Height="28" FontSize="11.5"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Status line -->
+                <TextBlock Grid.Row="2" x:Name="LblStatus" FontSize="11" Foreground="#5A6A7A"
+                           Margin="2,0,0,4" Text="Add at least one line item."/>
+
+                <!-- Line items -->
+                <DataGrid Grid.Row="3" x:Name="DgvLines"
+                          Background="White"
+                          BorderBrush="#DDE3EC" BorderThickness="1"
+                          GridLinesVisibility="None"
+                          AlternationCount="2"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          HeadersVisibility="Column"
+                          CanUserSortColumns="False"
+                          CanUserReorderColumns="False"
+                          CanUserResizeRows="False"
+                          CanUserResizeColumns="True"
+                          AutoGenerateColumns="False"
+                          RowHeight="40"
+                          ColumnHeaderHeight="36"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          BeginningEdit="DgvLines_BeginningEdit"
+                          PreviewMouseLeftButtonDown="DgvLines_PreviewMouseLeftButtonDown">
+
+                    <DataGrid.Columns>
+
+                        <!-- SELECT -->
+                        <DataGridTemplateColumn Width="34" CanUserResize="False">
+                            <DataGridTemplateColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Click="ChkSelectAll_Click"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.HeaderTemplate>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- EXISTING? -->
+                        <DataGridTemplateColumn Width="64" CanUserResize="False">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="Existing?" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                            </DataGridTemplateColumn.Header>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsExistingItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              ToolTip="Tick to pick an item that already exists; leave unticked to create a brand-new item on Create."/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- ITEM NAME (name for new, picker for existing) -->
+                        <DataGridTemplateColumn Header="Item Name *" Width="200" MinWidth="160" x:Name="ColItem">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding ItemDisplay}"
+                                               Foreground="{Binding ItemDisplayForeground}"
+                                               Margin="4,0" VerticalAlignment="Center" FontSize="11.5"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <TextBox Text="{Binding NewItemName, UpdateSourceTrigger=PropertyChanged}"
+                                                 FontSize="11.5" VerticalContentAlignment="Center"
+                                                 BorderThickness="0" Background="Transparent">
+                                            <TextBox.Style>
+                                                <Style TargetType="TextBox">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsExistingItem}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBox.Style>
+                                        </TextBox>
+                                        <ComboBox ItemsSource="{Binding FilteredItems}"
+                                                  SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  DisplayMemberPath="DisplayName"
+                                                  FontSize="11.5" IsEditable="True"
+                                                  IsTextSearchEnabled="True"
+                                                  TextSearch.TextPath="DisplayName"
+                                                  BorderThickness="0" Background="Transparent">
+                                            <ComboBox.Style>
+                                                <Style TargetType="ComboBox">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsExistingItem}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </ComboBox.Style>
+                                        </ComboBox>
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- DESCRIPTION -->
+                        <DataGridTextColumn Header="Description" Width="170"
+                                            Binding="{Binding Description}"
+                                            FontSize="11.5" ElementStyle="{StaticResource NewItemCell}"/>
+
+                        <!-- CATEGORY -->
+                        <DataGridTemplateColumn Header="Category *" Width="140" x:Name="ColCategory">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding Categories}"
+                                              SelectedItem="{Binding SelectedCategory, Mode=OneWay}"
+                                              DisplayMemberPath="Name"
+                                              FontSize="11.5" IsEditable="False"
+                                              IsHitTestVisible="False"
+                                              BorderThickness="0" Background="Transparent"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding Categories}"
+                                              SelectedItem="{Binding SelectedCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="Name"
+                                              FontSize="11.5" IsEditable="False"
+                                              IsTextSearchEnabled="True"
+                                              BorderThickness="0" Background="Transparent"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- ITEM TYPE -->
+                        <DataGridComboBoxColumn Header="Item Type" Width="110"
+                                                SelectedItemBinding="{Binding ItemType, UpdateSourceTrigger=PropertyChanged}"
+                                                ItemsSource="{x:Static local:RequestSetBuilderDialog.ItemTypeOptions}"
+                                                ElementStyle="{StaticResource NewItemCombo}"/>
+
+                        <!-- CONDITION -->
+                        <DataGridComboBoxColumn Header="Condition" Width="105"
+                                                SelectedItemBinding="{Binding SelectedCondition, UpdateSourceTrigger=PropertyChanged}"
+                                                ItemsSource="{x:Static local:RequestSetBuilderDialog.ConditionOptions}"
+                                                DisplayMemberPath="Name"
+                                                ElementStyle="{StaticResource NewItemCombo}"/>
+
+                        <!-- SERIAL NUMBER -->
+                        <DataGridTextColumn Header="Serial Number" Width="120"
+                                            Binding="{Binding SerialNumber, UpdateSourceTrigger=LostFocus}"
+                                            FontSize="11.5" ElementStyle="{StaticResource NewItemCell}"/>
+
+                        <!-- MODEL NUMBER -->
+                        <DataGridTextColumn Header="Model Number" Width="120"
+                                            Binding="{Binding ModelNumber, UpdateSourceTrigger=LostFocus}"
+                                            FontSize="11.5" ElementStyle="{StaticResource NewItemCell}"/>
+
+                        <!-- VENDOR -->
+                        <DataGridComboBoxColumn Header="Vendor" Width="140"
+                                                SelectedItemBinding="{Binding SelectedVendor, UpdateSourceTrigger=PropertyChanged}"
+                                                ItemsSource="{x:Static local:RequestSetBuilderDialog.VendorOptions}"
+                                                DisplayMemberPath="Name"
+                                                ElementStyle="{StaticResource NewItemCombo}"/>
+
+                        <!-- UoM -->
+                        <DataGridTextColumn Header="UoM" Width="70"
+                                            Binding="{Binding UnitOfMeasure}"
+                                            FontSize="11.5" ElementStyle="{StaticResource NewItemCell}"/>
+
+                        <!-- QTY -->
+                        <DataGridTextColumn Header="Qty *" Width="50"
+                                            Binding="{Binding Quantity, UpdateSourceTrigger=LostFocus}"
+                                            FontSize="11.5"/>
+
+                        <!-- UNIT PRICE -->
+                        <DataGridTextColumn Header="Unit Price" Width="90"
+                                            Binding="{Binding UnitPrice, StringFormat=N2, UpdateSourceTrigger=LostFocus}"
+                                            FontSize="11.5"/>
+
+                        <!-- AMOUNT (Qty x Unit Price) -->
+                        <DataGridTextColumn Header="Amount" Width="95" IsReadOnly="True"
+                                            Binding="{Binding Amount, Mode=OneWay, StringFormat=N2}"
+                                            FontSize="11.5"/>
+
+                        <!-- LICENSE # -->
+                        <DataGridTextColumn Header="License #" Width="110"
+                                            Binding="{Binding LicenseNumber}"
+                                            FontSize="11.5" ElementStyle="{StaticResource NewItemCell}"/>
+
+                        <!-- PART # -->
+                        <DataGridTextColumn Header="Part #" Width="100"
+                                            Binding="{Binding PartNumber}"
+                                            FontSize="11.5" ElementStyle="{StaticResource NewItemCell}"/>
+
+                        <!-- WARRANTY (YRS) -->
+                        <DataGridTextColumn Header="Warranty (Yrs)" Width="95"
+                                            Binding="{Binding WarrantyYears, UpdateSourceTrigger=LostFocus}"
+                                            FontSize="11.5" ElementStyle="{StaticResource NewItemCell}"/>
+
+                        <!-- REMARKS -->
+                        <DataGridTextColumn Header="Remarks" Width="130"
+                                            Binding="{Binding Remarks}"
+                                            FontSize="11.5" ElementStyle="{StaticResource NewItemCell}"/>
+
+                        <!-- DATE PURCHASED -->
+                        <DataGridTemplateColumn Header="Date Purchased" Width="115">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DatePurchased, StringFormat=yyyy-MM-dd}"
+                                               Margin="4,0" VerticalAlignment="Center" FontSize="11.5"
+                                               Foreground="{Binding ItemDisplayForeground}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <DatePicker SelectedDate="{Binding DatePurchased, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                FontSize="11.5" BorderThickness="0" Background="Transparent"
+                                                VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- WARRANTY START (override) -->
+                        <DataGridTemplateColumn Header="Warranty Start" Width="115">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding WarrantyStartDate, StringFormat=yyyy-MM-dd}"
+                                               Margin="4,0" VerticalAlignment="Center" FontSize="11.5"
+                                               Foreground="{Binding ItemDisplayForeground}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <DatePicker SelectedDate="{Binding WarrantyStartDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                FontSize="11.5" BorderThickness="0" Background="Transparent"
+                                                VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- WARRANTY END (override) -->
+                        <DataGridTemplateColumn Header="Warranty End" Width="115">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding WarrantyEndDate, StringFormat=yyyy-MM-dd}"
+                                               Margin="4,0" VerticalAlignment="Center" FontSize="11.5"
+                                               Foreground="{Binding ItemDisplayForeground}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <DatePicker SelectedDate="{Binding WarrantyEndDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                FontSize="11.5" BorderThickness="0" Background="Transparent"
+                                                VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- STATUS -->
+                        <DataGridTemplateColumn Header="Status" Width="115">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Status}" Margin="4,0"
+                                               VerticalAlignment="Center" FontSize="11.5"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{StaticResource StatusOptions}"
+                                              SelectedItem="{Binding Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              FontSize="11.5" BorderThickness="0" Background="Transparent"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- DATE REQUESTED -->
+                        <DataGridTemplateColumn Header="Date Requested" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DateRequested, StringFormat=yyyy-MM-dd}"
+                                               Margin="4,0" VerticalAlignment="Center" FontSize="11.5"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <DatePicker SelectedDate="{Binding DateRequested, Mode=TwoWay}"
+                                                FontSize="11.5" BorderThickness="0"
+                                                Background="Transparent" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                    </DataGrid.Columns>
+                </DataGrid>
+
+            </Grid>
+
+            <!-- FOOTER -->
+            <Border Grid.Row="2" Background="White" BorderBrush="#DDE3EC"
+                    BorderThickness="0,1,0,0" CornerRadius="0,0,10,10">
+                <DockPanel Margin="16,0" VerticalAlignment="Center" LastChildFill="False">
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                        <Button x:Name="BtnAddLine" Content="+ Add line" Style="{StaticResource OutlineBtn}"
+                                Margin="0,0,8,0" Click="BtnAddLine_Click"/>
+                        <Button x:Name="BtnAddFiveLines" Content="+ 5 lines" Style="{StaticResource OutlineBtn}"
+                                Margin="0,0,8,0" Click="BtnAddFiveLines_Click"/>
+                        <Button x:Name="BtnRemoveLine" Content="Remove selected" Style="{StaticResource DangerBtn}"
+                                IsEnabled="False" Click="BtnRemoveLine_Click"/>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="BtnCancel" Content="Cancel" Style="{StaticResource SecBtn}"
+                                Margin="0,0,8,0" Click="BtnCancel_Click" IsCancel="True"/>
+                        <Button x:Name="BtnCreate" Content="Create Request Set" Style="{StaticResource PrimaryBtn}"
+                                Click="BtnCreate_Click"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>

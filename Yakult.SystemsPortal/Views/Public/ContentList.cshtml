@@ -1,0 +1,83 @@
+@model ContentListViewModel
+@{ Layout = "_PublicLayout"; ViewData["Title"] = Model.Title; }
+
+<header class="section-hero">
+    <div class="portal-container">
+        <span class="portal-eyebrow">@(Model.Eyebrow ?? "Employee portal")</span>
+        <h1>@Model.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Description)) { <p>@Model.Description</p> }
+        @if (Model.Query != null)
+        {
+            <form class="portal-search portal-search--section" asp-action="Search" method="get" role="search">
+                <label class="sr-only" for="sectionSearch">Search the employee portal</label>
+                <input id="sectionSearch" name="q" value="@Model.Query" type="search" minlength="2" placeholder="Search employee information and services" />
+                <button type="submit">Search</button>
+            </form>
+        }
+        @if (Model.Title == "IT Help Center")
+        {
+            <div class="portal-cta-row" style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
+                <a class="portal-button" asp-controller="HelpIt" asp-action="Index">Submit an IT ticket <span aria-hidden="true">→</span></a>
+                <a class="portal-button portal-button--ghost" asp-controller="HelpIt" asp-action="Tracker">Track a ticket</a>
+            </div>
+        }
+    </div>
+</header>
+
+<section class="portal-container portal-listing">
+
+    @if (Model.AvailableTypes.Count > 1)
+    {
+        <nav class="filter-chips" aria-label="Filter resources by type">
+            @if (Model.Query != null)
+            {
+                <a asp-action="Search" asp-route-q="@Model.Query" class="@(string.IsNullOrWhiteSpace(Model.SelectedType) ? "is-active" : null)">All results</a>
+                @foreach (var type in Model.AvailableTypes)
+                {
+                    <a asp-action="Search" asp-route-q="@Model.Query" asp-route-type="@type" class="@(string.Equals(type, Model.SelectedType, StringComparison.OrdinalIgnoreCase) ? "is-active" : null)">@type</a>
+                }
+            }
+            else
+            {
+                <a asp-route-track="@Model.SelectedTrack" class="@(string.IsNullOrWhiteSpace(Model.SelectedType) ? "is-active" : null)">All</a>
+                @foreach (var type in Model.AvailableTypes)
+                {
+                    <a asp-route-track="@Model.SelectedTrack" asp-route-type="@type" class="@(string.Equals(type, Model.SelectedType, StringComparison.OrdinalIgnoreCase) ? "is-active" : null)">@type</a>
+                }
+            }
+        </nav>
+    }
+    @if (Model.Items.Count == 0 && Model.Services.Count == 0)
+    {
+        <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No published resources found</h2><p>@(Model.Query != null ? "Try a different search term or browse one of the portal sections." : "Content will appear here after it has been reviewed and published.")</p><a asp-action="Index">Return to the employee portal</a></div>
+    }
+    else
+    {
+        @if (Model.Query != null) { <p class="search-count">@((Model.Items.Count + Model.Services.Count)) result(s) for <strong>“@Model.Query”</strong></p> }
+        <div class="resource-grid">
+            @foreach (var service in Model.Services)
+            {
+                <a class="resource-card resource-card--service" data-track="Service" data-track-key="@service.Name" asp-action="Services"><span class="resource-card__meta">Yakult system</span><h2>@service.Name</h2><p>@service.Description</p><strong>View service details <span aria-hidden="true">→</span></strong></a>
+            }
+            @foreach (var item in Model.Items)
+            {
+                var itemIsCourse = item.ContentType.Equals("Course", StringComparison.OrdinalIgnoreCase);
+                PortalCourseProgress? courseProgress = null;
+                var hasProgress = itemIsCourse && Model.ProgressByContentId.TryGetValue(item.ContentId, out courseProgress);
+                <a class="resource-card" asp-action="ContentDetails" asp-route-slug="@item.Slug">
+                    @if (!string.IsNullOrWhiteSpace(item.ThumbnailUrl)) { <span class="resource-card__image" style="background-image:url('@item.ThumbnailUrl')"></span> }
+                    else if (itemIsCourse || item.ContentType == "Video") { <span class="resource-card__image resource-card__image--video"><span aria-hidden="true">&#9658;</span></span> }
+                    <span class="resource-card__content"><span class="resource-card__meta">@item.ContentType · @item.CategoryName</span>@if (item.IsDemo){<span class="dummy-data-badge dummy-data-badge--compact">DUMMY DATA</span>}<h2>@item.Title</h2><p>@item.Summary</p><strong>@(item.ContentType == "Video" ? "Watch video" : itemIsCourse ? (hasProgress && courseProgress?.IsCompleted == true ? "Review course" : hasProgress && (courseProgress?.ProgressPercent ?? 0) > 0 ? "Continue course" : "Start course") : "Open resource") <span aria-hidden="true">→</span></strong></span>
+                    @if (courseProgress is { IsCompleted: true })
+                    {
+                        <span class="course-badge">Completed</span>
+                    }
+                    else if (courseProgress is { ProgressPercent: > 0 })
+                    {
+                        <span class="course-card-progress" title="Watched @courseProgress.ProgressPercent%"><span style="width:@courseProgress.ProgressPercent%"></span></span>
+                    }
+                </a>
+            }
+        </div>
+    }
+</section>

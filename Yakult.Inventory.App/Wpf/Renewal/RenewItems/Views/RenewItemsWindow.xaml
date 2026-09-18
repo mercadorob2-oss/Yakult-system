@@ -1,0 +1,840 @@
+<Window
+    x:Class="Yakult.Inventory.App.WPF.Renewal.RenewItems.Views.RenewItemsWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.Renewal.RenewItems.ViewModels"
+    xmlns:local="clr-namespace:Yakult.Inventory.App.WPF.Renewal.RenewItems.Views"
+    Title="{Binding Title}"
+    MinWidth="1100" MinHeight="640"
+    Width="1400" Height="880"
+    WindowStartupLocation="CenterScreen"
+    WindowState="Maximized"
+    ResizeMode="CanResize"
+    FontFamily="Segoe UI"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType"
+    RenderOptions.ClearTypeHint="Enabled"
+    Background="{DynamicResource SurfaceGray}">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Yakult.Inventory.App;component/WPF/RequestPortal/RequestPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <local:DescriptionOrItemNameConverter x:Key="DescriptionOrItemNameConverter"/>
+
+            <!-- Overrides the merged RequestPortalStyles.xaml's implicit ScrollBar style, which
+                 hardcodes Width="6" unconditionally via a plain Setter — correct for a slim
+                 vertical scrollbar, but it also caps every HORIZONTAL scrollbar's Width to 6
+                 pixels total (instead of letting it stretch across the track), making horizontal
+                 scrollbars render as a practically invisible sliver. This window is the first to
+                 actually rely on horizontal scrolling, which is what surfaced it. Local resources
+                 are resolved before merged-dictionary ones for the same implicit key, so this
+                 wins over the shared style without touching it (avoids risking a regression
+                 anywhere else in the app that only ever uses vertical scrollbars). -->
+            <Style TargetType="ScrollBar">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ScrollBar">
+                            <Grid x:Name="Root" Background="Transparent">
+                                <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                    <Track.DecreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageUpCommand"
+                                                      Opacity="0" Focusable="False" IsTabStop="False"/>
+                                    </Track.DecreaseRepeatButton>
+                                    <Track.Thumb>
+                                        <Thumb>
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="Thumb">
+                                                    <Border Background="#C0C8D0" CornerRadius="3" Margin="1,0"/>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                    <Track.IncreaseRepeatButton>
+                                        <RepeatButton Command="ScrollBar.PageDownCommand"
+                                                      Opacity="0" Focusable="False" IsTabStop="False"/>
+                                    </Track.IncreaseRepeatButton>
+                                </Track>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="Orientation" Value="Horizontal">
+                                    <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="Orientation" Value="Vertical">
+                        <Setter Property="Width" Value="6"/>
+                    </Trigger>
+                    <Trigger Property="Orientation" Value="Horizontal">
+                        <Setter Property="Height" Value="6"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style x:Key="ColHeader" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="9.5"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                <Setter Property="Margin" Value="0,0,0,3"/>
+            </Style>
+
+            <!-- Flatter than the base SectionCard (no shadow/rounded corners) — used for cards
+                 that live inside the scrollable region so they don't visually compete with the
+                 outer section cards around them. -->
+            <Style x:Key="SubCard" TargetType="Border">
+                <Setter Property="Background"      Value="{StaticResource SurfaceGray}"/>
+                <Setter Property="BorderBrush"     Value="{StaticResource CardBorder}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius"    Value="6"/>
+                <Setter Property="Padding"         Value="16,12"/>
+                <Setter Property="Margin"          Value="0,0,0,16"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>    <!-- Two scrollable panels -->
+            <RowDefinition Height="Auto"/> <!-- Footer buttons, always pinned in view -->
+        </Grid.RowDefinitions>
+
+        <!-- ══ Two-panel layout: items on the left, everything else (grouping/replacement/
+             settings/financials/notes) on the right — each scrolls independently instead of one
+             long single-column form. ══════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" MinWidth="560"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="2*" MinWidth="440"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ══════════════════ LEFT PANEL — items ══════════════════ -->
+            <!-- Vertical-only — horizontal scrolling is scoped to just the items grid below (its
+                 own dedicated ScrollViewer), not the whole panel, so Document Details/instructions
+                 stay put instead of scrolling away with the grid. -->
+            <ScrollViewer Grid.Column="0" x:Name="LeftScroll" Background="Transparent"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Background="Transparent">
+
+            <!-- ══ New Invoice Set Details ══════════════════════════════════════ -->
+            <Border Style="{StaticResource SectionCard}" Padding="24,18">
+                <StackPanel>
+                    <TextBlock Text="NEW INVOICE SET DETAILS" Style="{StaticResource SectionLabel}" Margin="0,0,0,12"/>
+                    <!-- WrapPanel instead of a fixed-width Grid row — wraps onto a new line
+                         instead of getting clipped when the left panel is narrower than the
+                         ~860px this used to require all in one row. -->
+                    <WrapPanel Orientation="Horizontal">
+                        <StackPanel Width="200" Margin="0,0,20,10">
+                            <TextBlock Text="Document #:" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding NewDocumentNumber}"/>
+                        </StackPanel>
+                        <StackPanel Width="200" Margin="0,0,20,10">
+                            <TextBlock Text="Reference #:" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource InputBox}" Text="{Binding NewReferenceNumber}"/>
+                        </StackPanel>
+                        <StackPanel Width="180" Margin="0,0,0,10">
+                            <TextBlock Text="Document Date:" Margin="0,0,0,4"/>
+                            <DatePicker SelectedDate="{Binding NewDocumentDate}"/>
+                        </StackPanel>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ══ Select Items to Renew ═══════════════════════════════════════ -->
+            <Border Style="{StaticResource SectionCard}" Padding="24,18" Margin="0,0,0,4">
+                <StackPanel>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="SELECT ITEMS TO RENEW" Style="{StaticResource SectionLabel}" Margin="0" VerticalAlignment="Center"/>
+                        <Button x:Name="AddItemButton" Grid.Column="1" Content="+ Add Row"
+                                Command="{Binding OpenAddItemPopupCommand}"
+                                Style="{StaticResource SecondaryButton}" Padding="12,4"/>
+                    </Grid>
+                    <TextBlock FontSize="11" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,10">
+                        Check the items you want carried into this renewal. Item Code, Description, Qty, Unit Price, and the
+                        Start/End Dates are all editable per row. Uncheck an item to leave it out of this renewal — if it's
+                        already past its end date, it will be auto-archived instead. Use <Run FontWeight="SemiBold">+ Add Row</Run>
+                        to include an item that wasn't part of the original set at all.
+                    </TextBlock>
+
+                    <!-- "+ Add Row" popup: search, pick, and append a new row in one step. -->
+                    <Popup IsOpen="{Binding IsAddItemPopupOpen, Mode=TwoWay}"
+                           PlacementTarget="{Binding ElementName=AddItemButton}"
+                           Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                        <Border Background="White" BorderBrush="{StaticResource CardBorder}" BorderThickness="1"
+                                CornerRadius="6" Padding="14" Width="420"
+                                TextOptions.TextRenderingMode="Grayscale">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.25" Color="#000000"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <TextBlock Text="Add an Item to This Renewal" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
+                                <TextBlock FontSize="11" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,8">
+                                    Search for and select the item to add as a new row, then <Run FontWeight="SemiBold">Add to Renewal</Run>.
+                                    If it doesn't exist in the catalog yet, use <Run FontWeight="SemiBold">Add Item</Run> to create it first —
+                                    it'll be searchable here right after. Qty, Unit Price, and dates can be adjusted afterward directly in the table.
+                                </TextBlock>
+                                <TextBox Style="{StaticResource InputBox}"
+                                         Text="{Binding AddItemSearchText, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8"/>
+                                <ListBox Height="160" ItemsSource="{Binding AddItemFilteredCatalog}"
+                                         SelectedItem="{Binding SelectedAddCatalogItem}"
+                                         DisplayMemberPath="DisplayLabel" Margin="0,0,0,10"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="Cancel" Command="{Binding CancelAddItemPopupCommand}"
+                                            Style="{StaticResource SecondaryButton}" Width="80" Height="34" Padding="12,4" Margin="0,0,8,0"/>
+                                    <Button Content="Add Item" Command="{Binding OpenBatchAddItemCommand}"
+                                            Style="{StaticResource SecondaryButton}" Width="100" Height="34" Padding="12,4" Margin="0,0,8,0"
+                                            ToolTip="Item doesn't exist in the catalog yet — create it first"/>
+                                    <Button Content="Add to Renewal" Command="{Binding ConfirmAddItemCommand}"
+                                            Style="{StaticResource PrimaryButton}" Width="130" Height="34" Padding="12,4"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+
+                    <!-- ══ Items grid ═══════════════════════════════════════════ -->
+                    <!-- Dedicated horizontal scroll region for just the grid — Vertical="Disabled"
+                         since the DataGrid already scrolls itself vertically; this ScrollViewer
+                         only exists to reach the grid's fixed-width columns without also scrolling
+                         New Invoice Set Details / the instructions text above it away. -->
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                                  Margin="0,0,0,8">
+                    <DataGrid x:Name="ItemsGrid" ItemsSource="{Binding Rows}"
+                              SelectedItem="{Binding SelectedRow}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="False"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="{StaticResource CardBorder}"
+                              BorderBrush="{StaticResource CardBorder}"
+                              BorderThickness="1"
+                              Background="White"
+                              RowHeaderWidth="0"
+                              ColumnHeaderHeight="32"
+                              MinRowHeight="34"
+                              MinHeight="340"
+                              MaxHeight="900"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              HorizontalAlignment="Left"
+                              Width="1090">
+                        <DataGrid.Resources>
+                            <!-- Light green selection so the selected row is clearly visible against the
+                                 white grid background — dark (not white) text. The DataGridCell default
+                                 template paints selection using these SystemColors brushes directly, so
+                                 overriding them here (not a RowStyle) is what actually controls the
+                                 selected-row appearance. -->
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#A9E5B8"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDF0D8"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                        </DataGrid.Resources>
+
+                        <!-- One full-width header bar per Sub-Type Group, same grouping (and header
+                             text format) as ViewInvoiceDetailPage's DgvItems — see
+                             RenewItemsWindow.xaml.cs for the GroupDescription that drives this and
+                             RenewItemRow.GroupDisplay for the key format. -->
+                        <DataGrid.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.ContainerStyle>
+                                    <Style TargetType="{x:Type GroupItem}">
+                                        <Setter Property="Margin" Value="0"/>
+                                    </Style>
+                                </GroupStyle.ContainerStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#EAF1FB" BorderBrush="{StaticResource CardBorder}"
+                                                BorderThickness="0,0,0,1" Padding="10,6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <!-- Checked = every row in this group is checked, Unchecked = none are,
+                                                     Indeterminate = mixed — click always resolves to a plain
+                                                     check-all/uncheck-all toggle (see GroupHeaderCheckBox_Click). Lets
+                                                     a whole Sub-Type Group be excluded from the renewal in one click
+                                                     instead of unchecking each row. -->
+                                                <CheckBox VerticalAlignment="Center" Margin="0,0,8,0"
+                                                          Loaded="GroupHeaderCheckBox_Loaded"
+                                                          Click="GroupHeaderCheckBox_Click"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="12"
+                                                           Foreground="{StaticResource YakultBlue}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </DataGrid.GroupStyle>
+
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="✓" Width="36" CanUserSort="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <!-- Mode=OneWay + explicit Click: a DataGridTemplateColumn CheckBox's
+                                             TwoWay IsChecked binding does not reliably commit back to the row
+                                             when clicked (WPF DataGridCell/virtualization quirk) — reading the
+                                             toggled state explicitly and writing it back manually works. -->
+                                        <CheckBox IsChecked="{Binding Selected, Mode=OneWay}" Click="RowCheckBox_Click"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Item Code" Binding="{Binding ItemCode}" Width="110">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="6,4"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                                <DataGridTextColumn.EditingElementStyle>
+                                    <Style TargetType="TextBox">
+                                        <Setter Property="Padding" Value="6,4"/>
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                        <Setter Property="AcceptsReturn" Value="True"/>
+                                        <Setter Property="VerticalAlignment" Value="Stretch"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Top"/>
+                                    </Style>
+                                </DataGridTextColumn.EditingElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Plain DataGridTextColumn (not a DataGridTemplateColumn) so WPF's normal
+                                 editing-focus behavior applies — see DescriptionOrItemNameConverter for
+                                 why a MultiBinding is used instead of a converter-less path: falls back
+                                 to Item Name for display only when Description is blank; typing always
+                                 writes straight to the real Description property. -->
+                            <DataGridTextColumn Header="Description" Width="220">
+                                <DataGridTextColumn.Binding>
+                                    <MultiBinding Converter="{StaticResource DescriptionOrItemNameConverter}">
+                                        <Binding Path="Description" UpdateSourceTrigger="PropertyChanged"/>
+                                        <Binding Path="ItemName" Mode="OneWay"/>
+                                    </MultiBinding>
+                                </DataGridTextColumn.Binding>
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="6,4"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                                <DataGridTextColumn.EditingElementStyle>
+                                    <Style TargetType="TextBox">
+                                        <Setter Property="Padding" Value="6,4"/>
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                        <Setter Property="AcceptsReturn" Value="True"/>
+                                        <Setter Property="VerticalAlignment" Value="Stretch"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Top"/>
+                                    </Style>
+                                </DataGridTextColumn.EditingElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Qty" Binding="{Binding Quantity, StringFormat=N2}" Width="60">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="6,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="UoM" Binding="{Binding UnitOfMeasure}" Width="60" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="6,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice, StringFormat=N2}" Width="85">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="6,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=N2, Mode=OneWay}" Width="85" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="6,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTemplateColumn Header="Start Date" Width="105">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding StartDate, StringFormat=MM/dd/yyyy}"
+                                                   Padding="6,0" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <DatePicker SelectedDate="{Binding StartDate, Mode=TwoWay}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn Header="End Date" Width="105">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding EndDate, StringFormat=MM/dd/yyyy}"
+                                                   Padding="6,0" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate>
+                                        <DatePicker SelectedDate="{Binding EndDate, Mode=TwoWay}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="Parent Tag Group" Binding="{Binding ParentTag}" Width="160">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="6,4"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Replace With" Binding="{Binding ReplacementDisplay}" Width="200" IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding" Value="6,4"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="TextWrapping" Value="Wrap"/>
+                                        <Setter Property="Foreground" Value="{StaticResource YakultBlue}"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    </ScrollViewer>
+
+                    <TextBlock Text="⚠ Unchecked items past their end date will be auto-archived."
+                               Foreground="#B43C3C" FontStyle="Italic" FontSize="11"/>
+                </StackPanel>
+            </Border>
+
+            </StackPanel>
+            </ScrollViewer>
+
+            <!-- ══════════════════ RIGHT PANEL — grouping, replacement, settings, financials ══════════════════ -->
+            <ScrollViewer Grid.Column="2" x:Name="RightScroll" Background="Transparent"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Background="Transparent">
+
+                <!-- ── Sub-Type Group + Parent Tag Group (both apply to checked rows, one button) ── -->
+                <Border Style="{StaticResource SectionCard}" Padding="24,18">
+                    <StackPanel>
+                        <TextBlock Text="SUB-TYPE / PARENT TAG GROUP (OPTIONAL)" Style="{StaticResource SectionLabel}"/>
+                        <Border Style="{StaticResource SubCard}">
+                            <TextBlock FontSize="11" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap">
+                                Each checked row already carries forward whatever Sub-Type Group and Parent Tag Group it belonged
+                                to on the original invoice. Set either or both here — Sub-Type (Contract/Subscription/etc. with a
+                                Reference Code and date range) and Parent Tag (a free-text bundle label like "HX Cluster with 40%
+                                Storage Buffer") are independent, a row can carry both — then click
+                                <Run FontWeight="SemiBold">Apply to Checked</Run> once to set both at the same time. Leaving a
+                                field blank/(None) and applying clears that group from the checked rows.
+                            </TextBlock>
+                        </Border>
+
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Sub-Type:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding SubTypeOptions}" SelectedItem="{Binding GroupSubType}"/>
+                        </Grid>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Group:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding ExistingRowGroups}"
+                                      SelectedItem="{Binding SelectedExistingGroup}"
+                                      IsEnabled="{Binding IsGroupPanelEnabled}"/>
+                        </Grid>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding GroupReferenceCodeLabel}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="1" Style="{StaticResource InputBox}"
+                                     Text="{Binding GroupReferenceCode, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsGroupDetailEditable}"/>
+                        </Grid>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="12"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Start:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <DatePicker Grid.Column="1" SelectedDate="{Binding GroupBeginDate}"
+                                        IsEnabled="{Binding IsGroupDetailEditable}"/>
+                            <TextBlock Grid.Column="3" Text="End:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <DatePicker Grid.Column="4" SelectedDate="{Binding GroupEndDate}"
+                                        IsEnabled="{Binding IsGroupDetailEditable}"/>
+                        </Grid>
+
+                        <Separator Margin="0,16,0,10"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Parent Tag:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding ExistingParentTagRowGroups}"
+                                      SelectedItem="{Binding SelectedExistingParentTagGroup}"/>
+                        </Grid>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Label:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="1" Style="{StaticResource InputBox}"
+                                     Text="{Binding ParentTagInput, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsParentTagEditable}"/>
+                        </Grid>
+
+                        <Button Content="Apply to Checked" Command="{Binding ApplyGroupToCheckedCommand}"
+                                Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right"
+                                Width="160" Height="34" Padding="12,4" Margin="0,14,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Sub-Type Group Summary (editable financial cards, same as ViewInvoiceDetailPage) ── -->
+                <Border Style="{StaticResource SectionCard}" Padding="24,18"
+                        Visibility="{Binding HasGroupSummaryCards, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <TextBlock Text="SUB-TYPE GROUP SUMMARY" Style="{StaticResource SectionLabel}"/>
+                        <Border Style="{StaticResource SubCard}">
+                            <TextBlock FontSize="11" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap">
+                                One card per Sub-Type Group among the checked rows. Subtotal is the live sum of that
+                                group's line Amounts; VAT/WHT/Discount % are yours to set. The
+                                <Run FontWeight="SemiBold">Financial Calculator</Run>'s Subtotal below is the sum of
+                                every card's Total plus any checked item with no Sub-Type Group at all.
+                            </TextBlock>
+                        </Border>
+
+                        <!-- Default (vertical StackPanel) items panel, no MinWidth cap on the
+                             card — each card stretches to fill the full right-panel width instead
+                             of wrapping several narrow cards side by side. -->
+                        <ItemsControl ItemsSource="{Binding GroupSummaryCards}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{StaticResource CardBorder}" BorderThickness="1" CornerRadius="6"
+                                            Padding="18,14" Margin="0,0,0,10" Background="White">
+                                        <StackPanel>
+                                            <!-- Reference Code sits beside the header instead of down in the info
+                                                 column, where the narrow shared column was cutting long codes off. -->
+                                            <Grid Margin="0,0,0,8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding SubType}" FontWeight="Bold" FontSize="14"
+                                                           Foreground="{StaticResource YakultBlue}" VerticalAlignment="Bottom"/>
+                                                <TextBlock Grid.Column="1" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                                           TextWrapping="Wrap" TextAlignment="Right">
+                                                    <Run Text="{Binding ReferenceCodeLabel, Mode=OneWay}" Foreground="{StaticResource TextMuted}"/>
+                                                    <Run Text=":"/>
+                                                    <Run Text="{Binding ReferenceCodeDisplay, Mode=OneWay}" FontWeight="SemiBold"/>
+                                                </TextBlock>
+                                            </Grid>
+
+                                            <!-- Info (left) | editable fields (right) — side by side now
+                                                 that the card spans the full panel width. -->
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="24"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <Grid Grid.Column="0" VerticalAlignment="Top">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition/>
+                                                        <RowDefinition/>
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Start Date" FontSize="11" Foreground="{StaticResource TextMuted}" Margin="0,2,10,2"/>
+                                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding BeginDateDisplay}" FontSize="11" HorizontalAlignment="Right"/>
+                                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="End Date" FontSize="11" Foreground="{StaticResource TextMuted}" Margin="0,2,10,2"/>
+                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding EndDateDisplay}" FontSize="11" HorizontalAlignment="Right"/>
+                                                </Grid>
+
+                                                <Grid Grid.Column="2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="110"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition/>
+                                                        <RowDefinition/>
+                                                        <RowDefinition/>
+                                                        <RowDefinition/>
+                                                        <RowDefinition/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- Read-only — the original computed subtotal for this group, kept
+                                                         live from the underlying items regardless of any new price
+                                                         typed into Subtotal below. -->
+                                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Original Subtotal" VerticalAlignment="Center" Margin="0,3,10,3"/>
+                                                    <TextBlock Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Text="{Binding OriginalSubtotal, StringFormat=N2}"
+                                                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,3,0,3" Foreground="{StaticResource TextMuted}"/>
+
+                                                    <!-- Editable — set a new renewal price for this group. Starts equal
+                                                         to Original Subtotal; Revert undoes back to it. -->
+                                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Subtotal" VerticalAlignment="Center" Margin="0,3,10,3"/>
+                                                    <TextBox Grid.Row="1" Grid.Column="1" TextAlignment="Right" Margin="0,3,4,3" FontWeight="SemiBold"
+                                                             Text="{Binding Subtotal, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    <Button Grid.Row="1" Grid.Column="2" Content="Revert" Command="{Binding RevertSubtotalCommand}"
+                                                            FontSize="10" Padding="6,2" Margin="0,3,0,3" VerticalAlignment="Center"
+                                                            ToolTip="Reset Subtotal back to Original Subtotal"/>
+
+                                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="VAT (%)" VerticalAlignment="Center" Margin="0,3,10,3"/>
+                                                    <TextBox Grid.Row="2" Grid.Column="1" TextAlignment="Right" HorizontalAlignment="Right" Width="90" Margin="0,3,0,3"
+                                                             Text="{Binding VatPercent, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="WHT (%)" VerticalAlignment="Center" Margin="0,3,10,3"/>
+                                                    <TextBox Grid.Row="3" Grid.Column="1" TextAlignment="Right" HorizontalAlignment="Right" Width="90" Margin="0,3,0,3"
+                                                             Text="{Binding WhtPercent, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"/>
+                                                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Discount (%)" VerticalAlignment="Center" Margin="0,3,10,3"/>
+                                                    <TextBox Grid.Row="4" Grid.Column="1" TextAlignment="Right" HorizontalAlignment="Right" Width="90" Margin="0,3,0,3"
+                                                             Text="{Binding DiscountPercent, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"/>
+                                                </Grid>
+                                            </Grid>
+
+                                            <Border Height="1" Background="{StaticResource CardBorder}" Margin="0,10,0,8"/>
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Total" FontWeight="Bold" FontSize="14"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Total, StringFormat=N2}" FontWeight="Bold" FontSize="14"
+                                                           HorizontalAlignment="Right" Foreground="{StaticResource YakultBlue}"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Financial Calculator ──────────────────────────────────── -->
+                <Border Style="{StaticResource SectionCard}" Padding="24,18">
+                    <StackPanel>
+                        <TextBlock Text="FINANCIAL CALCULATOR" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,10">
+                            <Run Text="Original Total:  "/>
+                            <Run Text="{Binding OriginalTotal, StringFormat=N2, Mode=OneWay}" Foreground="{StaticResource YakultBlue}"/>
+                            <Run Text="{Binding OriginalSetCodeNote, Mode=OneWay}" FontWeight="Normal" FontSize="11" Foreground="{StaticResource TextMuted}"/>
+                        </TextBlock>
+
+                        <TextBlock Text="Subtotal:" Margin="0,0,0,4"/>
+                        <TextBox Style="{StaticResource InputBox}" Margin="0,0,0,10"
+                                 Text="{Binding Subtotal, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"
+                                 IsReadOnly="{Binding HasGroupSummaryCards}"
+                                 ToolTip="Driven by the Sub-Type Group Summary cards above once any exist."/>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="VAT %:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="1" Style="{StaticResource InputBox}" Margin="0,0,8,0"
+                                     Text="{Binding VatPercent, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding VatAmount, StringFormat=N2, Mode=OneWay}"
+                                       Foreground="{StaticResource YakultBlue}" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="WHT %:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="1" Style="{StaticResource InputBox}" Margin="0,0,8,0"
+                                     Text="{Binding WhtPercent, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding WhtAmount, StringFormat=N2, Mode=OneWay}"
+                                       Foreground="{StaticResource ErrorRed}" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Discount %:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="1" Style="{StaticResource InputBox}" Margin="0,0,8,0"
+                                     Text="{Binding DiscountPercent, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding DiscountAmount, StringFormat=N2, Mode=OneWay}"
+                                       Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Border BorderBrush="{StaticResource CardBorder}" BorderThickness="0,1,0,0" Margin="0,10,0,10"/>
+                        <TextBlock FontSize="15" FontWeight="Bold">
+                            <Run Text="Total Amount Due:  " Foreground="{StaticResource TextPrimary}"/>
+                            <Run Text="{Binding TotalAmountDue, StringFormat=N2, Mode=OneWay}" Foreground="#2ECC71"/>
+                        </TextBlock>
+                        <TextBlock Text="{Binding ComparisonText, Mode=OneWay}" FontSize="11" FontStyle="Italic"
+                                   Foreground="{StaticResource TextMuted}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Replacement Item for Selected Row ─────────────────────── -->
+                <Border Style="{StaticResource SectionCard}" Padding="24,18">
+                    <StackPanel>
+                        <TextBlock Text="REPLACEMENT ITEM FOR SELECTED ROW" Style="{StaticResource SectionLabel}"/>
+                        <Border Style="{StaticResource SubCard}">
+                            <TextBlock FontSize="11" Foreground="{StaticResource TextMuted}" TextWrapping="Wrap">
+                                Use this when an item from the original invoice is being swapped for a <Run FontWeight="Bold">different</Run> item
+                                in this renewal — for example, an old license SKU being replaced by a new one. Click a row in the table on the
+                                left to select it, search for and pick its replacement below, then click <Run FontWeight="SemiBold">Assign to Row</Run>.
+                                If an item is <Run FontWeight="Bold">not</Run> being replaced, no action is needed here — just leave it set to
+                                "— Keep Original / No Replacement —", or uncheck the row if you don't want to renew it at all. To include an
+                                item that wasn't part of the original set at all, use the <Run FontWeight="SemiBold">+ Add Row</Run> button instead.
+                            </TextBlock>
+                        </Border>
+                        <TextBlock Text="{Binding AssigningLabel}" FontSize="11" FontStyle="Italic"
+                                   Foreground="{StaticResource TextMuted}" Margin="0,0,0,8"/>
+
+                        <TextBlock Text="Search:" Margin="0,0,0,4"/>
+                        <TextBox Style="{StaticResource InputBox}" Margin="0,0,0,8"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Select Item:" Margin="0,0,0,4"/>
+                        <ListBox Height="130" Margin="0,0,0,8"
+                                 ItemsSource="{Binding FilteredCatalog}"
+                                 SelectedItem="{Binding SelectedCatalogItem}"
+                                 DisplayMemberPath="DisplayLabel"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Assign to Row" Command="{Binding AssignReplacementCommand}"
+                                    Style="{StaticResource PrimaryButton}" Width="130" Height="34" Padding="12,4" Margin="0,0,10,0"/>
+                            <Button Content="Clear" Command="{Binding ClearReplacementCommand}"
+                                    Style="{StaticResource SecondaryButton}" Width="70" Height="34" Padding="12,4"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Renewal Settings ──────────────────────────────────────── -->
+                <Border Style="{StaticResource SectionCard}" Padding="24,18">
+                    <StackPanel>
+                        <TextBlock Text="RENEWAL SETTINGS" Style="{StaticResource SectionLabel}"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Status:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding StatusOptions}"
+                                      SelectedItem="{Binding SelectedStatus}"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="16"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="90"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="New Start Date:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <DatePicker Grid.Column="1" SelectedDate="{Binding NewStartDate}"/>
+                            <TextBlock Grid.Column="3" Text="Years:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Grid.Column="4" Style="{StaticResource InputBox}"
+                                     Text="{Binding RenewalYears, UpdateSourceTrigger=PropertyChanged}"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="New End Date:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <DatePicker Grid.Column="1" SelectedDate="{Binding NewEndDate}"/>
+                        </Grid>
+                        <Button Content="Apply to Checked" Command="{Binding ApplyToCheckedCommand}"
+                                Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right"
+                                Width="150" Height="34" Padding="12,4"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Notes ──────────────────────────────────────────────────── -->
+                <Border Style="{StaticResource SectionCard}" Padding="24,18" Margin="0,0,0,4">
+                    <StackPanel>
+                        <TextBlock Text="NOTES" Style="{StaticResource SectionLabel}"/>
+                        <TextBox Style="{StaticResource InputBox}" Text="{Binding Notes}"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 Height="60" VerticalScrollBarVisibility="Auto"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ══ Footer ══════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="1" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="{Binding NewSetCodePreviewText}" FontSize="11" FontStyle="Italic"
+                       Foreground="{StaticResource TextMuted}" VerticalAlignment="Center"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Cancel" Command="{Binding CancelCommand}"
+                        Style="{StaticResource SecondaryButton}" MinWidth="90" Margin="0,0,10,0"/>
+                <Button Content="Confirm Renewal" Command="{Binding ConfirmCommand}"
+                        Style="{StaticResource PrimaryButton}" MinWidth="150"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,1098 @@
+<Window
+    x:Class="Yakult.Inventory.App.WPF.Renewal.LinkRenewal.Views.LinkRenewalWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.Renewal.LinkRenewal.ViewModels"
+    Title="Link Renewal Set"
+    MinWidth="860" MinHeight="540"
+    Width="1050" Height="660"
+    WindowStartupLocation="CenterScreen"
+    FontFamily="Segoe UI"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType"
+    RenderOptions.ClearTypeHint="Enabled"
+    Loaded="Window_Loaded">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Yakult.Inventory.App;component/WPF/RequestPortal/RequestPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- ── Match-status badge styles ──────────────────────────────── -->
+            <Style x:Key="MatchBadge" TargetType="Border">
+                <Setter Property="CornerRadius"    Value="4"/>
+                <Setter Property="Padding"         Value="8,3"/>
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="VerticalAlignment"   Value="Center"/>
+            </Style>
+
+            <!-- Comparison row status colours -->
+            <Style x:Key="CompRowText" TargetType="TextBlock">
+                <Setter Property="FontSize"          Value="12"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+                <Setter Property="Padding"           Value="8,0"/>
+            </Style>
+
+            <!-- Field-label in left panel -->
+            <Style x:Key="InfoLabel" TargetType="TextBlock">
+                <Setter Property="FontSize"   Value="10"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                <Setter Property="Margin"     Value="0,0,0,2"/>
+            </Style>
+            <Style x:Key="InfoValue" TargetType="TextBlock">
+                <Setter Property="FontSize"   Value="12"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                <Setter Property="Margin"     Value="0,0,0,10"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Header -->
+            <RowDefinition Height="*"/>     <!-- Body -->
+            <RowDefinition Height="Auto"/>  <!-- Footer -->
+        </Grid.RowDefinitions>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             HEADER
+             ════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0"
+                Background="{StaticResource YakultBlue}"
+                Padding="24,14,24,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center">
+                    <TextBlock FontSize="11" FontWeight="Bold"
+                               Foreground="#AADDFF"
+                               Text="LINK RENEWAL SET"/>
+                    <TextBlock FontSize="18" FontWeight="Bold"
+                               Foreground="White" Margin="0,2,0,0">
+                        <Run Text="Select the renewal for "/>
+                        <Run Text="{Binding ExpiringSet.SetCode, Mode=OneWay}" FontWeight="ExtraBold"/>
+                        <Run Text=" · "/>
+                        <Run Text="{Binding ExpiringSet.CompanyName, Mode=OneWay}"/>
+                    </TextBlock>
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                        <TextBlock FontSize="12" Foreground="#CCEEFC">
+                            <Run Text="Invoice No.: "/>
+                            <Run Text="{Binding ExpiringSet.DocumentNumber, Mode=OneWay}" FontWeight="SemiBold"/>
+                        </TextBlock>
+                        <TextBlock FontSize="12" Foreground="#CCEEFC" Margin="18,0,0,0">
+                            <Run Text="Expires: "/>
+                            <Run Text="{Binding ExpiringSet.EndDate, StringFormat=yyyy-MM-dd, Mode=OneWay}" FontWeight="SemiBold"/>
+                        </TextBlock>
+                        <TextBlock FontSize="12" Foreground="#CCEEFC" Margin="18,0,0,0">
+                            <Run Text="Status: "/>
+                            <Run Text="{Binding ExpiringSet.SetLevelStatus, Mode=OneWay}" FontWeight="SemiBold"/>
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Candidate count badge -->
+                <Border Grid.Column="1" Background="#22000000"
+                        CornerRadius="8" Padding="14,8"
+                        VerticalAlignment="Center">
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding AllCandidates.Count, Mode=OneWay}"
+                                   FontSize="22" FontWeight="Bold" Foreground="White"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="candidates" FontSize="11" Foreground="#AADDFF"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             BODY  (2-panel split)
+             ════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" MinWidth="240" MaxWidth="360"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── LEFT PANEL: Expiring Set ────────────────────────────── -->
+            <Border Grid.Column="0"
+                    Background="White"
+                    BorderBrush="{StaticResource CardBorder}"
+                    BorderThickness="0,0,1,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="20,18,20,18">
+
+                        <!-- Label -->
+                        <Border Background="#FFF3CD" CornerRadius="5"
+                                Padding="10,6" Margin="0,0,0,16">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⚠" FontSize="13" Foreground="#856404"
+                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="EXPIRING SET" FontSize="11"
+                                           FontWeight="Bold" Foreground="#856404"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Set info fields -->
+                        <TextBlock Text="SET CODE" Style="{StaticResource InfoLabel}"/>
+                        <TextBlock Text="{Binding ExpiringSet.SetCode, Mode=OneWay}"
+                                   Style="{StaticResource InfoValue}"/>
+
+                        <TextBlock Text="TYPE" Style="{StaticResource InfoLabel}"/>
+                        <TextBlock Text="{Binding ExpiringSet.SetType, Mode=OneWay}"
+                                   Style="{StaticResource InfoValue}"/>
+
+                        <TextBlock Text="INVOICE NO." Style="{StaticResource InfoLabel}"/>
+                        <TextBlock Text="{Binding ExpiringSet.DocumentNumber, Mode=OneWay,
+                                           FallbackValue='—', TargetNullValue='—'}"
+                                   Style="{StaticResource InfoValue}"/>
+
+                        <TextBlock Text="PO / REFERENCE" Style="{StaticResource InfoLabel}"/>
+                        <TextBlock Text="{Binding ExpiringSet.ReferenceNumber, Mode=OneWay,
+                                           FallbackValue='—', TargetNullValue='—'}"
+                                   Style="{StaticResource InfoValue}"/>
+
+                        <TextBlock Text="COMPANY" Style="{StaticResource InfoLabel}"/>
+                        <TextBlock Text="{Binding ExpiringSet.CompanyName, Mode=OneWay,
+                                           FallbackValue='—', TargetNullValue='—'}"
+                                   Style="{StaticResource InfoValue}"/>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="START DATE" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Text="{Binding ExpiringSet.StartDate, StringFormat=yyyy-MM-dd,
+                                                   Mode=OneWay, FallbackValue='—', TargetNullValue='—'}"
+                                           Style="{StaticResource InfoValue}" Margin="0"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="END DATE" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Text="{Binding ExpiringSet.EndDate, StringFormat=yyyy-MM-dd,
+                                                   Mode=OneWay, FallbackValue='—', TargetNullValue='—'}"
+                                           Style="{StaticResource InfoValue}" Margin="0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBlock Text="TOTAL AMOUNT" Style="{StaticResource InfoLabel}"/>
+                        <TextBlock Text="{Binding ExpiringSet.TotalAmountDue, StringFormat=N2, Mode=OneWay}"
+                                   Style="{StaticResource InfoValue}"/>
+
+                        <!-- Divider -->
+                        <Border BorderBrush="{StaticResource CardBorder}"
+                                BorderThickness="0,1,0,0" Margin="0,8,0,14"/>
+
+                        <!-- Items section label -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Text="ITEMS IN EXPIRING SET"
+                                       Style="{StaticResource SectionLabel}"
+                                       Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <Border Background="{StaticResource YakultBlue}"
+                                    CornerRadius="10" Padding="7,2"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="{Binding ExpiringItems.Count, Mode=OneWay}"
+                                           FontSize="10" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Empty state -->
+                        <TextBlock Text="Loading items…"
+                                   FontSize="12" Foreground="{StaticResource TextMuted}"
+                                   FontStyle="Italic" Margin="0,6,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsLoading}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Expiring items list -->
+                        <ItemsControl ItemsSource="{Binding ExpiringItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{StaticResource CardBorder}"
+                                            BorderThickness="0,0,0,1"
+                                            Padding="0,7,0,7">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding ItemCode}"
+                                                       FontSize="11" FontWeight="Bold"
+                                                       Foreground="{StaticResource YakultDarkBlue}"/>
+                                            <TextBlock Text="{Binding Description}"
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,1,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- ── RIGHT PANEL: Candidates + Comparison ─────────────────── -->
+            <Grid Grid.Column="1" Background="{StaticResource SurfaceGray}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>   <!-- Row 0: Search bar -->
+                    <RowDefinition Height="*"/>      <!-- Row 1: Candidates DataGrid -->
+                    <RowDefinition Height="Auto"/>   <!-- Row 2: Pagination bar -->
+                    <RowDefinition Height="Auto"/>   <!-- Row 3: Comparison header -->
+                    <RowDefinition Height="Auto"/>   <!-- Row 4: Comparison DataGrid -->
+                </Grid.RowDefinitions>
+
+                <!-- ── Search bar ──────────────────────────────────────── -->
+                <Border Grid.Row="0" Background="White"
+                        BorderBrush="{StaticResource CardBorder}"
+                        BorderThickness="0,0,0,1"
+                        Padding="14,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0">
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource InputBox}"
+                                     Padding="36,8,11,8"
+                                     VerticalContentAlignment="Center"/>
+                            <TextBlock Text="🔍" FontSize="13"
+                                       Foreground="{StaticResource TextMuted}"
+                                       VerticalAlignment="Center"
+                                       Margin="11,0,0,0"
+                                       IsHitTestVisible="False"/>
+                            <TextBlock Text="Search by invoice code, PO no., company, item code, description…"
+                                       FontSize="12" Foreground="{StaticResource TextMuted}"
+                                       VerticalAlignment="Center"
+                                       Margin="36,0,0,0"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SearchText}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                    Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock FontSize="11" Foreground="{StaticResource TextMuted}"
+                                       VerticalAlignment="Center">
+                                <Run Text="{Binding TotalFilteredCount, Mode=OneWay, FallbackValue='0'}"/>
+                                <Run Text=" of "/>
+                                <Run Text="{Binding AllCandidates.Count, Mode=OneWay}"/>
+                                <Run Text=" sets  ·  Sorted by match %"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ── Candidates DataGrid ─────────────────────────────── -->
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding PagedCandidates}"
+                          SelectedItem="{Binding SelectedCandidate}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="{StaticResource CardBorder}"
+                          BorderThickness="0"
+                          Background="White"
+                          RowHeaderWidth="0"
+                          ColumnHeaderHeight="36"
+                          MinRowHeight="36"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                            <Style.Triggers>
+                                <!-- Dim expired rows so they read as less desirable -->
+                                <DataTrigger Binding="{Binding IsExpired}" Value="True">
+                                    <Setter Property="Background" Value="#F8F8F8"/>
+                                    <Setter Property="Foreground" Value="#999999"/>
+                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                </DataTrigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#C8DFF5"/>
+                                    <Setter Property="Foreground" Value="#0D2B4E"/>
+                                    <Setter Property="FontStyle"  Value="Normal"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#D6E8F7"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                    <Setter Property="FontStyle"  Value="Normal"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+
+                    <DataGrid.Columns>
+
+                        <!-- Invoice Code -->
+                        <DataGridTextColumn Header="Invoice Code"
+                                            Binding="{Binding SetCode}"
+                                            Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"      Value="10,0"/>
+                                    <Setter Property="FontWeight"   Value="SemiBold"/>
+                                    <Setter Property="FontSize"     Value="12"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Type -->
+                        <DataGridTextColumn Header="Type"
+                                            Binding="{Binding SetType}"
+                                            Width="130">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"  Value="8,0"/>
+                                    <Setter Property="FontSize" Value="12"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Invoice No. -->
+                        <DataGridTextColumn Header="Invoice No."
+                                            Binding="{Binding DocumentNumber}"
+                                            Width="120">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"  Value="8,0"/>
+                                    <Setter Property="FontSize" Value="12"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- PO No. -->
+                        <DataGridTextColumn Header="PO No."
+                                            Binding="{Binding ReferenceNumber}"
+                                            Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"  Value="8,0"/>
+                                    <Setter Property="FontSize" Value="12"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Company -->
+                        <DataGridTextColumn Header="Company"
+                                            Binding="{Binding CompanyName}"
+                                            Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"         Value="8,0"/>
+                                    <Setter Property="FontSize"        Value="12"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="TextTrimming"    Value="CharacterEllipsis"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Start Date -->
+                        <DataGridTextColumn Header="Start Date"
+                                            Binding="{Binding StartDateDisplay}"
+                                            Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"  Value="8,0"/>
+                                    <Setter Property="FontSize" Value="12"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="VerticalAlignment"   Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- End Date -->
+                        <DataGridTextColumn Header="End Date"
+                                            Binding="{Binding EndDateDisplay}"
+                                            Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"  Value="8,0"/>
+                                    <Setter Property="FontSize" Value="12"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="VerticalAlignment"   Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Total Amount -->
+                        <DataGridTextColumn Header="Total Amount"
+                                            Binding="{Binding AmountDisplay}"
+                                            Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"  Value="8,0"/>
+                                    <Setter Property="FontSize" Value="12"/>
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="VerticalAlignment"   Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Match Count -->
+                        <DataGridTextColumn Header="Items"
+                                            Binding="{Binding MatchCountDisplay}"
+                                            Width="80">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"  Value="8,0"/>
+                                    <Setter Property="FontSize" Value="11"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="VerticalAlignment"   Value="Center"/>
+                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Match % -->
+                        <DataGridTextColumn Header="Match %"
+                                            Binding="{Binding MatchPercentDisplay}"
+                                            Width="72">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Padding"    Value="8,0"/>
+                                    <Setter Property="FontSize"   Value="12"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="VerticalAlignment"   Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Active / Expired badge -->
+                        <DataGridTemplateColumn Header="Status" Width="90">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border x:Name="badge"
+                                            CornerRadius="4" Padding="7,3"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Background="#D4EDDA">
+                                        <TextBlock x:Name="badgeText"
+                                                   Text="{Binding SetStatus}"
+                                                   FontSize="11" FontWeight="Bold"
+                                                   Foreground="#155724"/>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding IsExpired}" Value="True">
+                                            <Setter TargetName="badge"     Property="Background" Value="#E2E3E5"/>
+                                            <Setter TargetName="badgeText" Property="Foreground" Value="#6C757D"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- ── Pagination bar ─────────────────────────────────── -->
+                <Border Grid.Row="2"
+                        Background="White"
+                        BorderBrush="{StaticResource CardBorder}"
+                        BorderThickness="0,1,0,0"
+                        Padding="14,7">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Prev button -->
+                        <Button Grid.Column="0"
+                                Content="← Prev"
+                                Command="{Binding PrevPageCommand}"
+                                IsEnabled="{Binding HasPrevPage}"
+                                Style="{StaticResource SecondaryButton}"
+                                Height="28" Padding="14,0" FontSize="11"/>
+
+                        <!-- Page info -->
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding PageInfo, Mode=OneWay}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+
+                        <!-- Next button -->
+                        <Button Grid.Column="2"
+                                Content="Next →"
+                                Command="{Binding NextPageCommand}"
+                                IsEnabled="{Binding HasNextPage}"
+                                Style="{StaticResource SecondaryButton}"
+                                Height="28" Padding="14,0" FontSize="11"/>
+                    </Grid>
+                </Border>
+
+                <!-- ── Item Comparison header ──────────────────────────── -->
+                <Border Grid.Row="3"
+                        Background="{StaticResource YakultDarkBlue}"
+                        Padding="14,9">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasSelection}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <TextBlock FontSize="11" FontWeight="Bold"
+                                       Foreground="White" VerticalAlignment="Center"
+                                       Text="ITEM COMPARISON — "/>
+                            <TextBlock FontSize="11" FontWeight="Bold"
+                                       Foreground="#AADDFF" VerticalAlignment="Center"
+                                       Text="{Binding SelectedCandidate.SetCode, Mode=OneWay}"/>
+                        </StackPanel>
+
+                        <!-- Match / New / Missing counters -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Border Background="#1E9E5E" CornerRadius="4"
+                                    Padding="10,3" Margin="0,0,6,0">
+                                <TextBlock FontSize="11" FontWeight="Bold" Foreground="White">
+                                    <Run Text="✓ Matched: "/>
+                                    <Run Text="{Binding MatchedCount, Mode=OneWay}"/>
+                                </TextBlock>
+                            </Border>
+                            <Border Background="#3A8EF6" CornerRadius="4"
+                                    Padding="10,3" Margin="0,0,6,0">
+                                <TextBlock FontSize="11" FontWeight="Bold" Foreground="White">
+                                    <Run Text="+ New: "/>
+                                    <Run Text="{Binding NewCount, Mode=OneWay}"/>
+                                </TextBlock>
+                            </Border>
+                            <Border Background="#E03C31" CornerRadius="4" Padding="10,3">
+                                <TextBlock FontSize="11" FontWeight="Bold" Foreground="White">
+                                    <Run Text="✕ Missing: "/>
+                                    <Run Text="{Binding MissingCount, Mode=OneWay}"/>
+                                </TextBlock>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ── Item Comparison DataGrid ────────────────────────── -->
+                <Border Grid.Row="4"
+                        Background="White"
+                        BorderBrush="{StaticResource CardBorder}"
+                        BorderThickness="0,0,0,0"
+                        MaxHeight="220">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasSelection}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <Grid>
+                    <!-- No-selection hint (overlays the DataGrid when nothing is selected) -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Panel.ZIndex="1"
+                                Visibility="{Binding NoSelection, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Select a candidate above to compare items"
+                                   FontSize="13" Foreground="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+
+                    <DataGrid ItemsSource="{Binding ComparisonRows}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="{StaticResource CardBorder}"
+                              BorderThickness="0"
+                              Background="White"
+                              RowHeaderWidth="0"
+                              ColumnHeaderHeight="32"
+                              MinRowHeight="32"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Status}" Value="Matched">
+                                        <Setter Property="Background" Value="#F0FFF4"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="New">
+                                        <Setter Property="Background" Value="#EBF5FB"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="Missing">
+                                        <Setter Property="Background" Value="#FFF5F5"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#C8DFF5"/>
+                                        <Setter Property="Foreground" Value="#0D2B4E"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#D6E8F7"/>
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+
+                        <DataGrid.Columns>
+
+                            <!-- Status indicator -->
+                            <DataGridTemplateColumn Header="" Width="42">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock x:Name="icon"
+                                                   Text="✓"
+                                                   FontSize="13" FontWeight="Bold"
+                                                   Foreground="#1E9E5E"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="New">
+                                                            <Setter Property="Text"      Value="+"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource YakultBlue}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Missing">
+                                                            <Setter Property="Text"      Value="✕"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource ErrorRed}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Status label -->
+                            <DataGridTemplateColumn Header="Status" Width="90">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock x:Name="statusLabel"
+                                                   Text="{Binding Status}"
+                                                   FontSize="11" FontWeight="Bold"
+                                                   Padding="6,0"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{StaticResource TextMuted}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Matched">
+                                                            <Setter Property="Foreground" Value="#155724"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="New">
+                                                            <Setter Property="Foreground" Value="{StaticResource YakultDarkBlue}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Missing">
+                                                            <Setter Property="Foreground" Value="{StaticResource ErrorRed}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Item Code -->
+                            <DataGridTextColumn Header="Item Code"
+                                                Binding="{Binding ItemCode}"
+                                                Width="140">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding"    Value="8,0"/>
+                                        <Setter Property="FontSize"   Value="12"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Description -->
+                            <DataGridTextColumn Header="Description"
+                                                Binding="{Binding Description}"
+                                                Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Padding"         Value="8,0"/>
+                                        <Setter Property="FontSize"        Value="12"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="TextTrimming"    Value="CharacterEllipsis"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ── Empty-state when no candidates match search ──────── -->
+                <Border Grid.Row="1"
+                        Background="White"
+                        Panel.ZIndex="1">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPageEmpty}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="🔍" FontSize="40" HorizontalAlignment="Center"/>
+                        <TextBlock Text="No candidates match your search"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                        <TextBlock Text="Try a different search term"
+                                   FontSize="12" Foreground="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
+            </Grid>
+        </Grid>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             FOOTER
+             ════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2"
+                Background="White"
+                BorderBrush="{StaticResource CardBorder}"
+                BorderThickness="0,1,0,0"
+                Padding="20,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Status message -->
+                <Border Grid.Column="0"
+                        CornerRadius="5" Padding="14,8"
+                        VerticalAlignment="Center"
+                        Visibility="{Binding HasStatus, Converter={StaticResource BoolToVis}}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsError}" Value="True">
+                                    <Setter Property="Background" Value="#FFF3F3"/>
+                                    <Setter Property="BorderBrush" Value="#FFCDD2"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsError}" Value="False">
+                                    <Setter Property="Background" Value="#F0F8FF"/>
+                                    <Setter Property="BorderBrush" Value="#AADDFF"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="12" FontWeight="SemiBold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsError}" Value="True">
+                                        <Setter Property="Foreground" Value="{StaticResource ErrorRed}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsError}" Value="False">
+                                        <Setter Property="Foreground" Value="{StaticResource YakultDarkBlue}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+
+                <!-- Action buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Cancel"
+                            Command="{Binding CancelCommand}"
+                            Style="{StaticResource SecondaryButton}"
+                            Height="40" Padding="22,0" Margin="0,0,10,0"/>
+
+                    <Button Command="{Binding LinkCommand}"
+                            IsEnabled="{Binding HasSelection}"
+                            Height="40" Padding="22,0"
+                            Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="root"
+                                                    Background="{StaticResource YakultBlue}"
+                                                    CornerRadius="5"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <TextBlock Text="Link as Renewal"
+                                                           Foreground="White"
+                                                           FontSize="13" FontWeight="Bold"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="root" Property="Opacity" Value="0.88"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="root" Property="Opacity" Value="0.72"/>
+                                                </Trigger>
+                                                <Trigger Property="IsEnabled" Value="False">
+                                                    <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             LOADING OVERLAY
+             ════════════════════════════════════════════════════════════════ -->
+        <Border Grid.RowSpan="3"
+                Background="#CCFFFFFF"
+                Panel.ZIndex="200"
+                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="⟳" FontSize="48"
+                           Foreground="{StaticResource YakultBlue}"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Loading renewal candidates…"
+                           FontSize="14" Foreground="{StaticResource TextMuted}"
+                           HorizontalAlignment="Center" Margin="0,10,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             CONFIRMATION OVERLAY
+             ════════════════════════════════════════════════════════════════ -->
+        <Border Grid.RowSpan="3"
+                Background="#BB1A2333"
+                Panel.ZIndex="300"
+                Visibility="{Binding IsConfirming, Converter={StaticResource BoolToVis}}">
+            <Border Background="White" CornerRadius="12"
+                    Width="540" MaxHeight="480"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Padding="32,28">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="32" ShadowDepth="8"
+                                      Opacity="0.25" Color="Black" Direction="270"/>
+                </Border.Effect>
+                <StackPanel>
+
+                    <!-- Title -->
+                    <TextBlock Text="Confirm Link as Renewal"
+                               FontSize="20" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimary}"
+                               Margin="0,0,0,16"/>
+
+                    <!-- Expired warning banner (only visible when selected set is expired) -->
+                    <Border CornerRadius="6" Padding="12,9" Margin="0,0,0,14"
+                            Background="#FFF3CD" BorderBrush="#FFEEBA" BorderThickness="1"
+                            Visibility="{Binding SelectedIsExpired, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚠  " FontSize="13" Foreground="#856404"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock FontSize="12" FontWeight="SemiBold"
+                                       Foreground="#856404" TextWrapping="Wrap">
+                                The selected renewal set has already expired.
+                                Linking to an expired set is unusual — verify this is intentional.
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Summary -->
+                    <Border Background="#EBF5FB" CornerRadius="8"
+                            Padding="16,12" Margin="0,0,0,16">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="100"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0"
+                                       Text="Expiring set:"
+                                       Style="{StaticResource FieldLabel}" FontSize="12"
+                                       Margin="0,0,12,6"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1"
+                                       FontSize="12" FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimary}"
+                                       Margin="0,0,0,6">
+                                <Run Text="{Binding ExpiringSet.SetCode, Mode=OneWay}"/>
+                                <Run Text=" — "/>
+                                <Run Text="{Binding ExpiringSet.DocumentNumber, Mode=OneWay,
+                                             FallbackValue='—', TargetNullValue='—'}"/>
+                            </TextBlock>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0"
+                                       Text="Renewal set:"
+                                       Style="{StaticResource FieldLabel}" FontSize="12"
+                                       Margin="0,0,12,6"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1"
+                                       FontSize="12" FontWeight="Bold"
+                                       Foreground="{StaticResource YakultDarkBlue}"
+                                       Margin="0,0,0,6">
+                                <Run Text="{Binding SelectedCandidate.SetCode, Mode=OneWay, FallbackValue='—'}"/>
+                                <Run Text=" — "/>
+                                <Run Text="{Binding SelectedCandidate.DocumentNumber, Mode=OneWay, FallbackValue='—'}"/>
+                            </TextBlock>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0"
+                                       Text="Match:"
+                                       Style="{StaticResource FieldLabel}" FontSize="12"
+                                       Margin="0,0,12,0"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1"
+                                       FontSize="12" FontWeight="Bold"
+                                       Margin="0,0,0,0">
+                                <Run Text="{Binding SelectedCandidate.MatchPercentDisplay, Mode=OneWay, FallbackValue='—'}"/>
+                                <Run Text=" ("/>
+                                <Run Text="{Binding SelectedCandidate.MatchStatus, Mode=OneWay, FallbackValue='—'}"/>
+                                <Run Text=")"/>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+
+                    <!-- Consequence list -->
+                    <TextBlock FontSize="12" Foreground="{StaticResource TextMuted}"
+                               TextWrapping="Wrap" Margin="0,0,0,8">
+                        This action will:
+                    </TextBlock>
+                    <StackPanel Margin="8,0,0,20">
+                        <TextBlock FontSize="12" Foreground="{StaticResource TextPrimary}"
+                                   Margin="0,3">
+                            • Set the renewal set's <Run FontWeight="Bold">RenewalOfSetId</Run> →
+                            <Run Text="{Binding ExpiringSet.SetCode, Mode=OneWay}" FontWeight="Bold"/>
+                        </TextBlock>
+                        <TextBlock FontSize="12" Foreground="{StaticResource TextPrimary}"
+                                   Margin="0,3">
+                            • Mark all active items in <Run Text="{Binding ExpiringSet.SetCode, Mode=OneWay}" FontWeight="Bold"/>
+                            as <Run FontWeight="Bold">Renewed</Run>
+                        </TextBlock>
+                        <TextBlock FontSize="12" Foreground="{StaticResource TextMuted}"
+                                   Margin="0,3" FontStyle="Italic">
+                            The original set's document data will NOT be modified.
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Buttons -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0"
+                                Content="Cancel"
+                                Command="{Binding CancelConfirmCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Height="44" FontSize="13"/>
+
+                        <Button Grid.Column="2"
+                                Command="{Binding ConfirmLinkCommand}"
+                                Height="44" FontSize="13" FontWeight="Bold"
+                                Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="root"
+                                                        Background="{StaticResource YakultBlue}"
+                                                        CornerRadius="5">
+                                                    <TextBlock Text="Confirm Link"
+                                                               Foreground="White"
+                                                               FontSize="13" FontWeight="Bold"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="root" Property="Opacity" Value="0.88"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="root" Property="Opacity" Value="0.72"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+
+                </StackPanel>
+            </Border>
+        </Border>
+
+    </Grid>
+</Window>

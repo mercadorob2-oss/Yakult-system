@@ -1,0 +1,173 @@
+@model Inventory.RequestPortal.Models.ViewModels.CartridgeExchangeWorkspaceViewModel
+@* Rendered both by Index.cshtml (full page, ?id=) and by the Panel AJAX action (row click) —
+   kept as its own partial so selecting a request only re-renders this fragment, not the list,
+   filters, or scroll position around it. *@
+
+@if (Model.SelectedForm == null)
+{
+    <div class="cx-empty-panel">
+        <i class="bi bi-arrow-left-circle fs-1 d-block mb-2"></i>
+        Select a request from the list to begin.
+    </div>
+}
+else
+{
+    var form = Model.SelectedForm;
+
+    @* ── Summary block (mirrors ExchangePanelViewModel's summary fields) ── *@
+    <div class="cx-panel-field"><span class="lbl">Requester:</span><span class="val">@form.EmployeeName</span></div>
+    <div class="cx-panel-field"><span class="lbl">Model:</span><span class="val fw-bold">@form.ModelDisplay</span></div>
+    <div class="cx-panel-field"><span class="lbl">Request #:</span><span class="val">@form.ReqIdsDisplay</span></div>
+    <div class="cx-panel-field"><span class="lbl">Quantity:</span><span class="val">@form.TotalQuantity</span></div>
+    <div class="cx-panel-field"><span class="lbl">With Cartridge:</span><span class="val">@form.WithCartridgeDisplay</span></div>
+    <div class="cx-panel-field"><span class="lbl">Company:</span><span class="val">@form.CompanyName</span></div>
+    <div class="cx-panel-field"><span class="lbl">Branch:</span><span class="val">@form.BranchName</span></div>
+    <div class="cx-panel-field"><span class="lbl">Department:</span><span class="val">@form.DepartmentName</span></div>
+    <div class="cx-panel-field"><span class="lbl">Good (Returned):</span><span class="val">@form.TotalGoodEmptyQty</span></div>
+    <div class="cx-panel-field"><span class="lbl">Damaged (Returned):</span><span class="val">@form.TotalDamagedEmptyQty</span></div>
+    <div class="cx-panel-field"><span class="lbl">Distribution Method:</span><span class="val">@form.DistributionMethod</span></div>
+    <div class="cx-panel-field"><span class="lbl">Received By:</span><span class="val">@form.ReceivedByName</span></div>
+    @if (!string.IsNullOrWhiteSpace(form.AdditionalRemarks))
+    {
+        <div class="cx-panel-field"><span class="lbl">Additional Remarks:</span><span class="val">@form.AdditionalRemarks</span></div>
+    }
+
+    <form asp-action="Fulfill" method="post" id="cxFulfillForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="SubmissionSessionId" value="@form.SubmissionSessionId" />
+        <input type="hidden" name="EmployeeName" value="@form.EmployeeName" />
+        <input type="hidden" name="CompanyName" value="@form.CompanyName" />
+        <input type="hidden" name="BranchName" value="@form.BranchName" />
+        <input type="hidden" name="DepartmentName" value="@form.DepartmentName" />
+        <input type="hidden" name="ReceivedByName" value="@form.ReceivedByName" />
+        <input type="hidden" name="AdditionalRemarks" value="@form.AdditionalRemarks" />
+
+        @* ── Step 3A: Issued (Full) Cartridges ── *@
+        <div class="cx-section-card" style="border-left:3px solid #1E9E5E;">
+            <div class="cx-section-title" style="color:#1E9E5E;">Step 3A: Issued (Full) Cartridges</div>
+
+            @if (!form.IsMultiModel)
+            {
+                var line = form.Lines[0];
+                <input type="hidden" name="Lines[0].ReqId" value="@line.ReqId" />
+                <input type="hidden" name="Lines[0].RequestModelId" value="@line.RequestModelId" />
+                <input type="hidden" name="Lines[0].CartridgeModelId" value="@line.CartridgeModelId" />
+                <input type="hidden" name="Lines[0].DisplayModel" value="@line.DisplayModel" />
+                <input type="hidden" name="Lines[0].RequestedQty" value="@line.RequestedQty" />
+                <input type="hidden" name="Lines[0].GoodEmptyQty" value="@line.GoodEmptyQty" />
+                <input type="hidden" name="Lines[0].DamagedEmptyQty" value="@line.DamagedEmptyQty" />
+                <input type="hidden" name="Lines[0].AvailableBrandNewStock" value="@line.AvailableBrandNewStock" />
+                <input type="hidden" name="Lines[0].AvailableRefilledStock" value="@line.AvailableRefilledStock" />
+
+                <div class="cx-panel-field"><span class="lbl">Cartridge Model:</span><span class="val">@line.DisplayModel</span></div>
+                <div class="row g-2 align-items-end mb-1">
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Issued Brand New</label>
+                        <input type="number" class="form-control form-control-sm cartridge-bn-input" style="width:110px;"
+                               name="Lines[0].IssuedBrandNewQty" min="0" max="@line.MaxBrandNew" value="0"
+                               data-requested="@line.RequestedQty" data-avail-bn="@line.AvailableBrandNewStock" data-avail-rf="@line.AvailableRefilledStock"
+                               data-model="@line.DisplayModel" data-row="single" />
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Issued Refilled</label>
+                        <input type="number" class="form-control form-control-sm cartridge-rf-input" style="width:110px;"
+                               name="Lines[0].IssuedRefilledQty" min="0" max="@line.MaxRefilled" value="0" data-row="single" />
+                    </div>
+                </div>
+                <div class="small text-muted fst-italic">
+                    Stock: Brand New=@line.AvailableBrandNewStock, Refilled=@line.AvailableRefilledStock &nbsp; (Requested: @line.RequestedQty)
+                </div>
+            }
+            else
+            {
+                for (int i = 0; i < form.Lines.Count; i++)
+                {
+                    var line = form.Lines[i];
+                    <div class="cx-multimodel-row" data-row="multi-@i">
+                        <input type="hidden" name="Lines[@i].ReqId" value="@line.ReqId" />
+                        <input type="hidden" name="Lines[@i].RequestModelId" value="@line.RequestModelId" />
+                        <input type="hidden" name="Lines[@i].CartridgeModelId" value="@line.CartridgeModelId" />
+                        <input type="hidden" name="Lines[@i].DisplayModel" value="@line.DisplayModel" />
+                        <input type="hidden" name="Lines[@i].RequestedQty" value="@line.RequestedQty" />
+                        <input type="hidden" name="Lines[@i].GoodEmptyQty" value="@line.GoodEmptyQty" />
+                        <input type="hidden" name="Lines[@i].DamagedEmptyQty" value="@line.DamagedEmptyQty" />
+                        <input type="hidden" name="Lines[@i].AvailableBrandNewStock" value="@line.AvailableBrandNewStock" />
+                        <input type="hidden" name="Lines[@i].AvailableRefilledStock" value="@line.AvailableRefilledStock" />
+
+                        <div class="fw-bold small mb-2">Req #@line.ReqId — @line.DisplayModel</div>
+                        <div class="row g-2 align-items-end mb-2">
+                            <div class="col-auto">
+                                <label class="form-label small mb-1">Brand New</label>
+                                <input type="number" class="form-control form-control-sm cartridge-bn-input" style="width:100px;"
+                                       name="Lines[@i].IssuedBrandNewQty" min="0" max="@line.MaxBrandNew" value="0"
+                                       data-requested="@line.RequestedQty" data-avail-bn="@line.AvailableBrandNewStock" data-avail-rf="@line.AvailableRefilledStock"
+                                       data-model="@line.DisplayModel" data-row="multi-@i" />
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label small mb-1">Refilled</label>
+                                <input type="number" class="form-control form-control-sm cartridge-rf-input" style="width:100px;"
+                                       name="Lines[@i].IssuedRefilledQty" min="0" max="@line.MaxRefilled" value="0" data-row="multi-@i" />
+                            </div>
+                        </div>
+                        <div class="small text-muted fst-italic mb-1">
+                            Stock: Brand New=@line.AvailableBrandNewStock, Refilled=@line.AvailableRefilledStock &nbsp; (Requested: @line.RequestedQty)
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="small">
+                                Returned Empty: <strong class="text-danger">@line.RequestedQty</strong>
+                                &nbsp; Issued: <strong class="text-success cx-row-issued" data-row-target="multi-@i">0</strong>
+                                &nbsp; Pending: <strong class="cx-row-pending" data-row-target="multi-@i" style="color:#E67E22;">@line.RequestedQty</strong>
+                            </div>
+                            <span class="cx-status-badge cx-row-status" data-row-target="multi-@i" style="background:#E74C3C;">Unfulfilled</span>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        @* ── Step 3B: Returned (Empty) Cartridges ── *@
+        <div class="cx-section-card" style="border-left:3px solid #D03020;">
+            <div class="cx-section-title" style="color:#D03020;">Step 3B: Returned (Empty) Cartridges</div>
+
+            @if (!form.IsMultiModel)
+            {
+                var line = form.Lines[0];
+                <div class="row">
+                    <div class="col-5">
+                        <div class="cx-panel-field"><span class="lbl">Returned Empty Qty:</span><span class="val fw-bold text-danger">@line.RequestedQty</span></div>
+                        <div class="cx-panel-field"><span class="lbl">Issued Full Qty:</span><span class="val fw-bold text-success" id="cxIssuedFullQty">0</span></div>
+                        <div class="cx-panel-field"><span class="lbl">Pending (Unfulfilled):</span><span class="val fw-bold" id="cxPendingQty" style="color:#E67E22;">@line.RequestedQty</span></div>
+                    </div>
+                    <div class="col-7">
+                        <div class="cx-panel-field"><span class="lbl">Status:</span>
+                            <span class="cx-status-badge" id="cxStatusBadge" style="background:#E74C3C;">Unfulfilled</span>
+                        </div>
+                        <div class="lbl small mb-1">Remarks:</div>
+                        <textarea class="form-control form-control-sm" id="cxAutoRemarks" readonly rows="3" style="font-size:.75rem; font-style:italic; background:#f8faff;"></textarea>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p class="small fst-italic text-muted mb-0">
+                    Returned quantities are automatically recorded per model (equals requested qty per model).
+                </p>
+            }
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-danger flex-fill">
+                <i class="bi bi-check2-circle"></i> Fulfill Request
+            </button>
+            <a class="btn btn-outline-secondary" asp-controller="CartridgeExchange" asp-action="Index">Clear</a>
+        </div>
+    </form>
+
+    <form asp-action="ForceDelete" method="post" id="forceDeleteForm" class="mt-2" onsubmit="return confirmForceDelete(@Model.SelectedReqId);">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="reqId" value="@Model.SelectedReqId" />
+        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+            <i class="bi bi-exclamation-octagon"></i> Force Delete (Req #@Model.SelectedReqId)
+        </button>
+    </form>
+}

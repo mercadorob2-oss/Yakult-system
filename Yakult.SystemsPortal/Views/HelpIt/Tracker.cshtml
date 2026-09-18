@@ -1,0 +1,230 @@
+@model HelpItTrackerViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Track an IT Ticket";
+    var successMessage = ViewData["SuccessMessage"] as string;
+
+    string StatusPillClass(string status) => (status ?? string.Empty).Trim().ToLowerInvariant() switch
+    {
+        "pending" => "is-offline",
+        "open" => "is-maintenance",
+        "in progress" or "escalated" => "is-maintenance",
+        "solved" or "resolved (temporary)" or "closed" => "is-operational",
+        _ => "is-offline"
+    };
+}
+
+<header class="section-hero">
+    <div class="portal-container">
+        <span class="portal-eyebrow">IT Help Center</span>
+        <h1>Ticket tracker</h1>
+        <p>All Help IT tickets currently in the queue, including status and who's handling each one.</p>
+        <div class="portal-cta-row" style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
+            <a class="portal-button" asp-controller="HelpIt" asp-action="Index">Submit a new ticket <span aria-hidden="true">→</span></a>
+        </div>
+    </div>
+</header>
+
+<section class="portal-container portal-listing">
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="help-it-alert help-it-alert--success">@successMessage</div>
+    }
+
+    <div class="help-it-card">
+        <form asp-controller="HelpIt" asp-action="Tracker" method="get" class="help-it-filter-bar">
+            <input type="text" name="Search" value="@Model.Filter.Search" placeholder="Search ticket code, issue, caller, company..." />
+
+            <select name="Status">
+                <option value="" selected="@(string.IsNullOrEmpty(Model.Filter.Status))">All statuses</option>
+                <option value="pending" selected="@(Model.Filter.Status == "pending")">Pending</option>
+                <option value="solved" selected="@(Model.Filter.Status == "solved")">Solved</option>
+            </select>
+
+            <select name="Priority">
+                <option value="">All priorities</option>
+                @foreach (var option in HelpItTrackerViewModel.PriorityOptions)
+                {
+                    <option value="@option" selected="@(Model.Filter.Priority == option)">@option</option>
+                }
+            </select>
+
+            <select name="IssueType">
+                <option value="">All issue types</option>
+                @foreach (var option in HelpItTrackerViewModel.IssueTypeOptions)
+                {
+                    <option value="@option" selected="@(Model.Filter.IssueType == option)">@option</option>
+                }
+            </select>
+
+            <button type="submit" class="portal-button portal-button--light">Filter</button>
+        </form>
+
+        @if (Model.IsAdministrator && !Model.HasTicketSearch && !Model.IsAllTicketsExpanded)
+        {
+            <div class="help-it-view-all-bar">
+                <span><strong>Administrator view:</strong> the full ticket table is collapsed by default.</span>
+                <a class="portal-button portal-button--small" asp-controller="HelpIt" asp-action="Tracker" asp-route-viewAll="true">View all tickets</a>
+            </div>
+        }
+        else if (!Model.IsAdministrator && !Model.HasTicketSearch)
+        {
+            <div class="help-it-search-guidance">
+                <strong>Search for a ticket to view results</strong>
+                <span>Enter a ticket code or search term above. The full ticket table is available only to administrators.</span>
+            </div>
+        }
+
+        @if (!Model.CanShowTicketTable)
+        {
+            <div class="help-it-empty help-it-empty--search-only">
+                <strong>No ticket list displayed</strong>
+                <span>Use the search box above to look up a ticket or issue.</span>
+            </div>
+        }
+        else if (Model.Tickets.Count == 0)
+        {
+            <div class="help-it-empty">
+                <strong>No tickets found</strong>
+                <span>Try adjusting your search or filters, or submit a new ticket.</span>
+            </div>
+        }
+        else
+        {
+            <div class="help-it-table-wrap">
+                <table class="help-it-table">
+                    <thead>
+                        <tr>
+                            <th>Ticket</th>
+                            <th>Issue</th>
+                            <th>Company / Dept / Branch</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Assigned To</th>
+                            <th>Created</th>
+                            <th>Solved</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ticket in Model.Tickets)
+                        {
+                            <tr>
+                                <td><a class="help-it-ticket-link" href="@Url.RouteUrl("HelpItTicketDetails", new { ticketCode = ticket.TicketCode })" aria-label="View details for ticket @ticket.TicketCode"><strong>@ticket.TicketCode</strong></a><br /><span class="help-it-muted">@ticket.CallerName</span></td>
+                                <td class="help-it-issue-cell">@ticket.Issue</td>
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(ticket.Company) ? "—" : ticket.Company)<br />
+                                    <span class="help-it-muted">@(string.IsNullOrWhiteSpace(ticket.Department) ? "—" : ticket.Department) · @(string.IsNullOrWhiteSpace(ticket.Branch) ? "—" : ticket.Branch)</span>
+                                </td>
+                                <td>@ticket.Priority</td>
+                                <td><span class="admin-status-pill @StatusPillClass(ticket.Status)">@ticket.Status</span></td>
+                                <td>@(string.IsNullOrWhiteSpace(ticket.ResponsiblePerson) ? "Unassigned" : ticket.ResponsiblePerson)</td>
+                                <td>@ticket.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td>
+                                <td>@(ticket.SolvedAt.HasValue ? ticket.SolvedAt.Value.ToLocalTime().ToString("MMM d, yyyy h:mm tt") : "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="help-it-pager">
+                <span>Page @Model.Filter.Page of @Model.TotalPages (@Model.TotalCount total)</span>
+                <div class="help-it-pager__buttons">
+                    <a class="portal-button portal-button--light @(Model.Filter.Page <= 1 ? "is-disabled" : "")"
+                       asp-controller="HelpIt" asp-action="Tracker"
+                       asp-route-Search="@Model.Filter.Search" asp-route-Status="@Model.Filter.Status"
+                       asp-route-Priority="@Model.Filter.Priority" asp-route-IssueType="@Model.Filter.IssueType"
+                       asp-route-Page="@(Model.Filter.Page - 1)" asp-route-PageSize="@Model.Filter.PageSize">Previous</a>
+                    <a class="portal-button portal-button--light @(Model.Filter.Page >= Model.TotalPages ? "is-disabled" : "")"
+                       asp-controller="HelpIt" asp-action="Tracker"
+                       asp-route-Search="@Model.Filter.Search" asp-route-Status="@Model.Filter.Status"
+                       asp-route-Priority="@Model.Filter.Priority" asp-route-IssueType="@Model.Filter.IssueType"
+                       asp-route-Page="@(Model.Filter.Page + 1)" asp-route-PageSize="@Model.Filter.PageSize">Next</a>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+<style>
+    .help-it-view-all-bar, .help-it-search-guidance { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; padding: 12px 14px; border: 1px solid var(--portal-line); border-radius: 10px; background: var(--portal-soft); color: var(--portal-muted); font-size: .78rem; }
+    .help-it-view-all-bar strong { color: var(--portal-navy); }
+    .help-it-search-guidance { justify-content: flex-start; flex-direction: column; align-items: flex-start; background: #fff8f8; border-color: #f0c7c9; }
+    .help-it-search-guidance strong { color: var(--portal-navy); }
+    .help-it-search-guidance span { color: var(--portal-muted); }
+    .help-it-empty--search-only { margin-top: 8px; }
+    .help-it-view-all-bar .portal-button--small { width: auto; min-height: 36px; padding: 8px 12px; font-size: .72rem; white-space: nowrap; }
+    @@media (max-width: 620px) { .help-it-view-all-bar { align-items: stretch; flex-direction: column; } .help-it-view-all-bar .portal-button--small { width: 100%; } }
+    .help-it-filter-bar {
+        display: grid;
+        grid-template-columns: 2fr repeat(3, 1fr) auto;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .help-it-filter-bar input,
+    .help-it-filter-bar select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid rgba(15, 23, 42, 0.18);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-family: inherit;
+    }
+    .help-it-table-wrap { overflow-x: auto; }
+    .help-it-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    .help-it-table th {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+        opacity: .7;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+    .help-it-table td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        vertical-align: top;
+    }
+    .help-it-issue-cell {
+        max-width: 320px;
+        white-space: pre-wrap;
+    }
+    .help-it-muted { opacity: .6; font-size: 0.82rem; }
+    .help-it-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 48px 12px;
+        text-align: center;
+        opacity: .75;
+    }
+    .help-it-pager {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 16px;
+        font-size: 0.85rem;
+        opacity: .85;
+    }
+    .help-it-pager__buttons { display: flex; gap: 8px; }
+    .help-it-pager__buttons .is-disabled {
+        opacity: .4;
+        pointer-events: none;
+    }
+    .help-it-alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+    }
+    .help-it-alert--success {
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #15803d;
+    }
+</style>

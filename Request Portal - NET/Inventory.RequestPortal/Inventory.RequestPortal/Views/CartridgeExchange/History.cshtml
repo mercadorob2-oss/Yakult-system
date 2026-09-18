@@ -1,0 +1,224 @@
+@model List<Inventory.RequestPortal.Models.FulfilledCartridgeRowDto>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Fulfilled Cartridges";
+
+    // Mirrors Wpf/CartridgeManagement/Views/FulfilledCartridgesView.xaml + FulfilledCartridgesViewModel.cs:
+    // row-select (not per-row action links) driving toolbar Open/Reprint buttons, client-side
+    // search across the same fields as ApplyFilter (SetCode/RequesterName/CompanyName/
+    // BranchName/DepartmentName/CartridgeModel/ReceivedByName/ReqId), sortable columns
+    // (native WPF DataGrid column-header click-to-sort), and a fixed TOTAL RECORDS stat card that
+    // does NOT shrink when the search filters rows (only the pagination record count does).
+    // Deliberate web-only deviations from desktop: PageSize=10 (desktop uses 25) and a light-red
+    // header (desktop uses blue #4E9AFC) — both requested for this port specifically.
+    //
+    // AG Grid pilot page: rendered via the shared YakultGrid wrapper (see wwwroot/js/yakult-grid.js)
+    // instead of a hand-rolled <table> + vanilla-JS search/sort/pagination.
+
+    var rows = Model.Select(r => new
+    {
+        setId = r.SetId,
+        setCode = r.SetCode,
+        fulfilledAtDisplay = r.FulfilledAtDisplay,
+        fulfilledSort = r.FulfilledAt.ToString("yyyy-MM-ddTHH:mm:ss"),
+        reqId = r.ReqId,
+        requester = r.RequesterName,
+        company = r.CompanyName,
+        department = r.DepartmentName,
+        branch = r.BranchName,
+        model = r.CartridgeModel,
+        qty = r.TotalIssuedQty,
+        receivedBy = r.ReceivedByName
+    });
+    var rowsJson = JsonSerializer.Serialize(rows);
+}
+
+@await Html.PartialAsync("_CartridgeManagementNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Fulfilled Cartridges</h1>
+        <p class="subtitle mb-0">History of fulfilled cartridge requests &bull; Select a row, then Open to review full details or Reprint to reprint a transmittal form</p>
+    </div>
+
+    @* TOTAL RECORDS card, right-aligned in the header band (View Items pattern). *@
+    <div class="fc-header-stats ms-auto">
+        <div class="fc-stat"><div class="v" id="fcTotalRecords">@Model.Count</div><div class="l">Total Records</div></div>
+    </div>
+</div>
+
+<div class="content-padded">
+    <style>
+        .fc-header-stats { display: flex; align-items: center; gap: 8px; }
+        .fc-stat { display: flex; flex-direction: column; justify-content: center;
+                   height: 40px; min-width: 112px; padding: 0 12px;
+                   background: #fff; border: 1px solid var(--border-muted, #dde3ec); border-radius: 7px;
+                   border-left: 3px solid #4E9AFC; }
+        .fc-stat .v { font-size: 14px; font-weight: 700; color: var(--text-strong, #1a2333); line-height: 1.15; }
+        .fc-stat .l { font-size: 7px; font-weight: 600; color: var(--text-muted, #6b7a8d); letter-spacing: .04em; text-transform: uppercase; }
+        @@media (max-width: 991.98px) { .fc-header-stats { display: none; } }
+
+        /* Single action bar — Open / Reprint + search (left), Refresh (right). */
+        .fc-toolbar-card { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+                           background: #fff; border: 1px solid var(--border-muted, #dde3ec); border-radius: 10px;
+                           padding: 8px 12px; margin-bottom: 12px; }
+        .fc-search { display: flex; align-items: center; gap: 6px; flex: 1 1 260px; max-width: 460px;
+                     height: 31px; padding: 0 10px;
+                     border: 1px solid #c2ccda; border-radius: 5px; background: #fff; }
+        .fc-search i { color: #7a8a9a; font-size: .82rem; }
+        .fc-search input { flex: 1; border: 0; outline: 0; background: transparent; font-size: .8rem; }
+        .fc-toolbar-card .fc-refresh { margin-left: auto; }
+
+        /* Lock this page to the viewport: no outer page scrollbar — only the grid
+           scrolls, and the footer is always visible. (Scoped to this view.) */
+        html, body { overflow: hidden; }
+        .page-wrapper { height: 100vh; min-height: 0; }
+        .page-wrapper > main[role="main"] { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        main[role="main"] > .portal-header { flex: 0 0 auto; }
+        main[role="main"] > .content-padded { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .content-padded > .fc-toolbar-card,
+        .content-padded > .alert { flex: 0 0 auto; }
+        .content-padded > .card { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin-bottom: 0; }
+        .content-padded > .card > .card-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        #fcGrid.yg-grid { flex: 1 1 auto; min-height: 160px; height: auto; }
+    </style>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="fc-toolbar-card">
+        <button type="button" id="fcBtnOpen" class="btn btn-primary btn-sm" disabled>
+            <i class="bi bi-eye"></i> Open
+        </button>
+        <button type="button" id="fcBtnReprint" class="btn btn-success btn-sm" disabled>
+            <i class="bi bi-printer"></i> Reprint
+        </button>
+
+        <div class="fc-search">
+            <i class="bi bi-search"></i>
+            <input type="text" id="fcSearchBox"
+                   placeholder="Search by set code, requester, company, branch, department, model, or received by">
+        </div>
+
+        <button type="button" id="fcBtnRefresh" class="btn btn-outline-primary btn-sm fc-refresh" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div id="fcGrid" class="yg-grid"></div>
+        </div>
+    </div>
+</div>
+
+@* Row-detail popup — replaces navigating to the standalone Detail page. *@
+<div class="modal fade" id="fcDetailModal" tabindex="-1" aria-labelledby="fcDetailTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fcDetailTitle">Fulfilled Cartridge Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="fcDetailBody">
+                <div class="text-center text-muted py-4">Loading&hellip;</div>
+            </div>
+            <div class="modal-footer">
+                <a id="fcDetailReprint" class="btn btn-success btn-sm" href="#">
+                    <i class="bi bi-printer"></i> Reprint
+                </a>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var rowData = @Html.Raw(rowsJson);
+            var btnOpen = document.getElementById('fcBtnOpen');
+            var btnReprint = document.getElementById('fcBtnReprint');
+            var searchBox = document.getElementById('fcSearchBox');
+            var selected = null;
+
+            var detailModal = new bootstrap.Modal(document.getElementById('fcDetailModal'));
+            var detailBody = document.getElementById('fcDetailBody');
+            var detailTitle = document.getElementById('fcDetailTitle');
+            var detailReprint = document.getElementById('fcDetailReprint');
+
+            function openDetail(row) {
+                if (!row) return;
+                detailTitle.textContent = 'Set ' + row.setCode;
+                detailReprint.href = '@Url.Action("Reprint", "CartridgeExchange")?setId=' + row.setId;
+                detailBody.innerHTML = '<div class="text-center text-muted py-4">Loading&hellip;</div>';
+                detailModal.show();
+                fetch('@Url.Action("DetailPartial", "CartridgeExchange")/' + row.setId, { credentials: 'same-origin' })
+                    .then(function (r) { return r.ok ? r.text() : Promise.reject(r.status); })
+                    .then(function (html) { detailBody.innerHTML = html; })
+                    .catch(function () {
+                        detailBody.innerHTML = '<div class="text-center text-danger py-4">Could not load details.</div>';
+                    });
+            }
+
+            var columnDefs = [
+                { field: 'setCode', headerName: 'Set Code', minWidth: 110 },
+                {
+                    headerName: 'Fulfilled',
+                    valueGetter: function (p) { return p.data.fulfilledAtDisplay; },
+                    comparator: function (a, b, nodeA, nodeB) {
+                        var sa = (nodeA.data && nodeA.data.fulfilledSort) || '';
+                        var sb = (nodeB.data && nodeB.data.fulfilledSort) || '';
+                        return sa < sb ? -1 : sa > sb ? 1 : 0;
+                    },
+                    minWidth: 110
+                },
+                { field: 'reqId', headerName: 'Req ID', type: 'numericColumn', filter: 'agNumberColumnFilter', minWidth: 90 },
+                { field: 'requester', headerName: 'Requester', flex: 1.4 },
+                { field: 'company', headerName: 'Company', flex: 1 },
+                { field: 'department', headerName: 'Department', flex: 1.3 },
+                { field: 'branch', headerName: 'Branch', flex: 1.3 },
+                { field: 'model', headerName: 'Cartridge Model', flex: 1.2 },
+                { field: 'qty', headerName: 'Qty', type: 'numericColumn', filter: 'agNumberColumnFilter', minWidth: 80 },
+                { field: 'receivedBy', headerName: 'Received By', flex: 1.3 }
+            ];
+
+            var grid = YakultGrid.create('fcGrid', {
+                columnDefs: columnDefs,
+                rowData: rowData,
+                pageSize: 6,
+                noRowsMessage: 'No fulfilled cartridge sets found.',
+                onSelectionChanged: function (row) {
+                    selected = row;
+                    btnOpen.disabled = !row;
+                    btnReprint.disabled = !row;
+                },
+                onRowDoubleClicked: openDetail,
+                gridOptions: {
+                    onRowClicked: function (params) { openDetail(params.data); }
+                }
+            });
+
+            searchBox.addEventListener('input', function () {
+                grid.search(searchBox.value);
+            });
+
+            btnOpen.addEventListener('click', function () {
+                openDetail(selected);
+            });
+            btnReprint.addEventListener('click', function () {
+                if (!selected) return;
+                window.location.href = '@Url.Action("Reprint", "CartridgeExchange")?setId=' + selected.setId;
+            });
+        })();
+    </script>
+}

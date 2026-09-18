@@ -1,0 +1,104 @@
+@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
+@{
+    var csrfToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Yakult ITCM Server — centralized IT Call Monitoring scheduler and notification dashboard.">
+  <meta name="csrf-token" content="@csrfToken">
+  <title>Yakult ITCM Server</title>
+  <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true">
+  <script>
+    // Apply saved theme before paint to avoid flash
+    (function() {
+      var t = localStorage.getItem('itcm-theme');
+      if (t === 'dark') document.documentElement.setAttribute('data-theme','dark');
+      else if (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.setAttribute('data-theme','dark');
+    })();
+  </script>
+</head>
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <div class="app-shell">
+    <!-- ── Sidebar ── -->
+    <nav class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+      <div class="sidebar-logo">
+        <div class="logo-icon" aria-hidden="true">IT</div>
+        <div class="logo-text">
+          ITCM Server
+          <span>Scheduler Dashboard</span>
+        </div>
+      </div>
+
+      <div class="sidebar-user">
+        @if (User.HasClaim("ItcmAdministrator", "true"))
+        {
+          <div class="sidebar-user-avatar">@(string.IsNullOrWhiteSpace(User.Identity?.Name) ? "A" : User.Identity!.Name!.Substring(0, 1).ToUpperInvariant())</div>
+          <div class="sidebar-user-copy"><strong>@(User.Identity?.Name ?? "Administrator")</strong><span>ITCM Administrator</span></div>
+        }
+        else if (User.Identity?.IsAuthenticated == true)
+        {
+          <div class="sidebar-user-avatar">@(string.IsNullOrWhiteSpace(User.Identity?.Name) ? "V" : User.Identity!.Name!.Substring(0, 1).ToUpperInvariant())</div>
+          <div class="sidebar-user-copy"><strong>@(User.Identity?.Name ?? "Viewer")</strong><span>Read-only viewer</span></div>
+        }
+        else
+        {
+          <div class="sidebar-user-avatar">G</div>
+          <div class="sidebar-user-copy"><strong>Guest</strong><span>Read-only viewer</span></div>
+        }
+      </div>
+
+      <div class="sidebar-nav">
+        <div class="nav-section-label">Monitor</div>
+        <a href="/" class="nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active" : "")"
+           aria-current="@(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "page" : null)">
+          <span class="nav-icon" aria-hidden="true">📊</span>
+          <span class="nav-label">Dashboard</span>
+        </a>
+
+        <div class="nav-section-label" style="margin-top:8px">System</div>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+          <a href="/Config" class="nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Config" ? "active" : "")"
+             aria-current="@(ViewContext.RouteData.Values["page"]?.ToString() == "/Config" ? "page" : null)">
+            <span class="nav-icon" aria-hidden="true">⚙️</span>
+            <span class="nav-label">Configuration@(User.HasClaim("ItcmAdministrator", "true") ? "" : " 🔒")</span>
+          </a>
+        }
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="nav-item" onclick="toggleTheme()" id="themeToggle" aria-label="Toggle theme">
+          <span class="nav-icon" aria-hidden="true" id="themeIcon">🌙</span>
+          <span class="nav-label" id="themeLabel">Dark mode</span>
+        </button>
+        <button class="nav-item" onclick="toggleSidebar()" aria-label="Collapse sidebar" id="collapseBtn">
+          <span class="nav-icon" aria-hidden="true">◀</span>
+          <span class="nav-label">Collapse</span>
+        </button>
+        <form method="post" action="/Account/Logout" style="margin:0">
+          @Html.AntiForgeryToken()
+          <button type="submit" class="nav-item" aria-label="Sign out">
+            <span class="nav-icon" aria-hidden="true">↪</span>
+            <span class="nav-label">Sign out</span>
+          </button>
+        </form>
+      </div>
+    </nav>
+
+    <!-- ── Page content ── -->
+    <div class="page-content" id="pageContent">
+      @RenderBody()
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="~/js/dashboard.js" asp-append-version="true"></script>
+</body>
+</html>

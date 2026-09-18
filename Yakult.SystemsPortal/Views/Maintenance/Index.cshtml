@@ -1,0 +1,60 @@
+@model PortalNoticeSettings
+@{
+    Layout = null;
+    var title = string.IsNullOrWhiteSpace(Model.Title)
+        ? "We’re improving the Yakult Systems Portal"
+        : Model.Title;
+    var message = string.IsNullOrWhiteSpace(Model.Message)
+        ? "The portal is temporarily unavailable while scheduled maintenance is completed. Please try again shortly."
+        : Model.Message;
+    var schedule = Model.EndUtc.HasValue
+        ? $"Expected availability: {Model.EndUtc.Value.ToUniversalTime():MMMM dd, yyyy · HH:mm} UTC"
+        : "Our team is working to restore access as soon as possible.";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@title - Yakult Systems Portal</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        :root { color-scheme: light; }
+        .maintenance-page { min-height: 100vh; display: grid; place-items: center; padding: 32px; background: #fff; color: #132944; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; }
+        .maintenance-page::before, .maintenance-page::after { content: ""; position: fixed; pointer-events: none; }
+        .maintenance-page::before { inset: 0 0 auto 0; height: 36px; background: #132944; }
+        .maintenance-page::after { width: 540px; height: 540px; right: -170px; top: 18%; border-radius: 50%; background: #fbe8e8; opacity: .9; }
+        .maintenance-card { position: relative; z-index: 1; width: min(100%, 760px); padding: clamp(34px, 7vw, 76px); border: 1px solid #d9e1ea; border-top: 5px solid #df1421; border-radius: 4px; background: #fff; box-shadow: 0 18px 48px rgba(19,41,68,.12); text-align: left; }
+        .maintenance-brand { display: inline-flex; align-items: center; gap: 10px; color: #132944; font-size: .9rem; font-weight: 800; letter-spacing: .03em; }
+        .maintenance-brand__mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #df1421; color: #fff; font-size: 1.15rem; font-weight: 900; }
+        .maintenance-status { display: inline-flex; align-items: center; gap: 9px; margin: 54px 0 18px; color: #df1421; font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+        .maintenance-status__dot { width: 8px; height: 8px; border-radius: 50%; background: #df1421; }
+        .maintenance-card h1 { max-width: 620px; margin: 0; color: #132944; font-size: clamp(2.2rem, 6vw, 4.2rem); line-height: 1.08; letter-spacing: -.055em; }
+        .maintenance-card p { max-width: 620px; margin: 22px 0 0; color: #55708e; font-size: clamp(1rem, 2vw, 1.15rem); line-height: 1.75; }
+        .maintenance-schedule { margin: 28px 0 0; padding: 14px 18px; border-left: 3px solid #df1421; background: #f8fafc; color: #38516c; font-size: .92rem; }
+        .maintenance-actions { display: flex; justify-content: flex-start; margin-top: 28px; }
+        .maintenance-refresh { min-height: 44px; padding: 0 20px; border: 0; border-radius: 3px; background: #df1421; color: #fff; cursor: pointer; font: inherit; font-size: .9rem; font-weight: 800; transition: background .18s ease, transform .18s ease; }
+        .maintenance-refresh:hover { background: #b90f1a; transform: translateY(-1px); }
+        .maintenance-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 42px; color: #8aa0b6; font-size: .78rem; }
+        .maintenance-admin-link { color: #8aa0b6; opacity: .55; font-weight: 600; text-decoration: none; white-space: nowrap; transition: color .18s ease, opacity .18s ease; }
+        .maintenance-admin-link:hover, .maintenance-admin-link:focus-visible { color: #132944; opacity: 1; text-decoration: underline; text-underline-offset: 3px; }
+        .maintenance-admin-link:focus-visible { outline: 2px solid #df1421; outline-offset: 4px; border-radius: 2px; }
+        @@media (max-width: 560px) { .maintenance-page { padding: 20px; } .maintenance-card { padding: 32px 24px; } .maintenance-status { margin-top: 42px; } .maintenance-footer { align-items: flex-start; flex-direction: column; } }
+    </style>
+</head>
+<body class="maintenance-page">
+    <main class="maintenance-card" role="main" aria-labelledby="maintenanceTitle">
+        <div class="maintenance-brand"><span class="maintenance-brand__mark" aria-hidden="true"></span>Yakult Systems Portal</div>
+        <div class="maintenance-status"><span class="maintenance-status__dot" aria-hidden="true"></span>Important notice</div>
+        <h1 id="maintenanceTitle">@title</h1>
+        <p>@message</p>
+        <div class="maintenance-schedule">@schedule</div>
+        <div class="maintenance-actions"><button type="button" class="maintenance-refresh" onclick="window.location.reload()">Check portal availability</button></div>
+        <footer class="maintenance-footer">
+            <span>We appreciate your patience while this service is being improved.</span>
+            <a class="maintenance-admin-link" href="@Url.Action("Settings", "Admin")" rel="nofollow">Admin access</a>
+        </footer>
+    </main>
+</body>
+</html>

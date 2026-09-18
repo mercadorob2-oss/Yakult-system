@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <connectionStrings>
+    <add name="Yakult_Inventory_System"
+         connectionString="Server=YOUR_SQL_HOST;Database=YIMS;Integrated Security=true;TrustServerCertificate=False"
+         providerName="System.Data.SqlClient" />
+  </connectionStrings>
+</configuration>

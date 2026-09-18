@@ -1,0 +1,177 @@
+@using Yakult.SystemsPortal.Services
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentUser = User.Identity?.Name;
+    var demoMode = Context.RequestServices.GetRequiredService<IDemoModeService>();
+    var canUseDemoMode = demoMode.CanUse(Context);
+    var isDemoModeAvailable = demoMode.IsAvailable;
+    var isDemoModeEnabled = demoMode.IsEnabled(Context);
+    var returnUrl = Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString;
+    string Active(params string[] actions) => actions.Contains(currentAction, StringComparer.OrdinalIgnoreCase) ? "active" : string.Empty;
+    string ActiveController(string controller) => string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Portal Admin</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/demo-data.css" asp-append-version="true" />
+</head>
+<body class="admin-portal admin-portal--official">
+    <a class="skip-link admin-skip-link" href="#admin-main-content">Skip to main content</a>
+
+    <div class="admin-utility">
+        <div class="admin-container admin-utility__inner">
+            <span>Yakult Philippines Incorporated</span>
+            <span>Portal administration</span>
+        </div>
+    </div>
+
+    <header class="admin-header">
+        <div class="admin-container admin-header__inner">
+            <a class="admin-brand" asp-controller="Admin" asp-action="Dashboard" aria-label="Yakult Services Admin home">
+                <span class="admin-brand__mark" aria-hidden="true">Y</span>
+                <span>
+                    <strong>Yakult</strong>
+                    <small>Portal Admin</small>
+                </span>
+            </a>
+
+            <button type="button" class="admin-menu-button" id="adminMenuButton" aria-controls="adminNavigation" aria-expanded="false" aria-label="Open admin navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <nav class="admin-navigation" id="adminNavigation" aria-label="Admin navigation">
+                <div class="admin-navigation__group" aria-label="Operations">
+                    <span class="admin-navigation__label">Operations</span>
+                    <a asp-controller="Admin" asp-action="Dashboard" class="@Active("Dashboard")">Overview</a>
+                    <a asp-controller="Admin" asp-action="Cards" class="@Active("Cards")">Services &amp; Portals</a>
+                    <a asp-controller="Admin" asp-action="Health" class="@Active("Health")">Service Health</a>
+                </div>
+
+                <div class="admin-navigation__group" aria-label="Access and history">
+                    <span class="admin-navigation__label">Access</span>
+                    @if (User.HasClaim("IsDeveloper", "true"))
+                    {
+                        <a asp-controller="Admin" asp-action="AccountRequests" class="@Active("AccountRequests")">Account Requests</a>
+                    }
+                    <a asp-controller="Admin" asp-action="Audit" class="@Active("Audit")">Activity Log</a>
+                </div>
+
+                <div class="admin-navigation__group" aria-label="Content and settings">
+                    <span class="admin-navigation__label">Content</span>
+                    @if (User.IsInRole("ContentEditor") || User.IsInRole("EmployeeResourceEditor") || User.IsInRole("EmployeeResourcePublisher") || User.HasClaim("IsDeveloper", "true"))
+                    {
+                        <a asp-controller="ContentAdmin" asp-action="Index" class="@ActiveController("ContentAdmin")">Learning Content</a>
+                        <a asp-controller="EmployeeResourcesAdmin" asp-action="Index" class="@ActiveController("EmployeeResourcesAdmin")">Employee Resources</a>
+                    }
+                    <a asp-controller="Admin" asp-action="Settings" class="@Active("Settings")">Portal Notice</a>
+                </div>
+
+                @if (User.HasClaim("IsDeveloper", "true"))
+                {
+                    <div class="admin-navigation__group admin-navigation__group--system" aria-label="System configuration">
+                        <span class="admin-navigation__label">System</span>
+                        <a asp-controller="Admin" asp-action="ConnectionProperties" class="@Active("ConnectionProperties", "UnlockConnectionPage")">Database Connection</a>
+                    </div>
+                }
+            </nav>
+
+            <div class="admin-user-actions">
+                @if (isDemoModeAvailable && canUseDemoMode)
+                {
+                    <form asp-controller="Public" asp-action="SetDemoMode" method="post" class="portal-demo-toggle-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                        <input type="hidden" name="enabled" value="@(isDemoModeEnabled ? "false" : "true")" />
+                        <button type="submit" class="portal-demo-toggle" aria-pressed="@isDemoModeEnabled">
+                            @(isDemoModeEnabled ? "Exit demo view" : "View demo data")
+                        </button>
+                    </form>
+                }
+                <details class="admin-portal-dropdown" id="adminPortalDropdown">
+                    <summary aria-label="Open portal menu">Portal Menu <span aria-hidden="true">▾</span></summary>
+                    <div class="admin-portal-dropdown__panel">
+                        <a class="admin-portal-dropdown__link" asp-controller="Public" asp-action="Services">Public Services</a>
+                        <div class="admin-portal-dropdown__user" aria-label="Signed in administrator">
+                            <span class="admin-user-summary__avatar" aria-hidden="true">A</span>
+                            <span><small>Signed in</small><strong>@(string.IsNullOrWhiteSpace(currentUser) ? "Administrator" : currentUser)</strong></span>
+                        </div>
+                        <form asp-controller="Home" asp-action="Logout" method="post" class="admin-logout-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="admin-portal-dropdown__logout">Logout</button>
+                        </form>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </header>
+
+    <main class="admin-main" id="admin-main-content">
+        <section class="admin-page-heading">
+            <div class="admin-container">
+                <span class="eyebrow">Portal administration</span>
+                <h1>@ViewData["Title"]</h1>
+            </div>
+        </section>
+
+        <div class="admin-container admin-content">
+            @RenderBody()
+        </div>
+    </main>
+
+    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+        window.yakultToast = function(message, type) {
+            var region = document.getElementById('toastRegion');
+            if (!region || !message) return;
+            var toast = document.createElement('div');
+            toast.className = 'portal-toast portal-toast--' + (type || 'info');
+            toast.innerHTML = '<span class="portal-toast__dot"></span><span>' + String(message)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;') + '</span>';
+            region.appendChild(toast);
+            window.setTimeout(function() {
+                toast.classList.add('is-leaving');
+                window.setTimeout(function() { toast.remove(); }, 220);
+            }, 3600);
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var button = document.getElementById('adminMenuButton');
+            var nav = document.getElementById('adminNavigation');
+            var dropdown = document.getElementById('adminNavigationDropdown');
+            var portalDropdown = document.getElementById('adminPortalDropdown');
+            if (!button || !nav) return;
+
+            button.addEventListener('click', function() {
+                var open = nav.classList.toggle('is-open');
+                button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+
+            document.addEventListener('click', function(event) {
+                if (dropdown?.open && !dropdown.contains(event.target)) {
+                    dropdown.removeAttribute('open');
+                }
+                if (portalDropdown?.open && !portalDropdown.contains(event.target)) {
+                    portalDropdown.removeAttribute('open');
+                }
+                if (!nav.classList.contains('is-open')) return;
+                if (nav.contains(event.target) || button.contains(event.target)) return;
+                nav.classList.remove('is-open');
+                button.setAttribute('aria-expanded', 'false');
+            });
+        });
+    </script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

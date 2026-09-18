@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Compilation Error</title>
+        <meta name="viewport" content="width=device-width" />
+        <style>
+         body {font-family:"Verdana";font-weight:normal;font-size: .7em;color:black;} 
+         p {font-family:"Verdana";font-weight:normal;color:black;margin-top: -5px}
+         b {font-family:"Verdana";font-weight:bold;color:black;margin-top: -5px}
+         H1 { font-family:"Verdana";font-weight:normal;font-size:18pt;color:red }
+         H2 { font-family:"Verdana";font-weight:normal;font-size:14pt;color:maroon }
+         pre {font-family:"Consolas","Lucida Console",Monospace;font-size:11pt;margin:0;padding:0.5em;line-height:14pt}
+         .marker {font-weight: bold; color: black;text-decoration: none;}
+         .version {color: gray;}
+         .error {margin-bottom: 10px;}
+         .expandable { text-decoration:underline; font-weight:bold; color:navy; cursor:pointer; }
+         @media screen and (max-width: 639px) {
+          pre { width: 440px; overflow: auto; white-space: pre-wrap; word-wrap: break-word; }
+         }
+         @media screen and (max-width: 479px) {
+          pre { width: 280px; }
+         }
+        </style>
+    </head>
+
+    <body bgcolor="white">
+
+            <span><H1>Server Error in '/' Application.<hr width=100% size=1 color=silver></H1>
+
+            <h2> <i>Compilation Error</i> </h2></span>
+
+            <font face="Arial, Helvetica, Geneva, SunSans-Regular, sans-serif ">
+
+            <b> Description: </b>An error occurred during the compilation of a resource required to service this request. Please review the following specific error details and modify your source code appropriately.
+            <br><br>
+
+            <b> Compiler Error Message: </b>CS1002: ; expected<br><br>
+<b>Source Error:</b><br><br>
+            <table width=100% bgcolor="#ffffcc">
+               <tr><td>
+                              </td></tr>
+               <tr>
+                  <td>
+                      <code><pre>
+
+Line 12: public class SetImageUploadHandler : IHttpHandler
+Line 13: {
+<font color=red>Line 14:     private string ConnectionString =&gt; ConfigurationManager.ConnectionStrings[&quot;Yakult_Inventory_System&quot;]?.ConnectionString;
+</font>Line 15: 
+Line 16:     public void ProcessRequest(HttpContext context)</pre></code>
+
+                  </td>
+               </tr>
+            </table>
+
+            <br>
+
+            <b>Source File:</b> c:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx
+            &nbsp;&nbsp; <b>Line:</b>  14
+            <br><br>
+<br><div class="expandable" onclick="OnToggleTOCLevel1('compilerOutputDiv')">Show Detailed Compiler Output:</div>
+<div id="compilerOutputDiv" style="display: none;">
+            <br>            <table width=100% bgcolor="#ffffcc">
+               <tr>
+                  <td>
+                      <code><pre>c:\windows\system32\inetsrv&gt; &quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe&quot; /t:library /utf8output /R:&quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\assembly\dl3\f88c117f\dd82d603_4fb7dc01\System.Web.Http.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Web.DynamicData\v4.0_4.0.0.0__31bf3856ad364e35\System.Web.DynamicData.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_64\System.Web\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Web.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Xml\v4.0_4.0.0.0__b77a5c561934e089\System.Xml.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Runtime.Serialization\v4.0_4.0.0.0__b77a5c561934e089\System.Runtime.Serialization.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_64\System.Data\v4.0_4.0.0.0__b77a5c561934e089\System.Data.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.IdentityModel\v4.0_4.0.0.0__b77a5c561934e089\System.IdentityModel.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Xml.Linq\v4.0_4.0.0.0__b77a5c561934e089\System.Xml.Linq.dll&quot; /R:&quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\assembly\dl3\5a0c8297\4e7925d1_89c5dc01\App_global.asax.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Activities\v4.0_4.0.0.0__31bf3856ad364e35\System.Activities.dll&quot; /R:&quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\assembly\dl3\36226fb2\dd82d603_4fb7dc01\System.Web.Http.WebHost.dll&quot; /R:&quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\assembly\dl3\2e5144ff\f784d403_4fb7dc01\Newtonsoft.Json.dll&quot; /R:&quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\assembly\dl3\98568eb0\00eac7a6_b34fd901\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll&quot; /R:&quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\assembly\dl3\fc67f28e\244bdad0_89c5dc01\App_Code.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.ServiceModel.Activities\v4.0_4.0.0.0__31bf3856ad364e35\System.ServiceModel.Activities.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_64\System.EnterpriseServices\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.EnterpriseServices.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.ServiceModel.Web\v4.0_4.0.0.0__31bf3856ad364e35\System.ServiceModel.Web.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.WorkflowServices\v4.0_4.0.0.0__31bf3856ad364e35\System.WorkflowServices.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\Microsoft.CSharp\v4.0_4.0.0.0__b03f5f7f11d50a3a\Microsoft.CSharp.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System\v4.0_4.0.0.0__b77a5c561934e089\System.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Drawing\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Drawing.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.ServiceModel\v4.0_4.0.0.0__b77a5c561934e089\System.ServiceModel.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\Microsoft.VisualStudio.Web.PageInspector.Loader\v4.0_1.0.0.0__b03f5f7f11d50a3a\Microsoft.VisualStudio.Web.PageInspector.Loader.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Web.Extensions\v4.0_4.0.0.0__31bf3856ad364e35\System.Web.Extensions.dll&quot; /R:&quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\mscorlib.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Runtime.Caching\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Runtime.Caching.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.ComponentModel.DataAnnotations\v4.0_4.0.0.0__31bf3856ad364e35\System.ComponentModel.DataAnnotations.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Web.Services\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Web.Services.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Core\v4.0_4.0.0.0__b77a5c561934e089\System.Core.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Web.ApplicationServices\v4.0_4.0.0.0__31bf3856ad364e35\System.Web.ApplicationServices.dll&quot; /R:&quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\assembly\dl3\9fd5e527\f784d403_4fb7dc01\System.Net.Http.Formatting.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.ServiceModel.Activation\v4.0_4.0.0.0__31bf3856ad364e35\System.ServiceModel.Activation.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Configuration\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Configuration.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Net.Http\v4.0_4.0.0.0__b03f5f7f11d50a3a\System.Net.Http.dll&quot; /R:&quot;C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Data.DataSetExtensions\v4.0_4.0.0.0__b77a5c561934e089\System.Data.DataSetExtensions.dll&quot; /out:&quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\App_Web_set-image-upload.ashx.cdcab7d2.wibbamf0.dll&quot; /D:DEBUG /debug+ /optimize- /w:4 /nowarn:1659;1699;1701;612;618 /warnaserror-  &quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\App_Web_set-image-upload.ashx.cdcab7d2.wibbamf0.0.cs&quot; &quot;C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Temporary ASP.NET Files\root\5ae14314\bdebb366\App_Web_set-image-upload.ashx.cdcab7d2.wibbamf0.1.cs&quot;
+
+
+Microsoft (R) Visual C# Compiler version 4.8.9221.0
+
+for C# 5
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+
+
+This compiler is provided as part of the Microsoft (R) .NET Framework, but only supports language versions up to C# 5, which is no longer the latest version. For compilers that support newer versions of the C# programming language, see http://go.microsoft.com/fwlink/?LinkID=533240
+
+c:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx(14,37): error CS1002: ; expected
+c:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx(14,78): error CS1519: Invalid token &#39;[&#39; in class, struct, or interface member declaration
+c:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx(14,79): error CS1001: Identifier expected
+c:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx(14,79): error CS1519: Invalid token &#39;&quot;Yakult_Inventory_System&quot;&#39; in class, struct, or interface member declaration
+c:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx(14,123): error CS1519: Invalid token &#39;;&#39; in class, struct, or interface member declaration
+c:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx(234,28): error CS1002: ; expected
+</pre>                      </code>
+
+                  </td>
+               </tr>
+            </table>
+
+            
+
+</div>
+<br><div class="expandable" onclick="OnToggleTOCLevel1('dynamicCodeDiv')">Show Complete Compilation Source:</div>
+<div id="dynamicCodeDiv" style="display: none;">
+            <br>            <table width=100% bgcolor="#ffffcc">
+               <tr>
+                  <td>
+                      <code><pre>Line 1:    #pragma checksum &quot;C:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx&quot; &quot;{8829d00f-11b8-4213-878b-770e8597ac16}&quot; &quot;A3AEBE1FBC8DBC18105E0BFD5B15CCA5CE398612CC71B83ED14C2427B3F76E35&quot;Line 2:    Line 3:    #line 1 &quot;C:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx&quot;Line 4:    Line 5:    Line 6:    using System;Line 7:    using System.Configuration;Line 8:    using System.Data;Line 9:    using System.Data.SqlClient;Line 10:   using System.IO;Line 11:   using System.Threading.Tasks;Line 12:   using System.Web;Line 13:   using Newtonsoft.Json;Line 14:   Line 15:   public class SetImageUploadHandler : IHttpHandlerLine 16:   {Line 17:       private string ConnectionString =&gt; ConfigurationManager.ConnectionStrings[&quot;Yakult_Inventory_System&quot;]?.ConnectionString;Line 18:   Line 19:       public void ProcessRequest(HttpContext context)Line 20:       {Line 21:           context.Response.ContentType = &quot;application/json&quot;;Line 22:   Line 23:           if (string.IsNullOrWhiteSpace(ConnectionString))Line 24:           {Line 25:               ReturnError(context, 503, &quot;Image upload service is not configured. Please contact IT.&quot;, &quot;service_unavailable&quot;);Line 26:               return;Line 27:           }Line 28:   Line 29:           if (context.Request.HttpMethod != &quot;POST&quot;)Line 30:           {Line 31:               ReturnError(context, 405, &quot;Only POST method is allowed.&quot;, &quot;method_not_allowed&quot;);Line 32:               return;Line 33:           }Line 34:   Line 35:           var token = context.Request.QueryString[&quot;token&quot;];Line 36:           var setCode = context.Request.QueryString[&quot;set_code&quot;];Line 37:           Line 38:           // Treat &quot;null&quot; string as actual null (Retrofit can send this)Line 39:           if (token == &quot;null&quot;) token = null;Line 40:           if (setCode == &quot;null&quot;) setCode = null;Line 41:           Line 42:           if (string.IsNullOrWhiteSpace(token) &amp;&amp; string.IsNullOrWhiteSpace(setCode))Line 43:           {Line 44:               ReturnError(context, 400, &quot;Token or set_code is required.&quot;, &quot;missing_identifier&quot;);Line 45:               return;Line 46:           }Line 47:   Line 48:           // Parse the JSON request body firstLine 49:           UploadRequest request;Line 50:           using (var reader = new StreamReader(context.Request.InputStream))Line 51:           {Line 52:               var json = reader.ReadToEnd();Line 53:               request = JsonConvert.DeserializeObject&lt;UploadRequest&gt;(json);Line 54:           }Line 55:   Line 56:           if (request == null || string.IsNullOrWhiteSpace(request.ImageBase64))Line 57:           {Line 58:               ReturnError(context, 400, &quot;Image data is required.&quot;, &quot;missing_image&quot;);Line 59:               return;Line 60:           }Line 61:   Line 62:           Guid? parsedToken = null;Line 63:           if (!string.IsNullOrWhiteSpace(token))Line 64:           {Line 65:               Guid tokenGuid;Line 66:               if (!TryParseScannerToken(token, out tokenGuid, out var message, out var errorCode))Line 67:               {Line 68:                   ReturnError(context, 400, message, errorCode);Line 69:                   return;Line 70:               }Line 71:               parsedToken = tokenGuid;Line 72:           }Line 73:   Line 74:           tryLine 75:           {Line 76:               var result = UploadImageAsync(parsedToken, setCode, request).Result;Line 77:               if (!result.Success)Line 78:               {Line 79:                   ReturnError(context, 404, result.Message, &quot;upload_failed&quot;);Line 80:                   return;Line 81:               }Line 82:   Line 83:               ReturnJson(context, new { Line 84:                   success = true, Line 85:                   message = result.Message, Line 86:                   image_id = result.ImageId,Line 87:                   uploaded_at = result.UploadedAtLine 88:               });Line 89:           }Line 90:           catch (Exception ex)Line 91:           {Line 92:               ReturnError(context, 500, &quot;Failed to upload image.&quot;, &quot;upload_failed&quot;);Line 93:           }Line 94:       }Line 95:   Line 96:       private async Task&lt;UploadResult&gt; UploadImageAsync(Guid? token, string setCode, UploadRequest request)Line 97:       {Line 98:           const string getSetByTokenSql = &quot;SELECT TOP 1 SetId, SetCode FROM dbo.[Set] WHERE QRToken = @Token;&quot;;Line 99:           const string getSetByCodeSql = &quot;SELECT TOP 1 SetId, SetCode FROM dbo.[Set] WHERE SetCode = @SetCode;&quot;;Line 100:          const string insertImageSql = @&quot;Line 101:  INSERT INTO dbo.SetImages (SetId, ImagePath, ImageType, UploadedBy, UploadDate)Line 102:  VALUES (@SetId, @ImagePath, @ImageType, @UploadedBy, @UploadDate);Line 103:  SELECT CAST(SCOPE_IDENTITY() AS INT);&quot;;Line 104:  Line 105:          int setId;Line 106:          string resolvedSetCode;Line 107:  Line 108:          using (var con = new SqlConnection(ConnectionString))Line 109:          {Line 110:              await con.OpenAsync();Line 111:              Line 112:              // Get set info from token or setCodeLine 113:              if (token.HasValue)Line 114:              {Line 115:                  using (var cmd = new SqlCommand(getSetByTokenSql, con))Line 116:                  {Line 117:                      cmd.Parameters.Add(&quot;@Token&quot;, SqlDbType.UniqueIdentifier).Value = token.Value;Line 118:                      using (var reader = await cmd.ExecuteReaderAsync())Line 119:                      {Line 120:                          if (!await reader.ReadAsync())Line 121:                          {Line 122:                              return new UploadResult { Success = false, Message = &quot;Set not found.&quot; };Line 123:                          }Line 124:                          setId = reader.GetInt32(reader.GetOrdinal(&quot;SetId&quot;));Line 125:                          resolvedSetCode = reader.IsDBNull(reader.GetOrdinal(&quot;SetCode&quot;)) ? null : reader.GetString(reader.GetOrdinal(&quot;SetCode&quot;));Line 126:                      }Line 127:                  }Line 128:              }Line 129:              elseLine 130:              {Line 131:                  using (var cmd = new SqlCommand(getSetByCodeSql, con))Line 132:                  {Line 133:                      cmd.Parameters.Add(&quot;@SetCode&quot;, SqlDbType.VarChar, 50).Value = setCode;Line 134:                      using (var reader = await cmd.ExecuteReaderAsync())Line 135:                      {Line 136:                          if (!await reader.ReadAsync())Line 137:                          {Line 138:                              return new UploadResult { Success = false, Message = &quot;Set not found.&quot; };Line 139:                          }Line 140:                          setId = reader.GetInt32(reader.GetOrdinal(&quot;SetId&quot;));Line 141:                          resolvedSetCode = reader.IsDBNull(reader.GetOrdinal(&quot;SetCode&quot;)) ? null : reader.GetString(reader.GetOrdinal(&quot;SetCode&quot;));Line 142:                      }Line 143:                  }Line 144:              }Line 145:  Line 146:              // Decode base64 imageLine 147:              byte[] imageBytes;Line 148:              tryLine 149:              {Line 150:                  // Handle data URI scheme (data:image/jpeg;base64,...)Line 151:                  var base64Data = request.ImageBase64;Line 152:                  if (base64Data.Contains(&quot;,&quot;))Line 153:                  {Line 154:                      base64Data = base64Data.Split(&#39;,&#39;)[1];Line 155:                  }Line 156:                  imageBytes = Convert.FromBase64String(base64Data);Line 157:              }Line 158:              catchLine 159:              {Line 160:                  return new UploadResult { Success = false, Message = &quot;Invalid image data.&quot; };Line 161:              }Line 162:  Line 163:              // Create file path - save to App_Data/SetImagesLine 164:              // Use HttpContext.Current since we&#39;re in an async method that may lose the original context parameterLine 165:              var serverPath = HttpContext.Current?.Server.MapPath(&quot;~&quot;) ?? AppDomain.CurrentDomain.BaseDirectory;Line 166:              var uploadFolder = Path.Combine(serverPath, &quot;App_Data&quot;, &quot;SetImages&quot;);Line 167:              if (!Directory.Exists(uploadFolder))Line 168:              {Line 169:                  Directory.CreateDirectory(uploadFolder);Line 170:              }Line 171:  Line 172:              var fileName = string.Format(&quot;{0}_{1:yyyyMMdd_HHmmss}_{2}.jpg&quot;, resolvedSetCode, DateTime.UtcNow, Guid.NewGuid().ToString(&quot;N&quot;).Substring(0, 8));Line 173:              var filePath = Path.Combine(uploadFolder, fileName);Line 174:              Line 175:              // Save fileLine 176:              File.WriteAllBytes(filePath, imageBytes);Line 177:  Line 178:              // Store relative path in databaseLine 179:              var relativePath = string.Format(&quot;~/App_Data/SetImages/{0}&quot;, fileName);Line 180:              var uploadDate = DateTime.UtcNow;Line 181:  Line 182:              // Insert recordLine 183:              int imageId;Line 184:              using (var cmd = new SqlCommand(insertImageSql, con))Line 185:              {Line 186:                  cmd.Parameters.Add(&quot;@SetId&quot;, SqlDbType.Int).Value = setId;Line 187:                  cmd.Parameters.Add(&quot;@ImagePath&quot;, SqlDbType.VarChar, 500).Value = relativePath;Line 188:                  cmd.Parameters.Add(&quot;@ImageType&quot;, SqlDbType.VarChar, 50).Value = (object)request.ImageType ?? &quot;MobileUpload&quot;;Line 189:                  cmd.Parameters.Add(&quot;@UploadedBy&quot;, SqlDbType.VarChar, 100).Value = (object)request.UploadedBy ?? &quot;Mobile App&quot;;Line 190:                  cmd.Parameters.Add(&quot;@UploadDate&quot;, SqlDbType.DateTime).Value = uploadDate;Line 191:                  imageId = Convert.ToInt32(await cmd.ExecuteScalarAsync());Line 192:              }Line 193:  Line 194:              return new UploadResultLine 195:              {Line 196:                  Success = true,Line 197:                  Message = &quot;Image uploaded successfully.&quot;,Line 198:                  ImageId = imageId.ToString(),Line 199:                  UploadedAt = uploadDate.ToString(&quot;o&quot;)Line 200:              };Line 201:          }Line 202:      }Line 203:  Line 204:      private static bool TryParseScannerToken(string rawValue, out Guid token, out string message, out string errorCode)Line 205:      {Line 206:          token = Guid.Empty;Line 207:          message = null;Line 208:          errorCode = null;Line 209:          var value = (rawValue ?? &quot;&quot;).Trim();Line 210:          if (string.IsNullOrWhiteSpace(value))Line 211:          {Line 212:              message = &quot;No QR code data was received. Please scan again.&quot;;Line 213:              errorCode = &quot;empty_qr_data&quot;;Line 214:              return false;Line 215:          }Line 216:          const string prefix = &quot;yakult:set:v1:&quot;;Line 217:          if (value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))Line 218:              value = value.Substring(prefix.Length).Trim();Line 219:          if (Guid.TryParse(value, out token))Line 220:              return true;Line 221:          message = &quot;This QR code is not a valid Yakult dispatch QR code.&quot;;Line 222:          errorCode = &quot;invalid_qr_format&quot;;Line 223:          return false;Line 224:      }Line 225:  Line 226:      private void ReturnJson(HttpContext context, object data)Line 227:      {Line 228:          context.Response.Write(JsonConvert.SerializeObject(data));Line 229:      }Line 230:  Line 231:      private void ReturnError(HttpContext context, int statusCode, string message, string errorCode)Line 232:      {Line 233:          context.Response.StatusCode = statusCode;Line 234:          context.Response.Write(JsonConvert.SerializeObject(new { success = false, message, error = errorCode }));Line 235:      }Line 236:  Line 237:      public bool IsReusable =&gt; false;Line 238:  Line 239:      private HttpContext context;Line 240:      public void Init(HttpContext context) { this.context = context; }Line 241:  Line 242:      private class UploadRequestLine 243:      {Line 244:          [JsonProperty(&quot;image_base64&quot;)] public string ImageBase64 { get; set; }Line 245:          [JsonProperty(&quot;image_type&quot;)] public string ImageType { get; set; }Line 246:          [JsonProperty(&quot;uploaded_by&quot;)] public string UploadedBy { get; set; }Line 247:      }Line 248:  Line 249:      private class UploadResultLine 250:      {Line 251:          public bool Success { get; set; }Line 252:          public string Message { get; set; }Line 253:          public string ImageId { get; set; }Line 254:          public string UploadedAt { get; set; }Line 255:      }Line 256:  }Line 257:  Line 258:  Line 259:  #line defaultLine 260:  #line hiddenLine 261:  </pre>                      </code>
+
+                  </td>
+               </tr>
+            </table>
+
+            
+
+</div>
+
+        <script type="text/javascript">
+        function OnToggleTOCLevel1(level2ID)
+        {
+        var elemLevel2 = document.getElementById(level2ID);
+        if (elemLevel2.style.display == 'none')
+        {
+            elemLevel2.style.display = '';
+        }
+        else {
+            elemLevel2.style.display = 'none';
+        }
+        }
+        </script>
+                            <br><br>
+
+            <hr width=100% size=1 color=silver>
+
+            <b>Version Information:</b>&nbsp;Microsoft .NET Framework Version:4.0.30319; ASP.NET Version:4.8.9319.0
+
+            </font>
+
+    </body>
+</html>
+<!-- 
+[HttpCompileException]: c:\inetpub\wwwroot\Yakult.Inventory.Api2\set-image-upload.ashx(14): error CS1002: ; expected
+   at System.Web.Compilation.AssemblyBuilder.Compile()
+   at System.Web.Compilation.BuildProvidersCompiler.PerformBuild()
+   at System.Web.Compilation.BuildManager.CompileWebFile(VirtualPath virtualPath)
+   at System.Web.Compilation.BuildManager.GetVPathBuildResultInternal(VirtualPath virtualPath, Boolean noBuild, Boolean allowCrossApp, Boolean allowBuildInPrecompile, Boolean throwIfNotFound, Boolean ensureIsUpToDate)
+   at System.Web.Compilation.BuildManager.GetVPathBuildResultWithNoAssert(HttpContext context, VirtualPath virtualPath, Boolean noBuild, Boolean allowCrossApp, Boolean allowBuildInPrecompile, Boolean throwIfNotFound, Boolean ensureIsUpToDate)
+   at System.Web.Compilation.BuildManager.GetVPathBuildResult(HttpContext context, VirtualPath virtualPath, Boolean noBuild, Boolean allowCrossApp, Boolean allowBuildInPrecompile, Boolean ensureIsUpToDate)
+   at System.Web.UI.SimpleHandlerFactory.System.Web.IHttpHandlerFactory2.GetHandler(HttpContext context, String requestType, VirtualPath virtualPath, String physicalPath)
+   at System.Web.HttpApplication.MaterializeHandlerExecutionStep.System.Web.HttpApplication.IExecutionStep.Execute()
+   at System.Web.HttpApplication.ExecuteStepImpl(IExecutionStep step)
+   at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& completedSynchronously)
+-->

@@ -1,0 +1,238 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Inventory.Views.InventoryPageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls"
+             xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+             Background="#F0F2F6"
+             FontFamily="Segoe UI"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ Page header ══════════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Style="{StaticResource PageHeaderBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE71D;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                               Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel>
+                        <TextBlock Text="Inventory Dashboard" Style="{StaticResource PageTitle}"/>
+                        <TextBlock Text="Category stock, hardware, software/license, services, and inventory entries" Style="{StaticResource PageSubtitle}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <Button Grid.Column="1" Style="{StaticResource PrimaryBtn}" Command="{Binding RefreshCommand}" Margin="0">
+                    <TextBlock Text="⟳  Refresh"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- ══ Toolbar: search + sort + (Inventory-tab-only) filters/actions ══ -->
+        <Border Grid.Row="1" Style="{StaticResource FilterBar}">
+            <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#7A8A9A"/>
+                <TextBox Style="{StaticResource SearchBox}" Width="300" Margin="0,0,14,0"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Search by Item, Category, Entry Type, Request ID..."/>
+
+                <TextBlock Text="Sort By:" Style="{StaticResource FilterLabel}"/>
+                <ComboBox Width="200" Style="{StaticResource FilterCombo}" Margin="0,0,20,0"
+                          ItemsSource="{Binding SortByOptions}"
+                          SelectedItem="{Binding SelectedSortBy, Mode=TwoWay}"/>
+
+                <StackPanel Orientation="Horizontal" Visibility="{Binding IsInventoryTabActive, Converter={StaticResource BoolToVis}}">
+                    <CheckBox Content="Show Inactive" IsChecked="{Binding ShowInactive}" VerticalAlignment="Center"
+                              FontSize="11" Foreground="{StaticResource TextSubtleBrush}" Margin="0,0,14,0"/>
+
+                    <TextBlock Text="💡 Filter By:" Style="{StaticResource FilterLabel}"/>
+                    <ComboBox Style="{StaticResource FilterCombo}" Width="160" Margin="0,0,14,0"
+                              ItemsSource="{Binding FilterByOptionsInventory}"
+                              SelectedItem="{Binding SelectedFilterByInventory, Mode=TwoWay}"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Visibility="{Binding ShowEditArchiveButtons, Converter={StaticResource BoolToVis}}">
+                    <Button Style="{StaticResource SmallBtn}" Command="{Binding EditCommand}">
+                        <TextBlock Text="✎  Edit"/>
+                    </Button>
+                    <Button Style="{StaticResource SmallBtn}" Command="{Binding ArchiveCommand}">
+                        <TextBlock Text="📦  Archive"/>
+                    </Button>
+                </StackPanel>
+            </WrapPanel>
+        </Border>
+
+        <!-- ══ Tabs ═════════════════════════════════════════════════════════ -->
+        <TabControl Grid.Row="2" x:Name="MainTabs" Margin="14,0,14,0" Background="Transparent" BorderThickness="0"
+                    SelectedIndex="{Binding ActiveTabIndex}">
+
+            <!-- Tab 0: Category Stock Summary -->
+            <TabItem Header="Category Stock Summary">
+                <Border Background="White">
+                    <DataGrid x:Name="CategoryStockGrid" Style="{StaticResource ListDataGridChrome}"
+                              IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow"
+                              ItemsSource="{Binding PagedCategoryStock}" Sorting="Grid_Sorting">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Category Name" Binding="{Binding CategoryName}" Width="3*" MinWidth="200" SortMemberPath="CategoryName"/>
+                            <DataGridTextColumn Header="Total Stock" Binding="{Binding TotalStock, StringFormat=N0}" Width="2*" MinWidth="110" SortMemberPath="TotalStock"/>
+                            <DataGridTextColumn Header="Active Items" Binding="{Binding ActiveItems, StringFormat=N0}" Width="2*" MinWidth="110" SortMemberPath="ActiveItems"/>
+                            <DataGridTextColumn Header="Requested Items" Binding="{Binding RequestedItems, StringFormat=N0}" Width="2*" MinWidth="130" SortMemberPath="RequestedItems"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+
+            <!-- Tab 1: Hardware -->
+            <TabItem Header="Hardware">
+                <Border Background="White">
+                    <DataGrid x:Name="HardwareGrid" Style="{StaticResource ListDataGridChrome}"
+                              IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow"
+                              ItemsSource="{Binding PagedHardware}" Sorting="Grid_Sorting">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="3*" MinWidth="180" SortMemberPath="ItemName"/>
+                            <DataGridTextColumn Header="Category Name" Binding="{Binding CategoryName}" Width="2*" MinWidth="140" SortMemberPath="CategoryName"/>
+                            <DataGridTextColumn Header="Active Stock" Binding="{Binding ActiveStock, StringFormat=N0}" Width="*" MinWidth="100" SortMemberPath="ActiveStock"/>
+                            <DataGridTextColumn Header="Requested Items" Binding="{Binding RequestedItems, StringFormat=N0}" Width="*" MinWidth="120" SortMemberPath="RequestedItems"/>
+                            <DataGridTextColumn Header="Condition: Good" Binding="{Binding GoodCount, StringFormat=N0}" Width="*" MinWidth="110" SortMemberPath="GoodCount"/>
+                            <DataGridTextColumn Header="Condition: Damaged" Binding="{Binding DamagedCount, StringFormat=N0}" Width="*" MinWidth="130" SortMemberPath="DamagedCount"/>
+                            <DataGridTextColumn Header="Fixed Asset" Binding="{Binding FixedAsset}" Width="*" MinWidth="90" SortMemberPath="FixedAsset"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+
+            <!-- Tab 2: Software / License -->
+            <TabItem Header="Software / License">
+                <Border Background="White">
+                    <DataGrid x:Name="SoftwareLicenseGrid" Style="{StaticResource ListDataGridChrome}"
+                              IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow"
+                              ItemsSource="{Binding PagedSoftwareLicense}" Sorting="Grid_Sorting">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="3*" MinWidth="180" SortMemberPath="ItemName"/>
+                            <DataGridTextColumn Header="Category Name" Binding="{Binding CategoryName}" Width="2*" MinWidth="140" SortMemberPath="CategoryName"/>
+                            <DataGridTextColumn Header="Active Stock" Binding="{Binding ActiveStock, StringFormat=N0}" Width="*" MinWidth="100" SortMemberPath="ActiveStock"/>
+                            <DataGridTextColumn Header="Requested Items" Binding="{Binding RequestedItems, StringFormat=N0}" Width="*" MinWidth="120" SortMemberPath="RequestedItems"/>
+                            <DataGridTextColumn Header="Warranty Years" Binding="{Binding WarrantyYears, StringFormat=N0}" Width="*" MinWidth="100" SortMemberPath="WarrantyYears"/>
+                            <DataGridTextColumn Header="Warranty Start Date" Binding="{Binding WarrantyStartDate, StringFormat=yyyy-MM-dd}" Width="*" MinWidth="120" SortMemberPath="WarrantyStartDate"/>
+                            <DataGridTextColumn Header="Warranty End Date" Binding="{Binding WarrantyEndDate, StringFormat=yyyy-MM-dd}" Width="*" MinWidth="120" SortMemberPath="WarrantyEndDate"/>
+                            <DataGridTextColumn Header="Renewal Count" Binding="{Binding RenewalCount, StringFormat=N0}" Width="*" MinWidth="100" SortMemberPath="RenewalCount"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+
+            <!-- Tab 3: Services -->
+            <TabItem Header="Services">
+                <Border Background="White">
+                    <DataGrid x:Name="ServicesGrid" Style="{StaticResource ListDataGridChrome}"
+                              IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow"
+                              ItemsSource="{Binding PagedServices}" Sorting="Grid_Sorting">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Item Name" Binding="{Binding ItemName}" Width="3*" MinWidth="180" SortMemberPath="ItemName"/>
+                            <DataGridTextColumn Header="Category Name" Binding="{Binding CategoryName}" Width="2*" MinWidth="140" SortMemberPath="CategoryName"/>
+                            <DataGridTextColumn Header="Active Stock" Binding="{Binding ActiveStock, StringFormat=N0}" Width="*" MinWidth="100" SortMemberPath="ActiveStock"/>
+                            <DataGridTextColumn Header="Requested Items" Binding="{Binding RequestedItems, StringFormat=N0}" Width="*" MinWidth="120" SortMemberPath="RequestedItems"/>
+                            <DataGridTextColumn Header="Warranty Years" Binding="{Binding WarrantyYears, StringFormat=N0}" Width="*" MinWidth="100" SortMemberPath="WarrantyYears"/>
+                            <DataGridTextColumn Header="Warranty Start Date" Binding="{Binding WarrantyStartDate, StringFormat=yyyy-MM-dd}" Width="*" MinWidth="120" SortMemberPath="WarrantyStartDate"/>
+                            <DataGridTextColumn Header="Warranty End Date" Binding="{Binding WarrantyEndDate, StringFormat=yyyy-MM-dd}" Width="*" MinWidth="120" SortMemberPath="WarrantyEndDate"/>
+                            <DataGridTextColumn Header="Renewal Count" Binding="{Binding RenewalCount, StringFormat=N0}" Width="*" MinWidth="100" SortMemberPath="RenewalCount"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+
+            <!-- Tab 4: Inventory -->
+            <TabItem Header="Inventory">
+                <Border Background="White">
+                    <DataGrid x:Name="InventoryGrid" Style="{StaticResource ListDataGridChrome}"
+                              IsReadOnly="False" SelectionMode="Extended" SelectionUnit="FullRow"
+                              ItemsSource="{Binding PagedInventory}"
+                              MouseDoubleClick="InventoryGrid_MouseDoubleClick"
+                              Sorting="Grid_Sorting">
+                        <DataGrid.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                        </DataGrid.Resources>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="40" CanUserSort="False" CanUserResize="False" CanUserReorder="False">
+                                <DataGridTemplateColumn.HeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="DataGridColumnHeader">
+                                                    <Border Background="{TemplateBinding Background}" BorderBrush="{StaticResource PrimaryHoverBrush}" BorderThickness="0,0,1,1">
+                                                        <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                  ToolTip="Select / deselect all rows on this page"
+                                                                  Click="SelectAllCheckBox_Click"/>
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </DataGridTemplateColumn.HeaderStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                  IsChecked="{Binding Selected, Mode=TwoWay}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTextColumn Header="ID" Binding="{Binding InvId}" Width="55" SortMemberPath="InvId"/>
+                            <DataGridTextColumn Header="Item" Binding="{Binding ItemName}" Width="2*" MinWidth="150" SortMemberPath="ItemName"/>
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="*" MinWidth="110" SortMemberPath="Category"/>
+                            <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity, StringFormat=N0}" Width="*" MinWidth="90" SortMemberPath="Quantity"/>
+                            <DataGridTextColumn Header="Category Total Stock" Binding="{Binding CategoryTotalStock, StringFormat=N0}" Width="*" MinWidth="130" SortMemberPath="CategoryTotalStock"/>
+                            <DataGridTextColumn Header="Entry Type" Binding="{Binding EntryType}" Width="*" MinWidth="100" SortMemberPath="EntryType"/>
+                            <DataGridTextColumn Header="Date Posted" Binding="{Binding DatePosted, StringFormat=MM/dd/yyyy}" Width="*" MinWidth="105" SortMemberPath="DatePosted"/>
+                            <DataGridTextColumn Header="Posted By" Binding="{Binding PostedByName}" Width="*" MinWidth="110" SortMemberPath="PostedByName"/>
+                            <DataGridTextColumn Header="Request ID" Binding="{Binding RequestId}" Width="*" MinWidth="90" SortMemberPath="RequestId"/>
+                            <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="2*" MinWidth="180" SortMemberPath="Description">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource WrapCellText}"/>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+        </TabControl>
+
+        <!-- ══ Pagination (shared across all tabs) ═════════════════════════ -->
+        <Border Grid.Row="3" Style="{StaticResource FooterBar}">
+            <shared:PagingControl HorizontalAlignment="Left"
+                                   FirstPageCommand="{Binding FirstPageCommand}"
+                                   PrevPageCommand="{Binding PrevPageCommand}"
+                                   NextPageCommand="{Binding NextPageCommand}"
+                                   LastPageCommand="{Binding LastPageCommand}"
+                                   PageInfoText="{Binding PageInfoText}"/>
+        </Border>
+    </Grid>
+</UserControl>

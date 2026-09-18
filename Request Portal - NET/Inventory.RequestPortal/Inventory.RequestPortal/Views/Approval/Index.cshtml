@@ -1,0 +1,172 @@
+@model Inventory.RequestPortal.Models.ViewModels.ApprovalQueueViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Approvals";
+
+    List<JsonElement>? ParseModels(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw) || !raw.TrimStart().StartsWith("[")) return null;
+        try { return JsonSerializer.Deserialize<List<JsonElement>>(raw); }
+        catch { return null; }
+    }
+}
+
+<div class="portal-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1>Request Portal</h1>
+        <p class="subtitle mb-0">Submit and track your cartridge requests</p>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        @await Html.PartialAsync("_NotificationBell")
+        <div class="user-info text-end">
+            @if (ViewBag.IsLoggedIn == true)
+            {
+                <span class="d-block text-white-50 small">Logged in as</span>
+                <span class="d-block text-white fw-bold">@ViewBag.CurrentUserName</span>
+                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline mt-2">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="content-padded">
+    <div class="nav-tabs-container mb-4">
+        @if (ViewBag.IsDeveloper == true)
+        {
+            <div class="d-flex align-items-center">
+                <a class="btn btn-sm btn-outline-secondary me-3" asp-controller="Authorization" asp-action="DevQueue">
+                    <i class="bi bi-check2-square"></i> Authorization Queue
+                </a>
+                <a class="btn btn-sm btn-outline-secondary me-3" asp-controller="Request" asp-action="Index">
+                    <i class="bi bi-plus-circle"></i> New Request
+                </a>
+                <a class="btn btn-sm btn-outline-secondary me-3" asp-controller="Request" asp-action="AssistedRequest">
+                    <i class="bi bi-person-fill-gear"></i> IT Assisted Request
+                </a>
+            </div>
+        }
+        else if (ViewBag.IsApprover == true)
+        {
+            <div class="d-flex align-items-center">
+                <a class="btn btn-sm btn-outline-secondary me-3" asp-controller="Authorization" asp-action="Landing">
+                    <i class="bi bi-house-door"></i> Home
+                </a>
+                <ul class="nav nav-tabs mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" asp-controller="Approval" asp-action="Index">
+                            Approvals
+                            @if (Model.PendingAuthorizations.Count > 0)
+                            {
+                                <span class="badge bg-danger ms-1">@Model.PendingAuthorizations.Count</span>
+                            }
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        }
+    </div>
+
+    @if (ViewBag.SuccessMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @ViewBag.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @ViewBag.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <h5 class="mb-3 fw-bold" style="color:#1e293b;">
+        Pending Authorizations
+        @if (Model.PendingAuthorizations.Count > 0)
+        {
+            <span class="badge bg-warning text-dark ms-1">@Model.PendingAuthorizations.Count</span>
+        }
+    </h5>
+
+    <div>
+            @if (!Model.PendingAuthorizations.Any())
+            {
+                <div class="card">
+                    <div class="card-body text-center py-5 text-muted">
+                        <i class="bi bi-check-circle fs-2 d-block mb-2"></i>
+                        No pending authorization requests.
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Employee</th>
+                                        <th>Department</th>
+                                        <th>Model/s Requested</th>
+                                        <th>Submitted</th>
+                                        <th>Status</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var auth in Model.PendingAuthorizations)
+                                    {
+                                        <tr>
+                                            <td class="text-muted small align-middle">@auth.AuthorizationId</td>
+                                            <td class="align-middle fw-semibold">@auth.EmployeeName</td>
+                                            <td class="align-middle">@auth.DepartmentName</td>
+                                            <td class="align-middle">
+                                                @{ var apItems = ParseModels(auth.RequestedModels); }
+                                                @if (apItems != null && apItems.Count > 0)
+                                                {
+                                                    foreach (var item in apItems)
+                                                    {
+                                                        <div class="small">@item.GetProperty("model").GetString() (@item.GetProperty("qty").GetInt32())</div>
+                                                    }
+                                                }
+                                                else if (!string.IsNullOrWhiteSpace(auth.RequestedModels))
+                                                {
+                                                    foreach (var part in auth.RequestedModels.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                                                    {
+                                                        <div class="small">@part</div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted small fst-italic">—</span>
+                                                }
+                                            </td>
+                                            <td class="align-middle small text-muted">@auth.CreatedDate.ToString("MM/dd/yyyy")</td>
+                                            <td class="align-middle">
+                                                <span class="badge bg-warning text-dark">@auth.Status</span>
+                                            </td>
+                                            <td class="align-middle">
+                                                <a asp-controller="Authorization" asp-action="Details"
+                                                   asp-route-id="@auth.AuthorizationId"
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-pen"></i> Sign
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+</div>

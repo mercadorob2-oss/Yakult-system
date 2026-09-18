@@ -1,0 +1,73 @@
+@model HelpItTicketDetailsViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = $"Ticket {Model.Ticket.TicketCode}";
+    string StatusPillClass(string status) => (status ?? string.Empty).Trim().ToLowerInvariant() switch
+    {
+        "solved" or "resolved (temporary)" or "closed" => "is-operational",
+        "open" or "in progress" or "escalated" => "is-maintenance",
+        _ => "is-offline"
+    };
+}
+
+<section class="section-hero">
+    <div class="portal-container">
+        <span class="portal-eyebrow">IT Help Center</span>
+        <h1>Ticket status</h1>
+        <p>Review the current status and updates for your Help IT request.</p>
+    </div>
+</section>
+
+<section class="portal-container help-it-detail" aria-labelledby="ticket-heading">
+    <div class="help-it-detail__topline">
+        <a class="article-back" asp-controller="HelpIt" asp-action="Tracker">← Back to ticket tracker</a>
+        <span class="admin-status-pill @StatusPillClass(Model.Ticket.Status)">@Model.Ticket.Status</span>
+    </div>
+    <div class="help-it-detail__grid">
+        <article class="help-it-card">
+            <div class="help-it-detail__heading">
+                <div>
+                    <span class="portal-eyebrow">Ticket</span>
+                    <h2 id="ticket-heading">@Model.Ticket.TicketCode</h2>
+                </div>
+                <span class="help-it-priority">@Model.Ticket.Priority priority</span>
+            </div>
+            <div class="help-it-detail__issue">
+                <span class="help-it-detail__label">Issue</span>
+                <p>@Model.Ticket.Issue</p>
+            </div>
+            <dl class="help-it-summary-grid">
+                <div><dt>Issue type</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.IssueType) ? "Not specified" : Model.Ticket.IssueType)</dd></div>
+                <div><dt>Caller</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.CallerName) ? "Not specified" : Model.Ticket.CallerName)</dd></div>
+                <div><dt>Company</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.Company) ? "—" : Model.Ticket.Company)</dd></div>
+                <div><dt>Department</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.Department) ? "—" : Model.Ticket.Department)</dd></div>
+                <div><dt>Branch</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.Branch) ? "—" : Model.Ticket.Branch)</dd></div>
+                <div><dt>Submitted</dt><dd>@Model.Ticket.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</dd></div>
+                <div><dt>Solved</dt><dd>@(Model.Ticket.SolvedAt.HasValue ? Model.Ticket.SolvedAt.Value.ToLocalTime().ToString("MMM d, yyyy h:mm tt") : "Not yet solved")</dd></div>
+            </dl>
+        </article>
+
+        <aside class="help-it-card help-it-timeline" aria-labelledby="timeline-heading">
+            <div class="help-it-detail__heading">
+                <h2 id="timeline-heading">Updates</h2>
+                <span class="help-it-muted">@Model.Timeline.Count event@(Model.Timeline.Count == 1 ? "" : "s")</span>
+            </div>
+            @if (Model.Timeline.Count == 0)
+            {
+                <div class="help-it-empty"><strong>No updates yet</strong><span>We’ll show ticket activity here as IT works on your request.</span></div>
+            }
+            else
+            {
+                <ol class="help-it-timeline__list">
+                    @foreach (var item in Model.Timeline)
+                    {
+                        <li class="help-it-timeline__event help-it-timeline__event--@item.Kind">
+                            <span class="help-it-timeline__dot" aria-hidden="true"></span>
+                            <div><strong>@item.Title</strong><time datetime="@item.OccurredAt.ToUniversalTime().ToString("O")">@item.OccurredAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</time>@if (!string.IsNullOrWhiteSpace(item.Detail)) { <p>@item.Detail</p> }</div>
+                        </li>
+                    }
+                </ol>
+            }
+        </aside>
+    </div>
+</section>

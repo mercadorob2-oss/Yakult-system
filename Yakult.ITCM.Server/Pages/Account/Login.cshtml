@@ -1,0 +1,95 @@
+@page
+@model Yakult.ITCM.Server.Pages.Account.LoginModel
+@{
+    Layout = null;
+    ViewData["Title"] = "ITCM Login";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>ITCM Login</title>
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+</head>
+<body class="auth-page">
+    <main class="auth-shell">
+        <section class="auth-showcase" aria-label="ITCM Server overview">
+            <div class="auth-brand">
+                <div class="auth-brand-mark" aria-hidden="true">IT</div>
+                <div><strong>Yakult ITCM</strong><span>IT Call Monitoring</span></div>
+            </div>
+            <div class="auth-showcase-copy">
+                <div class="auth-kicker"><span class="live-dot"></span> SECURE OPERATIONS</div>
+                <h1>Keep every support call moving.</h1>
+                <p>Monitor scheduler health, reminders, escalations, and ticket activity from one operations workspace.</p>
+            </div>
+            <div class="auth-showcase-points">
+                <div><span>✓</span><strong>Scheduler visibility</strong><small>Review runs, heartbeat, and delivery activity.</small></div>
+                <div><span>✓</span><strong>Controlled configuration</strong><small>Manage runtime settings from one protected page.</small></div>
+            </div>
+            <div class="auth-showcase-footer">ITCM Server · Internal operations workspace</div>
+        </section>
+
+        <section class="auth-card" aria-labelledby="loginHeading">
+            <div class="auth-card-header">
+                <div class="auth-mobile-mark" aria-hidden="true">IT</div>
+                <div class="auth-kicker">SECURE SIGN IN</div>
+                <h2 id="loginHeading">Welcome back</h2>
+                <p>Sign in with your Yakult account to continue. Configuration stays admin-only.</p>
+            </div>
+
+            <form method="post" id="loginForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly" class="auth-validation" role="alert"></div>
+
+                <div class="auth-field">
+                    <label asp-for="Input.Username">Username</label>
+                    <div class="auth-input-wrap">
+                        <span class="auth-input-icon" aria-hidden="true">◉</span>
+                        <input asp-for="Input.Username" autocomplete="username" autofocus placeholder="Enter your username" />
+                    </div>
+                    <span asp-validation-for="Input.Username" class="auth-field-error"></span>
+                </div>
+
+                <div class="auth-field">
+                    <div class="auth-label-row"><label asp-for="Input.Password">Password</label></div>
+                    <div class="auth-input-wrap">
+                        <span class="auth-input-icon" aria-hidden="true">◆</span>
+                        <input asp-for="Input.Password" id="loginPassword" type="password" autocomplete="current-password" placeholder="Enter your password" />
+                        <button type="button" class="auth-password-toggle" id="togglePassword" aria-label="Show password" aria-controls="loginPassword">Show</button>
+                    </div>
+                    <span asp-validation-for="Input.Password" class="auth-field-error"></span>
+                </div>
+
+                <button type="submit" class="auth-submit" id="loginSubmit"><span>Sign in to ITCM</span><span aria-hidden="true">→</span></button>
+            </form>
+
+            <div class="auth-security-note"><span aria-hidden="true">🔒</span><span>Access is logged. Your session ends when you sign out or close the browser.</span></div>
+            <div class="auth-http-note"><strong>Temporary internal HTTP deployment</strong><span>Keep this service on the company network until HTTPS is enabled.</span></div>
+        </section>
+    </main>
+
+    <script>
+      (function () {
+        const password = document.getElementById('loginPassword');
+        const toggle = document.getElementById('togglePassword');
+        const form = document.getElementById('loginForm');
+        const submit = document.getElementById('loginSubmit');
+        toggle?.addEventListener('click', function () {
+          const visible = password.type === 'text';
+          password.type = visible ? 'password' : 'text';
+          toggle.textContent = visible ? 'Show' : 'Hide';
+          toggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+        });
+        form?.addEventListener('submit', function () {
+          if (!form.checkValidity()) return;
+          submit.disabled = true;
+          submit.querySelector('span').textContent = 'Signing in…';
+        });
+      })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+USE [YIMS]
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_ArchiveItem]    Script Date: 21/02/2026 4:22:10 pm ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE PROCEDURE [dbo].[sp_ArchiveItem]
+    @ItemId INT,
+    @ArchivedBy NVARCHAR(100),
+    @ArchiveReason NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        
+        -- Check if item exists
+        IF NOT EXISTS (SELECT 1 FROM dbo.Item WHERE ItemId = @ItemId)
+        BEGIN
+            RAISERROR('Item with ID %d does not exist.', 16, 1, @ItemId);
+            RETURN;
+        END
+        
+        -- Check if already archived
+        IF EXISTS (SELECT 1 FROM dbo.Item_Archive WHERE ItemId = @ItemId)
+        BEGIN
+            -- Update existing archive record
+            UPDATE dbo.Item_Archive 
+            SET 
+                ArchivedBy = @ArchivedBy,
+                ArchiveReason = @ArchiveReason,
+                ArchivedAt = GETDATE()
+            WHERE ItemId = @ItemId;
+            
+            PRINT 'Updated existing archive record for Item ' + CAST(@ItemId AS NVARCHAR(10));
+        END
+        ELSE
+        BEGIN
+            -- Insert into archive (excluding RowVer and computed columns)
+            INSERT INTO dbo.Item_Archive (
+                ItemId, Name, Description, Active, UnitOfMeasure, StockOnHand,
+                DateCreated, CreatedBy, DateModified, ModifiedBy, Category, SerialNumber,
+                CategoryId, ModelNumber, Amount, ItemType, StartDate, EndDate, ConditionID,
+                VendorId, Remarks, WarrantyYears, DurationYears, DurationStartDate,
+                DurationEndDate, DatePurchased, LicenseNumber, WarrantyStartDate,
+                ArchivedBy, ArchivedAt, ArchiveReason
+            )
+            SELECT 
+                ItemId, Name, Description, Active, UnitOfMeasure, StockOnHand,
+                DateCreated, CreatedBy, DateModified, ModifiedBy, Category, SerialNumber,
+                CategoryId, ModelNumber, Amount, ItemType, StartDate, EndDate, ConditionID,
+                VendorId, Remarks, WarrantyYears, DurationYears, DurationStartDate,
+                DurationEndDate, DatePurchased, LicenseNumber, WarrantyStartDate,
+                @ArchivedBy, GETDATE(), @ArchiveReason
+            FROM dbo.Item
+            WHERE ItemId = @ItemId;
+            
+            PRINT 'Created new archive record for Item ' + CAST(@ItemId AS NVARCHAR(10));
+        END
+        
+        -- Update original item - Set both Active = 0 and IsArchived = 1
+        UPDATE dbo.Item
+        SET 
+            Active = 0,
+            IsArchived = 1,
+            DateModified = GETDATE(),
+            ModifiedBy = @ArchivedBy
+        WHERE ItemId = @ItemId;
+        
+        COMMIT TRANSACTION;
+        
+        PRINT 'Item ' + CAST(@ItemId AS NVARCHAR(10)) + ' archived successfully.';
+        
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+            
+        DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        
+        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    END CATCH
+END
+GO
+
+
+YIMS_PROD:
+
+CREATE PROCEDURE dbo.ArchiveItem
+    @ItemId INT,
+    @ArchivedBy NVARCHAR(100) = NULL,
+    @ArchiveReason NVARCHAR(255) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF @ItemId IS NULL
+    BEGIN
+        RAISERROR('ItemId is required', 16, 1); RETURN;
+    END
+
+    BEGIN TRAN;
+    BEGIN TRY
+        -- copy if not already archived
+        IF NOT EXISTS (SELECT 1 FROM dbo.Item_Archive WHERE ItemId = @ItemId)
+        BEGIN
+            INSERT INTO dbo.Item_Archive
+            (ItemId, Name, Description, Active, UnitOfMeasure, StockOnHand,
+             DateCreated, CreatedBy, DateModified, ModifiedBy,
+             Category, SerialNumber, CategoryId, ModelNumber, Amount, ItemType,
+             StartDate, EndDate, ConditionID, VendorId, Remarks, WarrantyYears,
+             DurationYears, DurationStartDate, DurationEndDate, DatePurchased,
+             LicenseNumber, WarrantyStartDate, WarrantyEndDate,
+             ArchivedAt, ArchivedBy, ArchiveReason)
+            SELECT
+                ItemId, Name, Description, Active, UnitOfMeasure, StockOnHand,
+                DateCreated, CreatedBy, DateModified, ModifiedBy,
+                Category, SerialNumber, CategoryId, ModelNumber, Amount, ItemType,
+                StartDate, EndDate, ConditionID, VendorId, Remarks, WarrantyYears,
+                DurationYears, DurationStartDate, DurationEndDate, DatePurchased,
+                LicenseNumber, WarrantyStartDate, WarrantyEndDate,
+                SYSUTCDATETIME(), @ArchivedBy, @ArchiveReason
+            FROM dbo.Item
+            WHERE ItemId = @ItemId;
+        END
+
+        -- mark original inactive
+        UPDATE dbo.Item
+        SET Active = 0
+        WHERE ItemId = @ItemId;
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK;
+        THROW;
+    END CATCH
+END

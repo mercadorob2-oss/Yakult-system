@@ -1,0 +1,305 @@
+@model AdminCardsViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Service Health";
+    var nowUtc = DateTime.UtcNow;
+    var totalCount = Model.Cards.Count;
+    var configuredCount = Model.Cards.Count(c => !string.IsNullOrWhiteSpace(c.HealthCheckUrl));
+    var missingUrlCount = totalCount - configuredCount;
+    var uncheckedCount = Model.Cards.Count(c => string.IsNullOrWhiteSpace(c.LastHealthStatus));
+    var maintenanceCount = Model.Cards.Count(c => c.MaintenanceStartUtc.HasValue && c.MaintenanceEndUtc.HasValue && nowUtc >= c.MaintenanceStartUtc.Value && nowUtc <= c.MaintenanceEndUtc.Value);
+    var healthyCount = Model.Cards.Count(c => string.Equals(c.LastHealthStatus, "Healthy", StringComparison.OrdinalIgnoreCase));
+    var actionCount = Model.Cards.Count(c => string.IsNullOrWhiteSpace(c.HealthCheckUrl) || !string.Equals(c.LastHealthStatus, "Healthy", StringComparison.OrdinalIgnoreCase));
+}
+
+@functions {
+    bool IsInMaintenance(AdminPortalCardViewModel card, DateTime nowUtc)
+    {
+        return card.MaintenanceStartUtc.HasValue &&
+            card.MaintenanceEndUtc.HasValue &&
+            nowUtc >= card.MaintenanceStartUtc.Value &&
+            nowUtc <= card.MaintenanceEndUtc.Value;
+    }
+
+    string ServiceStatusClass(string status)
+    {
+        return status switch
+        {
+            "Connected" => "is-operational",
+            "Maintenance" => "is-maintenance",
+            "Disabled" => "is-disabled",
+            _ => "is-offline"
+        };
+    }
+
+    string HealthState(AdminPortalCardViewModel card)
+    {
+        if (string.IsNullOrWhiteSpace(card.HealthCheckUrl)) return "missing";
+        if (string.IsNullOrWhiteSpace(card.LastHealthStatus)) return "unchecked";
+        return string.Equals(card.LastHealthStatus, "Healthy", StringComparison.OrdinalIgnoreCase) ? "healthy" : "unhealthy";
+    }
+
+    string HealthLabel(string state, string status)
+    {
+        return state switch
+        {
+            "missing" => "Missing URL",
+            "unchecked" => "Not checked",
+            "healthy" => "Healthy",
+            "unhealthy" => string.IsNullOrWhiteSpace(status) ? "Unhealthy" : status,
+            _ => "Unknown"
+        };
+    }
+}
+
+<section class="admin-card-summary admin-card-summary--health" aria-label="Health summary">
+    <div class="admin-stat">
+        <span class="admin-stat__value">@configuredCount</span>
+        <span class="admin-stat__label">Configured</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value">@healthyCount</span>
+        <span class="admin-stat__label">Healthy</span>
+    </div>
+    <div class="admin-stat @(actionCount > 0 ? "is-attention" : "")">
+        <span class="admin-stat__value">@actionCount</span>
+        <span class="admin-stat__label">Need action</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value">@maintenanceCount</span>
+        <span class="admin-stat__label">Maintenance</span>
+    </div>
+</section>
+
+<section class="admin-workspace admin-workspace--single">
+    <div class="admin-list-panel admin-health-panel">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Service Health and Maintenance</h2>
+                <p>@configuredCount of @totalCount services have health URLs. @missingUrlCount still need a configured endpoint.</p>
+            </div>
+            <div class="admin-form-actions">
+                <button type="button" class="admin-button admin-button--primary" id="runHealthBtn">Run Checks</button>
+                <a class="admin-button admin-button--ghost" asp-controller="Admin" asp-action="Cards">Edit services</a>
+            </div>
+        </div>
+        <div class="admin-health-run-status" id="healthRunStatus" role="status">Run health checks to refresh the live result for this session.</div>
+        @Html.AntiForgeryToken()
+
+        <div class="admin-card-toolbar admin-card-toolbar--wide admin-health-toolbar">
+            <input type="text" id="healthSearch" placeholder="Search service, key, URL, or status..." autocomplete="off" />
+            <select id="healthFilter">
+                <option value="all">All services</option>
+                <option value="needs-action">Needs action</option>
+                <option value="healthy">Healthy</option>
+                <option value="unhealthy">Unhealthy</option>
+                <option value="missing">Missing URL</option>
+                <option value="unchecked">Unchecked</option>
+                <option value="maintenance">In maintenance</option>
+            </select>
+            <select id="healthSort" aria-label="Sort service health">
+                <option value="attention">Needs action first</option>
+                <option value="recent">Most recently checked</option>
+                <option value="name">Service name</option>
+            </select>
+        </div>
+
+        <div class="admin-health-board" id="healthBoard">
+            @if (Model.Cards.Count == 0)
+            {
+                <div class="admin-empty-state admin-empty-state--action">
+                    <strong>No services available</strong>
+                    <span>Add services before configuring health checks.</span>
+                    <a class="admin-button admin-button--ghost" asp-controller="Admin" asp-action="Cards">Open Services &amp; Portals</a>
+                </div>
+            }
+            else
+            {
+                foreach (var card in Model.Cards)
+                {
+                    var state = HealthState(card);
+                    var inMaintenance = IsInMaintenance(card, nowUtc);
+                    var searchText = $"{card.Name} {card.CardKey} {card.Status} {card.LastHealthStatus} {card.HealthCheckUrl}".ToLowerInvariant();
+                    <article class="admin-health-card is-health-@state" data-health-card data-card-key="@card.CardKey" data-health-state="@state" data-health-checked-at="@(card.LastHealthCheckedAt?.ToUniversalTime().ToString("o"))" data-maintenance="@(inMaintenance.ToString().ToLowerInvariant())" data-health-text="@searchText">
+                        <div class="admin-health-card__main">
+                            <div>
+                                <span class="admin-health-card__eyebrow">@card.CardKey</span>
+                                <h3>@card.Name</h3>
+                            </div>
+                            <div class="admin-health-card__pills">
+                                <span class="admin-status-pill @ServiceStatusClass(card.Status)">@card.Status</span>
+                                @if (inMaintenance)
+                                {
+                                    <span class="admin-status-pill is-maintenance">Maintenance window</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="admin-health-card__grid">
+                            <div>
+                                <span class="admin-health-card__label">Endpoint</span>
+                                <strong>@(string.IsNullOrWhiteSpace(card.HealthCheckUrl) ? "No health URL configured" : card.HealthCheckUrl)</strong>
+                            </div>
+                            <div>
+                                <span class="admin-health-card__label">Live result</span>
+                                <strong class="admin-health-state admin-health-state--@state health-live-result">@HealthLabel(state, card.LastHealthStatus)</strong>
+                                <span class="admin-health-card__detail" data-health-detail>@(card.LastHealthCheckedAt.HasValue ? card.LastHealthCheckedAt.Value.ToString("yyyy-MM-dd HH:mm") + " UTC" : "No check timestamp")</span>
+                            </div>
+                            <div>
+                                <span class="admin-health-card__label">Maintenance</span>
+                                <strong>@(card.MaintenanceStartUtc.HasValue || card.MaintenanceEndUtc.HasValue ? "Scheduled" : "None scheduled")</strong>
+                                @if (card.MaintenanceStartUtc.HasValue || card.MaintenanceEndUtc.HasValue)
+                                {
+                                    <span class="admin-health-card__detail">@card.MaintenanceStartUtc?.ToString("yyyy-MM-dd HH:mm") - @card.MaintenanceEndUtc?.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                }
+            }
+            <div class="admin-empty-state admin-empty-state--action" id="healthNoResults" hidden>
+                <strong>No health rows match</strong>
+                <span>Adjust search or filter settings to widen the view.</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('runHealthBtn');
+            const search = document.getElementById('healthSearch');
+            const filter = document.getElementById('healthFilter');
+            const sort = document.getElementById('healthSort');
+            const runStatus = document.getElementById('healthRunStatus');
+            const requestedFilter = new URLSearchParams(window.location.search).get('filter');
+            if (requestedFilter && Array.from(filter.options).some(option => option.value === requestedFilter)) {
+                filter.value = requestedFilter;
+            }
+            const noResults = document.getElementById('healthNoResults');
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            const rows = () => Array.from(document.querySelectorAll('[data-health-card]'));
+
+            function stateFromStatus(status) {
+                return String(status || '').toLowerCase() === 'healthy' ? 'healthy' : 'unhealthy';
+            }
+
+            function labelFromState(state, status) {
+                if (state === 'healthy') return 'Healthy';
+                if (state === 'missing') return 'Missing URL';
+                if (state === 'unchecked') return 'Not checked';
+                return status || 'Unhealthy';
+            }
+
+            function setRowHealth(row, state, status, detail, checkedAtUtc) {
+                row.dataset.healthState = state;
+                row.dataset.healthCheckedAt = checkedAtUtc || new Date().toISOString();
+                row.dataset.healthText = `${row.dataset.healthText || ''} ${status || state}`.toLowerCase();
+                row.classList.remove('is-health-healthy', 'is-health-unhealthy', 'is-health-missing', 'is-health-unchecked');
+                row.classList.add('is-health-' + state);
+                const result = row.querySelector('.health-live-result');
+                const detailTarget = row.querySelector('[data-health-detail]');
+                if (result) {
+                    result.className = 'admin-health-state admin-health-state--' + state + ' health-live-result';
+                    result.textContent = labelFromState(state, status);
+                }
+                if (detailTarget) {
+                    const checkedAt = checkedAtUtc ? new Date(checkedAtUtc) : new Date();
+                    const timestamp = Number.isNaN(checkedAt.getTime()) ? 'this session' : checkedAt.toLocaleString();
+                    detailTarget.textContent = detail ? `Checked ${timestamp} · ${detail}` : `Checked ${timestamp}`;
+                }
+            }
+
+            function sortHealthRows() {
+                const board = document.getElementById('healthBoard');
+                if (!board || !sort) return;
+                const rank = { missing: 0, unhealthy: 1, unchecked: 2, healthy: 3 };
+                const cards = rows().sort(function(left, right) {
+                    if (sort.value === 'name') {
+                        return (left.dataset.healthText || '').localeCompare(right.dataset.healthText || '');
+                    }
+                    if (sort.value === 'recent') {
+                        const leftTime = Date.parse(left.dataset.healthCheckedAt || '');
+                        const rightTime = Date.parse(right.dataset.healthCheckedAt || '');
+                        const leftValue = Number.isNaN(leftTime) ? -Infinity : leftTime;
+                        const rightValue = Number.isNaN(rightTime) ? -Infinity : rightTime;
+                        return rightValue - leftValue;
+                    }
+                    const leftRank = rank[left.dataset.healthState || 'unchecked'] ?? 2;
+                    const rightRank = rank[right.dataset.healthState || 'unchecked'] ?? 2;
+                    if (leftRank !== rightRank) return leftRank - rightRank;
+                    return (left.dataset.healthText || '').localeCompare(right.dataset.healthText || '');
+                });
+                cards.forEach(card => board.appendChild(card));
+            }
+
+            function applyHealthFilters() {
+                sortHealthRows();
+                const term = (search?.value || '').toLowerCase().trim();
+                const selected = filter?.value || 'all';
+                let visible = 0;
+                rows().forEach(row => {
+                    const state = row.dataset.healthState || 'unchecked';
+                    const maintenance = row.dataset.maintenance === 'true';
+                    const matchesTerm = !term || (row.dataset.healthText || '').includes(term);
+                    const matchesFilter = selected === 'all'
+                        || selected === state
+                        || (selected === 'maintenance' && maintenance)
+                        || (selected === 'needs-action' && state !== 'healthy');
+                    const show = matchesTerm && matchesFilter;
+                    row.hidden = !show;
+                    if (show) visible++;
+                });
+                if (noResults) noResults.hidden = visible !== 0;
+            }
+
+            search?.addEventListener('input', applyHealthFilters);
+            filter?.addEventListener('change', applyHealthFilters);
+            sort?.addEventListener('change', applyHealthFilters);
+            applyHealthFilters();
+
+            if (!btn) return;
+            btn.addEventListener('click', async function () {
+                btn.disabled = true;
+                btn.classList.add('is-loading');
+                btn.textContent = 'Checking...';
+                if (runStatus) {
+                    runStatus.className = 'admin-health-run-status is-running';
+                    runStatus.textContent = 'Running health checks. Results will update in this session.';
+                }
+                try {
+                    const response = await fetch('@Url.Action("CheckHealth", "Admin")', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'RequestVerificationToken': token }
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.success) throw new Error('Health check failed.');
+                    result.results.forEach(item => {
+                        const row = rows().find(candidate => candidate.dataset.cardKey === String(item.cardKey || ''));
+                        if (!row) return;
+                        const state = stateFromStatus(item.status);
+                        const detail = item.detail ? item.detail : 'Checked in this session.';
+                        setRowHealth(row, state, item.status, detail, item.checkedAtUtc);
+                    });
+                    applyHealthFilters();
+                    if (runStatus) {
+                        runStatus.className = 'admin-health-run-status is-fresh';
+                        runStatus.textContent = `Health checks completed at ${new Date().toLocaleTimeString()}. Results shown are from this session.`;
+                    }
+                    window.yakultToast?.('Health checks completed.', 'success');
+                } catch (error) {
+                    if (runStatus) {
+                        runStatus.className = 'admin-health-run-status';
+                        runStatus.textContent = error.message || 'Health checks could not be completed.';
+                    }
+                    window.yakultToast?.(error.message || 'Unable to run health checks.', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.classList.remove('is-loading');
+                    btn.textContent = 'Run Checks';
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,544 @@
+@{
+    Layout = null; // Full-page dashboard — no layout wrapper
+    ViewData["Title"] = "Home";
+    int pendingCount = ViewBag.PendingCount ?? 0;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home - Requester Portal</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/lib/driver.js/driver.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tour.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/root.css" asp-append-version="true" />
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    </style>
+</head>
+<body>
+
+<style>
+    /* ── Page shell ────────────────────────────────── */
+    .dashboard-page {
+        position: relative;
+        /* z-index:0 (not auto) forces this to establish its own stacking context, so the
+           z-index:-1 pattern below is contained here — just above this element's own
+           background, below its header/body/footer content — instead of escaping to the
+           nearest real stacking context above it (which pushed it behind the entire page). */
+        z-index: 0;
+        min-height: 100vh;
+        background: var(--surface-muted);
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Faint diagonal bottle watermark behind the whole dashboard —
+       kept subtle (low opacity, large tile) so it reads as texture, not decoration.
+       z-index:-1 (not position+z-index on the header/body/footer) so this stays behind
+       content without wrapping the header in its own stacking context — the header hosts
+       the notification-permission modal (#notifPermModal, z-index:100000), and giving the
+       header its own positioned stacking context would cap that modal's z-index inside it,
+       letting later same-level siblings like .dashboard-body paint over it. */
+    .dashboard-page::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: url('/images/yakult-bottles-repeating-pattern.png');
+        background-repeat: repeat;
+        background-size: 220px 210px;
+        opacity: 0.05;
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    /* ── Header — white/cream surface with a slim red brand accent,
+       matching PortalHub/Index.cshtml rather than the old solid-red band. ── */
+    .dashboard-header {
+        background: var(--surface-cream);
+        padding: 14px 32px;
+        height: var(--header-height);
+        overflow: hidden;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+        flex-wrap: nowrap;
+        gap: 8px;
+        border-bottom: 3px solid var(--yakult-red);
+    }
+
+    .dashboard-header .brand {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--yakult-red);
+        letter-spacing: -0.3px;
+    }
+
+    /* ── Center content ────────────────────────────── */
+    .dashboard-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px 24px 24px;
+    }
+
+    .dashboard-body h6 {
+        color: #888;
+        font-weight: 400;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    /* ── Card grid ─────────────────────────────────── */
+    .module-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        width: 100%;
+        max-width: 720px;
+    }
+
+    /* ── Module card (mirrors WinForms 320×200) ────── */
+    .module-card {
+        position: relative;
+        width: 320px;
+        min-height: 200px;
+        background: var(--surface);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        cursor: pointer;
+        text-decoration: none !important;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+        border: 1px solid var(--border-muted);
+    }
+
+    .module-card:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--yakult-blue);
+    }
+
+    /* Top accent bar (6 px, same as WinForms) */
+    .module-card .accent-bar {
+        height: 4px;
+        width: 100%;
+        flex-shrink: 0;
+    }
+
+    .module-card .card-inner {
+        flex: 1;
+        padding: 18px 20px 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Watermark icon — bottom-right, clipped, large */
+    .module-card .watermark {
+        position: absolute;
+        right: -10px;
+        bottom: 20px;
+        font-size: 90px;
+        line-height: 1;
+        opacity: 0.13;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .module-card .card-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--text-strong);
+        margin: 0 0 8px;
+        padding-right: 55px;
+        word-wrap: break-word;
+    }
+
+    .module-card .card-desc {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        line-height: 1.45;
+        margin: 0;
+        max-width: 240px;
+    }
+
+    .module-card .card-action {
+        display: inline-block;
+        margin-top: 22px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    /* Footer */
+    .dashboard-footer {
+        background: var(--surface);
+        border-top: 1px solid var(--border-muted);
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        font-weight: 600;
+        flex-shrink: 0;
+    }
+
+    /* ── Tablet: 576px – 767px ────────────────────── */
+    @@media (min-width: 576px) and (max-width: 767.98px) {
+        .dashboard-header {
+            padding: 12px 20px;
+        }
+
+        .dashboard-header .brand {
+            font-size: 1.1rem;
+        }
+
+        .module-grid {
+            gap: 14px;
+            max-width: 100%;
+        }
+
+        .module-card {
+            width: calc(50% - 7px);   /* two-column card grid on small tablets */
+            min-height: 0;
+        }
+
+        .module-card .card-desc {
+            max-width: 100%;
+        }
+
+        .module-card .watermark {
+            font-size: 60px;
+        }
+    }
+
+    /* ── Mobile: < 576px ──────────────────────────── */
+    @@media (max-width: 575.98px) {
+        .dashboard-header {
+            padding: 12px 16px;
+        }
+
+        .dashboard-header .brand {
+            font-size: 1rem;
+        }
+
+        .dashboard-body {
+            padding: 16px 16px 16px;
+        }
+
+        .dashboard-body h6 {
+            margin-bottom: 12px;
+        }
+
+        .module-grid {
+            gap: 12px;
+        }
+
+        .module-card {
+            width: 100%;
+            min-height: 0;
+        }
+
+        .module-card .card-desc {
+            max-width: 100%;
+        }
+
+        .module-card .watermark {
+            font-size: 60px;
+        }
+    }
+
+    /* ── Foldable / ultra-narrow (< 320px) ────────── */
+    @@media (max-width: 319.98px) {
+        .dashboard-header {
+            padding: 10px 12px;
+            gap: 6px;
+        }
+
+        .dashboard-header .brand {
+            font-size: 0.8rem;
+            letter-spacing: 0;
+        }
+
+        .dashboard-body {
+            padding: 12px 10px;
+        }
+
+        .module-card .card-title {
+            font-size: 0.9rem;
+        }
+
+        .module-card .card-desc {
+            font-size: 0.8rem;
+        }
+    }
+</style>
+
+@await Html.PartialAsync("_MasterNav")
+
+<div class="dashboard-page">
+
+    <!-- Header -->
+    <div class="dashboard-header">
+        <button id="hamburgerBtn" class="btn btn-link p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+                type="button" aria-label="Menu"
+                style="font-size:1.4rem; text-decoration:none; color:var(--text-strong);">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="brand">YAKULT REQUEST PORTAL</div>
+        @if (ViewBag.IsLoggedIn == true)
+        {
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <button type="button"
+                        id="approverHelpBtn"
+                        class="btn btn-link p-0 lh-1"
+                        style="font-size:1.25rem; text-decoration:none; opacity:0.85; color:var(--text-strong);"
+                        title="User Guide Center"
+                        data-bs-toggle="modal"
+                        data-bs-target="#userGuideCenterModal">
+                    <i class="bi bi-question-circle"></i>
+                </button>
+                @await Html.PartialAsync("_NotificationBell")
+            </div>@* /d-flex *@
+        }
+    </div>
+
+    <!-- Alerts -->
+    <div style="width:100%;max-width:720px;margin: 8px auto 0; padding: 0 24px;">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+    </div>
+
+    <!-- Module Grid -->
+    <div class="dashboard-body">
+        <h6>What would you like to do today?</h6>
+
+        <div class="module-grid">
+
+            <!-- Card 1: Authorize Cartridge Requests -->
+            <a asp-controller="Authorization" asp-action="SupervisorQueue" class="module-card">
+                <div class="accent-bar" style="background:#d50032;"></div>
+                <div class="card-inner">
+                    <div class="watermark">✍️</div>
+                    <p class="card-title">
+                        Authorize Cartridge Requests
+                        @if (pendingCount > 0)
+                        {
+                            <span class="badge bg-danger ms-1" style="font-size:0.7rem;vertical-align:middle;">@pendingCount</span>
+                        }
+                    </p>
+                    <p class="card-desc">
+                        Review and sign off on cartridge request authorizations from your department.
+                        Employees need your approval before they can submit a request.
+                    </p>
+                    <span class="card-action" style="color:#d50032;">Open Queue →</span>
+                </div>
+            </a>
+
+            <!-- Card 2: Submit a Request -->
+            <a asp-controller="Request" asp-action="Index" class="module-card">
+                <div class="accent-bar" style="background:#9B59B6;"></div>
+                <div class="card-inner">
+                    <div class="watermark">📋</div>
+                    <p class="card-title">Submit a Request</p>
+                    <p class="card-desc">
+                        Submit a new cartridge request for your department.
+                        Fill in the model and quantity — the system allocates stock automatically.
+                    </p>
+                    <span class="card-action" style="color:#9B59B6;">New Request →</span>
+                </div>
+            </a>
+
+            <!-- Card 3: Authorization History -->
+            <a asp-controller="Authorization" asp-action="History" class="module-card">
+                <div class="accent-bar" style="background:#0891b2;"></div>
+                <div class="card-inner">
+                    <div class="watermark">🕓</div>
+                    <p class="card-title">Authorization History</p>
+                    <p class="card-desc">
+                        View all your past cartridge authorizations — approved, rejected, and pending.
+                    </p>
+                    <span class="card-action" style="color:#0891b2;">View History →</span>
+                </div>
+            </a>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="dashboard-footer">
+        &copy; @DateTime.Now.Year &nbsp;&#8226;&nbsp; Yakult Information Technology Department
+    </div>
+
+</div>
+
+@* ── User Guide Center Modal ── *@
+<div class="modal fade" id="userGuideCenterModal" tabindex="-1" aria-labelledby="ugcModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:460px;">
+        <div class="modal-content" style="border-radius:14px; overflow:hidden;">
+            <div class="modal-header" style="background:#d50032; color:#fff; border-bottom:none; padding:20px 24px 16px;">
+                <div>
+                    <h5 class="modal-title mb-0 fw-bold" id="ugcModalLabel">
+                        <i class="bi bi-journal-bookmark-fill me-2"></i>User Guide Center
+                    </h5>
+                    <p class="mb-0 mt-1" style="font-size:.82rem; opacity:.85;">Choose a guide to get started</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <style>
+                    .ugc-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 14px;
+                        padding: 14px 22px;
+                        border-bottom: 1px solid #f0f0f0;
+                        cursor: pointer;
+                        transition: background .13s;
+                        text-decoration: none;
+                        color: inherit;
+                    }
+                    .ugc-item:hover { background: #fef2f5; color: inherit; }
+                    .ugc-item:last-child { border-bottom: none; }
+                    .ugc-icon {
+                        width: 40px; height: 40px;
+                        border-radius: 10px;
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 1.15rem;
+                        flex-shrink: 0;
+                    }
+                    .ugc-item-text .ugc-title { font-weight: 700; font-size: .93rem; color: #1e293b; }
+                    .ugc-item-text .ugc-desc  { font-size: .79rem; color: #64748b; margin-top: 1px; }
+                    .ugc-chevron { margin-left: auto; color: #cbd5e1; font-size: .85rem; }
+                    .ugc-complete {
+                        background: #fff8e1;
+                        border-top: 2px solid #ffc107;
+                    }
+                    .ugc-complete:hover { background: #fff3cd; }
+                </style>
+
+                @* Homepage Overview — starts tour in place *@
+                <div class="ugc-item" onclick="startGuide('approver-homepage')">
+                    <div class="ugc-icon" style="background:#fff0f3; color:#d50032;">
+                        <i class="bi bi-house-door-fill"></i>
+                    </div>
+                    <div class="ugc-item-text">
+                        <div class="ugc-title">Homepage Overview</div>
+                        <div class="ugc-desc">Dashboard layout, modules, and navigation</div>
+                    </div>
+                    <i class="bi bi-chevron-right ugc-chevron"></i>
+                </div>
+
+                @* Authorization Queue *@
+                <div class="ugc-item" onclick="navigateToTour('/Authorization/SupervisorQueue?tour=approver-queue')">
+                    <div class="ugc-icon" style="background:#fff0f3; color:#d50032;">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="ugc-item-text">
+                        <div class="ugc-title">Authorization Queue</div>
+                        <div class="ugc-desc">Review, sign, and approve or reject requests</div>
+                    </div>
+                    <i class="bi bi-chevron-right ugc-chevron"></i>
+                </div>
+
+                @* Submit Request *@
+                <div class="ugc-item" onclick="navigateToTour('/Request/Index?tour=approver-submit-request')">
+                    <div class="ugc-icon" style="background:#f5f0ff; color:#7c3aed;">
+                        <i class="bi bi-plus-circle-fill"></i>
+                    </div>
+                    <div class="ugc-item-text">
+                        <div class="ugc-title">Submit a Request</div>
+                        <div class="ugc-desc">How to submit and self-authorize your own requests</div>
+                    </div>
+                    <i class="bi bi-chevron-right ugc-chevron"></i>
+                </div>
+
+                @* Authorization History *@
+                <div class="ugc-item" onclick="navigateToTour('/Authorization/History?tour=approver-history')">
+                    <div class="ugc-icon" style="background:#e8f4fd; color:#1565c0;">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <div class="ugc-item-text">
+                        <div class="ugc-title">Authorization History</div>
+                        <div class="ugc-desc">Your submitted requests and approvals you've signed</div>
+                    </div>
+                    <i class="bi bi-chevron-right ugc-chevron"></i>
+                </div>
+
+                @* Complete Tour *@
+                <div class="ugc-item ugc-complete" onclick="startCompleteTour()">
+                    <div class="ugc-icon" style="background:#fff8e1; color:#f59e0b;">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <div class="ugc-item-text">
+                        <div class="ugc-title">Start Complete Tour</div>
+                        <div class="ugc-desc">Walk through all modules in sequence</div>
+                    </div>
+                    <i class="bi bi-chevron-right ugc-chevron"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/lib/driver.js/driver.js.iife.js" asp-append-version="true"></script>
+<script src="~/js/tour-system.js" asp-append-version="true"></script>
+<script src="~/js/tour-demo-data.js" asp-append-version="true"></script>
+<script src="~/js/tours/approver-homepage.js" asp-append-version="true"></script>
+<script>
+
+    // ── User Guide Center actions ────────────────────────────────────────────
+
+    function _closeUGC() {
+        var modalEl = document.getElementById('userGuideCenterModal');
+        if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+    }
+
+    function startGuide(tourKey) {
+        _closeUGC();
+        setTimeout(function () {
+            if (window.YakultTour) window.YakultTour.startTour(tourKey);
+        }, 300);
+    }
+
+    function navigateToTour(url) {
+        _closeUGC();
+        window.location.href = url;
+    }
+
+    function startCompleteTour() {
+        _closeUGC();
+        if (window.YakultTour) {
+            window.YakultTour.startChain([
+                'approver-queue',
+                'approver-submit-request',
+                'approver-history'
+            ]);
+        }
+    }
+</script>
+</body>
+</html>

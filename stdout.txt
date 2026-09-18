@@ -1,0 +1,15 @@
+Using launch settings from C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.SystemsPortal\Properties\launchSettings.json...
+dbug: Microsoft.Extensions.Hosting.Internal.Host[1]
+      Hosting starting
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:50999
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.SystemsPortal
+dbug: Microsoft.Extensions.Hosting.Internal.Host[2]
+      Hosting started
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.

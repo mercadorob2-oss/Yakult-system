@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yakult Systems • User Manual</title>
+    <!-- Reuse the existing documentation styles -->
+    <link rel="stylesheet" href="../ProjectDocsSite/styles.css" />
+    <style>
+        .manual-hero {
+            padding: 40px 0 32px;
+            background: linear-gradient(135deg, #fff7f7, #ffffff);
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .manual-hero h1 {
+            margin-bottom: 8px;
+        }
+        .manual-hero .lead {
+            max-width: 760px;
+        }
+        .manual-section {
+            padding: 28px 0 32px;
+        }
+        .manual-card {
+            border-radius: 16px;
+            border: 1px solid var(--border-soft);
+            background: #ffffff;
+            padding: 20px 22px 22px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.04);
+        }
+        .section-heading-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .section-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            background: var(--yakult-red);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .section-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+        .manual-section h2 {
+            margin-top: 0;
+            margin-bottom: 14px;
+        }
+        .manual-section h3 {
+            margin-top: 18px;
+            font-size: 16px;
+        }
+        .manual-callout {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #fff7f7;
+            border: 1px solid rgba(230, 0, 18, 0.25);
+            font-size: 13px;
+        }
+        .screenshot-placeholder {
+            margin-top: 14px;
+            margin-bottom: 4px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px dashed var(--border-soft);
+            background: #f9fafb;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .screenshot-placeholder strong {
+            font-weight: 600;
+        }
+        .step-title {
+            font-weight: 600;
+        }
+        .two-column-narrow {
+            display: grid;
+            grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.2fr);
+            gap: 18px;
+        }
+        @media (max-width: 800px) {
+            .two-column-narrow {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+    </style>
+</head>
+<body id="top">
+
+<header class="site-header">
+    <div class="container header-inner">
+        <div class="brand">
+            <span class="brand-badge">Yakult</span>
+            <span class="brand-text">Systems User Manual</span>
+        </div>
+        <nav class="nav-links">
+            <a href="#section1-intro" class="nav-link nav-link-active">1. Introduction</a>
+            <a href="#section2-desktop" class="nav-link">2. Inventory Desktop</a>
+            <a href="#section3-android" class="nav-link">3. YakultScanner</a>
+            <a href="#section4-dispatch" class="nav-link">4. Dispatch flow</a>
+            <a href="#section5-receipts" class="nav-link">5. Receipts</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+    <section id="section1-intro" class="manual-hero" data-reveal>
+        <div class="container">
+            <h1>1. Introduction</h1>
+            <p class="lead">
+                This user manual explains, in simple steps, how to use the
+                <strong>Yakult Inventory Monitoring System</strong> (desktop application)
+                together with the <strong>YakultScanner</strong> Android app.
+            </p>
+            <p>
+                The goal is to help everyday users – warehouse staff, dispatchers and office
+                users – understand what to click and what to look at during their work.
+            </p>
+            <ul class="bullet-list">
+                <li>The <strong>desktop app</strong> is where sets, items and receipts are
+                    created and maintained.</li>
+                <li>The <strong>Android app</strong> is used in the warehouse or field to scan
+                    documents and record what actually happened during dispatch.</li>
+                <li>Both parts share the same data so that everyone looks at the same
+                    information.</li>
+            </ul>
+        </div>
+    </section>
+
+    <section id="section2-desktop" class="manual-section cards-section subtle" data-reveal>
+        <div class="container">
+            <div class="manual-card">
+                <div class="section-heading-row">
+                    <div class="section-icon">2</div>
+                    <div>
+                        <div class="section-label">Desktop app</div>
+                        <h2>2. Inventory Desktop – How to use</h2>
+                    </div>
+                </div>
+
+                <h3>2.1 Starting the program and logging in</h3>
+                <ol class="numbered-list">
+                    <li>Double‑click the <strong>Yakult Inventory Monitoring System</strong> icon
+                        on your desktop or in the Start menu.</li>
+                    <li>If a login window appears, type your username (and password if required)
+                        then click <strong>Login</strong>.</li>
+                    <li>After login, the main window opens. From here you can choose
+                        <strong>View Sets</strong>, <strong>View Receipts</strong> and other
+                        options.</li>
+                </ol>
+
+                <div class="screenshot-placeholder">
+                    <strong>Screenshot:</strong> Inventory Desktop main window with View Sets highlighted.
+                </div>
+
+                <h3>2.2 Finding an existing set</h3>
+                <ol class="numbered-list">
+                    <li>Click <strong>View Sets</strong>.</li>
+                    <li>Use the filters at the top (Set Code, dates, status, department, branch)
+                        to narrow the list if needed.</li>
+                    <li>Click <strong>Search</strong>. The grid shows all matching sets.</li>
+                    <li>Double‑click a row to open details for that set, or select it and
+                        click <strong>Edit</strong>.</li>
+                </ol>
+
+                <h3>2.3 Creating a new set (summary)</h3>
+                <ol class="numbered-list">
+                    <li>In <strong>View Sets</strong>, click <strong>Add</strong>.</li>
+                    <li>Fill in the basic details:
+                        <ul class="bullet-list">
+                            <li><strong>Department / Branch</strong> – where this set belongs.</li>
+                            <li><strong>Request / Dispatch dates</strong> – if known.</li>
+                            <li><strong>Status</strong> – for example <em>Pending</em> while the
+                                set is being prepared.</li>
+                        </ul>
+                    </li>
+                    <li>Use the Items section in the dialog to add each item (model, serial
+                        number, quantity).</li>
+                    <li>Click <strong>Save</strong>. The set is added to the grid and can be used
+                        on printed documents.</li>
+                </ol>
+
+                <h3>2.4 Editing a set or an item</h3>
+                <ol class="numbered-list">
+                    <li>From <strong>View Sets</strong>, search for the set you want to change.</li>
+                    <li>Double‑click the row or click <strong>Edit</strong>.</li>
+                    <li>Change the fields you need (status, remarks, dates, or individual items).</li>
+                    <li>Click <strong>Save</strong>. The grid refreshes and shows the new values.</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <section id="section3-android" class="manual-section cards-section" data-reveal>
+        <div class="container">
+            <div class="manual-card">
+                <div class="section-heading-row">
+                    <div class="section-icon">3</div>
+                    <div>
+                        <div class="section-label">Mobile app</div>
+                        <h2>3. YakultScanner – How to use</h2>
+                    </div>
+                </div>
+
+                <h3>3.1 Logging in</h3>
+                <ol class="numbered-list">
+                    <li>Open the <strong>YakultScanner</strong> app on your Android device.</li>
+                    <li>Type your <strong>Username / ID</strong>. Optionally enter a
+                        <strong>Display name</strong> that will appear on the Dispatch Details
+                        screen.</li>
+                    <li>Tap <strong>Continue</strong> to go to the home screen.</li>
+                </ol>
+
+                <div class="screenshot-placeholder">
+                    <strong>Screenshot:</strong> YakultScanner login screen and home menu.
+                </div>
+
+                <h3>3.2 Choosing how to scan</h3>
+                <ol class="numbered-list">
+                    <li>On the home screen choose:
+                        <ul class="bullet-list">
+                            <li><strong>Device scanner</strong> – for built‑in handheld scanners
+                                that behave like a keyboard.</li>
+                            <li><strong>Camera scanner</strong> – uses the phone camera to read the
+                                code.</li>
+                        </ul>
+                    </li>
+                    <li>If the app asks for camera permission, tap <strong>Allow</strong>.</li>
+                </ol>
+
+                <h3>3.3 Scanning a document</h3>
+                <ol class="numbered-list">
+                    <li>Point the scanner or camera at the QR / set code printed on the Yakult
+                        document or label.</li>
+                    <li>Hold the device steady until the app confirms it has read the code.</li>
+                    <li>If the code is valid, the app automatically opens the
+                        <strong>Dispatch Details</strong> screen.</li>
+                    <li>If the set cannot be found, the app shows an error message. Check that
+                        you scanned the correct document and that the set exists on the desktop
+                        system.</li>
+                </ol>
+
+                <h3>3.4 Reporting an issue for an item</h3>
+                <ol class="numbered-list">
+                    <li>On the Dispatch Details screen scroll down to the item list.</li>
+                    <li>Find the item that has a problem and tap <strong>Report issue</strong>.</li>
+                    <li>In the dialog, type the new <strong>Item status</strong> (for example
+                        <em>Damaged</em>, <em>Missing</em> or <em>For return</em>) and add a short
+                        <strong>Remark</strong>.</li>
+                    <li>Tap <strong>Save</strong>. That item will now be marked as
+                        <em>Pending update</em> until you upload.</li>
+                </ol>
+
+                <h3>3.5 Uploading changes</h3>
+                <ol class="numbered-list">
+                    <li>After you finish checking all items, tap the
+                        <strong>Upload</strong> button at the bottom of the Dispatch Details
+                        screen.</li>
+                    <li>The app sends all pending item changes to the server and shows a message
+                        with how many updates were saved.</li>
+                    <li>The <em>Pending update</em> labels disappear. The new statuses are now the
+                        official record for those items.</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <section id="section4-dispatch" class="manual-section cards-section subtle" data-reveal>
+        <div class="container">
+            <div class="manual-card">
+                <div class="section-heading-row">
+                    <div class="section-icon">4</div>
+                    <div>
+                        <div class="section-label">End-to-end flow</div>
+                        <h2>4. Dispatch flow (desktop + mobile together)</h2>
+                    </div>
+                </div>
+                <ol class="numbered-list">
+                    <li><strong>Prepare the set in the desktop app</strong><br />
+                        Office staff create or update a set with all items that will be shipped.
+                        Once saved, the set has a Set Code that can be printed.</li>
+                    <li><strong>Print documents with the code</strong><br />
+                        The Set Code or QR code is printed on dispatch forms or labels attached
+                        to boxes.</li>
+                    <li><strong>Scan at the warehouse or field</strong><br />
+                        Dispatch staff open YakultScanner, log in and scan the printed code.</li>
+                    <li><strong>Check items on the Dispatch Details screen</strong><br />
+                        The mobile app shows Set Information (employee, branch, dates) and the
+                        full item list. Staff compare this with what they physically see.</li>
+                    <li><strong>Record any issues</strong><br />
+                        For damaged, missing or extra items, staff use <strong>Report issue</strong>
+                        to record the status and remarks.</li>
+                    <li><strong>Upload when finished</strong><br />
+                        Tapping <strong>Upload</strong> sends the updates to the server. Office
+                        users can then open the same set on the desktop and see the latest
+                        statuses.</li>
+                </ol>
+
+                <div class="screenshot-placeholder">
+                    <strong>Screenshot:</strong> Example dispatch form with QR code and mobile Dispatch Details screen.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="section5-receipts" class="manual-section cards-section" data-reveal>
+        <div class="container">
+            <div class="manual-card">
+                <div class="section-heading-row">
+                    <div class="section-icon">5</div>
+                    <div>
+                        <div class="section-label">Receipts</div>
+                        <h2>5. Receipts (supplier documents)</h2>
+                    </div>
+                </div>
+
+                <h3>5.1 Adding receipt documents on the desktop</h3>
+                <ol class="numbered-list">
+                    <li>In the desktop app open <strong>View Receipts</strong>.</li>
+                    <li>Click <strong>Add</strong> to create a new receipt record.</li>
+                    <li>Fill in Supplier, SI / DR / PO numbers and a short description.</li>
+                    <li>Attach up to three scanned images of the documents (for example, PDF or
+                        image files).</li>
+                    <li>Click <strong>Save</strong>. The receipt can later be linked to a set.</li>
+                </ol>
+
+                <div class="screenshot-placeholder">
+                    <strong>Screenshot:</strong> View Receipts list with one receipt selected.
+                </div>
+
+                <h3>5.2 Linking receipts to a set</h3>
+                <ol class="numbered-list">
+                    <li>Open <strong>View Sets</strong> and find the relevant set.</li>
+                    <li>Click the <strong>Receipts</strong> button on that row.</li>
+                    <li>If a receipt is already linked, you can open it immediately.</li>
+                    <li>If not, choose whether to:
+                        <ul class="bullet-list">
+                            <li><strong>Attach existing</strong> – link one of the manual receipt
+                                records you created earlier.</li>
+                            <li><strong>Create new linked</strong> – create a brand‑new receipt
+                                record that is attached to this set right away.</li>
+                        </ul>
+                    </li>
+                </ol>
+
+                <h3>5.3 Viewing and unlinking receipts</h3>
+                <ol class="numbered-list">
+                    <li>From <strong>View Receipts</strong> or from the link dialog, open the
+                        <strong>Receipt Set Viewer</strong>.</li>
+                    <li>Use the navigation controls to move between pages or images.</li>
+                    <li>If a receipt was linked to the wrong set, use the <strong>Unlink</strong>
+                        option. This keeps the document but removes the connection to that set so
+                        it can be linked correctly later.</li>
+                </ol>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <span>Yakult Systems • <span class="footer-accent">User manual</span></span>
+        <a href="#top" class="footer-link">Back to top</a>
+    </div>
+</footer>
+
+<script src="../ProjectDocsSite/main.js"></script>
+</body>
+</html>

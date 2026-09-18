@@ -1,0 +1,249 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Request.EditRequestDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Edit Request"
+        Width="780" Height="720"
+        MinWidth="620" MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        Background="#F5F6FA"
+        FontFamily="Segoe UI"
+        FontSize="12">
+
+    <Window.Resources>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="#3C3C3C"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
+        </Style>
+        <Style x:Key="DetailLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="#3C3C3C"/>
+            <Setter Property="Margin" Value="0,3,12,3"/>
+        </Style>
+        <Style x:Key="DetailValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#1E1E1E"/>
+            <Setter Property="Margin" Value="0,3,0,3"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush" Value="#B0B0B0"/>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="LockButton" TargetType="Button">
+            <Setter Property="Width" Value="35"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="#F0F0F0"/>
+            <Setter Property="BorderBrush" Value="#B0B0B0"/>
+        </Style>
+        <Style x:Key="BarButton" TargetType="Button">
+            <Setter Property="MinWidth" Value="90"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <Border Background="White" BorderBrush="#DCDCDC" BorderThickness="1" Padding="32,24,32,32">
+                <StackPanel>
+                    <Border Background="#E6F0FF" BorderBrush="#B0C8E8" BorderThickness="1" Padding="12,8" Margin="0,0,0,20">
+                        <TextBlock Text="Unlock the fields you want to edit, then click Save." Foreground="#3C3C3C"/>
+                    </Border>
+
+                    <TextBlock Text="REQUEST DETAILS" FontWeight="Bold" Foreground="#0078D7" Margin="0,0,0,8"/>
+
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Request ID:" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock x:Name="LblReqIdValue" Grid.Row="0" Grid.Column="1" Style="{StaticResource DetailValue}"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Model / Serial:" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock x:Name="LblModelSerialValue" Grid.Row="1" Grid.Column="1" Style="{StaticResource DetailValue}"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Condition:" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock x:Name="LblConditionValue" Grid.Row="2" Grid.Column="1" Style="{StaticResource DetailValue}"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Set:" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock x:Name="LblSetValue" Grid.Row="3" Grid.Column="1" Style="{StaticResource DetailValue}"/>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Request Source:" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock x:Name="LblSourceValue" Grid.Row="4" Grid.Column="1" Style="{StaticResource DetailValue}"/>
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Received By:" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock x:Name="LblReceivedByValue" Grid.Row="5" Grid.Column="1" Style="{StaticResource DetailValue}"/>
+
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Created By:" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock x:Name="LblCreatedValue" Grid.Row="6" Grid.Column="1" Style="{StaticResource DetailValue}"/>
+
+                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Submission Group:" Style="{StaticResource DetailLabel}"/>
+                        <TextBlock x:Name="LblSubmissionValue" Grid.Row="7" Grid.Column="1" Style="{StaticResource DetailValue}"/>
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Employee / Requester -->
+                        <TextBlock x:Name="LblEmployee" Grid.Row="0" Grid.Column="0" Text="Employee *" Style="{StaticResource FieldLabel}"/>
+                        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,6">
+                            <ComboBox x:Name="CmbEmployee" Width="300" Margin="0,0,8,0"
+                                      IsEditable="False"
+                                      SelectionChanged="CmbEmployee_SelectionChanged"/>
+                            <Button x:Name="BtnEditEmployee" Style="{StaticResource LockButton}" Content="&#128274;"
+                                    Margin="0,0,8,0" Click="BtnEditEmployee_Click"/>
+                            <TextBlock x:Name="LblDeptLevelTag" Text="(Dept. Level)" FontStyle="Italic" FontWeight="Bold"
+                                       Foreground="#1E64C8" VerticalAlignment="Center" Margin="0,0,8,0" Visibility="Collapsed"/>
+                            <Button x:Name="BtnSwitchMode" Content="Switch to Dept. Level" Padding="8,0" Height="26"
+                                    Background="#E6F0FF" Foreground="#1E64C8" BorderBrush="#B4C8F0"
+                                    Cursor="Hand" Click="BtnSwitchMode_Click"/>
+                        </StackPanel>
+
+                        <TextBlock x:Name="LblEmployeeNumber" Grid.Row="1" Grid.Column="0" Text="Employee #" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="TxtEmployeeNumber" Grid.Row="1" Grid.Column="1" Margin="0,6" IsReadOnly="True" Background="#F0F0F0"/>
+
+                        <!-- Company / Department / Branch -->
+                        <TextBlock x:Name="LblCompany" Grid.Row="2" Grid.Column="0" Text="Company" Style="{StaticResource FieldLabel}"/>
+                        <Grid Grid.Row="2" Grid.Column="1" Margin="0,6">
+                            <TextBox x:Name="TxtCompany" IsReadOnly="True" Background="#F0F0F0"/>
+                            <ComboBox x:Name="CmbCompanyEdit" IsEditable="True" IsTextSearchEnabled="True" Visibility="Collapsed"/>
+                        </Grid>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Department" Style="{StaticResource FieldLabel}"/>
+                        <Grid Grid.Row="3" Grid.Column="1" Margin="0,6">
+                            <TextBox x:Name="TxtDepartment" IsReadOnly="True" Background="#F0F0F0"/>
+                            <ComboBox x:Name="CmbDeptEdit" IsEditable="True" IsTextSearchEnabled="True" Visibility="Collapsed"/>
+                        </Grid>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Branch" Style="{StaticResource FieldLabel}"/>
+                        <Grid Grid.Row="4" Grid.Column="1" Margin="0,6">
+                            <TextBox x:Name="TxtBranch" IsReadOnly="True" Background="#F0F0F0"/>
+                            <ComboBox x:Name="CmbBranchEdit" IsEditable="True" IsTextSearchEnabled="True" Visibility="Collapsed"/>
+                        </Grid>
+
+                        <!-- Item -->
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Item *" Style="{StaticResource FieldLabel}"/>
+                        <StackPanel Grid.Row="5" Grid.Column="1" Orientation="Horizontal" Margin="0,6">
+                            <ComboBox x:Name="CmbItemCategory" Width="150" Margin="0,0,8,0"
+                                      IsEnabled="False"
+                                      SelectionChanged="CmbItemCategory_SelectionChanged"/>
+                            <ComboBox x:Name="CmbItem" Width="260" Margin="0,0,8,0"
+                                      IsEditable="True" IsTextSearchEnabled="True" IsEnabled="False"
+                                      SelectionChanged="CmbItem_SelectionChanged"/>
+                            <Button x:Name="BtnEditItem" Style="{StaticResource LockButton}" Content="&#128274;"
+                                    Click="BtnEditItem_Click"/>
+                        </StackPanel>
+
+                        <!-- Quantity / Unit Price -->
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Quantity *" Style="{StaticResource FieldLabel}"/>
+                        <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Margin="0,6">
+                            <TextBox x:Name="TxtQuantity" Width="110" IsReadOnly="True" Background="#F0F0F0"
+                                     TextChanged="TxtQuantity_TextChanged"/>
+                            <Button x:Name="BtnEditQuantity" Style="{StaticResource LockButton}" Margin="8,0,0,0"
+                                    Content="&#128274;" Click="BtnEditQuantity_Click"/>
+                            <TextBlock Text="Unit Price" Style="{StaticResource FieldLabel}" Margin="16,0,8,0"/>
+                            <TextBox x:Name="TxtUnitPrice" Width="120" IsReadOnly="True" Background="#F0F0F0" Text="0"/>
+                        </StackPanel>
+
+                        <!-- Date Requested -->
+                        <TextBlock Grid.Row="7" Grid.Column="0" Text="Date Requested *" Style="{StaticResource FieldLabel}"/>
+                        <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" Margin="0,6">
+                            <DatePicker x:Name="DtDateRequested" Width="200" Height="28" IsEnabled="False"/>
+                            <Button x:Name="BtnEditDate" Style="{StaticResource LockButton}" Margin="8,0,8,0"
+                                    Content="&#128274;" Click="BtnEditDate_Click"/>
+                            <TextBlock Text="(mm/dd/yyyy)" FontStyle="Italic" Foreground="Gray" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Status -->
+                        <TextBlock Grid.Row="8" Grid.Column="0" Text="Status *" Style="{StaticResource FieldLabel}"/>
+                        <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" Margin="0,6">
+                            <ComboBox x:Name="CmbStatus" Width="240" IsEnabled="False"/>
+                            <Button x:Name="BtnEditStatus" Style="{StaticResource LockButton}" Margin="8,0,0,0"
+                                    Content="&#128274;" Click="BtnEditStatus_Click"/>
+                        </StackPanel>
+
+                        <!-- Entry Type -->
+                        <TextBlock Grid.Row="9" Grid.Column="0" Text="Entry Type (Auto)" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="TxtEntryType" Grid.Row="9" Grid.Column="1" Width="140" HorizontalAlignment="Left"
+                                 Margin="0,6" IsReadOnly="True" Background="#F0F0F0" FontWeight="Bold"/>
+
+                        <!-- Description -->
+                        <TextBlock Grid.Row="10" Grid.Column="0" Text="Description" Style="{StaticResource FieldLabel}" VerticalAlignment="Top" Margin="0,10,12,0"/>
+                        <TextBox x:Name="TxtDescription" Grid.Row="10" Grid.Column="1" Margin="0,6"
+                                 Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+
+                        <!-- Remarks -->
+                        <TextBlock Grid.Row="11" Grid.Column="0" Text="Remarks" Style="{StaticResource FieldLabel}" VerticalAlignment="Top" Margin="0,10,12,0"/>
+                        <TextBox x:Name="TxtRemarks" Grid.Row="11" Grid.Column="1" Margin="0,6"
+                                 Height="80" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="BtnDelete" Grid.Column="0" HorizontalAlignment="Left" Content="Delete"
+                    Style="{StaticResource BarButton}" Background="IndianRed" Foreground="White"
+                    Click="BtnDelete_Click"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="BtnCancel" Content="Cancel" Style="{StaticResource BarButton}"
+                        Background="#E8E8E8" Foreground="Black" IsCancel="True"/>
+                <Button x:Name="BtnSave" Content="Save" Style="{StaticResource BarButton}" Margin="8,0,0,0"
+                        Background="#0078D7" Foreground="White" Click="BtnSave_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

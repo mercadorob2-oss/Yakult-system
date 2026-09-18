@@ -1,0 +1,150 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Invoice.ConvertToSubTypeGroupDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Convert to Sub-Type Group"
+        Width="1040" Height="720"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F6"
+        FontFamily="Segoe UI">
+
+    <Window.Resources>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4A5568"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+        <Style x:Key="FieldBox" TargetType="Control">
+            <Setter Property="Height" Value="30"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#E6F0FF" BorderBrush="#BBD6F5" BorderThickness="1" Padding="8" Margin="0,0,0,10">
+            <TextBlock TextWrapping="Wrap"
+                       Text="Check the Ungrouped items that belong together, choose their Sub-Type below, then Add to Group. Repeat for as many groups as this invoice needs — each Sub-Type Group's Financial Details (VAT/WHT/Discount) are edited afterward on the Invoice Details page, not here."/>
+        </Border>
+
+        <!-- ── All invoice items, with a checkbox column for the current batch ─────── -->
+        <DataGrid x:Name="Grid" Grid.Row="1"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  SelectionMode="Extended"
+                  SelectionUnit="FullRow"
+                  GridLinesVisibility="All"
+                  HeadersVisibility="Column"
+                  AlternatingRowBackground="#F5F9FF"
+                  Background="White"
+                  BorderBrush="#DDE3EC"
+                  BorderThickness="1"
+                  RowHeight="32">
+            <DataGrid.Resources>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="#3498DB"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="Padding" Value="6"/>
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Width="60">
+                    <DataGridTemplateColumn.HeaderStyle>
+                        <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+                            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                        </Style>
+                    </DataGridTemplateColumn.HeaderStyle>
+                    <DataGridTemplateColumn.Header>
+                        <CheckBox x:Name="ChkSelectAll" Click="ChkSelectAll_Click" ToolTip="Select all Ungrouped rows"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding Selected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsUngrouped}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="SetItemId" Binding="{Binding SetItemId}" Width="80" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Item/License Name" Binding="{Binding ItemName}" Width="220" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Model" Binding="{Binding ModelNumber}" Width="110" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Serial" Binding="{Binding SerialNumber}" Width="120" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Qty" Binding="{Binding Quantity}" Width="60" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Amount" Binding="{Binding Amount, StringFormat=N2}" Width="90" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Current Group" Binding="{Binding GroupLabel}" Width="*" IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- ── Sub-Type Group for the checked batch ─────────────────────────────── -->
+        <Border Grid.Row="2" Background="White" CornerRadius="8" Padding="12" Margin="0,10,0,0" BorderBrush="#DDE3EC" BorderThickness="1">
+            <StackPanel>
+                <TextBlock x:Name="TxtSelectedCount" Text="0 Ungrouped item(s) checked" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="160"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Sub-Type *" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="CmbSubType" Style="{StaticResource FieldBox}" SelectionChanged="CmbSubType_SelectionChanged"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Group" Style="{StaticResource FieldLabel}"/>
+                        <ComboBox x:Name="CmbExistingGroup" Style="{StaticResource FieldBox}" IsEnabled="False" SelectionChanged="CmbExistingGroup_SelectionChanged"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="4">
+                        <TextBlock x:Name="LblReferenceCode" Text="Reference Code" Style="{StaticResource FieldLabel}"/>
+                        <TextBox x:Name="TxtReferenceCode" Style="{StaticResource FieldBox}" VerticalContentAlignment="Center" Padding="6,0"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Start Date" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker x:Name="DtpStart" Style="{StaticResource FieldBox}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="End Date" Style="{StaticResource FieldLabel}"/>
+                        <DatePicker x:Name="DtpEnd" Style="{StaticResource FieldBox}"/>
+                    </StackPanel>
+
+                    <Button x:Name="BtnAddToGroup" Grid.Column="4" Content="Add Checked Items to Group"
+                            Width="220" Height="36" VerticalAlignment="Bottom"
+                            Background="#2F6FED" Foreground="White" BorderThickness="0"
+                            Click="BtnAddToGroup_Click"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="3" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="TxtStatus" VerticalAlignment="Center" Foreground="#4A5568"/>
+            <Button Grid.Column="1" x:Name="BtnClose" Content="Close" Width="110" Height="36" Click="BtnClose_Click"/>
+        </Grid>
+    </Grid>
+</Window>

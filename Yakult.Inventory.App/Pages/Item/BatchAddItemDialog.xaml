@@ -1,0 +1,993 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Item.BatchAddItemDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Batch Add Items"
+        Width="1000" Height="700"
+        MinWidth="900" MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        ResizeMode="CanResizeWithGrip">
+
+    <Window.Resources>
+
+        <!-- ── Base TextBlock ─────────────────────────────────────────────── -->
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+        </Style>
+
+        <!-- ── Editable TextBox with animated focus ring ─────────────────── -->
+        <Style x:Key="FormField" TargetType="TextBox">
+            <Setter Property="Height"                   Value="32"/>
+            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Background"               Value="White"/>
+            <Setter Property="BorderBrush"              Value="#C8D2DC"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Padding"                  Value="8,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush"     Value="#3A8EF6"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                                <Setter Property="Foreground"                 Value="#A0ADB9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Multiline variant ─────────────────────────────────────────── -->
+        <Style x:Key="MultiField" TargetType="TextBox" BasedOn="{StaticResource FormField}">
+            <Setter Property="Height"                      Value="Auto"/>
+            <Setter Property="MinHeight"                   Value="72"/>
+            <Setter Property="AcceptsReturn"               Value="True"/>
+            <Setter Property="TextWrapping"                Value="Wrap"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalContentAlignment"    Value="Top"/>
+            <Setter Property="Padding"                     Value="8,6"/>
+        </Style>
+
+        <!-- ── ComboBox ──────────────────────────────────────────────────── -->
+        <Style x:Key="FormCombo" TargetType="ComboBox">
+            <Setter Property="Height"                   Value="32"/>
+            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Background"               Value="White"/>
+            <Setter Property="Padding"                  Value="6,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="IsTextSearchEnabled"      Value="True"/>
+            <!-- While closed, mouse wheel over the combo should scroll the dialog, not
+                 change the selected value — users were accidentally changing dropdown
+                 selections while scrolling through the form. -->
+            <EventSetter Event="PreviewMouseWheel" Handler="FormCombo_PreviewMouseWheel"/>
+        </Style>
+
+        <!-- ── DatePicker — replaces "15" glyph with classic calendar icon ─── -->
+        <Style x:Key="FormDate" TargetType="DatePicker">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Foreground"      Value="#1A2333"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#C8D2DC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"         Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DatePicker">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="32"/>
+                                </Grid.ColumnDefinitions>
+
+                                <DatePickerTextBox x:Name="PART_TextBox"
+                                                   Grid.Column="0"
+                                                   Foreground="{TemplateBinding Foreground}"
+                                                   Background="Transparent"
+                                                   BorderThickness="0"
+                                                   Padding="8,0"
+                                                   VerticalAlignment="Center"
+                                                   VerticalContentAlignment="Center"/>
+
+                                <Button x:Name="PART_Button"
+                                        Grid.Column="1"
+                                        Focusable="False"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Width="28" Height="26">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="BtnBd" Background="Transparent"
+                                                    CornerRadius="3" Padding="4,3">
+                                                <Path Data="M3,2 L3,0 M9,2 L9,0 M0,4 L12,4 M0,2 L0,12 L12,12 L12,2 Z M2,6 L4,6 M6,6 L8,6 M10,6 L12,6 M2,9 L4,9 M6,9 L8,9"
+                                                      Stroke="#5A6A7A" StrokeThickness="1"
+                                                      Stretch="Uniform" Width="14" Height="14"
+                                                      VerticalAlignment="Center"
+                                                      HorizontalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="BtnBd" Property="Background" Value="#E8ECF0"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                                <Popup x:Name="PART_Popup"
+                                       AllowsTransparency="True"
+                                       Placement="Bottom"
+                                       StaysOpen="False"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                                <Setter Property="Foreground" Value="#A0ADB9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Field label ───────────────────────────────────────────────── -->
+        <Style x:Key="FL" TargetType="TextBlock">
+            <Setter Property="FontSize"          Value="11.5"/>
+            <Setter Property="Foreground"        Value="#4A5A6A"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin"            Value="0,0,12,0"/>
+        </Style>
+
+        <!-- ── Section title ─────────────────────────────────────────────── -->
+        <Style x:Key="ST" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="9.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#3A8EF6"/>
+            <Setter Property="Margin"     Value="0,0,0,10"/>
+        </Style>
+
+        <!-- ── White card ────────────────────────────────────────────────── -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="8"/>
+            <Setter Property="Padding"         Value="18,12"/>
+            <Setter Property="Margin"          Value="0,0,0,8"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="6" ShadowDepth="1"
+                                      Opacity="0.06" Direction="270" Color="#0A1A2A"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Primary action button (Add Batch) ─────────────────────────── -->
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Height"          Value="38"/>
+            <Setter Property="Padding"         Value="26,0"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background"      Value="#3A8EF6"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.72"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.42"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Secondary button (Cancel, Done) ───────────────────────────── -->
+        <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
+            <Setter Property="Background" Value="#E8ECF0"/>
+            <Setter Property="Foreground" Value="#3A4A5A"/>
+        </Style>
+
+        <!-- ── Small inline button (+Add) ────────────────────────────────── -->
+        <Style x:Key="InlineBtn" TargetType="Button">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="MinWidth"        Value="46"/>
+            <Setter Property="Padding"         Value="10,0"/>
+            <Setter Property="FontSize"        Value="11.5"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background"      Value="#E8F0FE"/>
+            <Setter Property="Foreground"      Value="#3A8EF6"/>
+            <Setter Property="Margin"          Value="6,0,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#CDD9F8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Ghost outline button (Preview) ────────────────────────────── -->
+        <Style x:Key="GhostBtn" TargetType="Button">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="Padding"         Value="14,0"/>
+            <Setter Property="FontSize"        Value="11.5"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderBrush"     Value="#3A8EF6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="Foreground"      Value="#3A8EF6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#EEF4FF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Outer shell — rounded corners + drop shadow                         -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <Border CornerRadius="10" Background="White" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="5"
+                              Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="52"/>    <!-- Header bar        -->
+                <RowDefinition Height="*"/>     <!-- Scrollable body   -->
+                <RowDefinition Height="60"/>    <!-- Footer bar        -->
+            </Grid.RowDefinitions>
+
+            <!-- ════════════════════════════════════════════════════════ -->
+            <!-- ROW 0 · HEADER                                          -->
+            <!-- ════════════════════════════════════════════════════════ -->
+            <Border Grid.Row="0" Background="#3A8EF6"
+                    CornerRadius="10,10,0,0"
+                    MouseLeftButtonDown="OnHeaderDrag"
+                    Cursor="SizeAll">
+                <DockPanel Margin="18,0,10,0" VerticalAlignment="Center">
+                    <!-- Window chrome buttons -->
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                                VerticalAlignment="Center" Cursor="Arrow">
+                        <TextBlock Text="─" FontSize="14" FontWeight="Bold"
+                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   VerticalAlignment="Center"
+                                   Padding="8,0"
+                                   MouseLeftButtonDown="OnMinimizeClick"/>
+                        <TextBlock x:Name="BtnMaximizeGlyph"
+                                   Text="□" FontSize="13" FontWeight="Bold"
+                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   VerticalAlignment="Center"
+                                   Padding="8,0"
+                                   MouseLeftButtonDown="OnMaximizeClick"/>
+                        <TextBlock Text="✕" FontSize="14" FontWeight="Bold"
+                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   VerticalAlignment="Center"
+                                   Padding="8,0"
+                                   MouseLeftButtonDown="OnCloseClick"/>
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Batch Add Items"
+                                   FontSize="13" FontWeight="Bold"
+                                   Foreground="White"/>
+                        <TextBlock x:Name="LblSessionCount"
+                                   Text="" FontSize="10"
+                                   Foreground="#BDD9FF" Margin="0,1,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- ════════════════════════════════════════════════════════ -->
+            <!-- ROW 1 · SCROLLABLE BODY                                 -->
+            <!-- ════════════════════════════════════════════════════════ -->
+            <ScrollViewer Grid.Row="1"
+                          Background="#F0F2F6"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="16,10,16,2">
+                <StackPanel>
+
+                    <!-- Info banner ──────────────────────────────────── -->
+                    <Border Background="#EEF4FF" BorderBrush="#BDD0F8"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="12,7" Margin="0,0,0,5">
+                        <TextBlock FontSize="11" Foreground="#2A5BC8"
+                                   TextWrapping="Wrap">
+                            Add items with serial numbers (one per line) or use Quantity for bulk items.
+                            Serial numbers take priority when both are provided.
+                        </TextBlock>
+                    </Border>
+
+                    <!-- ════════════════════════════════════════════════ -->
+                    <!-- SECTION 1 · ITEM INFORMATION                    -->
+                    <!-- ════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="ITEM INFORMATION" Style="{StaticResource ST}"/>
+
+                            <!-- Item Name -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Item Name *" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtItemName" Grid.Column="1"
+                                         Style="{StaticResource FormField}"/>
+                            </Grid>
+
+                            <!-- Description -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Description" Style="{StaticResource FL}"
+                                           VerticalAlignment="Top" Margin="0,7,12,0"/>
+                                <TextBox x:Name="TxtDescription" Grid.Column="1"
+                                         Style="{StaticResource MultiField}" MinHeight="50"/>
+                            </Grid>
+
+                            <!-- Model Number -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Model Number *" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtModelNumber" Grid.Column="1"
+                                         Style="{StaticResource FormField}"
+                                         TextChanged="TxtModelNumber_TextChanged"/>
+                            </Grid>
+
+                            <!-- Cartridge Model (conditional — shown when Category = Cartridge) -->
+                            <Grid x:Name="RowCartridgeModel" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Cartridge Model *" Style="{StaticResource FL}"/>
+                                <Grid Grid.Column="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="CmbCartridgeModel"
+                                              Style="{StaticResource FormCombo}"
+                                              SelectionChanged="CmbCartridgeModel_SelectionChanged"/>
+                                    <Button x:Name="BtnAddCartridgeModel" Grid.Column="1"
+                                            Content="+ Add" Style="{StaticResource InlineBtn}"
+                                            Click="BtnAddCartridgeModel_Click"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Cartridge Origin (conditional) -->
+                            <Grid x:Name="RowCartridgeOrigin" Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Origin *" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbCartridgeOrigin" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          HorizontalAlignment="Left" Width="200"/>
+                            </Grid>
+
+                            <!-- Consumable Model (conditional — shown when Category = Ink/Toner/Print Head) -->
+                            <Grid x:Name="RowConsumableModel" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Model" Style="{StaticResource FL}"/>
+                                <Grid Grid.Column="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="CmbConsumableModel"
+                                              Style="{StaticResource FormCombo}"/>
+                                    <Button x:Name="BtnAddConsumableModel" Grid.Column="1"
+                                            Content="+ Add" Style="{StaticResource InlineBtn}"
+                                            Click="BtnAddConsumableModel_Click"/>
+                                </Grid>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ════════════════════════════════════════════════ -->
+                    <!-- SECTION 2 · CLASSIFICATION &amp; STOCK          -->
+                    <!-- ════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="CLASSIFICATION &amp; STOCK"
+                                       Style="{StaticResource ST}"/>
+
+                            <!-- Type | Category -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Type *" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbItemType" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          SelectionChanged="CmbItemType_SelectionChanged"/>
+                                <TextBlock Grid.Column="3" Text="Category *"
+                                           Style="{StaticResource FL}"/>
+                                <Grid Grid.Column="4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="CmbCategory"
+                                              Style="{StaticResource FormCombo}"
+                                              SelectionChanged="CmbCategory_SelectionChanged"/>
+                                    <Button x:Name="BtnAddCategory" Grid.Column="1"
+                                            Content="+ Add" Style="{StaticResource InlineBtn}"
+                                            Click="BtnAddCategory_Click"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Sub-Type (optional) — default classification used by Invoice Reports;
+                                 distinct from the per-invoice Sub-Type Entries (reference code + dates)
+                                 tracked separately on each invoice. -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Sub-Type" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbSubType" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          SelectionChanged="CmbSubType_SelectionChanged"/>
+                            </Grid>
+
+                            <!-- Enable contract dates checkbox (shown only for Services) -->
+                            <Grid x:Name="RowServiceDateToggle" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkServiceContractDates" Grid.Column="1"
+                                          Content="Enable Start / End Date for Services"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          Checked="ChkServiceContractDates_Changed"
+                                          Unchecked="ChkServiceContractDates_Changed"/>
+                            </Grid>
+
+                            <!-- Start Date | End Date (conditional) -->
+                            <Grid x:Name="RowContractDates" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Start Date" Style="{StaticResource FL}"/>
+                                <DatePicker x:Name="DpStartDate" Grid.Column="1"
+                                            Style="{StaticResource FormDate}"
+                                            SelectedDateChanged="DpLicenseDate_SelectedDateChanged"/>
+                                <TextBlock Grid.Column="3" Text="End Date"
+                                           Style="{StaticResource FL}"/>
+                                <DatePicker x:Name="DpEndDate" Grid.Column="4"
+                                            Style="{StaticResource FormDate}"
+                                            SelectedDateChanged="DpLicenseDate_SelectedDateChanged"/>
+                            </Grid>
+
+                            <!-- License Number (shown for Software/License + Services, or any
+                                 item with a Sub-Type selected — e.g. a Hardware item under a
+                                 Contract) -->
+                            <Grid x:Name="RowLicenseNumber" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="LblLicenseNumber" Text="License Number" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtLicenseNumber" Grid.Column="1"
+                                         Style="{StaticResource FormField}"/>
+                            </Grid>
+
+                            <!-- Warranty period info label (shown for Software in place of warranty years) -->
+                            <Border x:Name="RowWarrantyInfoBand" Visibility="Collapsed"
+                                    Background="#F0FBF4" BorderBrush="#A8DEB8"
+                                    BorderThickness="1" CornerRadius="4"
+                                    Padding="10,6" Margin="0,0,0,5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource FL}"/>
+                                    <TextBlock x:Name="LblWarrantyInfo" Grid.Column="1"
+                                               FontSize="11" Foreground="#1C7A38"
+                                               VerticalAlignment="Center"
+                                               TextWrapping="Wrap"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Condition | Unit of Measure + Amount -->
+                            <Grid Margin="0,0,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90"/>   <!-- Condition lbl  -->
+                                    <ColumnDefinition Width="*"/>    <!-- Condition cmb  -->
+                                    <ColumnDefinition Width="20"/>   <!-- gap            -->
+                                    <ColumnDefinition Width="120"/>  <!-- UoM lbl        -->
+                                    <ColumnDefinition Width="*"/>    <!-- UoM cmb        -->
+                                    <ColumnDefinition Width="8"/>    <!-- gap            -->
+                                    <ColumnDefinition Width="58"/>   <!-- Amount label   -->
+                                    <ColumnDefinition Width="72"/>   <!-- Amount input   -->
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Condition *" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbCondition" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"/>
+                                <TextBlock Grid.Column="3" Text="Unit of Measure *"
+                                           Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbUnitOfMeasure" Grid.Column="4"
+                                          Style="{StaticResource FormCombo}"/>
+                                <TextBlock Grid.Column="6" Text="Amount"
+                                           Style="{StaticResource FL}"
+                                           HorizontalAlignment="Right" Margin="0,0,6,0"/>
+                                <TextBox x:Name="TxtAmount" Grid.Column="7"
+                                         Style="{StaticResource FormField}" Text="0"
+                                         ToolTip="Item amount / cost"/>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ════════════════════════════════════════════════ -->
+                    <!-- SECTION 3 · SERIAL NUMBERS                      -->
+                    <!-- ════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="SERIAL NUMBERS" Style="{StaticResource ST}"/>
+
+                            <!-- Quantity -->
+                            <Grid x:Name="RowQuantity" Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Quantity *" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtQuantity" Grid.Column="1"
+                                         Style="{StaticResource FormField}" Text="1"/>
+                                <TextBlock Grid.Column="2"
+                                           Text="(ignored when serial numbers are provided)"
+                                           FontSize="10.5" Foreground="#8A9AAA"
+                                           VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            </Grid>
+
+                            <!-- Serial Numbers -->
+                            <Grid x:Name="RowSerialNumbersEntry" Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Serial Numbers" Style="{StaticResource FL}"
+                                           VerticalAlignment="Top" Margin="0,7,12,0"/>
+                                <StackPanel Grid.Column="1">
+                                    <TextBox x:Name="TxtSerialNumbers"
+                                             Style="{StaticResource MultiField}"
+                                             MinHeight="64" MaxHeight="140"
+                                             AcceptsReturn="True"/>
+                                    <TextBlock Text="Enter one serial number per line. Leave empty to use Quantity instead."
+                                               FontSize="10.5" Foreground="#8A9AAA"
+                                               Margin="2,5,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Cell Phone Details (conditional — shown when Category = CellPhone) -->
+                            <!-- Full-width block (not the usual 140/label + *-column layout) so the
+                                 table can use the whole row instead of being squeezed into the right
+                                 column — the label sits on its own row directly above it. -->
+                            <StackPanel x:Name="RowCellPhoneEntries" Visibility="Collapsed" Margin="0,0,0,4">
+                                    <TextBlock Text="Cell Phone Details *" Style="{StaticResource FL}"
+                                               Margin="0,0,0,6"/>
+                                    <DataGrid x:Name="DgvCellPhones"
+                                              AutoGenerateColumns="False"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              CanUserSortColumns="False"
+                                              CanUserReorderColumns="False"
+                                              HeadersVisibility="Column"
+                                              GridLinesVisibility="All"
+                                              VerticalGridLinesBrush="#DDE3EC"
+                                              HorizontalGridLinesBrush="#DDE3EC"
+                                              RowHeight="32"
+                                              ColumnHeaderHeight="30"
+                                              FontSize="11.5"
+                                              Background="White"
+                                              BorderBrush="#DDE3EC" BorderThickness="1"
+                                              MaxHeight="220"
+                                              VerticalScrollBarVisibility="Auto"
+                                              PreviewKeyDown="DgvCellPhones_PreviewKeyDown"
+                                              PreviewMouseRightButtonDown="DgvCellPhones_PreviewMouseRightButtonDown">
+                                        <DataGrid.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Paste" InputGestureText="Ctrl+V"
+                                                          Click="MnuPasteCellPhoneRows_Click"/>
+                                            </ContextMenu>
+                                        </DataGrid.ContextMenu>
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="#" Width="40" IsReadOnly="True"
+                                                Binding="{Binding RowNumber, Mode=OneWay}">
+                                                <DataGridTextColumn.ElementStyle>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                        <Setter Property="Foreground" Value="#8A9AAA"/>
+                                                    </Style>
+                                                </DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="Cell Phone Number" Width="*"
+                                                Binding="{Binding CellPhoneNumber, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <DataGridTextColumn Header="Serial Number *" Width="*"
+                                                Binding="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <DataGridTextColumn Header="IMEI 1" Width="*"
+                                                Binding="{Binding IMEI1, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <DataGridTextColumn Header="IMEI 2" Width="*"
+                                                Binding="{Binding IMEI2, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <DataGridTemplateColumn Width="36" CanUserResize="False">
+                                                <DataGridTemplateColumn.CellTemplate>
+                                                    <DataTemplate>
+                                                        <Button Content="✕" FontSize="10" Padding="0"
+                                                                Width="20" Height="20"
+                                                                Background="Transparent" BorderThickness="0"
+                                                                Foreground="#C0392B" Cursor="Hand"
+                                                                Click="BtnRemoveCellPhoneRow_Click"/>
+                                                    </DataTemplate>
+                                                </DataGridTemplateColumn.CellTemplate>
+                                            </DataGridTemplateColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <Button x:Name="BtnAddCellPhoneRow" Content="+ Add Row"
+                                                Style="{StaticResource InlineBtn}"
+                                                HorizontalAlignment="Left"
+                                                Click="BtnAddCellPhoneRow_Click"/>
+                                        <Button x:Name="BtnAddCellPhoneRows10" Content="+ Add 10 Rows"
+                                                Style="{StaticResource InlineBtn}"
+                                                HorizontalAlignment="Left" Margin="6,0,0,0"
+                                                Click="BtnAddCellPhoneRows10_Click"/>
+                                        <Button x:Name="BtnDeleteCellPhoneRows" Content="Delete"
+                                                Style="{StaticResource InlineBtn}"
+                                                HorizontalAlignment="Left" Margin="6,0,0,0"
+                                                Click="BtnDeleteCellPhoneRows_Click"/>
+                                    </StackPanel>
+                                    <!-- Pagination — the grid only ever displays one page at a time,
+                                         but every row across every page is still kept and saved. -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0" VerticalAlignment="Center">
+                                        <Button x:Name="BtnCellPhonePrevPage" Content="‹ Prev"
+                                                Style="{StaticResource InlineBtn}"
+                                                Click="BtnCellPhonePrevPage_Click"/>
+                                        <TextBlock x:Name="TxtCellPhonePageInfo"
+                                                   Text="Page 1 of 1  (0 rows)"
+                                                   FontSize="11" Foreground="#5A6A7A"
+                                                   VerticalAlignment="Center" Margin="10,0"/>
+                                        <Button x:Name="BtnCellPhoneNextPage" Content="Next ›"
+                                                Style="{StaticResource InlineBtn}"
+                                                Click="BtnCellPhoneNextPage_Click"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Each row adds one cell phone item. Serial Number is required per row."
+                                               FontSize="10.5" Foreground="#8A9AAA"
+                                               Margin="2,5,0,0"/>
+                            </StackPanel>
+
+                            <!-- Preview button + list -->
+                            <Grid x:Name="RowPreviewSection" Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <StackPanel Grid.Column="1">
+                                    <Button x:Name="BtnPreview"
+                                            Content="▶  Preview Serial Numbers"
+                                            Style="{StaticResource GhostBtn}"
+                                            HorizontalAlignment="Left"
+                                            Click="BtnPreview_Click"/>
+
+                                    <!-- Preview panel (conditional) -->
+                                    <Border x:Name="PnlPreview" Visibility="Collapsed"
+                                            Background="#F8FAFF"
+                                            BorderBrush="#DDE3EC" BorderThickness="1"
+                                            CornerRadius="6" Padding="12,10"
+                                            Margin="0,10,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="SERIAL NUMBERS PREVIEW"
+                                                       FontSize="9" FontWeight="Bold"
+                                                       Foreground="#6A7A8A"
+                                                       Margin="0,0,0,6"/>
+                                            <ListBox x:Name="LstPreview"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     FontFamily="Consolas" FontSize="11"
+                                                     MaxHeight="160"
+                                                     ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ════════════════════════════════════════════════ -->
+                    <!-- SECTION 4 · PURCHASE DETAILS                    -->
+                    <!-- ════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="PURCHASE DETAILS" Style="{StaticResource ST}"/>
+
+                            <!-- Vendor -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Vendor" Style="{StaticResource FL}"/>
+                                <Grid Grid.Column="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="CmbVendor"
+                                              Style="{StaticResource FormCombo}"/>
+                                    <Button x:Name="BtnAddVendor" Grid.Column="1"
+                                            Content="+ Add" Style="{StaticResource InlineBtn}"
+                                            Click="BtnAddVendor_Click"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Warranty Years (shown for Hardware / Services) -->
+                            <Grid x:Name="RowWarrantyYears" Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Warranty (Years)" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtWarrantyYears" Grid.Column="1"
+                                         Style="{StaticResource FormField}" Text="0"/>
+                            </Grid>
+
+                            <!-- Warranty Start (optional manual override — same pattern as Edit Item.
+                                 Unchecked: Warranty Start defaults to the item's creation time when
+                                 Warranty (Years) is above zero, same as before this was added. -->
+                            <Grid x:Name="RowWarrantyStart" Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Warranty Start" Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkWarrantyStart" Grid.Column="1"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <DatePicker x:Name="DpWarrantyStart" Grid.Column="2"
+                                            Style="{StaticResource FormDate}"
+                                            HorizontalAlignment="Left" Width="220"
+                                            IsEnabled="{Binding IsChecked, ElementName=ChkWarrantyStart}"
+                                            SelectedDateChanged="WarrantyDates_ValueChanged"/>
+                            </Grid>
+
+                            <!-- Warranty End (optional manual override) -->
+                            <Grid x:Name="RowWarrantyEnd" Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Warranty End" Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkWarrantyEnd" Grid.Column="1"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <DatePicker x:Name="DpWarrantyEnd" Grid.Column="2"
+                                            Style="{StaticResource FormDate}"
+                                            HorizontalAlignment="Left" Width="220"
+                                            IsEnabled="{Binding IsChecked, ElementName=ChkWarrantyEnd}"
+                                            SelectedDateChanged="WarrantyDates_ValueChanged"/>
+                            </Grid>
+
+                            <!-- Date Purchased -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkDatePurchased" Grid.Column="1"
+                                          Content="Date Purchased"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <DatePicker x:Name="DpDatePurchased" Grid.Column="2"
+                                            Style="{StaticResource FormDate}"
+                                            IsEnabled="{Binding IsChecked,
+                                                        ElementName=ChkDatePurchased}"/>
+                            </Grid>
+
+                            <!-- Part Number -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Part #" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtPartNumber" Grid.Column="1"
+                                         Style="{StaticResource FormField}" MaxLength="100"/>
+                            </Grid>
+
+                            <!-- Fixed Asset -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkIsTrackedAsset" Grid.Column="1"
+                                          Content="Treat this item as a Fixed Asset"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          ToolTip="Tracked assets are lifecycle-managed, not stock-managed."/>
+                            </Grid>
+
+                            <!-- Borrowable -->
+                            <Grid Margin="0,5,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkIsBorrowable" Grid.Column="1"
+                                          Content="Available for borrowing"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          ToolTip="Shows this item in the Borrow Items &quot;Select from list&quot; picker."/>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ════════════════════════════════════════════════ -->
+                    <!-- SECTION 5 · REMARKS                             -->
+                    <!-- ════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="REMARKS (OPTIONAL)"
+                                       FontSize="9.5" FontWeight="Bold"
+                                       Foreground="#8A9AAA" Margin="0,0,0,8"/>
+                            <TextBox x:Name="TxtRemarks"
+                                     Style="{StaticResource MultiField}"
+                                     MinHeight="46" MaxHeight="100"
+                                     AcceptsReturn="True"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Resize grip spacer -->
+                    <Border Height="8" Background="Transparent"/>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ════════════════════════════════════════════════════════ -->
+            <!-- ROW 2 · FOOTER                                          -->
+            <!-- ════════════════════════════════════════════════════════ -->
+            <Border Grid.Row="2" Background="White"
+                    BorderBrush="#DDE3EC" BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,10,10">
+                <DockPanel Margin="20,0" VerticalAlignment="Center" LastChildFill="False">
+                    <Button DockPanel.Dock="Left" Content="⬆ Import Stock Count CSV"
+                            Style="{StaticResource SecBtn}"
+                            Click="BtnImportCsv_Click"/>
+                    <Button DockPanel.Dock="Left" Content="🧾 Import Invoice CSV"
+                            Style="{StaticResource SecBtn}" Margin="8,0,0,0"
+                            Click="BtnImportInvoiceCsv_Click"/>
+                    <Button DockPanel.Dock="Left" Content="📄 Build Invoice"
+                            Style="{StaticResource SecBtn}" Margin="8,0,0,0"
+                            ToolTip="Add the items, tag them into Sub-Type groups and set the financials on one page — the on-screen alternative to Import Invoice CSV."
+                            Click="BtnBuildInvoice_Click"/>
+                    <Button DockPanel.Dock="Left" Content="📦 Build Request Set"
+                            Style="{StaticResource SecBtn}" Margin="8,0,0,0"
+                            ToolTip="Enter request line items on one page — brand-new items are created in the system when the Set is created."
+                            Click="BtnBuildRequestSet_Click"/>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="BtnCancel" Content="Cancel"
+                                Style="{StaticResource SecBtn}" Margin="0,0,8,0"
+                                Click="BtnCancel_Click" IsCancel="True"/>
+                        <Button x:Name="BtnAdd" Content="Add Batch"
+                                Style="{StaticResource PrimaryBtn}" Margin="0,0,8,0"
+                                Click="BtnAdd_Click"/>
+                        <Button x:Name="BtnDone" Content="Done"
+                                Style="{StaticResource SecBtn}"
+                                Click="BtnDone_Click"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>

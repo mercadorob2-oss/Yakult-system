@@ -1,0 +1,218 @@
+@using Inventory.RequestPortal.Extensions
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnv
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery _AntiForgery
+@{
+    var currentUser = Context.Session.GetObject<UserSessionModel>(Inventory.RequestPortal.Controllers.AccountController.SessionKeyUser);
+    bool showDbSwitcher = currentUser?.IsDeveloper == true;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Requester Portal</title>
+    <meta name="csrf-token" content="@_AntiForgery.GetAndStoreTokens(Context).RequestToken" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/root.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Inventory.RequestPortal.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/driver.js/driver.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tour.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.9/styles/ag-grid.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.9/styles/ag-theme-alpine.css" />
+    <link rel="stylesheet" href="~/css/yakult-grid.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="page-wrapper">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+
+        @if (ViewData["HideFooter"] as bool? != true)
+        {
+            <footer class="border-top footer text-muted">
+                <div class="container text-center">
+                    &copy; 2026 - Yakult Information Technology Department
+                </div>
+            </footer>
+        }
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.9/dist/ag-grid-community.min.js"></script>
+    <script src="~/js/yakult-grid.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (showDbSwitcher)
+    {
+        <script src="~/js/dev-tools.js" asp-append-version="true"></script>
+        <script src="~/js/db-switcher.js" asp-append-version="true"></script>
+    }
+    <script src="~/lib/driver.js/driver.js.iife.js" asp-append-version="true"></script>
+    <script src="~/js/tour-system.js" asp-append-version="true"></script>
+    <script src="~/js/tour-demo-data.js" asp-append-version="true"></script>
+
+    @if (showDbSwitcher)
+    {
+    <!-- Database Switcher floating button + modal (developer accounts only) -->
+    <style>
+        .dev-db-switcher-btn {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            z-index: 9999;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 50px;
+            padding: 0.35rem 0.85rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #555;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .dev-db-switcher-btn:hover {
+            background: #fff;
+            color: #333;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .dev-db-switcher-btn .db-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4CAF50;
+            flex-shrink: 0;
+        }
+    </style>
+
+    <button class="dev-db-switcher-btn" id="devDbSwitcherTrigger" title="Switch database">
+        <span class="db-dot"></span>
+        <i class="bi bi-database"></i>
+        <span id="devDbSwitcherLabel">DB</span>
+    </button>
+
+    <!-- DB Switcher Modal -->
+    <div class="modal fade" id="devDbSwitcherModal" tabindex="-1" aria-labelledby="devDbSwitcherModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:16px;border:none;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+                <div class="modal-header" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border-radius:16px 16px 0 0;border:none;">
+                    <h5 class="modal-title" id="devDbSwitcherModalLabel">
+                        <i class="bi bi-database-gear"></i> Database Switcher
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding:1.5rem;">
+
+                    <!-- Source tabs -->
+                    <div class="d-flex gap-2 mb-3">
+                        <button id="devBtnSourceCustom" class="btn btn-primary btn-sm flex-fill" onclick="devSwitchSource('custom')">
+                            <i class="bi bi-pencil-square"></i> Custom
+                        </button>
+                        <button id="devBtnSourcePreset" class="btn btn-outline-secondary btn-sm flex-fill" onclick="devSwitchSource('preset')">
+                            <i class="bi bi-list-ul"></i> Preset
+                        </button>
+                        <button id="devBtnSourceLocal" class="btn btn-outline-secondary btn-sm flex-fill" onclick="devSwitchSource('local')">
+                            <i class="bi bi-pc-display"></i> Local
+                        </button>
+                    </div>
+
+                    <!-- Custom panel -->
+                    <div id="devCustomPanel">
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold mb-1" style="font-size:0.85rem;">Server Address</label>
+                            <input type="text" id="devCustServer" class="form-control form-control-sm" placeholder="e.g. 192.168.100.186,50301" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold mb-1" style="font-size:0.85rem;">Database Name</label>
+                            <input type="text" id="devCustDatabase" class="form-control form-control-sm" placeholder="e.g. YIMS_PROD" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold mb-1" style="font-size:0.85rem;">Authentication</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="devAuthMode" id="devAuthSql" value="sql" checked />
+                                    <label class="form-check-label" for="devAuthSql" style="font-size:0.85rem;">SQL Server</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="devAuthMode" id="devAuthWin" value="windows" />
+                                    <label class="form-check-label" for="devAuthWin" style="font-size:0.85rem;">Windows Auth</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="devSqlFields">
+                            <div class="mb-2">
+                                <label class="form-label fw-semibold mb-1" style="font-size:0.85rem;">Username</label>
+                                <input type="text" id="devCustUsername" class="form-control form-control-sm" placeholder="e.g. remote_user" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label fw-semibold mb-1" style="font-size:0.85rem;">Password</label>
+                                <input type="password" id="devCustPassword" class="form-control form-control-sm" placeholder="Password" />
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-sm w-100 mt-1" id="devBtnTestApply">
+                            <i class="bi bi-plug"></i> Test &amp; Apply
+                        </button>
+                    </div>
+
+                    <!-- Preset panel -->
+                    <div id="devPresetPanel" style="display:none;">
+                        <label class="form-label fw-semibold mb-1" style="font-size:0.85rem;">Select Database</label>
+                        <select class="form-select form-select-sm" id="devDbSelectorModal">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+
+                    <!-- Local panel -->
+                    <div id="devLocalPanel" style="display:none;">
+                        <label class="form-label fw-semibold mb-1" style="font-size:0.85rem;">Local Database (Windows Auth)</label>
+                        <select class="form-select form-select-sm" id="devLocalDbSelector">
+                            <option value="">Loading local databases...</option>
+                        </select>
+                        <small class="text-muted">Connects to localhost via Windows Authentication</small>
+                    </div>
+
+                    <div id="devDbSwitcherStatus" class="mt-3 p-2" style="font-size:0.85rem;border-radius:8px;"></div>
+                </div>
+                <div class="modal-footer" style="border:none;padding:0.75rem 1.5rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            initDbSwitcher({
+                modalId:        'devDbSwitcherModal',
+                triggerId:      'devDbSwitcherTrigger',
+                labelId:        'devDbSwitcherLabel',
+                statusId:       'devDbSwitcherStatus',
+                btnCustomId:    'devBtnSourceCustom',
+                btnPresetId:    'devBtnSourcePreset',
+                btnLocalId:     'devBtnSourceLocal',
+                customPanelId:  'devCustomPanel',
+                presetPanelId:  'devPresetPanel',
+                localPanelId:   'devLocalPanel',
+                presetSelectId: 'devDbSelectorModal',
+                localSelectId:  'devLocalDbSelector',
+                serverInputId:  'devCustServer',
+                dbInputId:      'devCustDatabase',
+                authSqlId:      'devAuthSql',
+                authWinId:      'devAuthWin',
+                sqlFieldsId:    'devSqlFields',
+                usernameInputId:'devCustUsername',
+                passwordInputId:'devCustPassword',
+                testApplyBtnId: 'devBtnTestApply',
+                switchSourceFn: 'devSwitchSource'
+            });
+        });
+    </script>
+    }
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

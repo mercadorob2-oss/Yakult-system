@@ -1,0 +1,128 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260713164351
+Username: YAKULT0\russel.mercado
+RunAs User: YAKULT0\russel.mercado
+Configuration Name: 
+Machine: ITDLAPTOP9 (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_remote\Setup-Api2-IIS.ps1 -NoSleep
+Process ID: 32520
+PSVersion: 5.1.26100.8737
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8737
+BuildVersion: 10.0.26100.8737
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+=== Yakult API2 - IIS Setup ===
+[1/5] Target directory...
+  Exists: C:\inetpub\wwwroot\Yakult.Inventory.Api2_remote
+  Granted Everyone/Modify on C:\inetpub\wwwroot\Yakult.Inventory.Api2_remote
+[2/5] Copying files...
+
+                          42    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\
+            New File                1706        Setup-Api2-IIS.bat
+                           1    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\App_Data\
+                           1    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\App_Data\Logs\
+                           2    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\App_Data\mobile-serials\
+                           2    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\App_Data\PublishProfiles\
+                           1    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\App_Data\SetImages\
+                           0    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\aspnet_client\
+                           0    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\aspnet_client\system_web\
+                           0    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\aspnet_client\system_web\4_0_30319\
+                          12    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\bin\
+                           2    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\Content\
+                           0    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\
+                           2    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\
+                           0    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\build\
+                           1    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\build\net472\
+                           1    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\icons\
+                           0    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\lib\
+                           2    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\lib\net472\
+                           2    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\tasks\
+                           0    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\tools\
+                          31    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.4.1.0\tools\Roslyn-4.1.0\
+                           3    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\Scripts\
+                           1    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\Views\
+                           1    C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.Inventory.Api2_rem
+ote\Views\Home\
+  Robocopy exit code: 1
+[3/5] App pool...
+APPPOOL object "YakultAPI2" changed
+  Updated: YakultAPI2
+[4/5] Site...
+
+ERROR ( message:Unknown attribute "physicalPath".  Replace with -? for help. )
+  Updated: Yakult.Inventory.Api2
+APP object "Yakult.Inventory.Api2/" changed
+[5/5] Starting...
+"YakultAPI2" successfully started.
+ERROR ( hresult:80070057, message:Command execution failed.
+The parameter is incorrect.
+ )
+Health check (up to 30s)...
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 1/10: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 2/10: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 3/10: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 4/10: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 5/10: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 6/10: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 7/10: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 8/10: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 9/10: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 10/10: Unable to connect to the remote server
+  Trying /dbinfo.ashx...
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 1/5: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 2/5: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 3/5: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 4/5: Unable to connect to the remote server
+PS>TerminatingError(Invoke-WebRequest): "Unable to connect to the remote server"
+  Attempt 5/5: Unable to connect to the remote server
+WARNING: Health check failed. Site may still need IIS warm-up.
+
+=== Done ===
+Base: http://localhost:7014/
+Note: Update Web.config connection string in C:\inetpub\wwwroot\Yakult.Inventory.Api2_remote if needed.
+**********************
+Windows PowerShell transcript end
+End time: 20260713164534
+**********************

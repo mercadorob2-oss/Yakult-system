@@ -1,0 +1,11 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.EDocs.Transmittal.Views.TransmittalPrintView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#EEEEEE">
+    <!-- Host only. The preview pages (and the printed FixedDocument) are built
+         in code-behind from TransmittalCopyElement instances, which reproduce
+         the reference workbook transmittal.xlsx cell for cell: sheet 1 is a
+         LEGAL page with the TRANSMITTAL copy on the top half and the FILE copy
+         on the bottom, sheet 2 carries the GATEPASS copy on its top half. -->
+    <StackPanel x:Name="PagesHost" Margin="0,4,0,4"/>
+</UserControl>

@@ -1,0 +1,44 @@
+/*
+ * Yakult brand theme for AG Grid Community.
+ * Extends AG Grid's built-in "alpine" theme (see _Layout.cshtml) via CSS variables
+ * instead of hand-styling every cell, so upgrades to AG Grid itself don't require
+ * re-theming. Colors mirror root.css's --yakult-red and the row hover/selected
+ * states already used across the app's Bootstrap tables.
+ */
+.ag-theme-yakult {
+    --ag-header-background-color: var(--yakult-red, #d50032);
+    --ag-header-foreground-color: #fff;
+    --ag-header-column-resize-handle-color: rgba(255, 255, 255, 0.4);
+    --ag-header-column-separator-color: rgba(255, 255, 255, 0.25);
+    --ag-selected-row-background-color: var(--row-selected, #b8ceed);
+    --ag-row-hover-color: var(--row-hover, #edf3fb);
+    --ag-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --ag-font-size: 13px;
+    --ag-border-color: var(--border-muted, #dde3ec);
+    --ag-row-border-color: var(--border-muted, #dde3ec);
+    --ag-cell-horizontal-padding: 10px;
+    --ag-row-height: 34px;
+    --ag-header-height: 34px;
+    --ag-borders: solid 1px;
+    --ag-border-radius: 8px;
+    width: 100%;
+}
+
+.ag-theme-yakult .ag-header-cell-label {
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+.ag-theme-yakult .ag-row {
+    cursor: pointer;
+}
+
+.ag-theme-yakult .yg-overlay {
+    color: #7a8a9a;
+    font-size: 0.9rem;
+}
+
+/* Fixed default height so the grid renders sensibly before rowData/pagination settle. */
+.yg-grid {
+    height: 560px;
+}

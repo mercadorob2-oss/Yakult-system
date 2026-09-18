@@ -1,0 +1,223 @@
+@{
+    ViewData["Title"] = "Authorization Status";
+}
+
+@await Html.PartialAsync("_MasterNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Requester Portal</h1>
+        <p class="subtitle mb-0">Submit and track your cartridge requests</p>
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+        <button type="button"
+                onclick="window.YakultTour && window.YakultTour.startTourForPage()"
+                class="btn btn-link text-white p-0 lh-1"
+                style="font-size:1.15rem; text-decoration:none; opacity:.85;"
+                title="Start Guided Tour">
+            <i class="bi bi-question-circle"></i>
+        </button>
+        @await Html.PartialAsync("_NotificationBell")
+    </div>
+</div>
+
+<div class="content-padded">
+    <div class="nav-tabs-container mb-4">
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Request" asp-action="Index">New Request</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Request" asp-action="MyRequests">My Submitted Requests</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" asp-controller="Authorization" asp-action="EmployeeStatus">Authorization</a>
+            </li>
+        </ul>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div id="empStatusContent">
+        <div class="d-flex justify-content-center py-5">
+            <span class="spinner-border text-danger" role="status"></span>
+        </div>
+    </div>
+</div>
+
+@* ── Authorization detail modal ── *@
+<div class="modal fade" id="authDetailModal" tabindex="-1" aria-labelledby="authDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f8fafc;">
+                <h5 class="modal-title" id="authDetailModalLabel">
+                    <i class="bi bi-shield-check me-2 text-danger"></i>
+                    <span id="authDetailTitle">Authorization Details</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="authDetailBody">
+                <div class="text-center py-4">
+                    <span class="spinner-border text-danger" role="status"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<style>
+    .row-highlight {
+        background-color: #fff8e1 !important;
+        outline: 2px solid #f59e0b;
+        outline-offset: -2px;
+    }
+
+    .auth-page-controls .page-link {
+        border-radius: 6px !important;
+        font-size: 0.8rem;
+        padding: 4px 9px;
+        color: #475569;
+        border-color: #e2e8f0;
+    }
+
+    .auth-page-controls .page-item.active .page-link {
+        background-color: #d50032 !important;
+        border-color: #d50032 !important;
+        color: #fff !important;
+    }
+
+    .auth-page-controls .page-item.disabled .page-link {
+        color: #cbd5e1;
+    }
+
+    .auth-page-controls {
+        gap: 3px;
+    }
+</style>
+<script>
+    function initTablePagination(tbodyId, controlsId, pageSize, highlightId) {
+        var tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+        var rows = Array.from(tbody.querySelectorAll('tr'));
+
+        var currentPage = 1;
+        var totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+
+        function showPage(page) {
+            currentPage = page;
+            var start = (page - 1) * pageSize;
+            rows.forEach(function (row, i) {
+                row.style.display = (i >= start && i < start + pageSize) ? '' : 'none';
+            });
+            renderControls();
+        }
+
+        function renderControls() {
+            var el = document.getElementById(controlsId);
+            if (!el) return;
+            if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+            var start   = (currentPage - 1) * pageSize + 1;
+            var showing = Math.min(currentPage * pageSize, rows.length);
+
+            var html = '<div class="d-flex align-items-center justify-content-between px-3 py-2 border-top">';
+            html += '<span style="font-size:.82rem; color:#64748b;">Showing ' + start + '–' + showing + ' of ' + rows.length + '</span>';
+            html += '<nav><ul class="pagination mb-0 d-flex flex-wrap auth-page-controls">';
+
+            html += '<li class="page-item' + (currentPage === 1 ? ' disabled' : '') + '">'
+                  + '<a class="page-link" href="#" data-page="' + (currentPage - 1) + '">&lsaquo;</a></li>';
+
+            var winStart = Math.max(1, currentPage - 2);
+            var winEnd   = Math.min(totalPages, winStart + 4);
+            if (winEnd - winStart < 4) winStart = Math.max(1, winEnd - 4);
+
+            for (var p = winStart; p <= winEnd; p++) {
+                html += '<li class="page-item' + (p === currentPage ? ' active' : '') + '">'
+                      + '<a class="page-link" href="#" data-page="' + p + '">' + p + '</a></li>';
+            }
+
+            html += '<li class="page-item' + (currentPage === totalPages ? ' disabled' : '') + '">'
+                  + '<a class="page-link" href="#" data-page="' + (currentPage + 1) + '">&rsaquo;</a></li>';
+
+            html += '</ul></nav></div>';
+            el.innerHTML = html;
+
+            el.querySelectorAll('[data-page]').forEach(function (a) {
+                a.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var p = parseInt(a.dataset.page);
+                    if (p >= 1 && p <= totalPages) showPage(p);
+                });
+            });
+        }
+
+        // Jump to the page containing the highlighted row
+        var startPage = 1;
+        if (highlightId) {
+            var hlIdx = rows.findIndex(function (r) {
+                return parseInt(r.dataset.authId) === highlightId;
+            });
+            if (hlIdx >= 0) startPage = Math.floor(hlIdx / pageSize) + 1;
+        }
+
+        showPage(startPage);
+
+        if (highlightId) {
+            rows.forEach(function (r) {
+                if (parseInt(r.dataset.authId) === highlightId) {
+                    r.classList.add('row-highlight');
+                    setTimeout(function () { r.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 150);
+                }
+            });
+        }
+    }
+
+    window.showAuthDetail = function (authId, title) {
+        var modal = new bootstrap.Modal(document.getElementById('authDetailModal'));
+        document.getElementById('authDetailTitle').textContent = title || 'Authorization Details';
+        document.getElementById('authDetailBody').innerHTML =
+            '<div class="text-center py-4"><span class="spinner-border text-danger" role="status"></span></div>';
+        modal.show();
+        fetch('/Authorization/EmployeeView/' + authId, { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.text() : '<p class="text-danger p-3">Failed to load details.</p>'; })
+            .then(function (html) { document.getElementById('authDetailBody').innerHTML = html; })
+            .catch(function () { document.getElementById('authDetailBody').innerHTML = '<p class="text-danger p-3">Failed to load details.</p>'; });
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var highlightId = parseInt(new URLSearchParams(window.location.search).get('highlight') || '0') || null;
+
+        fetch('/Authorization/EmployeeStatusTable', { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.text() : null; })
+            .then(function (html) {
+                if (!html) return;
+                document.getElementById('empStatusContent').innerHTML = html;
+                initTablePagination('empStatusTbody', 'empStatusPagination', 10, highlightId);
+                document.dispatchEvent(new CustomEvent('empStatusLoaded'));
+            })
+            .catch(function () {
+                document.getElementById('empStatusContent').innerHTML =
+                    '<div class="alert alert-danger">Failed to load authorization history. Please refresh the page.</div>';
+            });
+    });
+</script>
+<script src="~/js/tours/user-auth-status.js" asp-append-version="true"></script>
+}

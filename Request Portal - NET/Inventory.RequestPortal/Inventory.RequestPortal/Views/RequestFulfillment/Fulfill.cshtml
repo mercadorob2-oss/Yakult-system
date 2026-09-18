@@ -1,0 +1,83 @@
+@model Inventory.RequestPortal.Models.ViewModels.FulfillRequestFormViewModel
+@{
+    ViewData["Title"] = "Fulfill Request";
+}
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <a class="btn btn-link text-white p-0 lh-1" asp-action="Unfulfilled"
+       style="font-size:1.4rem; text-decoration:none;" title="Back">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h1>Fulfill Request</h1>
+        <p class="subtitle mb-0">
+            @(Model.SetId.HasValue ? $"Set #{Model.SetId}" : "Single request")
+            — @(Model.EmployeeName ?? "—")
+        </p>
+    </div>
+</div>
+
+<div class="content-padded">
+    <div class="card request-card request-card-wide">
+        <div class="card-body">
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Count > 0))
+            {
+                <div class="alert alert-danger" role="alert">
+                    <div asp-validation-summary="All" class="mb-0"></div>
+                </div>
+            }
+
+            <form asp-action="Fulfill" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="SetId" />
+                <input type="hidden" asp-for="EmployeeName" />
+                <input type="hidden" asp-for="BranchName" />
+                <input type="hidden" asp-for="DepartmentName" />
+
+                @for (int i = 0; i < Model.Lines.Count; i++)
+                {
+                    var line = Model.Lines[i];
+                    <div class="border rounded p-3 mb-3">
+                        <input type="hidden" asp-for="Lines[i].ReqId" />
+                        <input type="hidden" asp-for="Lines[i].ItemId" />
+                        <input type="hidden" asp-for="Lines[i].ItemName" />
+                        <input type="hidden" asp-for="Lines[i].Quantity" />
+                        <input type="hidden" asp-for="Lines[i].IssuedQty" />
+                        <input type="hidden" asp-for="Lines[i].AvailableStock" />
+
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <strong>@line.ItemName</strong>
+                                <div class="text-muted small">
+                                    Req #@line.ReqId · Requested: @line.Quantity · Previously Issued: @line.IssuedQty · Still Pending: @line.PendingQty
+                                </div>
+                            </div>
+                            <span class="badge @(line.AvailableStock > 0 ? "bg-success" : "bg-danger")">
+                                @line.AvailableStock available
+                            </span>
+                        </div>
+
+                        <div class="row g-2 align-items-end">
+                            <div class="col-auto">
+                                <label class="form-label small mb-1">Issue Qty (max @line.MaxIssuable)</label>
+                                <input type="number" class="form-control fulfill-qty-input" style="width:120px;"
+                                       asp-for="Lines[i].IssueQty" min="0" max="@line.MaxIssuable" data-max="@line.MaxIssuable" />
+                            </div>
+                            <div class="col">
+                                <label class="form-label small mb-1">Remarks (optional)</label>
+                                <input type="text" class="form-control" asp-for="Lines[i].Remarks" />
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-check2-circle"></i> Confirm Fulfillment
+                </button>
+                <a class="btn btn-outline-secondary" asp-action="Unfulfilled">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/fulfillment.js" asp-append-version="true"></script>

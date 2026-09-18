@@ -1,0 +1,177 @@
+/* =========================================================
+   Yakult Request Portal — Driver.js tour overrides
+   Scoped to .driver-* classes so nothing else is affected.
+   ========================================================= */
+
+/* ── Popover card ─────────────────────────────────────── */
+.driver-popover {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    border: none !important;
+    max-width: 340px !important;
+    font-family: inherit !important;
+}
+
+/* ── Popover title ─────────────────────────────────────── */
+.driver-popover-title {
+    color: #1e293b !important;
+    font-size: 0.98rem !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    margin-bottom: 6px !important;
+}
+
+/* ── Popover body text ─────────────────────────────────── */
+.driver-popover-description {
+    color: #475569 !important;
+    font-size: 0.875rem !important;
+    line-height: 1.55 !important;
+}
+
+/* ── Footer (button row + progress text) ──────────────── */
+.driver-popover-footer {
+    margin-top: 14px !important;
+}
+
+/* ── Progress text (step N of N) ──────────────────────── */
+.driver-popover-progress-text {
+    color: #94a3b8 !important;
+    font-size: 0.76rem !important;
+    font-weight: 500 !important;
+}
+
+/* ── Next / Done button  →  Yakult red ────────────────── */
+.driver-popover-next-btn {
+    background-color: #d50032 !important;
+    border-color: #d50032 !important;
+    color: #fff !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    font-family: inherit !important;
+    font-style: normal !important;
+    letter-spacing: normal !important;
+    text-shadow: none !important;
+    padding: 6px 14px !important;
+    transition: background-color 0.15s !important;
+    -webkit-font-smoothing: antialiased !important;
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-next-btn:focus {
+    background-color: #b0002a !important;
+    border-color: #b0002a !important;
+}
+
+/* ── Previous button ──────────────────────────────────── */
+.driver-popover-prev-btn {
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    font-family: inherit !important;
+    font-style: normal !important;
+    letter-spacing: normal !important;
+    text-shadow: none !important;
+    padding: 6px 14px !important;
+    color: #475569 !important;
+    border-color: #cbd5e1 !important;
+    background: #f1f5f9 !important;
+    -webkit-font-smoothing: antialiased !important;
+}
+
+.driver-popover-prev-btn:hover,
+.driver-popover-prev-btn:focus {
+    background: #e2e8f0 !important;
+}
+
+/* ── Close (×) button ─────────────────────────────────── */
+.driver-popover-close-btn {
+    color: #94a3b8 !important;
+    font-size: 1.1rem !important;
+    opacity: 0.7 !important;
+}
+
+.driver-popover-close-btn:hover {
+    color: #475569 !important;
+    opacity: 1 !important;
+}
+
+/* ── Arrow ────────────────────────────────────────────── */
+.driver-popover-arrow {
+    opacity: 0.95 !important;
+}
+
+/* Overlay colour is controlled by overlayOpacity in tour-system.js.
+   Do NOT set background here — it bleeds through the SVG spotlight cutout
+   and dims the focused element. */
+
+/* ── Highlight ring around the spotlit element ─────────── */
+.driver-active .driver-popover,
+.driver-active [data-driver-highlighted] {
+    outline: none !important;
+}
+
+/* ── Modal-aside steps ────────────────────────────────────
+   Used when spotlighting elements inside an open modal.
+   Shrinks the popover so it fits in the margin beside the
+   modal dialog (side: 'left') without covering modal content.
+   Apply via  popoverClass: 'yakult-tour-aside'  on any step
+   that targets an element inside a Bootstrap modal.
+   ────────────────────────────────────────────────────────── */
+.driver-popover.yakult-tour-aside {
+    max-width: 240px !important;
+    font-size: 0.855rem !important;
+}
+
+.driver-popover.yakult-tour-aside .driver-popover-title {
+    font-size: 0.92rem !important;
+}
+
+/* ── Responsive: shrink popover on small screens ──────── */
+@media (max-width: 480px) {
+    .driver-popover {
+        max-width: calc(100vw - 24px) !important;
+        min-width: 260px !important;
+    }
+
+    .driver-popover-title {
+        font-size: 0.92rem !important;
+    }
+
+    .driver-popover-description {
+        font-size: 0.82rem !important;
+    }
+}
+
+/* ── Foldable devices and ultra-narrow phones (< 320px) ── */
+@media (max-width: 319.98px) {
+    .driver-popover {
+        max-width: calc(100vw - 8px) !important;
+        min-width: 0 !important;   /* override the 260px floor above */
+        border-radius: 8px !important;
+    }
+
+    .driver-popover-title {
+        font-size: 0.84rem !important;
+    }
+
+    .driver-popover-description {
+        font-size: 0.75rem !important;
+        line-height: 1.45 !important;
+    }
+
+    .driver-popover-next-btn,
+    .driver-popover-prev-btn {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+    }
+
+    .driver-popover-progress-text {
+        font-size: 0.68rem !important;
+    }
+
+    /* Side-modal popover — keep within bounds on foldable */
+    .driver-popover.yakult-tour-aside {
+        max-width: calc(100vw - 8px) !important;
+    }
+}

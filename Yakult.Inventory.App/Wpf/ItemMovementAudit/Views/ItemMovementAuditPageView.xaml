@@ -1,0 +1,304 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.ItemMovementAudit.Views.ItemMovementAuditPageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls"
+             xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+             Background="#F0F2F6"
+             FontFamily="Segoe UI"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+            <conv:InverseBooleanConverter x:Key="InverseBoolean"/>
+
+            <Style x:Key="AuditDatePicker" TargetType="DatePicker">
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="#B0BAC8"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Margin" Value="0,0,10,8"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+            </Style>
+
+            <Style x:Key="TotalCardStyle" TargetType="Border" BasedOn="{StaticResource StatCardClickable}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsTotalCardActive}" Value="True">
+                        <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="InCardStyle" TargetType="Border" BasedOn="{StaticResource StatCardClickable}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsInCardActive}" Value="True">
+                        <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="OutCardStyle" TargetType="Border" BasedOn="{StaticResource StatCardClickable}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsOutCardActive}" Value="True">
+                        <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                        <Setter Property="BorderThickness" Value="2"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ Page header: title (left) + compact summary cards (right) ═════ -->
+        <Border Grid.Row="0" Style="{StaticResource PageHeaderBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                               Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel>
+                        <TextBlock Text="Item Movement Audit" Style="{StaticResource PageTitle}"/>
+                        <TextBlock Text="Full timeline of item movements across inventory, requests, and repairs" Style="{StaticResource PageSubtitle}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <Border Style="{StaticResource TotalCardStyle}" Cursor="Hand">
+                        <Border.InputBindings><MouseBinding MouseAction="LeftClick" Command="{Binding TotalCardClickCommand}"/></Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="TOTAL" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding TotalCount}" Style="{StaticResource StatCardValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource InCardStyle}" Cursor="Hand">
+                        <Border.InputBindings><MouseBinding MouseAction="LeftClick" Command="{Binding InCardClickCommand}"/></Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="IN" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding InCount}" Style="{StaticResource StatCardValue}" Foreground="{StaticResource SuccessBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource OutCardStyle}" Cursor="Hand" Margin="0">
+                        <Border.InputBindings><MouseBinding MouseAction="LeftClick" Command="{Binding OutCardClickCommand}"/></Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="OUT" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding OutCount}" Style="{StaticResource StatCardValue}" Foreground="{StaticResource DangerBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══ Toolbar: date presets + direction + search + Advanced Filters ══ -->
+        <Border Grid.Row="1" Style="{StaticResource ToolbarBar}">
+            <WrapPanel VerticalAlignment="Center">
+                <Button Content="Today" Style="{StaticResource SmallBtn}" Command="{Binding SetDatePresetCommand}" CommandParameter="0" Margin="0,0,2,8"/>
+                <Button Content="7d" Style="{StaticResource SmallBtn}" Command="{Binding SetDatePresetCommand}" CommandParameter="7" Margin="0,0,2,8"/>
+                <Button Content="30d" Style="{StaticResource SmallBtn}" Command="{Binding SetDatePresetCommand}" CommandParameter="30" Margin="0,0,2,8"/>
+                <Button Content="Month" Style="{StaticResource SmallBtn}" Command="{Binding SetDatePresetCommand}" CommandParameter="-1" Margin="0,0,10,8"/>
+
+                <TextBlock Text="Start date:" Style="{StaticResource FilterLabel}"/>
+                <DatePicker Style="{StaticResource AuditDatePicker}" Width="125"
+                            SelectedDate="{Binding DateFrom, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            ToolTip="Select the first date included in the audit range."/>
+                <TextBlock Text="End date:" Style="{StaticResource FilterLabel}"/>
+                <DatePicker Style="{StaticResource AuditDatePicker}" Width="125"
+                            SelectedDate="{Binding DateTo, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            ToolTip="Select the last date included in the audit range."/>
+
+                <TextBlock Text="Direction:" Style="{StaticResource FilterLabel}"/>
+                <ComboBox Style="{StaticResource FilterCombo}" Width="90" Margin="0,0,16,8"
+                          ItemsSource="{Binding DirectionOptions}" SelectedItem="{Binding SelectedDirection, Mode=TwoWay}"/>
+
+                <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,8" Foreground="#7A8A9A"/>
+                <TextBox Style="{StaticResource SearchBox}" Width="220" Margin="0,0,8,8"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Search anything..."/>
+
+                <ToggleButton x:Name="AdvancedFiltersToggle" Style="{StaticResource CategoryFilterToggleBtn}"
+                              Width="140" Height="30" Margin="0,0,8,8" Content="Advanced Filters"/>
+                <Popup PlacementTarget="{Binding ElementName=AdvancedFiltersToggle}"
+                       IsOpen="{Binding IsChecked, ElementName=AdvancedFiltersToggle, Mode=TwoWay}"
+                       StaysOpen="False" Placement="Bottom" HorizontalOffset="-260" AllowsTransparency="True">
+                    <Border Background="White" BorderBrush="{StaticResource BorderBrush1}" BorderThickness="1"
+                            CornerRadius="8" Padding="18" Width="380">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="#1A2333"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="Advanced Filters" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="View" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding ViewModeOptions}" SelectedItem="{Binding SelectedViewMode, Mode=TwoWay}"
+                                              ToolTip="Latest only = most recent event per serial. Show all events = full timeline."/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                    <TextBlock Text="Top" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding TopRowsOptions}" SelectedItem="{Binding TopRows, Mode=TwoWay}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Rows" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding PageSizeOptions}" SelectedItem="{Binding PageSize, Mode=TwoWay}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="Category" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding CategoryOptions}" SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                    <TextBlock Text="Type" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding SelectedType, Mode=TwoWay}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Source" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding SourceOptions}" SelectedItem="{Binding SelectedSource, Mode=TwoWay}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="Serial" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <TextBox Style="{StaticResource SearchBox}" HorizontalAlignment="Stretch"
+                                             Text="{Binding SerialFilter, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="0,0,8,0">
+                                    <TextBlock Text="Set Code" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <TextBox Style="{StaticResource SearchBox}" HorizontalAlignment="Stretch"
+                                             Text="{Binding SetCodeFilter, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="User" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <TextBox Style="{StaticResource SearchBox}" HorizontalAlignment="Stretch"
+                                             Text="{Binding UserFilter, UpdateSourceTrigger=PropertyChanged}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <TextBlock Text="Filter By" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding FilterByOptions}" SelectedItem="{Binding SelectedFilterBy, Mode=TwoWay}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Sort By" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding SortByOptions}" SelectedItem="{Binding SelectedSortBy, Mode=TwoWay}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <CheckBox Content="Show Archived" IsChecked="{Binding ShowArchived}"
+                                      FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextSubtleBrush}" Margin="0,0,0,12"/>
+
+                            <Separator Margin="0,2,0,12"/>
+
+                            <Button HorizontalAlignment="Right" Style="{StaticResource SmallBtn}" Command="{Binding ResetFiltersCommand}" ClickMode="Press" Margin="0">
+                                <TextBlock Text="↺  Reset Filters"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+
+                <Button Style="{StaticResource SmallBtn}" Command="{Binding ViewDetailsCommand}" Margin="8,0,2,8"><TextBlock Text="👁️  View"/></Button>
+                <Button Style="{StaticResource PrimaryBtn}" Command="{Binding RefreshCommand}" Margin="0,0,0,8"><TextBlock Text="⟳  Refresh"/></Button>
+            </WrapPanel>
+        </Border>
+
+        <!-- ══ Grid ═════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="White" Margin="14,0,14,0">
+            <Grid>
+                <DataGrid x:Name="ItemsGrid"
+                          Style="{StaticResource ListDataGridChrome}"
+                          IsReadOnly="True"
+                          SelectionMode="Single" SelectionUnit="FullRow"
+                          ItemsSource="{Binding PagedMovements}"
+                          SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                          MouseDoubleClick="ItemsGrid_MouseDoubleClick"
+                          Sorting="ItemsGrid_Sorting">
+                    <DataGrid.Resources>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                    </DataGrid.Resources>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="When" Binding="{Binding EventTime, StringFormat=yyyy-MM-dd HH:mm}" Width="140" SortMemberPath="EventTime"/>
+                        <DataGridTextColumn Header="Dir" Binding="{Binding Direction}" Width="60" SortMemberPath="Direction"/>
+                        <DataGridTextColumn Header="Type" Binding="{Binding MovementType}" Width="120" SortMemberPath="MovementType"/>
+                        <DataGridTextColumn Header="Category" Binding="{Binding MovementCategory}" Width="140" SortMemberPath="MovementCategory"/>
+                        <DataGridTextColumn Header="Serial" Binding="{Binding SerialNumber}" Width="130" SortMemberPath="SerialNumber"/>
+                        <DataGridTextColumn Header="Set Code" Binding="{Binding SetCode}" Width="110" SortMemberPath="SetCode"/>
+                        <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="100" SortMemberPath="Source"/>
+                        <DataGridTextColumn Header="User" Binding="{Binding UserName}" Width="120" SortMemberPath="UserName"/>
+                        <DataGridTextColumn Header="Employee" Binding="{Binding EmployeeName}" Width="140" SortMemberPath="EmployeeName"/>
+                        <DataGridTextColumn Header="Branch" Binding="{Binding BranchName}" Width="120" SortMemberPath="BranchName"/>
+                        <DataGridTextColumn Header="Department" Binding="{Binding DepartmentName}" Width="120" SortMemberPath="DepartmentName"/>
+                        <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="*" MinWidth="200" SortMemberPath="Notes">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource WrapCellText}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <ProgressBar Height="4" VerticalAlignment="Top" IsIndeterminate="True"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+            </Grid>
+        </Border>
+
+        <!-- ══ Pagination ═══════════════════════════════════════════════════ -->
+        <Border Grid.Row="3" Style="{StaticResource FooterBar}">
+            <shared:PagingControl HorizontalAlignment="Left"
+                                   FirstPageCommand="{Binding FirstPageCommand}"
+                                   PrevPageCommand="{Binding PrevPageCommand}"
+                                   NextPageCommand="{Binding NextPageCommand}"
+                                   LastPageCommand="{Binding LastPageCommand}"
+                                   PageInfoText="{Binding PageInfoText}"/>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,1176 @@
+<UserControl
+    x:Class="Yakult.Inventory.App.WPF.CartridgeManagement.Views.CartridgeManagementView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels"
+    xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+    Background="#F0F2F6"
+    FontFamily="Segoe UI"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType"
+    RenderOptions.ClearTypeHint="Enabled">
+
+    <UserControl.Resources>
+        <!-- ── Converters ──────────────────────────────────────────────────────── -->
+        <conv:StringToColorBrushConverter   x:Key="HexToBrush"/>
+        <conv:BoolToVisibilityConverter     x:Key="BoolToVis"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+        <conv:NullToVisibilityConverter     x:Key="NullToVis"/>
+
+        <!-- ── Base text style ────────────────────────────────────────────────── -->
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+        </Style>
+
+        <!-- ── Summary field label ────────────────────────────────────────────── -->
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4A5A6A"/>
+            <Setter Property="Margin"     Value="0,4,0,2"/>
+        </Style>
+
+        <!-- ── Read-only summary textbox ─────────────────────────────────────── -->
+        <Style x:Key="SummaryBox" TargetType="TextBox">
+            <Setter Property="IsReadOnly"         Value="True"/>
+            <Setter Property="Background"         Value="#F3F5F8"/>
+            <Setter Property="BorderBrush"        Value="#CDD5DE"/>
+            <Setter Property="BorderThickness"    Value="1"/>
+            <Setter Property="Padding"            Value="7,5"/>
+            <Setter Property="FontSize"           Value="11"/>
+            <Setter Property="Foreground"         Value="#1A2333"/>
+            <Setter Property="Margin"             Value="0,0,0,4"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ── Section card border ────────────────────────────────────────────── -->
+        <Style x:Key="SectionCard" TargetType="Border">
+            <Setter Property="Background"      Value="#FFFFFF"/>
+            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="8"/>
+            <Setter Property="Padding"         Value="14"/>
+            <Setter Property="Margin"          Value="0,0,0,10"/>
+        </Style>
+
+        <!-- ── Search box — plain TextBox, no custom template ───────────────── -->
+        <Style x:Key="SearchBox" TargetType="TextBox">
+            <Setter Property="BorderBrush"              Value="#B0BAC8"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Background"               Value="White"/>
+            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="FontSize"                 Value="11"/>
+            <Setter Property="Padding"                  Value="6,4"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ── DatePicker with classic calendar icon (no "15" number) ─────────── -->
+        <Style x:Key="CleanDatePicker" TargetType="DatePicker">
+            <Setter Property="Height"          Value="28"/>
+            <Setter Property="MinWidth"        Value="112"/>
+            <Setter Property="FontSize"        Value="10"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#C8D2DC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground"      Value="#1A2333"/>
+            <Setter Property="Padding"         Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DatePicker">
+                        <Border x:Name="dpBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="28"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox x:Name="PART_TextBox"
+                                         Grid.Column="0"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         FontSize="{TemplateBinding FontSize}"
+                                         Padding="6,0"
+                                         VerticalContentAlignment="Center"/>
+
+                                <Button x:Name="PART_Button"
+                                        Grid.Column="1"
+                                        Focusable="False"
+                                        VerticalAlignment="Stretch"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="btnBd"
+                                                    Background="{TemplateBinding Background}"
+                                                    CornerRadius="0,3,3,0">
+                                                <TextBlock Text="&#xE787;"
+                                                           FontFamily="Segoe MDL2 Assets"
+                                                           FontSize="12"
+                                                           Foreground="#5A6A7E"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="btnBd" Property="Background" Value="#EEF2F7"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                                <Popup x:Name="PART_Popup"
+                                       AllowsTransparency="True"
+                                       Placement="Bottom"
+                                       StaysOpen="False"
+                                       PlacementTarget="{Binding ElementName=PART_TextBox}"/>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Compact date ComboBox ──────────────────────────────────────────── -->
+        <Style x:Key="FilterComboBox" TargetType="ComboBox">
+            <Setter Property="Height"          Value="28"/>
+            <Setter Property="FontSize"        Value="10"/>
+            <Setter Property="Padding"         Value="6,0"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#C8D2DC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ── Action button base ─────────────────────────────────────────────── -->
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Padding"         Value="16,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Height"          Value="36"/>
+            <Setter Property="Margin"          Value="0,0,8,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.72"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Pagination button ──────────────────────────────────────────────── -->
+        <Style x:Key="PageButton" TargetType="Button">
+            <Setter Property="Width"           Value="32"/>
+            <Setter Property="Height"          Value="30"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="Foreground"      Value="#3A8EF6"/>
+            <Setter Property="BorderBrush"     Value="#CDD5DE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Margin"          Value="2,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#EBF5FF"/>
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#3A8EF6"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── DataGrid column header ─────────────────────────────────────────── -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background"      Value="#EEF2F7"/>
+            <Setter Property="Foreground"      Value="#3A4A5A"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="FontSize"        Value="10"/>
+            <Setter Property="Padding"         Value="7,6"/>
+            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+        </Style>
+
+        <!-- ── DataGrid row ───────────────────────────────────────────────────── -->
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="White"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#3A8EF6"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#EBF5FF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ── Numeric spinner style ──────────────────────────────────────────── -->
+        <Style x:Key="ModernSpinner" TargetType="TextBox">
+            <Setter Property="BorderBrush"     Value="#3A8EF6"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Padding"         Value="6,4"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Width"           Value="100"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- ── Thin modern ScrollBar ──────────────────────────────────────────── -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width"      Value="6"/>
+            <Setter Property="MinWidth"   Value="6"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid x:Name="Root" Background="Transparent" Width="6">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0"
+                                                  Focusable="False" IsTabStop="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border x:Name="ThumbBorder"
+                                                        Background="#B8C4D0"
+                                                        CornerRadius="3"
+                                                        Margin="1,2"/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ThumbBorder" Property="Background" Value="#7A90A4"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="ThumbBorder" Property="Background" Value="#3A8EF6"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0"
+                                                  Focusable="False" IsTabStop="False"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter TargetName="Root"       Property="Width"     Value="Auto"/>
+                                <Setter TargetName="Root"       Property="Height"    Value="6"/>
+                                <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Session block DataTemplate ────────────────────────────────────── -->
+        <DataTemplate x:Key="SessionGroupTemplate" DataType="{x:Type vm:SessionGroupViewModel}">
+            <Border Margin="0,0,0,10"
+                    Background="White"
+                    BorderBrush="#DDE3EC"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.09" Color="#000000" Direction="270"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="36"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header bar -->
+                    <Border Grid.Row="0"
+                            Background="{Binding HeaderBrush}"
+                            CornerRadius="7,7,0,0"
+                            Padding="10,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Multi / Single badge -->
+                            <Border Grid.Column="0"
+                                    Background="#28000000"
+                                    CornerRadius="4"
+                                    Padding="6,2"
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Multi Model" FontSize="9" FontWeight="Bold" Foreground="White"
+                                               Visibility="{Binding IsMultiModel, Converter={StaticResource BoolToVis}}"/>
+                                    <TextBlock Text="Single Model" FontSize="9" FontWeight="Bold" Foreground="White"
+                                               Visibility="{Binding IsMultiModel, Converter={StaticResource InvBoolToVis}}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Header text: Employee — Company → Branch → Department -->
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding HeaderText}"
+                                       FontWeight="SemiBold" FontSize="11"
+                                       Foreground="{Binding HeaderForeground}"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="NoWrap"
+                                       TextTrimming="CharacterEllipsis"/>
+
+                            <!-- Date badge — color coded: green=oldest, blue=newer -->
+                            <Border Grid.Column="2"
+                                    Background="{Binding DateColor, Converter={StaticResource HexToBrush}}"
+                                    CornerRadius="10"
+                                    Padding="9,3"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="3" ShadowDepth="0" Opacity="0.18" Color="#000000"/>
+                                </Border.Effect>
+                                <TextBlock Text="{Binding DateCreated, StringFormat='yyyy-MM-dd HH:mm'}"
+                                           FontSize="9" FontWeight="SemiBold"
+                                           Foreground="White"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Request rows DataGrid -->
+                    <DataGrid Grid.Row="1"
+                              x:Name="dgvSession"
+                              ItemsSource="{Binding Requests}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="#EEF2F7"
+                              BorderThickness="0"
+                              Background="White"
+                              RowHeaderWidth="0"
+                              ColumnHeaderHeight="33"
+                              MinRowHeight="38"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              EnableRowVirtualization="True"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Hidden"
+                              MaxHeight="320">
+
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Req #"    Binding="{Binding ReqId, Mode=OneWay}"             Width="55">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="FontSize"   Value="11"/>
+                                        <Setter Property="Foreground" Value="#2A3A4A"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Padding" Value="4,0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Model"   Binding="{Binding ModelNumber}"       Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="FontSize"   Value="11"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Padding" Value="4,0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Qty"     Binding="{Binding Quantity}"          Width="45">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontSize" Value="11"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment"   Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="With Cartridge" Binding="{Binding WithCartridgeDisplay}" Width="90">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontSize" Value="11"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment"   Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Good"    Binding="{Binding GoodEmptyQty}"     Width="50">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontSize" Value="11"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment"   Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Damaged" Binding="{Binding DamagedEmptyQty}"  Width="60">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontSize" Value="11"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment"   Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Status"  Binding="{Binding Status}"            Width="90">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontSize" Value="11"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Padding" Value="4,0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <DataGridTextColumn Header="Created"
+                                                Binding="{Binding DateCreated, StringFormat='yyyy-MM-dd HH:mm'}"
+                                                Width="115">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontSize"   Value="11"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Padding" Value="4,0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- ── Multi-model row DataTemplate ──────────────────────────────────── -->
+        <DataTemplate x:Key="MultiModelRowTemplate" DataType="{x:Type vm:MultiModelRowViewModel}">
+            <Border Margin="0,0,0,8"
+                    Background="#F5F8FF"
+                    BorderBrush="#DDE3EC"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Row header with req# and model -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,6">
+                        <TextBlock FontWeight="Bold" FontSize="11" Foreground="#2A3A4A">
+                            <Run Text="Req #"/>
+                            <Run Text="{Binding ReqId, Mode=OneWay}"/>
+                            <Run Text=" — "/>
+                            <Run Text="{Binding DisplayModel, Mode=OneWay}"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Qty inputs -->
+                    <Grid Grid.Row="1" Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Brand New:" Style="{StaticResource FieldLabel}"
+                                   VerticalAlignment="Center" Margin="0,0,6,4"/>
+                        <conv:IntegerSpinner Grid.Row="0" Grid.Column="1"
+                                             Value="{Binding IssuedBrandNewQty, Mode=TwoWay}"
+                                             MinValue="0"
+                                             MaxValue="{Binding MaxBrandNew}"
+                                             Margin="0,0,0,4"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Refilled:" Style="{StaticResource FieldLabel}"
+                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <conv:IntegerSpinner Grid.Row="1" Grid.Column="1"
+                                             Value="{Binding IssuedRefilledQty, Mode=TwoWay}"
+                                             MinValue="0"
+                                             MaxValue="{Binding MaxRefilled}"/>
+                    </Grid>
+
+                    <!-- Metrics + Status -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: quantities -->
+                        <StackPanel Grid.Column="0" Orientation="Vertical">
+                            <TextBlock FontSize="9" Foreground="#5A6A7E" FontStyle="Italic"
+                                       Text="{Binding StockInfo}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <TextBlock Text="Returned Empty: " FontSize="10" FontWeight="SemiBold" Foreground="#5A6A7E"/>
+                                <TextBlock Text="{Binding RequestedQty}" FontSize="10" FontWeight="Bold" Foreground="#D03020"/>
+                                <TextBlock Text="   Issued: "        FontSize="10" FontWeight="SemiBold" Foreground="#5A6A7E" Margin="8,0,0,0"/>
+                                <TextBlock Text="{Binding IssuedFullQty}" FontSize="10" FontWeight="Bold" Foreground="#1E9E5E"/>
+                                <TextBlock Text="   Pending: "        FontSize="10" FontWeight="SemiBold" Foreground="#5A6A7E" Margin="8,0,0,0"/>
+                                <TextBlock Text="{Binding UnfulfilledDisplay}" FontSize="10" FontWeight="Bold"
+                                           Foreground="{Binding UnfulfilledColor, Converter={StaticResource HexToBrush}}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Right: status badge -->
+                        <Border Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                Background="{Binding FulfillmentStatusColor, Converter={StaticResource HexToBrush}}"
+                                CornerRadius="10" Padding="10,3">
+                            <TextBlock Text="{Binding FulfillmentStatus}"
+                                       Foreground="White" FontWeight="Bold" FontSize="10"/>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <!-- ══════════════════════════════════════════════════════════════════════════ -->
+    <!--  ROOT LAYOUT                                                              -->
+    <!-- ══════════════════════════════════════════════════════════════════════════ -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="65*"/>
+            <ColumnDefinition Width="6"/>
+            <ColumnDefinition Width="35*" MinWidth="380"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ════════════════════════════════════════════════════════════════════ -->
+        <!--  LEFT PANEL — Pending Requests                                       -->
+        <!-- ════════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Column="0" Background="White">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>   <!-- Title -->
+                <RowDefinition Height="Auto"/>   <!-- Search bar -->
+                <RowDefinition Height="Auto"/>   <!-- Sort indicator + loading -->
+                <RowDefinition Height="*"/>      <!-- Session blocks list -->
+                <RowDefinition Height="Auto"/>   <!-- Pagination -->
+                <RowDefinition Height="Auto"/>   <!-- Action buttons -->
+            </Grid.RowDefinitions>
+
+            <!-- Title -->
+            <Border Grid.Row="0" Background="White" Padding="16,14,16,8">
+                <TextBlock Text="📋 Pending Cartridge Requests (Grouped by Submission)"
+                           FontSize="14" FontWeight="Bold" Foreground="#3A8EF6"/>
+            </Border>
+
+            <!-- ── Filter strip: Search + Date Range ────────────────────── -->
+            <Border Grid.Row="1"
+                    Background="White"
+                    BorderBrush="#DDE3EC"
+                    BorderThickness="0,0,0,1"
+                    Padding="12,8,12,10">
+                <StackPanel>
+
+                    <!-- Row 1: Text search -->
+                    <Grid Margin="0,0,0,6">
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource SearchBox}"/>
+                        <!-- Placeholder -->
+                        <TextBlock Text="Search by name, company, branch, or model..."
+                                   FontSize="10" Foreground="#9DAAB8"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"
+                                   IsHitTestVisible="False">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SearchText}" Value="">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+
+                    <!-- Row 2: Date range filter -->
+                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+
+                        <!-- From date -->
+                        <TextBlock Text="From:"
+                                   FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#5A6A7E"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,5,0"/>
+                        <DatePicker SelectedDate="{Binding DateFrom, Mode=TwoWay}"
+                                    Style="{StaticResource CleanDatePicker}"
+                                    Margin="0,0,8,0"/>
+
+                        <!-- To date -->
+                        <TextBlock Text="To:"
+                                   FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#5A6A7E"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,5,0"/>
+                        <DatePicker SelectedDate="{Binding DateTo, Mode=TwoWay}"
+                                    Style="{StaticResource CleanDatePicker}"
+                                    Margin="0,0,10,0"/>
+
+                        <!-- Divider -->
+                        <Border Width="1" Height="16" Background="#DDE3EC"
+                                VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                        <!-- Quick range -->
+                        <TextBlock Text="Timeline:"
+                                   FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#5A6A7E"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,5,0"/>
+                        <ComboBox ItemsSource="{Binding QuickRanges}"
+                                  SelectedItem="{Binding SelectedQuickRange, Mode=TwoWay}"
+                                  Style="{StaticResource FilterComboBox}"
+                                  MinWidth="120"
+                                  Margin="0,0,8,0"/>
+
+                        <!-- Divider -->
+                        <Border Width="1" Height="16" Background="#DDE3EC"
+                                VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                        <!-- Type filter -->
+                        <TextBlock Text="Type:"
+                                   FontSize="10" FontWeight="SemiBold"
+                                   Foreground="#5A6A7E"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,5,0"/>
+                        <ComboBox ItemsSource="{Binding ModelFilterOptions}"
+                                  SelectedItem="{Binding SelectedModelFilter, Mode=TwoWay}"
+                                  Style="{StaticResource FilterComboBox}"
+                                  MinWidth="110"
+                                  Margin="0,0,8,0"/>
+
+                        <!-- Clear button -->
+                        <Button Content="✕ Clear"
+                                Command="{Binding ClearDateFilterCommand}"
+                                Height="26"
+                                Padding="8,0"
+                                FontSize="10" FontWeight="SemiBold"
+                                Foreground="#5A6A7E"
+                                Background="#F0F3F7"
+                                BorderBrush="#CDD5DE" BorderThickness="1"
+                                Cursor="Hand"
+                                VerticalContentAlignment="Center">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="4"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="#E4E9F0"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Sort indicator + loading strip -->
+            <Grid Grid.Row="2" Margin="14,6,14,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0"
+                        Content="{Binding SortIndicatorText}"
+                        Command="{Binding ToggleSortCommand}"
+                        HorizontalAlignment="Left"
+                        Background="Transparent" BorderThickness="0"
+                        Cursor="Hand"
+                        FontSize="10" FontWeight="Bold"
+                        Foreground="{Binding SortIndicatorColor, Converter={StaticResource HexToBrush}}"
+                        Padding="0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       FontWeight="{TemplateBinding FontWeight}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       Cursor="Hand">
+                                <TextBlock.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick"
+                                                  Command="{Binding DataContext.ToggleSortCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                </TextBlock.InputBindings>
+                            </TextBlock>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Loading indicator -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="⟳ Loading…" FontSize="10" FontStyle="Italic" Foreground="#8A9AAA"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Session blocks — virtualized scroll -->
+            <ScrollViewer Grid.Row="3"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          PanningMode="VerticalFirst"
+                          CanContentScroll="True">
+                <ItemsControl ItemsSource="{Binding PagedGroups}"
+                              ItemTemplate="{StaticResource SessionGroupTemplate}"
+                              Padding="12,8,12,8"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              ScrollViewer.CanContentScroll="True">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Pagination bar -->
+            <Border Grid.Row="4" Background="#F3F5F8" Padding="12,6"
+                    BorderBrush="#DDE3EC" BorderThickness="0,1,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Page buttons left -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Button Content="«" Style="{StaticResource PageButton}"
+                                Command="{Binding FirstPageCommand}"/>
+                        <Button Content="‹" Style="{StaticResource PageButton}"
+                                Command="{Binding PrevPageCommand}"/>
+                    </StackPanel>
+
+                    <!-- Page info -->
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding PageInfo}"
+                               FontSize="10" Foreground="#4A5A6A"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"/>
+
+                    <!-- Page buttons right -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <Button Content="›" Style="{StaticResource PageButton}"
+                                Command="{Binding NextPageCommand}"/>
+                        <Button Content="»" Style="{StaticResource PageButton}"
+                                Command="{Binding LastPageCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Action buttons row -->
+            <Border Grid.Row="5" Background="White" Padding="12,8,12,12"
+                    BorderBrush="#DDE3EC" BorderThickness="0,1,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="📂 Open Request"
+                            Background="#3A8EF6"
+                            Command="{Binding OpenRequestCommand}"
+                            Style="{StaticResource ActionButton}"/>
+
+                    <Button Content="🔄 Refresh"
+                            Background="#1E9E5E"
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource ActionButton}"/>
+
+                    <TextBlock Text="{Binding AutoRefreshText}"
+                               FontSize="9" FontStyle="Italic"
+                               Foreground="#8A9AAA"
+                               VerticalAlignment="Center"
+                               Margin="6,0,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Splitter -->
+        <GridSplitter Grid.Column="1"
+                      Width="6"
+                      Background="#DDE3EC"
+                      ResizeDirection="Columns"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"/>
+
+        <!-- ════════════════════════════════════════════════════════════════════ -->
+        <!--  RIGHT PANEL — Cartridge Exchange                                    -->
+        <!-- ════════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Column="2" Background="White">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>  <!-- Title -->
+                <RowDefinition Height="*"/>     <!-- Scrollable content -->
+                <RowDefinition Height="Auto"/>  <!-- Action buttons -->
+            </Grid.RowDefinitions>
+
+            <!-- Title -->
+            <Border Grid.Row="0" Background="White" Padding="16,14,16,8"
+                    BorderBrush="#DDE3EC" BorderThickness="0,0,0,1">
+                <TextBlock Text="🔄 Cartridge Exchange"
+                           FontSize="14" FontWeight="Bold" Foreground="#E07020"/>
+            </Border>
+
+            <!-- Scrollable exchange content -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="12,8,12,0">
+                <StackPanel>
+
+                    <!-- ── Request Summary Card ───────────────────────────── -->
+                    <Border Style="{StaticResource SectionCard}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Row 0: Requester (full width) -->
+                            <StackPanel Grid.Row="0" Grid.ColumnSpan="2">
+                                <TextBlock Text="Requester:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.Requester, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+
+                            <!-- Row 1: Model (full width) -->
+                            <StackPanel Grid.Row="1" Grid.ColumnSpan="2">
+                                <TextBlock Text="Model:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.Model, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+
+                            <!-- Row 2: Request # | Quantity -->
+                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,4,0">
+                                <TextBlock Text="Request #:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.ReqIds, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="1" Margin="4,0,0,0">
+                                <TextBlock Text="Quantity:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.Quantity, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+
+                            <!-- Row 3: With Cartridge | Company -->
+                            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,4,0">
+                                <TextBlock Text="With Cartridge:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.WithCartridge, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="3" Grid.Column="1" Margin="4,0,0,0">
+                                <TextBlock Text="Company:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.Company, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+
+                            <!-- Row 4: Branch | Department -->
+                            <StackPanel Grid.Row="4" Grid.Column="0" Margin="0,0,4,0">
+                                <TextBlock Text="Branch:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.Branch, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="4" Grid.Column="1" Margin="4,0,0,0">
+                                <TextBlock Text="Department:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.Department, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+
+                            <!-- Row 5: Good | Damaged -->
+                            <StackPanel Grid.Row="5" Grid.Column="0" Margin="0,0,4,0">
+                                <TextBlock Text="Good (Returned):" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.GoodEmptyQty, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Row="5" Grid.Column="1" Margin="4,0,0,0">
+                                <TextBlock Text="Damaged (Returned):" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.DamagedEmptyQty, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+
+                            <!-- Row 6: Distribution Method (full width) -->
+                            <StackPanel Grid.Row="6" Grid.ColumnSpan="2">
+                                <TextBlock Text="Distribution Method:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.DistributionMethod, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+
+                            <!-- Row 7: Received By (full width) -->
+                            <StackPanel Grid.Row="7" Grid.ColumnSpan="2">
+                                <TextBlock Text="Received By:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.ReceivedBy, Mode=OneWay}"
+                                         Style="{StaticResource SummaryBox}"/>
+                            </StackPanel>
+
+                            <!-- Row 8: Additional Remarks (full width) -->
+                            <StackPanel Grid.Row="8" Grid.ColumnSpan="2">
+                                <TextBlock Text="Additional Remarks:" Style="{StaticResource FieldLabel}"/>
+                                <TextBox Text="{Binding ExchangePanel.AdditionalRemarks, Mode=OneWay}"
+                                         IsReadOnly="True"
+                                         TextWrapping="Wrap"
+                                         Style="{StaticResource SummaryBox}"
+                                         MinHeight="40"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── Step 3A: Issued (Full) Cartridges ─────────────── -->
+                    <Border Style="{StaticResource SectionCard}">
+                        <Border.BorderBrush>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#1E9E5E" Offset="0"/>
+                                <GradientStop Color="#DDE3EC" Offset="0.05"/>
+                            </LinearGradientBrush>
+                        </Border.BorderBrush>
+                        <Border.BorderThickness>
+                            <Thickness Left="1" Top="3" Right="1" Bottom="1"/>
+                        </Border.BorderThickness>
+                        <StackPanel>
+                            <TextBlock Text="Step 3A: 📤 Issued (Full) Cartridges"
+                                       FontSize="11" FontWeight="Bold" Foreground="#1E9E5E"
+                                       Margin="0,0,0,10"/>
+
+                            <!-- Single-model issued controls -->
+                            <StackPanel Visibility="{Binding ExchangePanel.IsSingleModelMode, Converter={StaticResource BoolToVis}}">
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" MinWidth="120"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Model display -->
+                                    <TextBlock Grid.Row="0" Grid.Column="0"
+                                               Text="Cartridge Model:"
+                                               Style="{StaticResource FieldLabel}"
+                                               VerticalAlignment="Center" Margin="0,0,8,4"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1"
+                                             Text="{Binding ExchangePanel.Model, Mode=OneWay}"
+                                             Style="{StaticResource SummaryBox}"/>
+
+                                    <!-- Brand New spinner -->
+                                    <TextBlock Grid.Row="1" Grid.Column="0"
+                                               Text="Issued Brand New:"
+                                               Style="{StaticResource FieldLabel}"
+                                               VerticalAlignment="Center" Margin="0,0,8,4"/>
+                                    <StackPanel Grid.Row="1" Grid.Column="1"
+                                                Orientation="Horizontal" Margin="0,2,0,4">
+                                        <conv:IntegerSpinner
+                                            Value="{Binding ExchangePanel.IssuedBrandNewQty, Mode=TwoWay}"
+                                            MinValue="0"
+                                            MaxValue="{Binding ExchangePanel.MaxBrandNew}"/>
+                                    </StackPanel>
+
+                                    <!-- Refilled spinner -->
+                                    <TextBlock Grid.Row="2" Grid.Column="0"
+                                               Text="Issued Refilled:"
+                                               Style="{StaticResource FieldLabel}"
+                                               VerticalAlignment="Center" Margin="0,0,8,4"/>
+                                    <StackPanel Grid.Row="2" Grid.Column="1"
+                                                Orientation="Horizontal" Margin="0,2,0,4">
+                                        <conv:IntegerSpinner
+                                            Value="{Binding ExchangePanel.IssuedRefilledQty, Mode=TwoWay}"
+                                            MinValue="0"
+                                            MaxValue="{Binding ExchangePanel.MaxRefilled}"/>
+                                    </StackPanel>
+
+                                    <!-- Stock info -->
+                                    <TextBlock Grid.Row="3" Grid.Column="1"
+                                               Text="{Binding ExchangePanel.StockInfoText}"
+                                               FontSize="9" FontStyle="Italic"
+                                               Foreground="#5A6A7E" Margin="0,2,0,0"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Multi-model issued controls -->
+                            <ItemsControl ItemsSource="{Binding ExchangePanel.MultiModelRows}"
+                                          ItemTemplate="{StaticResource MultiModelRowTemplate}"
+                                          Visibility="{Binding ExchangePanel.IsMultiModelMode, Converter={StaticResource BoolToVis}}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── Step 3B: Returned (Empty) Cartridges ───────────── -->
+                    <Border Style="{StaticResource SectionCard}">
+                        <Border.BorderBrush>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#D03020" Offset="0"/>
+                                <GradientStop Color="#DDE3EC" Offset="0.05"/>
+                            </LinearGradientBrush>
+                        </Border.BorderBrush>
+                        <Border.BorderThickness>
+                            <Thickness Left="1" Top="3" Right="1" Bottom="1"/>
+                        </Border.BorderThickness>
+                        <StackPanel>
+                            <TextBlock Text="Step 3B: 📥 Returned (Empty) Cartridges"
+                                       FontSize="11" FontWeight="Bold" Foreground="#D03020"
+                                       Margin="0,0,0,10"/>
+
+                            <!-- Single-model metrics + remarks -->
+                            <Grid Visibility="{Binding ExchangePanel.IsSingleModelMode, Converter={StaticResource BoolToVis}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="45*"/>
+                                    <ColumnDefinition Width="55*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: quantity metrics -->
+                                <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="Returned Empty Qty: " FontSize="10" FontWeight="SemiBold" Foreground="#4A5A6A" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ExchangePanel.RequestedQty}"
+                                                   FontSize="12" FontWeight="Bold" Foreground="#D03020" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="Issued Full Qty: " FontSize="10" FontWeight="SemiBold" Foreground="#4A5A6A" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ExchangePanel.IssuedFullQty}"
+                                                   FontSize="12" FontWeight="Bold" Foreground="#1E9E5E" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Pending (Unfulfilled): " FontSize="10" FontWeight="SemiBold" Foreground="#4A5A6A" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ExchangePanel.UnfulfilledDisplay}"
+                                                   FontSize="12" FontWeight="Bold"
+                                                   Foreground="{Binding ExchangePanel.UnfulfilledColor, Converter={StaticResource HexToBrush}}"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Right: status badge + remarks -->
+                                <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="Status: " FontSize="10" FontWeight="SemiBold" Foreground="#4A5A6A" VerticalAlignment="Center"/>
+                                        <Border Background="{Binding ExchangePanel.FulfillmentStatusColor, Converter={StaticResource HexToBrush}}"
+                                                CornerRadius="10" Padding="10,2">
+                                            <TextBlock Text="{Binding ExchangePanel.FulfillmentStatus}"
+                                                       Foreground="White" FontWeight="Bold" FontSize="10"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Remarks:" FontSize="10" FontWeight="SemiBold" Foreground="#4A5A6A" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding ExchangePanel.AutoRemarks, Mode=OneWay}"
+                                             IsReadOnly="True"
+                                             TextWrapping="Wrap"
+                                             FontSize="9" FontStyle="Italic"
+                                             Foreground="#5A6A7E"
+                                             Background="#F8FAFF"
+                                             BorderBrush="#DDE3EC" BorderThickness="1"
+                                             Padding="6" MinHeight="64"
+                                             VerticalScrollBarVisibility="Auto"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Multi-model note -->
+                            <TextBlock Visibility="{Binding ExchangePanel.IsMultiModelMode, Converter={StaticResource BoolToVis}}"
+                                       Text="Returned quantities are automatically recorded per model (equals requested qty per model)."
+                                       FontSize="9" FontStyle="Italic" Foreground="#5A6A7E"/>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Action buttons -->
+            <Border Grid.Row="2" Background="White" Padding="12,8,12,12"
+                    BorderBrush="#DDE3EC" BorderThickness="0,1,0,0">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="6" ShadowDepth="-2" Opacity="0.06" Color="#000000"/>
+                </Border.Effect>
+                <WrapPanel Orientation="Horizontal">
+                    <Button Content="✅ Fulfill Request"
+                            Background="#1E9E5E"
+                            Command="{Binding FulfillCommand}"
+                            Style="{StaticResource ActionButton}"/>
+                    <Button Content="🗑 Clear"
+                            Background="#8090A0"
+                            Command="{Binding ClearCommand}"
+                            Style="{StaticResource ActionButton}"/>
+                    <Button Content="🚨 Force Delete"
+                            Background="#D03020"
+                            Command="{Binding ForceDeleteCommand}"
+                            Style="{StaticResource ActionButton}"/>
+                </WrapPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

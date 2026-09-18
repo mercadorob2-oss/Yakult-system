@@ -1,0 +1,155 @@
+<UserControl x:Class="Yakult.Inventory.App.Wpf.RepairPortal.Gallery.Views.RepairTicketGalleryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <!-- VerticalAlignment="Top" + Auto row heights (rather than the whole thing stretching to fill
+         the Shell's remaining space) is what keeps the paging bar directly under the cards and on
+         screen — same fix RepairTicketTableView already uses. Only PAGE_SIZE cards (code-behind)
+         are ever realized at once, and the cards ScrollViewer itself is capped by MaxHeight below,
+         so even a full page scrolls internally instead of pushing the paging bar out of view. -->
+    <Grid VerticalAlignment="Top" Margin="8,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- SizeChanged (code-behind) recomputes the UniformGrid's Columns to fit as many ~300px-minimum
+             cards per row as the available width allows, then UniformGrid stretches each column to fill
+             the row evenly — so 3 cards fitting with room to spare grow to fill the row instead of
+             leaving dead space on the right, and a 4th only ever appears once there's genuinely room
+             for it (capped at 460px per card via MaxWidth below, so cards don't get absurdly wide on an
+             ultrawide monitor). -->
+        <ScrollViewer x:Name="GalleryScrollViewer" Grid.Row="0" MaxHeight="480" VerticalScrollBarVisibility="Auto"
+                      Padding="8" SizeChanged="GalleryScrollViewer_SizeChanged">
+            <ItemsControl x:Name="TicketsItemsControl">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="3"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource FeedCardStyle}" MinWidth="300" MaxWidth="460"
+                                HorizontalAlignment="Stretch"
+                                MouseLeftButtonUp="Card_MouseLeftButtonUp" Tag="{Binding}">
+                            <StackPanel>
+                                <!-- Author line — fixed-height slot so every card's image starts at the same Y.
+                                     A Grid (not a horizontal StackPanel) constrains the text column to the
+                                     card's actual remaining width, so long names/roles truncate with an
+                                     ellipsis instead of overflowing past the card's edge uncontained. -->
+                                <Grid Height="36" Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Style="{StaticResource AvatarPlaceholderStyle}">
+                                        <TextBlock Style="{StaticResource AvatarGlyphStyle}"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis">
+                                            <Run Text="{Binding SubmittedByName, Mode=OneWay, TargetNullValue='Unknown'}"/>
+                                            <Run Text=" submitted this repair" Foreground="#64748B" FontWeight="Normal"/>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding DateReceived, StringFormat='{}{0:MMM d, yyyy h:mm tt}'}" FontSize="11" Foreground="#94A3B8"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Image / placeholder -->
+                                <Grid Height="110" Margin="0,0,0,8">
+                                    <Border Style="{StaticResource EquipmentImagePlaceholderStyle}"
+                                            Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVisibilityInverseConverter}}">
+                                        <TextBlock Style="{StaticResource EquipmentGlyphStyle}"/>
+                                    </Border>
+                                    <Border CornerRadius="10" Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <Border.Background>
+                                            <ImageBrush ImageSource="{Binding ThumbnailImageBytes, Converter={StaticResource BytesToImageConverter}}" Stretch="UniformToFill"/>
+                                        </Border.Background>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Item summary — fixed-height slot, up to 2 lines, so the code line always lands on the same Y -->
+                                <Grid Height="40" Margin="0,0,0,4">
+                                    <TextBlock Text="{Binding ItemName}" FontWeight="Bold" FontSize="14" TextWrapping="Wrap"
+                                               VerticalAlignment="Top" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+                                <TextBlock Text="{Binding TicketCode}" FontSize="11" Foreground="#94A3B8" Height="16" Margin="0,0,0,4"/>
+
+                                <!-- Category / Item ID pills — fixed-height slot regardless of whether Category is present -->
+                                <Grid Height="26" Margin="0,0,0,4">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Top">
+                                        <Border Style="{StaticResource CategoryPillStyle}" Margin="0,0,6,0"
+                                                Visibility="{Binding Category, Converter={StaticResource EmptyStringToVisibilityConverter}}">
+                                            <TextBlock Style="{StaticResource CategoryPillTextStyle}" Text="{Binding Category}"/>
+                                        </Border>
+                                        <Border Style="{StaticResource ItemIdPillStyle}">
+                                            <TextBlock Style="{StaticResource ItemIdPillTextStyle}" Text="{Binding ItemId, StringFormat='Item ID: {0}'}"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Company · Branch · Department — fixed-height slot, up to 2 lines -->
+                                <Grid Height="34" Margin="0,0,0,4">
+                                    <TextBlock FontSize="11" Foreground="#64748B" TextWrapping="Wrap"
+                                               VerticalAlignment="Top" TextTrimming="CharacterEllipsis">
+                                        <Run Text="{Binding CompanyName, Mode=OneWay}"/>
+                                        <Run Text=" · "/>
+                                        <Run Text="{Binding BranchName, Mode=OneWay}"/>
+                                        <Run Text=" · "/>
+                                        <Run Text="{Binding DeptName, Mode=OneWay}"/>
+                                    </TextBlock>
+                                </Grid>
+
+                                <!-- Problem quote block — fixed height so the badges row below always lands on the same Y -->
+                                <Border Background="#F8FAFC" CornerRadius="8" Padding="8" Margin="0,6,0,6" Height="44">
+                                    <TextBlock Text="{Binding Problem}" TextWrapping="Wrap" FontStyle="Italic" Foreground="#334155" FontSize="12"
+                                               VerticalAlignment="Top" TextTrimming="CharacterEllipsis"/>
+                                </Border>
+
+                                <!-- Status + priority badges — fixed-height slot -->
+                                <Grid Height="30" Margin="0,0,0,8">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Border Style="{StaticResource StatusBadgeStyle}" Margin="0,0,6,0">
+                                            <TextBlock Text="{Binding Status}" Style="{StaticResource BadgeTextStyle}"/>
+                                        </Border>
+                                        <Border Style="{StaticResource PriorityBadgeStyle}" Margin="0,0,6,0">
+                                            <TextBlock Text="{Binding Priority}" Style="{StaticResource BadgeTextStyle}"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding DaysInCurrentStatus, StringFormat='{}{0}d'}" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Quick actions — just Open/Delete now (Add Evidence/Add Note removed); a
+                                     single row is enough since every row above is a fixed-height slot that
+                                     already lands this on the same Y across cards. -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Content="Open" Style="{StaticResource RepairPrimaryBtn}" Margin="0,0,4,0"
+                                            Click="OpenButton_Click" Tag="{Binding}"/>
+                                    <Button Grid.Column="1" Content="Delete" Style="{StaticResource RepairSecondaryBtn}" Foreground="#DC2626" Margin="4,0,0,0"
+                                            Click="DeleteButton_Click" Tag="{Binding}"
+                                            ToolTip="Permanently delete this ticket — for accidental intake mistakes"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <Border Grid.Row="1" Padding="8" HorizontalAlignment="Center">
+            <shared:PagingControl x:Name="PagingBar"/>
+        </Border>
+    </Grid>
+</UserControl>

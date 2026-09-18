@@ -1,0 +1,69 @@
+# Build output
+**/bin/
+**/obj/
+
+# NuGet packages
+packages/
+**/packages/
+
+# Visual Studio workspace state
+**/.vs/
+
+# Published/generated application artifacts
+**/publish/
+**/_build_verify/
+*.zip
+
+# Local secrets and machine-specific overrides
+**/appsettings.Local.json
+
+# Serilog rolling file output (Request Portal - NET)
+**/Logs/log-*.txt
+
+# Code-signing private key -- never commit. The .cer (public cert) is fine to
+# commit/distribute; the .pfx contains the private key and must stay only on
+# the build machine (see Yakult.Inventory.App/Installer/CodeSigning/).
+*.pfx
+
+# Claude Code session data
+.claude/
+
+# User-specific project settings
+*.csproj.user
+*.sqlproj.user
+*.vbproj.user
+
+# SSDT artifacts
+*.dbmdl
+*.jfm
+
+# Fody - auto-generated XML schema
+FodyWeavers.xsd
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_CartridgeAuthorization_AddSource.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_CartridgeAuthorization_ClearTable.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_Notification_CreateTable.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_UserNotificationSetting_CreateTable.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_NullPasswordForHashedUsers.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_CreateTrigger_PrivilegeFlagsAudit.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_AddSecurityToken.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_CreateTrigger_PrivilegeFlagsGuard.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_SP_RequestPrivilegeChange_Create.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_AddApproverDevice.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_AddPendingPairingToken.sql
+/Yakult.Inventory.App/Security/PrivilegeApproval/
+/Latest_sys/YakultPrivilegeApprover/
+/docs/db mig
+/.claude/settings.local.json
+/docs/Hardware ModelNumber Correction.xlsx
+/Request_Portal_User_Guide.pptx
+/Request_Portal_User_Guide_v2.pptx
+/~$Request_Portal_User_Guide_v2.pptx
+
+# Encrypted runtime portal state (connection profile and gate metadata)
+Yakult.SystemsPortal/App_Data/portal-state.dat
+Yakult.SystemsPortal/App_Data/portal-state.dat.tmp
+
+Yakult.SystemsPortal/App_Data/DataProtection-Keys/
+
+# yt-dlp binary -- too large for git; ships via csproj from the local tools folder
+Yakult.SystemsPortal/tools/yt-dlp.exe

@@ -1,0 +1,407 @@
+@model List<Inventory.RequestPortal.Models.ViewModels.RequestSessionGroupViewModel>
+@{
+    ViewData["Title"] = ViewBag.PageTitle;
+
+    // Mirrors Wpf/RequestManagement/Views/UnfulfilledRequestsView.xaml + PartiallyFulfilledRequestsView.xaml
+    // and their ViewModels: these are two separate desktop pages/forms (not tabs on one page), so
+    // this view is reached via the shared offcanvas nav (_MasterNav), matching how the
+    // Cartridge Fulfillment pages are navigated. Search/filter/sort applied at the SESSION (group)
+    // level — a group matches if ANY of its rows match — client-side pagination over groups
+    // (PageSize=10), and a remarks strip that updates on row click. Unfulfilled shows Pending
+    // Records/Unfulfilled Qty/By Item stat cards (UnfulfilledRequestsViewModel.UpdateStats);
+    // Partially Fulfilled shows Sets/Total Issued/Still Pending
+    // (PartiallyFulfilledRequestsViewModel.UpdateStats) — both computed from the loaded dataset
+    // itself, unlike cartridge exchange's always-pending query. The desktop page's single "Fulfill
+    // Selected" footer button (gated on SelectedRow.IsPending) replaces this view's previous
+    // per-group inline Fulfill links for closer parity.
+    string statsMode = ViewBag.StatsMode ?? "Unfulfilled";
+}
+
+@await Html.PartialAsync("_MasterNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>@ViewBag.PageTitle</h1>
+        <p class="subtitle mb-0">Ink, Toner &amp; Print Head requests</p>
+    </div>
+
+    @* Compact summary cards, right-aligned in the header band — mirrors ViewItemsPage's
+       Row 0 (title left, StatCardShell cluster right). *@
+    <div class="rf-header-stats ms-auto">
+        @if (statsMode == "PartiallyFulfilled")
+        {
+            <div class="rf-stat" style="--rf-accent:#4E9AFC;"><div class="v">@ViewBag.SessionCount</div><div class="l">Sets</div></div>
+            <div class="rf-stat" style="--rf-accent:#1E9E5E;"><div class="v" style="color:#1E9E5E;">@ViewBag.TotalIssued</div><div class="l">Total Issued</div></div>
+            <div class="rf-stat" style="--rf-accent:#C0392B;"><div class="v" style="color:#C0392B;">@ViewBag.TotalPending</div><div class="l">Still Pending</div></div>
+        }
+        else
+        {
+            <div class="rf-stat" style="--rf-accent:#4E9AFC;"><div class="v">@ViewBag.PendingRecords</div><div class="l">Pending Records</div></div>
+            <div class="rf-stat" style="--rf-accent:#C0392B;"><div class="v" style="color:#C0392B;">@ViewBag.UnfulfilledQty</div><div class="l">Unfulfilled Qty</div></div>
+        }
+    </div>
+</div>
+
+<div class="content-padded">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <style>
+        /* Tighten vertical rhythm on this page — maximise room for the group list. */
+        .portal-header { margin-bottom: 0 !important; }
+        .content-padded { padding-top: 10px !important; }
+
+        /* Lock this page to the viewport: no outer page scrollbar — only the sets
+           table scrolls, and expanding a row grows the table's scroll area, never
+           the page. (These rules are scoped to this view's inline <style>.) */
+        html, body { overflow: hidden; }
+        .page-wrapper { height: 100vh; min-height: 0; }
+        .page-wrapper > main[role="main"] { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        main[role="main"] > .portal-header { flex: 0 0 auto; }
+        main[role="main"] > .content-padded { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .content-padded > .rf-toolbar-card,
+        .content-padded > .rf-remarks-strip,
+        .content-padded > .rf-pagination,
+        .content-padded > .alert { flex: 0 0 auto; }
+
+        /* Header-band summary cards — compact accent-bar cards like ViewItemsPage's StatCardShell. */
+        .rf-header-stats { display: flex; align-items: center; gap: 8px; }
+        .rf-stat { display: flex; flex-direction: column; justify-content: center;
+                   height: 40px; min-width: 112px; padding: 0 12px;
+                   background: #fff; border: 1px solid #dde3ec; border-radius: 7px;
+                   border-left: 3px solid var(--rf-accent, #4E9AFC); }
+        .rf-stat .v { font-size: 14px; font-weight: 700; color: #1a2333; line-height: 1.15; }
+        .rf-stat .l { font-size: 7px; font-weight: 600; color: #6b7a8d; letter-spacing: .04em; text-transform: uppercase; }
+        @@media (max-width: 991.98px) { .rf-header-stats { display: none; } }
+
+        /* Single action bar — item actions + search + filters (left), Refresh (right).
+           Mirrors ViewItemsPage's Row 1 SectionCard. */
+        .rf-toolbar-card { display: flex; align-items: center; gap: 12px;
+                           background: #fff; border: 1px solid #dde3ec; border-radius: 10px;
+                           padding: 8px 12px; margin-bottom: 10px; }
+        .rf-toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; }
+        .rf-toolbar-card .rf-refresh { margin-left: auto; flex: 0 0 auto; white-space: nowrap; }
+        .rf-search { display: flex; align-items: center; gap: 6px;
+                     height: 31px; width: 300px; max-width: 100%; padding: 0 10px;
+                     border: 1px solid #c2ccda; border-radius: 5px; background: #fff; }
+        .rf-search i { color: #7a8a9a; font-size: .82rem; }
+        .rf-search input { flex: 1; border: 0; outline: 0; background: transparent; font-size: .8rem; }
+        .rf-flabel { font-size: .72rem; font-weight: 600; color: #6b7a8d; margin: 0; }
+        .rf-toolbar-card select.form-select-sm { width: auto; min-width: 130px; }
+
+        .rf-toolbar-card { box-shadow: 0 2px 6px rgba(20,35,51,.06); }
+
+        /* Sets list — one table; each set is a summary row that expands to its line items.
+           The list body scrolls inside the card; the header row stays pinned. */
+        .rf-sets-card { background: #fff; border: 1px solid #dde3ec; border-radius: 10px; overflow: hidden;
+                        flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .rf-sets-card .table-responsive { flex: 1 1 auto; min-height: 120px; overflow-y: auto; }
+        .rf-sets-table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; font-size: .82rem; }
+        .rf-sets-table > thead th { position: sticky; top: 0; z-index: 5;
+                                    background: #f4f6fa; color: #6b7a8d; font-size: .7rem; font-weight: 700;
+                                    text-transform: uppercase; letter-spacing: .03em; padding: 8px 12px;
+                                    border-bottom: 1px solid #dde3ec; white-space: nowrap; }
+        .rf-set-row { cursor: pointer; }
+        .rf-set-row > td { padding: 9px 12px; border-bottom: 1px solid #eef1f5; }
+        .rf-set-row:hover { background: #EDF3FB; }
+        .rf-set-row.expanded { background: #eef4fc; }
+        .rf-set-row.expanded > td { font-weight: 600; border-bottom-color: transparent; }
+        .rf-chevron { display: inline-block; transition: transform .15s ease; color: #7a8a9a; font-size: .8rem; }
+        .rf-set-row.expanded .rf-chevron { transform: rotate(90deg); }
+        .rf-set-detail > td { padding: 0; background: #fafbfc; border-bottom: 1px solid #dde3ec; }
+        .rf-set-detail .rf-group-table { margin: 0; font-size: .8rem; }
+        .rf-set-detail .rf-group-table thead th { background: transparent; border-bottom: 1px solid #e5e9ef;
+                                                  color: #8896a7; font-size: .68rem; text-transform: uppercase; }
+
+        .rf-group-table tbody tr { cursor: pointer; }
+        .rf-group-table tbody tr:hover { background: #EDF3FB; }
+        .rf-group-table tbody tr.selected { background: #B8CEED !important; }
+
+        .rf-remarks-strip { background: #fff; border: 1px solid #dde3ec; border-radius: 8px; padding: 10px 16px; margin-top: 10px; }
+        .rf-remarks-strip .lbl { font-size: 9px; font-weight: 600; color: #7a8a9a; letter-spacing: .03em; margin-bottom: 3px; }
+
+        .rf-pagination { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    </style>
+
+    <div class="rf-toolbar-card">
+        <div class="rf-toolbar-left">
+            <button type="button" id="rfBtnFulfill" class="btn btn-danger btn-sm" disabled>
+                <i class="bi bi-box-seam"></i> Fulfill Selected
+            </button>
+
+            <div class="rf-search">
+                <i class="bi bi-search"></i>
+                <input type="text" id="rfSearchBox"
+                       placeholder="Search by requester, branch, department, item, req #...">
+            </div>
+
+            <label class="rf-flabel" for="rfFilterBy">Filter</label>
+            <select id="rfFilterBy" class="form-select form-select-sm">
+                <option>All Fields</option>
+                <option>Requester</option>
+                <option>Branch</option>
+                <option>Department</option>
+                <option>Item</option>
+                <option value="Req #">Req #</option>
+            </select>
+
+            <label class="rf-flabel" for="rfSortBy">Sort</label>
+            <select id="rfSortBy" class="form-select form-select-sm">
+                <option value="asc">Set # (A→Z)</option>
+                <option value="desc">Set # (Z→A)</option>
+            </select>
+        </div>
+
+        <button type="button" id="rfBtnRefresh" class="btn btn-outline-primary btn-sm rf-refresh" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+
+    <div class="rf-sets-card @(statsMode == "PartiallyFulfilled" ? "" : "rf-no-remarks")" id="rfGroupContainer">
+        <div class="table-responsive">
+            <table class="rf-sets-table">
+                <thead>
+                    <tr>
+                        <th style="width:30px;"></th>
+                        <th>Set #</th>
+                        <th>Requester</th>
+                        <th>Branch</th>
+                        <th>Department</th>
+                        <th class="text-end">Pending</th>
+                        <th class="text-end">Lines</th>
+                    </tr>
+                </thead>
+                <tbody id="rfSetsBody">
+                    @if (Model.Count == 0)
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">Nothing here right now.</td></tr>
+                    }
+
+                    @foreach (var group in Model)
+                    {
+                        var reqIds = string.Join(" ", group.Rows.Select(r => r.ReqId));
+                        var items = string.Join(" ", group.Rows.Select(r => r.ItemName));
+                        var searchBlob = $"{group.EmployeeName} {group.BranchName} {group.DepartmentName} {items} {reqIds}".ToLowerInvariant();
+                        var pendingLines = group.Rows.Count(r => r.IssuedQty < r.Quantity);
+
+                        <tr class="rf-set-row"
+                            data-setid="@(group.SetId ?? int.MaxValue)"
+                            data-requester="@(group.EmployeeName ?? "")"
+                            data-branch="@(group.BranchName ?? "")"
+                            data-department="@(group.DepartmentName ?? "")"
+                            data-item="@items"
+                            data-reqid="@reqIds"
+                            data-search="@searchBlob">
+                            <td><i class="bi bi-chevron-right rf-chevron"></i></td>
+                            <td>@group.GroupLabel</td>
+                            <td>@(string.IsNullOrWhiteSpace(group.EmployeeName) ? "—" : group.EmployeeName)</td>
+                            <td>@(string.IsNullOrWhiteSpace(group.BranchName) ? "—" : group.BranchName)</td>
+                            <td>@(string.IsNullOrWhiteSpace(group.DepartmentName) ? "—" : group.DepartmentName)</td>
+                            <td class="text-end"><span class="badge bg-secondary">@pendingLines pending</span></td>
+                            <td class="text-end">@group.Rows.Count</td>
+                        </tr>
+                        <tr class="rf-set-detail" style="display:none;">
+                            <td colspan="7">
+                                <table class="table table-sm rf-group-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Req #</th>
+                                            <th>Item</th>
+                                            <th class="text-end">Requested</th>
+                                            <th class="text-end">Issued</th>
+                                            <th class="text-end">Pending</th>
+                                            <th>Status</th>
+                                            <th>Created At</th>
+                                            <th>Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var row in group.Rows)
+                                        {
+                                            int pending = Math.Max(0, row.Quantity - row.IssuedQty);
+                                            string status = row.IssuedQty >= row.Quantity ? "Fulfilled" : (row.IssuedQty > 0 ? "Partially Fulfilled" : "Unfulfilled");
+                                            bool isPending = pending > 0;
+                                            <tr data-reqid="@row.ReqId"
+                                                data-ispending="@(isPending ? "1" : "0")"
+                                                data-remarks="@(string.IsNullOrWhiteSpace(row.Remarks) ? "" : row.Remarks)">
+                                                <td>@row.ReqId</td>
+                                                <td>@row.ItemName</td>
+                                                <td class="text-end">@row.Quantity</td>
+                                                <td class="text-end">@row.IssuedQty</td>
+                                                <td class="text-end">@pending</td>
+                                                <td>
+                                                    <span class="badge @(status == "Fulfilled" ? "bg-success" : status == "Partially Fulfilled" ? "bg-warning text-dark" : "bg-danger")">@status</span>
+                                                </td>
+                                                <td>@row.DateCreated.ToString("MM/dd/yyyy")</td>
+                                                <td class="text-truncate" style="max-width:220px;">@row.Remarks</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center text-muted py-4" id="rfNoResults" style="display:none;">No matching sets found.</div>
+    </div>
+
+    @if (statsMode == "PartiallyFulfilled")
+    {
+        <div class="rf-remarks-strip">
+            <div class="lbl">REMARKS</div>
+            <div id="rfRemarksText">Click a row to view remarks</div>
+        </div>
+    }
+
+    <div class="rf-pagination">
+        <button type="button" id="rfPrevBtn" class="btn btn-sm btn-outline-secondary">&lsaquo;</button>
+        <span id="rfPageInfo" class="small text-muted"></span>
+        <button type="button" id="rfNextBtn" class="btn btn-sm btn-outline-secondary">&rsaquo;</button>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var PAGE_SIZE = 15;
+        var tbody = document.getElementById('rfSetsBody');
+        var searchBox = document.getElementById('rfSearchBox');
+        var filterBy = document.getElementById('rfFilterBy');
+        var sortBy = document.getElementById('rfSortBy');
+        var prevBtn = document.getElementById('rfPrevBtn');
+        var nextBtn = document.getElementById('rfNextBtn');
+        var pageInfo = document.getElementById('rfPageInfo');
+        var noResults = document.getElementById('rfNoResults');
+        var btnFulfill = document.getElementById('rfBtnFulfill');
+        var remarksText = document.getElementById('rfRemarksText');
+
+        var setRows = Array.prototype.slice.call(tbody.querySelectorAll('tr.rf-set-row'));
+        setRows.forEach(function (r) { r._detail = r.nextElementSibling; });
+
+        var currentPage = 1;
+        var selectedLine = null;
+
+        function groupFieldValue(row, key) {
+            switch (key) {
+                case 'Requester': return row.getAttribute('data-requester') || '';
+                case 'Branch': return row.getAttribute('data-branch') || '';
+                case 'Department': return row.getAttribute('data-department') || '';
+                case 'Item': return row.getAttribute('data-item') || '';
+                case 'Req #': return row.getAttribute('data-reqid') || '';
+                default: return row.getAttribute('data-search') || '';
+            }
+        }
+
+        function matchesSearch(row) {
+            var q = (searchBox.value || '').trim().toLowerCase();
+            if (!q) return true;
+            return groupFieldValue(row, filterBy.value).toLowerCase().indexOf(q) >= 0;
+        }
+
+        function getFiltered() {
+            var filtered = setRows.filter(matchesSearch);
+            var dir = sortBy.value === 'desc' ? -1 : 1;
+            filtered.sort(function (a, b) {
+                var va = parseInt(a.getAttribute('data-setid'), 10);
+                var vb = parseInt(b.getAttribute('data-setid'), 10);
+                if (va < vb) return -1 * dir;
+                if (va > vb) return 1 * dir;
+                return 0;
+            });
+            return filtered;
+        }
+
+        function render() {
+            if (setRows.length === 0) return;
+            var filtered = getFiltered();
+            var totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            var pageStart = (currentPage - 1) * PAGE_SIZE;
+            var pageEnd = pageStart + PAGE_SIZE;
+
+            setRows.forEach(function (r) { r.style.display = 'none'; r._detail.style.display = 'none'; });
+
+            filtered.forEach(function (r, idx) {
+                tbody.appendChild(r);
+                tbody.appendChild(r._detail);
+                if (idx >= pageStart && idx < pageEnd) {
+                    r.style.display = '';
+                    r._detail.style.display = r.classList.contains('expanded') ? '' : 'none';
+                }
+            });
+
+            noResults.style.display = filtered.length === 0 ? '' : 'none';
+
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages;
+            pageInfo.textContent = filtered.length === 0
+                ? 'No results'
+                : 'Page ' + currentPage + ' of ' + totalPages + '  (' + filtered.length + ' set' + (filtered.length === 1 ? '' : 's') + ')';
+        }
+
+        function deselect() {
+            if (selectedLine) selectedLine.classList.remove('selected');
+            selectedLine = null;
+            btnFulfill.disabled = true;
+            if (remarksText) remarksText.textContent = 'Click a row to view remarks';
+        }
+
+        function selectLine(row) {
+            if (selectedLine) selectedLine.classList.remove('selected');
+            selectedLine = row;
+            row.classList.add('selected');
+
+            if (remarksText) {
+                var remarks = row.getAttribute('data-remarks');
+                remarksText.textContent = remarks ? ('Remarks: ' + remarks) : 'No remarks';
+            }
+
+            btnFulfill.disabled = row.getAttribute('data-ispending') !== '1';
+        }
+
+        function toggleSet(row) {
+            var expanded = row.classList.toggle('expanded');
+            row._detail.style.display = expanded ? '' : 'none';
+        }
+
+        tbody.addEventListener('click', function (e) {
+            var line = e.target.closest('.rf-set-detail .rf-group-table tbody tr');
+            if (line) { selectLine(line); return; }
+            var setRow = e.target.closest('tr.rf-set-row');
+            if (setRow) toggleSet(setRow);
+        });
+
+        btnFulfill.addEventListener('click', function () {
+            if (!selectedLine) return;
+            var id = selectedLine.getAttribute('data-reqid');
+            window.location.href = '@Url.Action("Fulfill")/' + id;
+        });
+
+        searchBox.addEventListener('input', function () { currentPage = 1; deselect(); render(); });
+        filterBy.addEventListener('change', function () { currentPage = 1; deselect(); render(); });
+        sortBy.addEventListener('change', function () { currentPage = 1; deselect(); render(); });
+        prevBtn.addEventListener('click', function () { currentPage--; deselect(); render(); });
+        nextBtn.addEventListener('click', function () { currentPage++; deselect(); render(); });
+
+        render();
+    })();
+</script>

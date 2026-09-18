@@ -1,0 +1,249 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Category.Views.CategoryPageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls"
+             xmlns:local="clr-namespace:Yakult.Inventory.App.WPF.Category.Views"
+             xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+             Background="#F0F2F6"
+             FontFamily="Segoe UI"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <local:ActiveToStatusTextConverter x:Key="ActiveToStatusText"/>
+            <conv:BoolToCardBrushConverter x:Key="BoolToCardBrush"/>
+
+            <Style x:Key="CenteredCellText" TargetType="TextBlock">
+                <Setter Property="TextAlignment" Value="Center"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
+
+            <!-- Grays out inactive rows, matching the original's CellFormatting override
+                 (ForeColor=Gray, Font=Italic, BackColor=light gray) for inactive categories. -->
+            <Style x:Key="CategoryRowStyle" TargetType="DataGridRow" BasedOn="{StaticResource ListDataGridRow}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Active}" Value="False">
+                        <Setter Property="Background" Value="#F5F5F5"/>
+                        <Setter Property="Foreground" Value="Gray"/>
+                        <Setter Property="FontStyle" Value="Italic"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ Page header: title (left) + compact summary cards (right) ═════ -->
+        <Border Grid.Row="0" Style="{StaticResource PageHeaderBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE8FD;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                               Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel>
+                        <TextBlock Text="Categories" Style="{StaticResource PageTitle}"/>
+                        <TextBlock Text="Manage item categories" Style="{StaticResource PageSubtitle}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <Border Style="{StaticResource StatCardClickable}" Cursor="Hand" Background="{Binding IsTotalCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding TotalCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="TOTAL" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding TotalCount}" Style="{StaticResource StatCardValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Cursor="Hand" Background="{Binding IsActiveCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ActiveCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="ACTIVE" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding ActiveCount}" Style="{StaticResource StatCardValue}" Foreground="{StaticResource SuccessBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Cursor="Hand" Margin="0" Background="{Binding IsInactiveCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding InactiveCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="INACTIVE" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding InactiveCount}" Style="{StaticResource StatCardValue}" Foreground="{StaticResource DangerBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Button Grid.Column="2" Style="{StaticResource PrimaryBtn}" Command="{Binding RefreshCommand}" Margin="0">
+                    <TextBlock Text="⟳  Refresh"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- ══ Toolbar: actions + search + Advanced Filters ════════════════ -->
+        <Border Grid.Row="1" Style="{StaticResource ToolbarBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <WrapPanel VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryBtn}" Command="{Binding AddCommand}">
+                        <TextBlock Text="➕  Add Category"/>
+                    </Button>
+                    <Button Style="{StaticResource SmallBtn}" Command="{Binding EditCommand}">
+                        <TextBlock Text="✎  Edit"/>
+                    </Button>
+                    <Button Style="{StaticResource SmallBtn}" Command="{Binding ToggleActiveCommand}">
+                        <TextBlock Text="{Binding ToggleActiveButtonText}"/>
+                    </Button>
+                    <Button Style="{StaticResource SmallBtn}" Command="{Binding ArchiveCommand}">
+                        <TextBlock Text="📦  Archive"/>
+                    </Button>
+                    <Button Style="{StaticResource DangerBtn}" Command="{Binding DeleteCommand}" Margin="0,0,8,8">
+                        <TextBlock Text="🗑  Delete"/>
+                    </Button>
+
+                    <shared:SelectedCountBadge Count="{Binding SelectedCount}" EntityLabel="categories"
+                                                Click="SelectedBadge_Click" Margin="0,0,16,8"/>
+
+                    <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,8" Foreground="#7A8A9A"/>
+                    <TextBox Style="{StaticResource SearchBox}" Width="240" Margin="0,0,8,8"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Search by Category Name..."/>
+
+                    <ToggleButton x:Name="AdvancedFiltersToggle" Style="{StaticResource CategoryFilterToggleBtn}"
+                                  Width="140" Height="30" Margin="0,0,8,8" Content="Advanced Filters"/>
+                    <Popup PlacementTarget="{Binding ElementName=AdvancedFiltersToggle}"
+                           IsOpen="{Binding IsChecked, ElementName=AdvancedFiltersToggle, Mode=TwoWay}"
+                           StaysOpen="False" Placement="Bottom" AllowsTransparency="True">
+                        <Border Background="White" BorderBrush="{StaticResource BorderBrush1}" BorderThickness="1"
+                                CornerRadius="8" Padding="18" Width="280">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="#1A2333"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <TextBlock Text="Advanced Filters" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                                <CheckBox Content="Show Inactive" IsChecked="{Binding ShowInactive}"
+                                          FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextSubtleBrush}" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="Filter By" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch" Margin="0,0,0,12"
+                                          ItemsSource="{Binding FilterByOptions}"
+                                          SelectedItem="{Binding SelectedFilterBy, Mode=TwoWay}"/>
+
+                                <TextBlock Text="Sort By" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch" Margin="0,0,0,12"
+                                          ItemsSource="{Binding SortByOptions}"
+                                          SelectedItem="{Binding SelectedSortBy, Mode=TwoWay}"/>
+
+                                <Separator Margin="0,2,0,12"/>
+
+                                <Button HorizontalAlignment="Right" Style="{StaticResource SmallBtn}" Command="{Binding ResetFiltersCommand}" ClickMode="Press" Margin="0">
+                                    <TextBlock Text="↺  Reset Filters"/>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══ Grid ═════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="White" Margin="14,0,14,0">
+            <DataGrid x:Name="CategoriesGrid"
+                      Style="{StaticResource ListDataGridChrome}"
+                      RowStyle="{StaticResource CategoryRowStyle}"
+                      IsReadOnly="False"
+                      SelectionMode="Extended" SelectionUnit="FullRow"
+                      ItemsSource="{Binding PagedCategories}"
+                      SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                      Sorting="CategoriesGrid_Sorting"
+                      MouseDoubleClick="CategoriesGrid_MouseDoubleClick">
+                <DataGrid.Resources>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                </DataGrid.Resources>
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Width="40" CanUserSort="False" CanUserResize="False" CanUserReorder="False">
+                        <DataGridTemplateColumn.HeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="{StaticResource PrimaryBrush}"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="DataGridColumnHeader">
+                                            <Border Background="{TemplateBinding Background}" BorderBrush="{StaticResource PrimaryHoverBrush}" BorderThickness="0,0,1,1">
+                                                <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                          ToolTip="Select / deselect all rows on this page (used by Delete)"
+                                                          Click="SelectAllCheckBox_Click"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </DataGridTemplateColumn.HeaderStyle>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          IsChecked="{Binding Selected, Mode=TwoWay}"
+                                          Checked="RowSelectCheckBox_Changed"
+                                          Unchecked="RowSelectCheckBox_Changed"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTextColumn Header="ID" Binding="{Binding CategoryId}" Width="55" SortMemberPath="CategoryId"
+                                        ElementStyle="{StaticResource CenteredCellText}"/>
+                    <DataGridTextColumn Header="Category Name" Binding="{Binding Name}" Width="2.5*" MinWidth="200" SortMemberPath="Name"/>
+                    <DataGridTextColumn Header="Item Count" Binding="{Binding ItemCount}" Width="*" MinWidth="100" SortMemberPath="ItemCount"
+                                        ElementStyle="{StaticResource CenteredCellText}"/>
+
+                    <!-- SortMemberPath deliberately does not match a real ItemCategoryDto property —
+                         mirrors the original, where "Status" was a CellFormatting-only display value
+                         with no backing property, so clicking this header did nothing. -->
+                    <DataGridTextColumn Header="Status" Binding="{Binding Active, Converter={StaticResource ActiveToStatusText}}"
+                                        Width="*" MinWidth="100" SortMemberPath="StatusDisplay"
+                                        ElementStyle="{StaticResource CenteredCellText}"/>
+
+                    <DataGridTextColumn Header="Date Created" Binding="{Binding DateCreated, StringFormat=MM/dd/yyyy}" Width="*" MinWidth="110" SortMemberPath="DateCreated"
+                                        ElementStyle="{StaticResource CenteredCellText}"/>
+                    <DataGridTextColumn Header="Created By" Binding="{Binding CreatedByName}" Width="1.3*" MinWidth="130" SortMemberPath="CreatedByName"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- ══ Pagination ═══════════════════════════════════════════════════ -->
+        <Border Grid.Row="3" Style="{StaticResource FooterBar}">
+            <shared:PagingControl HorizontalAlignment="Left"
+                                   FirstPageCommand="{Binding FirstPageCommand}"
+                                   PrevPageCommand="{Binding PrevPageCommand}"
+                                   NextPageCommand="{Binding NextPageCommand}"
+                                   LastPageCommand="{Binding LastPageCommand}"
+                                   PageInfoText="{Binding PageInfoText}"/>
+        </Border>
+    </Grid>
+</UserControl>

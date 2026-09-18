@@ -1,0 +1,3017 @@
+﻿﻿﻿﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Data.SqlClient;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Configuration;
+using Newtonsoft.Json;
+using Yakult.Inventory.App.Helpers;
+using Yakult.Inventory.App.Models;
+using Yakult.Inventory.App.Repositories;
+using Yakult.Inventory.App.Session;
+using ReaLTaiizor.Controls;
+using ReaLTaiizor.Enum.Poison;
+using Yakult.Inventory.App.Core;
+using Yakult.Inventory.App.Pages.Set;
+using Yakult.Inventory.App.Pages.ItemAudit;
+
+
+namespace Yakult.Inventory.App.Pages.Update
+{
+    public partial class ViewUpdatesPage : UserControl
+    {
+        private DefaultListPageLayout _layout;
+        private System.Windows.Forms.Panel _templatePaginationPanel;
+        private HopeButton _btnMarkProcessed;
+        private HopeButton _btnViewDetails;
+        private HopeButton _btnDelete;
+        private HopeButton _btnApplyFilter;
+        private HopeButton _btnAuditTimeline;
+        private System.Windows.Forms.CheckBox _chkProblemsOnly;
+        private ComboBox _cmbPageSize;
+        private ToolTip _toolTip;
+        private System.Windows.Forms.Timer _stateSaveTimer;
+        private System.Windows.Forms.Timer _loadDebounceTimer;
+        private bool _restoringState;
+        private string _restoreSortKey;
+        private System.Windows.Forms.SortOrder _restoreSortOrder = System.Windows.Forms.SortOrder.None;
+        private bool _isLoading;
+        private bool _reloadRequested;
+
+        private DataGridView dgvUpdates;
+        private MaterialCard cardTotalPanel, cardProcessedPanel, cardUnprocessedPanel;
+        private Label titleLabel, lblDateFrom, lblDateTo, lblStatus, lblSetCode,
+            lblTotalCount, lblProcessedCount, lblUnprocessedCount;
+        private DateTimePicker dtpDateFrom, dtpDateTo;
+        private ComboBox cmbStatus;
+        private TextBox txtSetCode;
+        private ProgressBar progressBar;
+        private readonly SetItemUpdateRepository _repository;
+        private readonly AuditRepository _auditRepository;
+        private readonly ItemRepairHistoryRepository _repairHistoryRepository;
+        private int _loadVersion;
+
+        private System.Windows.Forms.Button btnFirstPage, btnPrevPage, btnNextPage, btnLastPage;
+        private Label lblPageInfo;
+        private int _currentPage = 1;
+        private int _pageSize = 10;
+        private List<SetItemUpdateDto> _filteredUpdates;
+        private List<SetItemUpdateDto> _allUpdates; // Cache for client-side filtering
+        private System.Windows.Forms.Timer _debounceTimer;
+        private CancellationTokenSource _applyFiltersCts;
+        private int _applyFiltersVersion;
+
+        // Sorting state for Sort By dropdown
+        private DataGridViewColumn _sortColumn;
+        private System.Windows.Forms.SortOrder _sortOrder = System.Windows.Forms.SortOrder.None;
+        private bool _sortByDropdownInitialized = false;
+
+        public ViewUpdatesPage()
+        {
+            _repository = new SetItemUpdateRepository();
+            _auditRepository = new AuditRepository();
+            _repairHistoryRepository = new ItemRepairHistoryRepository();
+
+            InitializeComponent();
+            BuildUiWithTemplate();
+            InitializeStatePersistence();
+            RestoreUiState();
+            _ = LoadUpdatesAsync();
+        }
+
+        private static DateTime GetDefaultUpdatesFromDate()
+        {
+            return DateTime.Today.AddMonths(-1);
+        }
+
+        private static DateTime GetDefaultUpdatesToDate()
+        {
+            return DateTime.Today;
+        }
+
+        private void ApplyDefaultDateRange()
+        {
+            if (dtpDateFrom != null)
+                dtpDateFrom.Value = GetDefaultUpdatesFromDate();
+
+            if (dtpDateTo != null)
+                dtpDateTo.Value = GetDefaultUpdatesToDate();
+        }
+
+        private string GetConnectionString()
+        {
+            DatabaseConfig.EnsureConfigured();
+            return DatabaseConfig.ConnectionString;
+        }
+
+        private void BuildUiWithTemplate()
+        {
+            SuspendLayout();
+            Controls.Clear();
+
+            Dock = DockStyle.Fill;
+            BackColor = Color.White;
+
+            // Header search filters SET CODE only (syncs to txtSetCode)
+            _layout = DefaultListPageTemplate.Create(
+                "Mobile Updates",
+                "Search anything...",
+                (s, e) => { /* Handled by TextChanged event */ },
+                () => { _ = LoadUpdatesAsync(); });
+
+            titleLabel = _layout.TitleLabel;
+
+            // Button bar
+            _btnMarkProcessed = new HopeButton
+            {
+                Text = "\u2705  Mark Processed",
+                Font = UiTheme.Fonts.Button,
+                Size = new Size(190, UiTheme.Sizes.PillButtonHeight),
+                Margin = new Padding(0, 6, 12, 0)
+            };
+            UiFactory.ConfigureOutlineHopeButton(_btnMarkProcessed, UiTheme.Colors.PrimaryHover, UiTheme.Colors.OutlineHoverBack);
+            _btnMarkProcessed.Click += async (s, e) => await MarkSelectedAsProcessedAsync();
+
+            _btnViewDetails = new HopeButton
+            {
+                Text = "\U0001F50D  View Detail",
+                Font = UiTheme.Fonts.Button,
+                Size = new Size(160, UiTheme.Sizes.PillButtonHeight),
+                Margin = new Padding(0, 6, 12, 0)
+            };
+            UiFactory.ConfigureOutlineHopeButton(_btnViewDetails, UiTheme.Colors.PrimaryHover, UiTheme.Colors.OutlineHoverBack);
+            _btnViewDetails.Click += (s, e) => OpenSelectedUpdateDetails();
+
+            _btnDelete = new HopeButton
+            {
+                Text = "\U0001F5D1  Delete",
+                Font = UiTheme.Fonts.Button,
+                Size = new Size(130, UiTheme.Sizes.PillButtonHeight),
+                Margin = new Padding(0, 6, 12, 0)
+            };
+            UiFactory.ConfigureOutlineHopeButton(_btnDelete, UiTheme.Colors.Danger, UiTheme.Colors.DangerHoverBack);
+            _btnDelete.Click += async (s, e) => await DeleteSelectedUpdatesAsync();
+
+            _btnApplyFilter = new HopeButton
+            {
+                Text = "\U0001F50E  Apply Filter",
+                Font = UiTheme.Fonts.Button,
+                Size = new Size(160, UiTheme.Sizes.PillButtonHeight),
+                Margin = new Padding(0, 6, 12, 0)
+            };
+            UiFactory.ConfigureOutlineHopeButton(_btnApplyFilter, UiTheme.Colors.PrimaryHover, UiTheme.Colors.OutlineHoverBack);
+            _btnApplyFilter.Click += async (s, e) => await LoadUpdatesAsync();
+
+            DefaultListPageTemplate.AddButtons(_layout.ButtonLeftFlow, new[] { _btnViewDetails, _btnMarkProcessed, _btnDelete, _btnApplyFilter });
+
+            // Summary cards
+            cardTotalPanel = UiFactory.CreateSummaryCard("Total", out lblTotalCount, UiTheme.Colors.Primary);
+            cardProcessedPanel = UiFactory.CreateSummaryCard("Processed", out lblProcessedCount, Color.FromArgb(39, 174, 96));
+            cardUnprocessedPanel = UiFactory.CreateSummaryCard("Unprocessed", out lblUnprocessedCount, UiTheme.Colors.Danger);
+            DefaultListPageTemplate.AddSummaryCards(_layout.SummaryFlow, new[] { cardTotalPanel, cardProcessedPanel, cardUnprocessedPanel });
+            MakeSummaryCardFilterable(cardTotalPanel, targetStatusIndex: 0);
+            MakeSummaryCardFilterable(cardProcessedPanel, targetStatusIndex: 1);
+            MakeSummaryCardFilterable(cardUnprocessedPanel, targetStatusIndex: 2);
+
+            // Filters (date + status + set code) inside grid card
+            dtpDateFrom = new DateTimePicker { Format = DateTimePickerFormat.Short, Value = GetDefaultUpdatesFromDate() };
+            dtpDateTo = new DateTimePicker { Format = DateTimePickerFormat.Short, Value = GetDefaultUpdatesToDate() };
+            cmbStatus = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbStatus.Items.AddRange(new object[] { "All", "Processed", "Unprocessed" });
+            cmbStatus.SelectedIndex = 2;
+            txtSetCode = new TextBox();
+            _chkProblemsOnly = new System.Windows.Forms.CheckBox { Text = "Problems only", AutoSize = true };
+            _cmbPageSize = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 90 };
+            _cmbPageSize.Items.AddRange(new object[] { 10, 25, 50, 100 });
+            _cmbPageSize.SelectedItem = _pageSize;
+            if (_cmbPageSize.SelectedItem == null) _cmbPageSize.SelectedIndex = 0;
+
+            var filterHost = new System.Windows.Forms.Panel { Dock = DockStyle.Top, Height = 56, BackColor = Color.Transparent, Padding = new Padding(6, 4, 6, 4) };
+            var filterFlow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.LeftToRight, WrapContents = false, AutoScroll = true, BackColor = Color.Transparent, Padding = new Padding(0), Margin = new Padding(0) };
+
+            lblDateFrom = new Label { Text = "From:", AutoSize = true, ForeColor = UiTheme.Colors.TextMuted, Margin = new Padding(6, 14, 6, 0) };
+            lblDateTo = new Label { Text = "To (inclusive):", AutoSize = true, ForeColor = UiTheme.Colors.TextMuted, Margin = new Padding(0, 14, 6, 0) };
+            lblStatus = new Label { Text = "Status:", AutoSize = true, ForeColor = UiTheme.Colors.TextMuted, Margin = new Padding(0, 14, 6, 0) };
+            lblSetCode = new Label { Text = "Set Code:", AutoSize = true, ForeColor = UiTheme.Colors.TextMuted, Margin = new Padding(0, 14, 6, 0) };
+            var lblPageSize = new Label { Text = "Rows:", AutoSize = true, ForeColor = UiTheme.Colors.TextMuted, Margin = new Padding(0, 14, 6, 0) };
+
+            dtpDateFrom.Margin = new Padding(0, 12, 12, 0);
+            dtpDateTo.Margin = new Padding(0, 12, 12, 0);
+            cmbStatus.Margin = new Padding(0, 12, 12, 0);
+            cmbStatus.Width = 140;
+            _chkProblemsOnly.Margin = new Padding(0, 14, 12, 0);
+            txtSetCode.Margin = new Padding(0, 12, 12, 0);
+            txtSetCode.Width = 160;
+            _cmbPageSize.Margin = new Padding(0, 12, 12, 0);
+
+            filterFlow.Controls.Add(lblDateFrom);
+            filterFlow.Controls.Add(dtpDateFrom);
+            filterFlow.Controls.Add(lblDateTo);
+            filterFlow.Controls.Add(dtpDateTo);
+            filterFlow.Controls.Add(lblStatus);
+            filterFlow.Controls.Add(cmbStatus);
+            filterFlow.Controls.Add(_chkProblemsOnly);
+            filterFlow.Controls.Add(lblSetCode);
+            filterFlow.Controls.Add(txtSetCode);
+            filterFlow.Controls.Add(lblPageSize);
+            filterFlow.Controls.Add(_cmbPageSize);
+            filterHost.Controls.Add(filterFlow);
+
+            // Grid
+            dgvUpdates = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                ReadOnly = true,
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                AllowUserToResizeRows = false,
+                AllowUserToResizeColumns = true,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = true,
+                RowHeadersVisible = false,
+                AutoGenerateColumns = false,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+            };
+            UiFactory.StyleGrid(dgvUpdates);
+            DefaultListPageTemplate.AttachVendorsPillCellPainting(dgvUpdates, c =>
+            {
+                if (c == null) return false;
+                return c.Name == "UpdateId" || c.Name == "SetCode" || c.Name == "CreatedAt";
+            });
+
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "UpdateId", DataPropertyName = "UpdateId", HeaderText = "ID", AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells, MinimumWidth = 60, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "SetCode", DataPropertyName = "SetCode", HeaderText = "Set Code", FillWeight = 10, MinimumWidth = 110, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemType", DataPropertyName = "ItemType", HeaderText = "Item", FillWeight = 14, MinimumWidth = 160, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "SerialNumber", DataPropertyName = "SerialNumber", HeaderText = "Serial", FillWeight = 11, MinimumWidth = 120, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "ModelNumber", DataPropertyName = "ModelNumber", HeaderText = "Model", FillWeight = 11, MinimumWidth = 120, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "BranchName", DataPropertyName = "BranchName", HeaderText = "Branch", FillWeight = 12, MinimumWidth = 140, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "DepartmentName", DataPropertyName = "DepartmentName", HeaderText = "Department", FillWeight = 12, MinimumWidth = 140, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "PreviousStatus", DataPropertyName = "PreviousStatus", HeaderText = "Prev Status", FillWeight = 8, MinimumWidth = 90, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "NewStatus", DataPropertyName = "NewStatus", HeaderText = "New Status", FillWeight = 8, MinimumWidth = 90, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "Remark", DataPropertyName = "Remark", HeaderText = "Remark", FillWeight = 18, MinimumWidth = 220, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "UpdatedByName", DataPropertyName = "UpdatedByName", HeaderText = "Updated By", FillWeight = 12, MinimumWidth = 140, SortMode = DataGridViewColumnSortMode.Programmatic });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "CreatedAt", DataPropertyName = "CreatedAt", HeaderText = "Created At", FillWeight = 12, MinimumWidth = 140, DefaultCellStyle = new DataGridViewCellStyle { Format = "yyyy-MM-dd HH:mm" }, SortMode = DataGridViewColumnSortMode.Programmatic });
+
+            dgvUpdates.CellFormatting += DgvUpdates_CellFormatting;
+            dgvUpdates.CellDoubleClick += DgvUpdates_CellDoubleClick;
+
+            // Wire up column header click for sorting (must be done after columns are added)
+            dgvUpdates.EnableHeadersVisualStyles = false;
+            dgvUpdates.ColumnHeaderMouseClick += DgvUpdates_ColumnHeaderMouseClick;
+
+            _layout.GridCard.Controls.Clear();
+            _layout.GridCard.Controls.Add(dgvUpdates);
+            _layout.GridCard.Controls.Add(filterHost);
+
+            // Pagination
+            _templatePaginationPanel = _layout.PaginationPanel;
+            _templatePaginationPanel.Controls.Clear();
+            btnFirstPage = new System.Windows.Forms.Button { Text = "<<", Width = 45, Height = 25, Left = 0, Top = 5 };
+            btnPrevPage = new System.Windows.Forms.Button { Text = "<", Width = 45, Height = 25, Left = 50, Top = 5 };
+            lblPageInfo = new Label { AutoSize = false, Width = 200, Left = 100, Top = 10, Font = new Font("Segoe UI", 9F, FontStyle.Regular), TextAlign = ContentAlignment.MiddleLeft };
+            btnNextPage = new System.Windows.Forms.Button { Text = ">", Width = 45, Height = 25, Left = 310, Top = 5 };
+            btnLastPage = new System.Windows.Forms.Button { Text = ">>", Width = 45, Height = 25, Left = 360, Top = 5 };
+            btnFirstPage.Click += BtnFirstPage_Click;
+            btnPrevPage.Click += BtnPrevPage_Click;
+            btnNextPage.Click += BtnNextPage_Click;
+            btnLastPage.Click += BtnLastPage_Click;
+            _templatePaginationPanel.Controls.AddRange(new Control[] { btnFirstPage, btnPrevPage, lblPageInfo, btnNextPage, btnLastPage });
+
+            Controls.Add(_layout.BodyPanel);
+            Controls.Add(_layout.PaginationPanel);
+            Controls.Add(_layout.SummaryPanel);
+            Controls.Add(_layout.ButtonBarPanel);
+            Controls.Add(_layout.HeaderPanel);
+
+            // Wire up Filter By ComboBox event handler
+            if (_layout?.FilterByComboBox != null)
+            {
+                _layout.FilterByComboBox.SelectedIndexChanged += CmbFilterBy_SelectedIndexChanged;
+            }
+
+            // Progress bar (keep existing load/progress behavior)
+            progressBar = new ProgressBar
+            {
+                Dock = DockStyle.Bottom,
+                Height = 5,
+                Style = ProgressBarStyle.Continuous,
+                Visible = false
+            };
+            Controls.Add(progressBar);
+
+            // Tooltips & event wiring (template version)
+            _toolTip = new ToolTip { ShowAlways = true };
+            _toolTip.SetToolTip(dtpDateFrom, "Date range is inclusive. The 'To' date includes the entire selected day.");
+            _toolTip.SetToolTip(dtpDateTo, "Date range is inclusive. The 'To' date includes the entire selected day.");
+            _toolTip.SetToolTip(_chkProblemsOnly, "Shows only updates flagged as Missing or Archived.");
+
+            // Debounce timer for filter text inputs
+            if (_debounceTimer == null)
+            {
+                _debounceTimer = new System.Windows.Forms.Timer { Interval = 300 };
+                _debounceTimer.Tick += async (s, e) =>
+                {
+                    _debounceTimer.Stop();
+                    await ApplyFiltersAsync();
+                };
+            }
+            else
+            {
+                _debounceTimer.Interval = 300;
+            }
+
+            // Debounce timer for server reload (date range)
+            if (_loadDebounceTimer == null)
+            {
+                _loadDebounceTimer = new System.Windows.Forms.Timer { Interval = 350 };
+                _loadDebounceTimer.Tick += async (s, e) =>
+                {
+                    _loadDebounceTimer.Stop();
+                    await LoadUpdatesAsync();
+                };
+            }
+            else
+            {
+                _loadDebounceTimer.Interval = 350;
+            }
+
+            dtpDateFrom.ValueChanged += (s, e) => TriggerDebouncedLoad();
+            dtpDateTo.ValueChanged += (s, e) => TriggerDebouncedLoad();
+            cmbStatus.SelectedIndexChanged += async (s, e) => await ApplyFiltersAsync();
+            _chkProblemsOnly.CheckedChanged += async (s, e) => await ApplyFiltersAsync();
+            _cmbPageSize.SelectedIndexChanged += (s, e) =>
+            {
+                if (_cmbPageSize.SelectedItem is int rows && rows > 0)
+                {
+                    _pageSize = rows;
+                    _currentPage = 1;
+                    UpdatePagination();
+                }
+                ScheduleSaveState();
+            };
+
+            txtSetCode.TextChanged += (s, e) => TriggerDebouncedFilter();
+            if (_layout?.SearchBox != null)
+                _layout.SearchBox.TextChanged += (s, e) => TriggerDebouncedFilter();
+
+            // Persist state on key interactions
+            cmbStatus.SelectedIndexChanged += (s, e) => ScheduleSaveState();
+            _chkProblemsOnly.CheckedChanged += (s, e) => ScheduleSaveState();
+            dtpDateFrom.ValueChanged += (s, e) => ScheduleSaveState();
+            dtpDateTo.ValueChanged += (s, e) => ScheduleSaveState();
+
+            // Add quick action: jump to audit timeline for selected serial
+            _btnAuditTimeline = new HopeButton
+            {
+                Text = "📈  Audit Timeline",
+                Font = UiTheme.Fonts.Button,
+                Size = new Size(170, UiTheme.Sizes.PillButtonHeight),
+                Margin = new Padding(0, 6, 12, 0)
+            };
+            UiFactory.ConfigureOutlineHopeButton(_btnAuditTimeline, UiTheme.Colors.PrimaryHover, UiTheme.Colors.OutlineHoverBack);
+            _btnAuditTimeline.Click += async (s, e) => await OpenAuditTimelineForSelectedAsync();
+            DefaultListPageTemplate.AddButtons(_layout.ButtonLeftFlow, new[] { _btnAuditTimeline });
+
+            ResumeLayout(true);
+        }
+
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            this.Name = "ViewUpdatesPage";
+            this.Size = new Size(800, 450);
+            this.ResumeLayout(false);
+        }
+
+        #if false
+        private void BuildUi()
+        {
+            Dock = DockStyle.Fill;
+            BackColor = Color.FromArgb(240, 240, 240);
+
+            // Main panels
+            bodyPanel = new System.Windows.Forms.Panel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(12, 8, 12, 12),
+                BackColor = Color.FromArgb(240, 240, 240)
+            };
+            headerPanel = new System.Windows.Forms.Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 50,
+                BackColor = Color.FromArgb(41, 128, 185)
+            };
+            buttonBarPanel = new System.Windows.Forms.Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 52,
+                Padding = new Padding(12, 10, 12, 10),
+                BackColor = Color.FromArgb(41, 128, 185)
+            };
+
+            summaryPanel = new System.Windows.Forms.Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 80,
+                Padding = new Padding(12, 12, 12, 0),
+                BackColor = Color.Transparent
+            };
+
+            filterPanel = new System.Windows.Forms.Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 150,
+                Padding = new Padding(16, 10, 16, 10),
+                BackColor = Color.FromArgb(245, 247, 250)
+            };
+
+            gridPanel = new System.Windows.Forms.Panel
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(12, 4, 12, 12),
+                BackColor = Color.White,
+                Margin = new Padding(0)
+            };
+
+            paginationPanel = new System.Windows.Forms.Panel
+            {
+                Dock = DockStyle.Bottom,
+                Height = 40,
+                Padding = new Padding(12, 5, 12, 5),
+                BackColor = Color.White
+            };
+
+            // Progress bar at the bottom
+            progressBar = new ProgressBar
+            {
+                Dock = DockStyle.Bottom,
+                Height = 5,
+                Style = ProgressBarStyle.Continuous,
+                Visible = false
+            };
+
+            // Add controls to form (order matters for docking)
+            Controls.Add(bodyPanel);
+            Controls.Add(buttonBarPanel);
+            Controls.Add(headerPanel);
+            Controls.Add(progressBar);
+
+            // Title
+            titleLabel = new Label
+            {
+                AutoSize = true,
+                Text = "Mobile Updates",
+                Font = new Font("Montserrat", 13F, FontStyle.Bold),
+                ForeColor = Color.White,
+                Location = new Point(12, 12)
+            };
+
+            // Unprocessed badge (top-right)
+            badgeUnprocessed = new System.Windows.Forms.Button
+            {
+                Text = "Unprocessed: 0",
+                Width = 130,
+                Height = 28,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(231, 76, 60),
+                ForeColor = Color.White,
+                Font = new Font("Montserrat", 8F, FontStyle.Bold),
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Visible = false
+            };
+            badgeUnprocessed.FlatAppearance.BorderSize = 0;
+            badgeUnprocessed.Location = new Point(headerPanel.Width - badgeUnprocessed.Width - 16, 11);
+
+            headerPanel.Resize += (s, e) =>
+            {
+                badgeUnprocessed.Location = new Point(headerPanel.ClientSize.Width - badgeUnprocessed.Width - 16, 11);
+                if (btnThemeToggle != null)
+                    btnThemeToggle.Location = new Point(badgeUnprocessed.Left - btnThemeToggle.Width - 10, 11);
+            };
+
+            // Theme toggle button (Dark/Light) - using HopeButton for rounder look
+            btnThemeToggle = new HopeButton
+            {
+                Text = "Dark",
+                Size = new Size(72, 28),
+                Font = new Font("Montserrat", 8F, FontStyle.Bold),
+                BorderColor = Color.White,
+                DefaultColor = Color.FromArgb(52, 152, 219),
+                TextColor = Color.White,
+                Location = new Point(badgeUnprocessed.Left - 82, 11)
+            };
+            btnThemeToggle.Click += (s, e) =>
+            {
+                _isDarkTheme = !_isDarkTheme;
+                ApplyTheme();
+            };
+
+            // Summary cards panel (below header)
+            var summaryRow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                AutoSize = false,
+                BackColor = Color.Transparent,
+                Padding = new Padding(0),
+                Margin = new Padding(0)
+            };
+
+            cardTotalPanel = new MaterialCard
+            {
+                Width = 180,
+                Height = 56,
+                BackColor = Color.White,
+                Margin = new Padding(0, 0, 12, 0)
+            };
+
+            cardProcessedPanel = new MaterialCard
+            {
+                Width = 180,
+                Height = 56,
+                BackColor = Color.FromArgb(235, 248, 240),
+                Margin = new Padding(0, 0, 12, 0)
+            };
+
+            cardUnprocessedPanel = new MaterialCard
+            {
+                Width = 180,
+                Height = 56,
+                BackColor = Color.FromArgb(253, 236, 234),
+                Margin = new Padding(0)
+            };
+
+            var lblTotalTitle = new Label
+            {
+                Text = "Total",
+                Font = new Font("Montserrat", 9f, FontStyle.Regular),
+                ForeColor = Color.FromArgb(120, 120, 120),
+                Location = new Point(12, 8),
+                AutoSize = true
+            };
+            lblTotalCount = new Label
+            {
+                Text = "0",
+                Font = new Font("Montserrat", 14f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(44, 62, 80),
+                Location = new Point(12, 26),
+                AutoSize = true
+            };
+            cardTotalPanel.Controls.Add(lblTotalTitle);
+            cardTotalPanel.Controls.Add(lblTotalCount);
+
+            var lblProcessedTitle = new Label
+            {
+                Text = "Processed",
+                Font = new Font("Montserrat", 9f, FontStyle.Regular),
+                ForeColor = Color.FromArgb(39, 174, 96),
+                Location = new Point(12, 8),
+                AutoSize = true
+            };
+            lblProcessedCount = new Label
+            {
+                Text = "0",
+                Font = new Font("Montserrat", 14f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(39, 174, 96),
+                Location = new Point(12, 26),
+                AutoSize = true
+            };
+            cardProcessedPanel.Controls.Add(lblProcessedTitle);
+            cardProcessedPanel.Controls.Add(lblProcessedCount);
+
+            var lblUnprocessedTitle = new Label
+            {
+                Text = "Unprocessed",
+                Font = new Font("Montserrat", 9f, FontStyle.Regular),
+                ForeColor = Color.FromArgb(192, 57, 43),
+                Location = new Point(12, 8),
+                AutoSize = true
+            };
+            lblUnprocessedCount = new Label
+            {
+                Text = "0",
+                Font = new Font("Montserrat", 14f, FontStyle.Bold),
+                ForeColor = Color.FromArgb(192, 57, 43),
+                Location = new Point(12, 26),
+                AutoSize = true
+            };
+            cardUnprocessedPanel.Controls.Add(lblUnprocessedTitle);
+            cardUnprocessedPanel.Controls.Add(lblUnprocessedCount);
+
+            // Click on processed/unprocessed cards adjusts status filter
+            cardProcessedPanel.Click += async (s, e) =>
+            {
+                cmbStatus.SelectedIndex = 1; // Processed
+                await ApplyFiltersAsync();
+            };
+            cardUnprocessedPanel.Click += async (s, e) =>
+            {
+                cmbStatus.SelectedIndex = 2; // Unprocessed
+                await ApplyFiltersAsync();
+            };
+
+            summaryRow.Controls.Add(cardTotalPanel);
+            summaryRow.Controls.Add(cardProcessedPanel);
+            summaryRow.Controls.Add(cardUnprocessedPanel);
+            summaryPanel.Controls.Add(summaryRow);
+
+            // Button row with colored action buttons
+            var btnRow = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                AutoSize = true,
+                Dock = DockStyle.Left,
+                BackColor = Color.Transparent
+            };
+
+            // Header action buttons - function-colored, pill-like (using standard Button with FlatStyle)
+            btnRefresh = new System.Windows.Forms.Button
+            {
+                Text = "Refresh",
+                Size = new Size(96, 32),
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(93, 173, 226),      // Softer blue
+                ForeColor = Color.White,
+                Cursor = Cursors.Hand
+            };
+            btnRefresh.FlatAppearance.BorderSize = 0;
+            btnRefresh.FlatAppearance.MouseOverBackColor = Color.FromArgb(52, 152, 219);
+
+            btnMarkProcessed = new System.Windows.Forms.Button
+            {
+                Text = "Mark Processed",
+                Size = new Size(138, 32),
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(129, 199, 132),     // Softer green
+                ForeColor = Color.White,
+                Cursor = Cursors.Hand
+            };
+            btnMarkProcessed.FlatAppearance.BorderSize = 0;
+            btnMarkProcessed.FlatAppearance.MouseOverBackColor = Color.FromArgb(46, 204, 113);
+
+            btnDelete = new System.Windows.Forms.Button
+            {
+                Text = "Delete",
+                Size = new Size(88, 32),
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(239, 154, 154),     // Softer red
+                ForeColor = Color.White,
+                Cursor = Cursors.Hand
+            };
+            btnDelete.FlatAppearance.BorderSize = 0;
+            btnDelete.FlatAppearance.MouseOverBackColor = Color.FromArgb(231, 76, 60);
+
+
+
+            // Button events
+            btnRefresh.Click += async (s, e) => await LoadUpdatesAsync();
+            btnMarkProcessed.Click += async (s, e) => await MarkSelectedAsProcessedAsync();
+            btnDelete.Click += async (s, e) => await DeleteSelectedUpdatesAsync();
+
+            // Prepare debounce timer
+            _debounceTimer = new System.Windows.Forms.Timer { Interval = 300 };
+            _debounceTimer.Tick += async (s, e) =>
+            {
+                _debounceTimer.Stop();
+                await ApplyFiltersAsync();
+            };
+
+            // Attach Real-time Filter Events
+            dtpDateFrom.ValueChanged += async (s, e) => await LoadUpdatesAsync();
+            dtpDateTo.ValueChanged += async (s, e) => await LoadUpdatesAsync();
+            
+            cmbStatus.SelectedIndexChanged += async (s, e) => await ApplyFiltersAsync();
+
+            txtSetCode.TextChanged += (s, e) => TriggerDebouncedFilter();
+            if (_layout?.SearchBox != null)
+                _layout.SearchBox.TextChanged += (s, e) => TriggerDebouncedFilter();
+
+            // Make header buttons pill-shaped and keep them that way on resize
+            MakePillButton(btnRefresh);
+            MakePillButton(btnMarkProcessed);
+            MakePillButton(btnDelete);
+
+            btnRefresh.Resize += (s, e) => MakePillButton(btnRefresh);
+            btnMarkProcessed.Resize += (s, e) => MakePillButton(btnMarkProcessed);
+            btnDelete.Resize += (s, e) => MakePillButton(btnDelete);
+
+            // Add buttons to button row with spacing
+            btnRow.Controls.Add(btnRefresh);
+            btnRow.Controls.Add(new Label { Width = 6, BackColor = Color.Transparent });
+            btnRow.Controls.Add(btnMarkProcessed);
+            btnRow.Controls.Add(new Label { Width = 6, BackColor = Color.Transparent });
+            btnRow.Controls.Add(btnDelete);
+
+            // Add title and badge to header (hide dark theme toggle)
+            headerPanel.Controls.Add(titleLabel);
+            headerPanel.Controls.Add(badgeUnprocessed);
+            // Add button row to buttonBarPanel
+            buttonBarPanel.Controls.Add(btnRow);
+
+            // Click functionality for Total card (Reset filters)
+            cardTotalPanel.Cursor = Cursors.Hand;
+            cardTotalPanel.Click += async (s, e) =>
+            {
+                 cmbStatus.SelectedIndex = 0; // All
+                 await ApplyFiltersAsync();
+            };
+
+            // Recursively make children of summary cards clickable too
+            void MakeCardClickable(Control parent, int targetIndex)
+            {
+                foreach (Control c in parent.Controls)
+                {
+                    c.Cursor = Cursors.Hand;
+                    c.Click += async (s, e) =>
+                    {
+                        cmbStatus.SelectedIndex = targetIndex;
+                        await ApplyFiltersAsync();
+                    };
+                }
+            }
+            MakeCardClickable(cardTotalPanel, 0);       // All
+            MakeCardClickable(cardProcessedPanel, 1);   // Processed
+            MakeCardClickable(cardUnprocessedPanel, 2); // Unprocessed
+
+            // Filter card to avoid vanilla look
+            var filterCard = new MaterialCard
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.White,
+                Padding = new Padding(16, 10, 16, 10),
+                Margin = new Padding(0)
+            };
+            filterPanel.Controls.Add(filterCard);
+
+            // Filter controls with improved layout
+            int labelWidth = 75;
+            int controlWidth = 140;
+            int spacing = 24;
+            int currentX = 10;
+            int currentY = 12;
+
+            // Date From
+            lblDateFrom = new Label
+            {
+                Text = "From:",
+                Location = new Point(currentX, currentY + 4),
+                Width = labelWidth,
+                Font = new Font("Montserrat", 9F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(90, 90, 90)
+            };
+            dtpDateFrom = new DateTimePicker
+            {
+                Format = DateTimePickerFormat.Short,
+                Location = new Point(currentX + labelWidth, currentY),
+                Width = controlWidth,
+                Value = GetDefaultUpdatesFromDate(),
+                Font = new Font("Montserrat", 9F)
+            };
+            currentX += labelWidth + controlWidth + spacing;
+
+            // Date To
+            lblDateTo = new Label
+            {
+                Text = "To Date:",
+                Location = new Point(currentX, currentY + 4),
+                Width = labelWidth,
+                Font = new Font("Montserrat", 9F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(90, 90, 90)
+            };
+            dtpDateTo = new DateTimePicker
+            {
+                Format = DateTimePickerFormat.Short,
+                Location = new Point(currentX + labelWidth, currentY),
+                Width = controlWidth,
+                Value = GetDefaultUpdatesToDate(),
+                Font = new Font("Montserrat", 9F)
+            };
+            currentX = 15;
+            currentY += 38;
+
+            // Status filter
+            lblStatus = new Label
+            {
+                Text = "Status:",
+                Location = new Point(currentX, currentY + 4),
+                Width = labelWidth,
+                Font = new Font("Montserrat", 9F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(90, 90, 90)
+            };
+            cmbStatus = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Location = new Point(currentX + labelWidth, currentY),
+                Width = controlWidth,
+                Font = new Font("Montserrat", 9F)
+            };
+            cmbStatus.Items.AddRange(new object[] { "All", "Processed", "Unprocessed" });
+            cmbStatus.SelectedIndex = 2; // Default to Unprocessed
+            currentX += labelWidth + controlWidth + spacing;
+
+            // Set Code filter
+            lblSetCode = new Label
+            {
+                Text = "Set Code:",
+                Location = new Point(currentX, currentY + 4),
+                Width = labelWidth,
+                Font = new Font("Montserrat", 9F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(90, 90, 90)
+            };
+            txtSetCode = new TextBox
+            {
+                Location = new Point(currentX + labelWidth, currentY),
+                Width = controlWidth,
+                Font = new Font("Montserrat", 9F)
+            };
+
+            // Add filter controls to filter card (first row)
+            filterCard.Controls.AddRange(new Control[] {
+                lblDateFrom, dtpDateFrom, lblDateTo, dtpDateTo,
+                lblStatus, cmbStatus, lblSetCode, txtSetCode
+            });
+
+            // Quick filter buttons on the same row as Set Code (no search box)
+            int searchX = currentX + labelWidth + controlWidth + spacing;
+            int searchY = currentY;
+
+            int quickX = searchX;
+
+            // Quick filter buttons - smaller pills with corresponding colors (standard Button)
+            btnQuickAll = new System.Windows.Forms.Button
+            {
+                Text = "All",
+                Size = new Size(70, 28),
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(93, 173, 226),   // Softer blue
+                ForeColor = Color.White,
+                Cursor = Cursors.Hand,
+                Location = new Point(quickX, searchY)
+            };
+            btnQuickAll.FlatAppearance.BorderSize = 0;
+            btnQuickAll.FlatAppearance.MouseOverBackColor = Color.FromArgb(52, 152, 219);
+
+            btnQuickUnprocessed = new System.Windows.Forms.Button
+            {
+                Text = "Unprocessed",
+                Size = new Size(112, 28),
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(239, 154, 154),    // Softer red
+                ForeColor = Color.White,
+                Cursor = Cursors.Hand,
+                Location = new Point(quickX + btnQuickAll.Width + 8, searchY)
+            };
+            btnQuickUnprocessed.FlatAppearance.BorderSize = 0;
+            btnQuickUnprocessed.FlatAppearance.MouseOverBackColor = Color.FromArgb(231, 76, 60);
+
+            btnQuickProcessed = new System.Windows.Forms.Button
+            {
+                Text = "Processed",
+                Size = new Size(96, 28),
+                Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(165, 214, 167),   // Softer green
+                ForeColor = Color.White,
+                Cursor = Cursors.Hand,
+                Location = new Point(quickX + btnQuickAll.Width + btnQuickUnprocessed.Width + 16, searchY)
+            };
+            btnQuickProcessed.FlatAppearance.BorderSize = 0;
+            btnQuickProcessed.FlatAppearance.MouseOverBackColor = Color.FromArgb(46, 204, 113);
+
+            // Make quick filter buttons pill-shaped and keep them that way on resize
+            MakePillButton(btnQuickAll);
+            MakePillButton(btnQuickUnprocessed);
+            MakePillButton(btnQuickProcessed);
+
+            btnQuickAll.Resize += (s, e) => MakePillButton(btnQuickAll);
+            btnQuickUnprocessed.Resize += (s, e) => MakePillButton(btnQuickUnprocessed);
+            btnQuickProcessed.Resize += (s, e) => MakePillButton(btnQuickProcessed);
+
+            btnQuickAll.Click += async (s, e) =>
+            {
+                cmbStatus.SelectedIndex = 0;
+                await ApplyFiltersAsync();
+            };
+            btnQuickUnprocessed.Click += async (s, e) =>
+            {
+                cmbStatus.SelectedIndex = 2;
+                await ApplyFiltersAsync();
+            };
+            btnQuickProcessed.Click += async (s, e) =>
+            {
+                cmbStatus.SelectedIndex = 1;
+                await ApplyFiltersAsync();
+            };
+
+            filterCard.Controls.Add(txtSearch);
+            filterCard.Controls.Add(btnQuickAll);
+            filterCard.Controls.Add(btnQuickUnprocessed);
+            filterCard.Controls.Add(btnQuickProcessed);
+
+            dgvUpdates = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                ReadOnly = true,
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                AllowUserToResizeRows = false,
+                AllowUserToResizeColumns = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = true,
+                RowHeadersVisible = false,
+                AutoGenerateColumns = false,
+                EnableHeadersVisualStyles = false,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
+                ColumnHeadersHeight = 38,
+                GridColor = Color.White,
+                BackgroundColor = Color.White,
+                CellBorderStyle = DataGridViewCellBorderStyle.None,
+                ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None,
+                RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
+                BorderStyle = BorderStyle.None
+            };
+
+            // Style the column headers
+            dgvUpdates.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+            dgvUpdates.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvUpdates.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            dgvUpdates.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(52, 152, 219);
+            dgvUpdates.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dgvUpdates.ColumnHeadersDefaultCellStyle.Padding = new Padding(8, 4, 0, 4);
+
+            // Style the rows - transparent background so custom pills show through
+            dgvUpdates.DefaultCellStyle.BackColor = Color.FromArgb(240, 246, 252);
+            dgvUpdates.DefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+            dgvUpdates.DefaultCellStyle.ForeColor = Color.FromArgb(40, 40, 40);
+            dgvUpdates.DefaultCellStyle.SelectionBackColor = Color.FromArgb(41, 128, 185);
+            dgvUpdates.DefaultCellStyle.SelectionForeColor = Color.White;
+            dgvUpdates.DefaultCellStyle.Padding = new Padding(8, 6, 8, 6);
+            dgvUpdates.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(232, 240, 248);
+            // Taller rows with divider space for pill effect
+            dgvUpdates.RowTemplate.Height = 48;
+            dgvUpdates.RowTemplate.DividerHeight = 0;
+            dgvUpdates.RowTemplate.Resizable = DataGridViewTriState.False;
+
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "UpdateId", DataPropertyName = "UpdateId", HeaderText = "ID", Width = 60 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "SetCode", DataPropertyName = "SetCode", HeaderText = "Set Code", Width = 100 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "ItemType", DataPropertyName = "ItemType", HeaderText = "Item", Width = 160 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "SerialNumber", DataPropertyName = "SerialNumber", HeaderText = "Serial", Width = 120 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "ModelNumber", DataPropertyName = "ModelNumber", HeaderText = "Model", Width = 120 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "BranchName", DataPropertyName = "BranchName", HeaderText = "Branch", Width = 140 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "DepartmentName", DataPropertyName = "DepartmentName", HeaderText = "Department", Width = 140 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "PreviousStatus", DataPropertyName = "PreviousStatus", HeaderText = "Prev Status", Width = 90 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "NewStatus", DataPropertyName = "NewStatus", HeaderText = "New Status", Width = 90 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", HeaderText = "Status", Width = 90 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "Remark", DataPropertyName = "Remark", HeaderText = "Remark", Width = 220, AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "UpdatedByName", DataPropertyName = "UpdatedByName", HeaderText = "Updated By", Width = 140 });
+            dgvUpdates.Columns.Add(new DataGridViewTextBoxColumn { Name = "CreatedAt", DataPropertyName = "CreatedAt", HeaderText = "Created At", Width = 140, DefaultCellStyle = new DataGridViewCellStyle { Format = "yyyy-MM-dd HH:mm" } });
+
+            dgvUpdates.CellFormatting += DgvUpdates_CellFormatting;
+            dgvUpdates.CellPainting += DgvUpdates_CellPainting;
+
+            gridPanel.Controls.Add(dgvUpdates);
+
+            btnFirstPage = new System.Windows.Forms.Button { Text = "<<", Width = 45, Height = 25, Left = 0, Top = 5 };
+            btnPrevPage = new System.Windows.Forms.Button { Text = "<", Width = 45, Height = 25, Left = 50, Top = 5 };
+            lblPageInfo = new Label { AutoSize = false, Width = 200, Left = 100, Top = 10, Font = new Font("Segoe UI", 9F, FontStyle.Regular), TextAlign = ContentAlignment.MiddleLeft };
+            btnNextPage = new System.Windows.Forms.Button { Text = ">", Width = 45, Height = 25, Left = 310, Top = 5 };
+            btnLastPage = new System.Windows.Forms.Button { Text = ">>", Width = 45, Height = 25, Left = 360, Top = 5 };
+
+            btnFirstPage.Click += BtnFirstPage_Click;
+            btnPrevPage.Click += BtnPrevPage_Click;
+            btnNextPage.Click += BtnNextPage_Click;
+            btnLastPage.Click += BtnLastPage_Click;
+
+            paginationPanel.Controls.AddRange(new Control[] { btnFirstPage, btnPrevPage, lblPageInfo, btnNextPage, btnLastPage });
+
+            bodyPanel.Controls.Add(gridPanel);
+            bodyPanel.Controls.Add(paginationPanel);
+            bodyPanel.Controls.Add(filterPanel);
+            bodyPanel.Controls.Add(summaryPanel);
+
+            // Wire up Filter By ComboBox event handler
+            if (_layout?.FilterByComboBox != null)
+            {
+                _layout.FilterByComboBox.SelectedIndexChanged += CmbFilterBy_SelectedIndexChanged;
+            }
+        }
+        #endif
+
+        private void TriggerDebouncedFilter()
+        {
+            _debounceTimer?.Stop();
+            _debounceTimer?.Start();
+        }
+
+        private void TriggerDebouncedLoad()
+        {
+            if (_restoringState)
+                return;
+
+            _currentPage = 1;
+            _loadDebounceTimer?.Stop();
+            _loadDebounceTimer?.Start();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                var cts = Interlocked.Exchange(ref _applyFiltersCts, null);
+                if (cts != null)
+                {
+                    try { cts.Cancel(); } catch { }
+                    try { cts.Dispose(); } catch { }
+                }
+
+                try { _debounceTimer?.Stop(); } catch { }
+                try { _debounceTimer?.Dispose(); } catch { }
+                _debounceTimer = null;
+
+                try { _loadDebounceTimer?.Stop(); } catch { }
+                try { _loadDebounceTimer?.Dispose(); } catch { }
+                _loadDebounceTimer = null;
+
+                try { _stateSaveTimer?.Stop(); } catch { }
+                try { _stateSaveTimer?.Dispose(); } catch { }
+                _stateSaveTimer = null;
+
+                try { _toolTip?.Dispose(); } catch { }
+                _toolTip = null;
+            }
+
+            base.Dispose(disposing);
+        }
+
+        private async Task LoadUpdatesAsync()
+        {
+            if (_isLoading)
+            {
+                _reloadRequested = true;
+                _loadVersion++;
+                return;
+            }
+
+            var version = ++_loadVersion;
+            _isLoading = true;
+            try
+            {
+                // Disable controls during load
+                SetControlsEnabled(false);
+                progressBar.Visible = true;
+                progressBar.Style = ProgressBarStyle.Marquee;
+                UseWaitCursor = true;
+                await Task.Yield();
+
+                // Get date range (server-side filter)
+                var fromDate = dtpDateFrom.Value.Date;
+                var toDate = dtpDateTo.Value.Date;
+
+                var setCodeFilter = txtSetCode?.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(setCodeFilter))
+                    setCodeFilter = null;
+
+                // Load data using server-side filters where safe (date range + explicit set code).
+                // Status is filtered client-side so summary counts remain accurate.
+                var updates = await _repository.GetFilteredAsync(
+                    fromDate: fromDate,
+                    toDate: toDate,
+                    includeProcessed: true,
+                    includeUnprocessed: true,
+                    setCode: setCodeFilter
+                );
+
+                if (version != _loadVersion || IsDisposed)
+                    return;
+
+                _allUpdates = updates?.ToList() ?? new List<SetItemUpdateDto>();
+
+                // Apply client-side filters (search across multiple fields, etc.)
+                await ApplyFiltersAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load updates: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                _isLoading = false;
+                progressBar.Visible = false;
+                UseWaitCursor = false;
+                SetControlsEnabled(true);
+
+                if (_reloadRequested && !IsDisposed)
+                {
+                    _reloadRequested = false;
+                    _ = LoadUpdatesAsync();
+                }
+            }
+        }
+
+        private async Task ApplyFiltersAsync()
+        {
+            if (_allUpdates == null) return;
+
+            CancellationTokenSource cts = null;
+            CancellationToken token = default(CancellationToken);
+            var version = 0;
+
+            try
+            {
+                cts = new CancellationTokenSource();
+                token = cts.Token;
+                version = Interlocked.Increment(ref _applyFiltersVersion);
+
+                var prev = Interlocked.Exchange(ref _applyFiltersCts, cts);
+                if (prev != null)
+                {
+                    try { prev.Cancel(); } catch { }
+                    try { prev.Dispose(); } catch { }
+                }
+
+                // Snapshot values on UI thread (avoid touching controls in Task.Run).
+                var all = _allUpdates;
+                var status = cmbStatus?.SelectedIndex ?? 0;
+                var filterSetCode = (txtSetCode?.Text ?? string.Empty).Trim();
+                var searchTerm = (_layout?.SearchBox?.Text ?? string.Empty).Trim();
+                var problemsOnly = _chkProblemsOnly != null && _chkProblemsOnly.Checked;
+
+                var result = await Task.Run(() =>
+                {
+                    token.ThrowIfCancellationRequested();
+
+                    var allCount = all?.Count ?? 0;
+                    var processedCount = 0;
+                    if (all != null)
+                    {
+                        for (var i = 0; i < all.Count; i++)
+                        {
+                            if (all[i] != null && all[i].Processed)
+                                processedCount++;
+                        }
+                    }
+
+                    IEnumerable<SetItemUpdateDto> filtered = all ?? new List<SetItemUpdateDto>();
+
+                    if (status == 1)
+                        filtered = filtered.Where(u => u != null && u.Processed);
+                    else if (status == 2)
+                        filtered = filtered.Where(u => u != null && !u.Processed);
+
+                    if (!string.IsNullOrWhiteSpace(filterSetCode))
+                        filtered = filtered.Where(u => u?.SetCode?.IndexOf(filterSetCode, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                    if (!string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        filtered = filtered.Where(u =>
+                            u != null &&
+                            ((u.SetCode?.IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                             (u.SerialNumber?.IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                             (u.ItemType?.IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                             (u.ModelNumber?.IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                             (u.BranchName?.IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                             (u.DepartmentName?.IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                             (u.Remark?.IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0) ||
+                             (u.UpdatedByName?.IndexOf(searchTerm, StringComparison.OrdinalIgnoreCase) >= 0)));
+                    }
+
+                    if (problemsOnly)
+                        filtered = filtered.Where(u => u != null && (u.IsMissing || u.IsArchived));
+
+                    var filteredList = filtered.ToList();
+                    return (Filtered: filteredList, AllCount: allCount, ProcessedCount: processedCount, UnprocessedCount: allCount - processedCount);
+                }, token).ConfigureAwait(true);
+
+                if (token.IsCancellationRequested || version != _applyFiltersVersion || IsDisposed)
+                    return;
+
+                _filteredUpdates = result.Filtered;
+                _currentPage = 1;
+
+                ApplyCurrentSortIfAny();
+                UpdatePagination();
+                ApplySortGlyphAndDropdown();
+
+                try
+                {
+                    dgvUpdates?.ClearSelection();
+                    if (dgvUpdates != null) dgvUpdates.CurrentCell = null;
+                }
+                catch
+                {
+                }
+
+                if (titleLabel != null)
+                    titleLabel.Text = $"Mobile Updates ({result.ProcessedCount} of {result.AllCount} processed)";
+
+                if (lblTotalCount != null) lblTotalCount.Text = result.AllCount.ToString();
+                if (lblProcessedCount != null) lblProcessedCount.Text = result.ProcessedCount.ToString();
+                if (lblUnprocessedCount != null) lblUnprocessedCount.Text = result.UnprocessedCount.ToString();
+
+                UpdateSummaryCardActiveStates();
+
+                ScheduleSaveState();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Filter error: {ex.Message}");
+            }
+        }
+
+        private string GetCurrentSortKey()
+        {
+            if (_sortColumn == null)
+                return null;
+
+            return !string.IsNullOrWhiteSpace(_sortColumn.DataPropertyName)
+                ? _sortColumn.DataPropertyName
+                : _sortColumn.Name;
+        }
+
+        private void ApplyCurrentSortIfAny()
+        {
+            var key = GetCurrentSortKey();
+            var order = _sortOrder;
+
+            if (string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(_restoreSortKey))
+                key = _restoreSortKey;
+            if (order == System.Windows.Forms.SortOrder.None && _restoreSortOrder != System.Windows.Forms.SortOrder.None)
+                order = _restoreSortOrder;
+
+            if (string.IsNullOrWhiteSpace(key) || order == System.Windows.Forms.SortOrder.None)
+                return;
+
+            var dir = order == System.Windows.Forms.SortOrder.Ascending
+                ? System.ComponentModel.ListSortDirection.Ascending
+                : System.ComponentModel.ListSortDirection.Descending;
+
+            SortDataSource(key, dir);
+            _sortOrder = order;
+        }
+
+        private void ApplySortGlyphAndDropdown()
+        {
+            if (dgvUpdates == null || dgvUpdates.Columns.Count == 0)
+                return;
+
+            var key = GetCurrentSortKey();
+            if (string.IsNullOrWhiteSpace(key))
+                key = _restoreSortKey;
+
+            if (string.IsNullOrWhiteSpace(key) || _sortOrder == System.Windows.Forms.SortOrder.None)
+                return;
+
+            var col = dgvUpdates.Columns
+                .Cast<DataGridViewColumn>()
+                .FirstOrDefault(c => string.Equals(c.DataPropertyName, key, StringComparison.OrdinalIgnoreCase) || string.Equals(c.Name, key, StringComparison.OrdinalIgnoreCase));
+
+            if (col == null)
+                return;
+
+            foreach (DataGridViewColumn c in dgvUpdates.Columns)
+                c.HeaderCell.SortGlyphDirection = System.Windows.Forms.SortOrder.None;
+
+            col.HeaderCell.SortGlyphDirection = _sortOrder;
+            _sortColumn = col;
+
+            if (_layout?.SortByComboBox != null)
+                DefaultListPageTemplate.SyncSortByDropdown(_layout.SortByComboBox, col, _sortOrder);
+
+            dgvUpdates.Invalidate();
+        }
+
+        private void MakeSummaryCardFilterable(MaterialCard card, int targetStatusIndex)
+        {
+            if (card == null)
+                return;
+
+            card.Cursor = Cursors.Hand;
+            card.TabStop = true;
+
+            async void HandleClick(object sender, EventArgs e)
+            {
+                try
+                {
+                    if (cmbStatus == null || cmbStatus.Items == null || cmbStatus.Items.Count == 0)
+                        return;
+
+                    if (targetStatusIndex < 0 || targetStatusIndex >= cmbStatus.Items.Count)
+                        return;
+
+                    if (cmbStatus.SelectedIndex != targetStatusIndex)
+                    {
+                        cmbStatus.SelectedIndex = targetStatusIndex;
+                        return; // SelectedIndexChanged already triggers ApplyFiltersAsync()
+                    }
+
+                    // If already selected, a click should still "do something" (refresh + re-highlight).
+                    UpdateSummaryCardActiveStates();
+                    if (_allUpdates != null)
+                        await ApplyFiltersAsync();
+                }
+                catch
+                {
+                }
+            }
+
+            AttachClickRecursively(card, HandleClick);
+        }
+
+        private static void AttachClickRecursively(Control root, EventHandler handler)
+        {
+            if (root == null || handler == null)
+                return;
+
+            root.Click += handler;
+            root.Cursor = Cursors.Hand;
+
+            foreach (Control child in root.Controls)
+            {
+                AttachClickRecursively(child, handler);
+            }
+        }
+
+        private void UpdateSummaryCardActiveStates()
+        {
+            if (cardTotalPanel == null) return;
+
+            var status = cmbStatus.SelectedIndex; // 0=All, 1=Processed, 2=Unprocessed
+
+            // Reset all
+            cardTotalPanel.BorderStyle = BorderStyle.None;
+            cardProcessedPanel.BorderStyle = BorderStyle.None;
+            cardUnprocessedPanel.BorderStyle = BorderStyle.None;
+            
+            // Highlight active
+            if (status == 0) cardTotalPanel.BorderStyle = BorderStyle.FixedSingle;
+            else if (status == 1) cardProcessedPanel.BorderStyle = BorderStyle.FixedSingle;
+            else if (status == 2) cardUnprocessedPanel.BorderStyle = BorderStyle.FixedSingle;
+        }
+
+        private void UpdatePagination()
+        {
+            if (dgvUpdates == null)
+                return;
+
+            if (_filteredUpdates == null || _filteredUpdates.Count == 0)
+            {
+                dgvUpdates.DataSource = new List<SetItemUpdateDto>();
+                if (lblPageInfo != null)
+                    lblPageInfo.Text = "Page 0 of 0 (0 updates) - No updates match the current filters.";
+                if (btnFirstPage != null) btnFirstPage.Enabled = false;
+                if (btnPrevPage != null) btnPrevPage.Enabled = false;
+                if (btnNextPage != null) btnNextPage.Enabled = false;
+                if (btnLastPage != null) btnLastPage.Enabled = false;
+                return;
+            }
+
+            int totalPages = (int)Math.Ceiling((double)_filteredUpdates.Count / _pageSize);
+            if (_currentPage > totalPages) _currentPage = totalPages;
+            if (_currentPage < 1) _currentPage = 1;
+
+            var pagedData = _filteredUpdates
+                .Skip((_currentPage - 1) * _pageSize)
+                .Take(_pageSize)
+                .ToList();
+
+            dgvUpdates.DataSource = null;
+            dgvUpdates.DataSource = pagedData;
+            EnableSortingGlyphs();
+
+            // Initialize Sort By dropdown after first load (when columns are available)
+            if (!_sortByDropdownInitialized && _layout?.SortByComboBox != null && dgvUpdates != null && dgvUpdates.Columns.Count > 0)
+            {
+                var defaultSortKey = DefaultListPageTemplate.ResolveDefaultSortColumnKey(dgvUpdates);
+                DefaultListPageTemplate.SetupSortByDropdown(
+                    _layout.SortByComboBox,
+                    dgvUpdates,
+                    (columnKey, direction) =>
+                    {
+                        _sortOrder = direction;
+
+                        var dir = direction == System.Windows.Forms.SortOrder.Ascending
+                            ? System.ComponentModel.ListSortDirection.Ascending
+                            : System.ComponentModel.ListSortDirection.Descending;
+
+                        SortDataSource(columnKey, dir);
+                        UpdatePagination();
+
+                        // Get fresh column reference AFTER rebind and set glyphs
+                        var freshCol = dgvUpdates.Columns.Cast<DataGridViewColumn>()
+                            .FirstOrDefault(c => c.DataPropertyName == columnKey || c.Name == columnKey);
+
+                        if (freshCol != null)
+                        {
+                            foreach (DataGridViewColumn c in dgvUpdates.Columns)
+                                c.HeaderCell.SortGlyphDirection = System.Windows.Forms.SortOrder.None;
+                            freshCol.HeaderCell.SortGlyphDirection = _sortOrder;
+                            _sortColumn = freshCol;
+                            dgvUpdates.Invalidate();
+                            ScheduleSaveState();
+                        }
+                    },
+                    defaultColumnKey: defaultSortKey,
+                    defaultDirection: System.Windows.Forms.SortOrder.Ascending
+                );
+
+                _sortByDropdownInitialized = true;
+            }
+
+            if (lblPageInfo != null)
+                lblPageInfo.Text = $"Page {_currentPage} of {totalPages} ({_filteredUpdates.Count} updates)";
+
+            if (btnFirstPage != null) btnFirstPage.Enabled = _currentPage > 1;
+            if (btnPrevPage != null) btnPrevPage.Enabled = _currentPage > 1;
+            if (btnNextPage != null) btnNextPage.Enabled = _currentPage < totalPages;
+            if (btnLastPage != null) btnLastPage.Enabled = _currentPage < totalPages;
+        }
+
+        private void BtnFirstPage_Click(object sender, EventArgs e)
+        {
+            _currentPage = 1;
+            UpdatePagination();
+        }
+
+        private void BtnPrevPage_Click(object sender, EventArgs e)
+        {
+            if (_currentPage > 1)
+            {
+                _currentPage--;
+                UpdatePagination();
+            }
+        }
+
+        private void BtnNextPage_Click(object sender, EventArgs e)
+        {
+            if (_filteredUpdates == null) return;
+
+            int totalPages = (int)Math.Ceiling((double)_filteredUpdates.Count / _pageSize);
+            if (_currentPage < totalPages)
+            {
+                _currentPage++;
+                UpdatePagination();
+            }
+        }
+
+        private void BtnLastPage_Click(object sender, EventArgs e)
+        {
+            if (_filteredUpdates == null) return;
+
+            int totalPages = (int)Math.Ceiling((double)_filteredUpdates.Count / _pageSize);
+            _currentPage = totalPages;
+            UpdatePagination();
+        }
+
+        private void DgvUpdates_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (dgvUpdates == null) return;
+            if (e.RowIndex < 0) return;
+
+            try
+            {
+                dgvUpdates.ClearSelection();
+                dgvUpdates.Rows[e.RowIndex].Selected = true;
+                if (e.ColumnIndex >= 0 && e.ColumnIndex < dgvUpdates.Columns.Count)
+                {
+                    dgvUpdates.CurrentCell = dgvUpdates.Rows[e.RowIndex].Cells[e.ColumnIndex];
+                }
+            }
+            catch
+            {
+            }
+
+            OpenSelectedUpdateDetails();
+        }
+
+        private void OpenSelectedUpdateDetails()
+        {
+            var dto = GetSelectedUpdateDto();
+            if (dto == null)
+            {
+                MessageBox.Show("Please select an update first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var dialog = new SetItemUpdateDetailsDialog(dto))
+            {
+                dialog.ShowDialog(FindForm());
+            }
+        }
+
+        private SetItemUpdateDto GetSelectedUpdateDto()
+        {
+            if (dgvUpdates == null) return null;
+
+            if (dgvUpdates.CurrentRow?.DataBoundItem is SetItemUpdateDto currentDto)
+            {
+                return currentDto;
+            }
+
+            if (dgvUpdates.SelectedRows.Count > 0 && dgvUpdates.SelectedRows[0].DataBoundItem is SetItemUpdateDto selectedDto)
+            {
+                return selectedDto;
+            }
+
+            return null;
+        }
+
+        private async Task OpenAuditTimelineForSelectedAsync()
+        {
+            var dto = GetSelectedUpdateDto();
+            if (dto == null)
+            {
+                MessageBox.Show("Please select an update first.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var serial = (dto.SerialNumber ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(serial))
+            {
+                MessageBox.Show("Selected update has no Serial Number. Audit timeline requires a serial number.", "Missing Serial", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var form = new Form())
+            {
+                form.Text = $"Item Movement Audit — {serial}";
+                form.StartPosition = FormStartPosition.CenterParent;
+                form.Size = new Size(1200, 720);
+                form.MinimizeBox = false;
+                form.MaximizeBox = true;
+
+                var page = new ViewItemMovementAuditPage(autoLoad: false)
+                {
+                    Dock = DockStyle.Fill
+                };
+                form.Controls.Add(page);
+
+                form.Shown += async (_, __) =>
+                {
+                    try
+                    {
+                        await page.LoadTimelineForSerialAsync(serial);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, "Audit Timeline", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                };
+
+                var owner = FindForm();
+                if (owner != null)
+                    form.ShowDialog(owner);
+                else
+                    form.ShowDialog();
+            }
+        }
+
+        /// <summary>
+        /// Shapes a standard WinForms Button into a rounded rectangle by assigning a
+        /// GraphicsPath-based Region. This avoids the bottom being visually clipped.
+        /// </summary>
+        private void MakePillButton(System.Windows.Forms.Button button)
+        {
+            if (button == null) return;
+            if (button.Width <= 0 || button.Height <= 0) return;
+
+            // Use a small corner radius so it looks like a rounded rectangle
+            int radius = 10;
+            var rect = button.ClientRectangle;
+            rect.Inflate(-1, -1);
+
+            using (var path = new GraphicsPath())
+            {
+                // Top-left
+                path.AddArc(rect.X, rect.Y, radius, radius, 180, 90);
+                // Top-right
+                path.AddArc(rect.Right - radius, rect.Y, radius, radius, 270, 90);
+                // Bottom-right
+                path.AddArc(rect.Right - radius, rect.Bottom - radius, radius, radius, 0, 90);
+                // Bottom-left
+                path.AddArc(rect.X, rect.Bottom - radius, radius, radius, 90, 90);
+                path.CloseFigure();
+
+                if (button.Region != null)
+                {
+                    button.Region.Dispose();
+                }
+
+                button.Region = new Region(path);
+            }
+        }
+
+        private async Task MarkSelectedAsProcessedAsync()
+        {
+            if (dgvUpdates.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select at least one update to mark as processed.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var selectedDtos = new List<SetItemUpdateDto>();
+            foreach (DataGridViewRow row in dgvUpdates.SelectedRows)
+            {
+                if (row.DataBoundItem is SetItemUpdateDto dto)
+                {
+                    selectedDtos.Add(dto);
+                }
+            }
+
+            using (var dialog = new MarkAsProcessedDialog(selectedDtos))
+            {
+                var owner = this.FindForm();
+                var result = owner != null ? dialog.ShowDialog(owner) : dialog.ShowDialog();
+                if (result != DialogResult.OK)
+                {
+                    return;
+                }
+
+                var selectedConditionId = dialog.SelectedConditionId;
+                var selectedConditionName = dialog.SelectedConditionName;
+                var selectedRepairAction = dialog.SelectedRepairAction;
+                var updatesToProcess = dialog.UpdatesToProcess;
+
+                if (!updatesToProcess.Any())
+                {
+                    MessageBox.Show("No valid updates to process.", "No Updates", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                try
+                {
+                    SetControlsEnabled(false);
+                    progressBar.Visible = true;
+                    progressBar.Style = ProgressBarStyle.Continuous;
+                    progressBar.Maximum = updatesToProcess.Count;
+                    progressBar.Value = 0;
+
+                    var processedById = AppSession.CurrentUserId;
+                    var processedByName = AppSession.CurrentUserName;
+                    var auditEntries = new List<AuditEntry>();
+                    var selectedUpdates = new List<int>();
+                    var selectedDtosForProcessing = new List<SetItemUpdateDto>();
+                    var processedCount = 0;
+                    var errorCount = 0;
+                    var originalSelectionCount = updatesToProcess.Count;
+                    string repairAction = null;
+
+                    if (!string.IsNullOrWhiteSpace(selectedRepairAction) &&
+                        !selectedRepairAction.StartsWith("None", StringComparison.OrdinalIgnoreCase))
+                    {
+                        repairAction = selectedRepairAction.Trim();
+                    }
+
+                    foreach (var dto in updatesToProcess)
+                    {
+                        selectedUpdates.Add(dto.UpdateId);
+                        selectedDtosForProcessing.Add(dto);
+
+                        var auditEntry = new AuditEntry
+                        {
+                            Action = "MarkAsProcessed",
+                            EntityId = dto.UpdateId,
+                            EntityType = "SetItemUpdate",
+                            UserId = processedById,
+                            UserName = processedByName,
+                            Timestamp = DateTime.Now,
+                            Notes = "Marked as processed from desktop application",
+                            OldValues = JsonConvert.SerializeObject(new
+                            {
+                                dto.SetCode,
+                                dto.SerialNumber,
+                                dto.ModelNumber,
+                                dto.PreviousStatus,
+                                dto.NewStatus,
+                                dto.Remark,
+                                dto.Processed,
+                                dto.ProcessedBy,
+                                dto.ProcessedAt
+                            })
+                        };
+                        auditEntries.Add(auditEntry);
+
+                    }
+
+                    // Apply the selected condition to items and capture which updates were actually applied
+                    var appliedUpdateIds = await ApplyConditionToItemsAsync(selectedDtosForProcessing, selectedConditionId, processedById, processedByName, repairAction);
+
+                    if (appliedUpdateIds == null || appliedUpdateIds.Count == 0)
+                    {
+                        MessageBox.Show(
+                            "None of the selected updates could be matched to items in the master list.\n" +
+                            "Make sure the items exist and their serial numbers match before processing.",
+                            "No items updated",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+
+                        await LoadUpdatesAsync();
+                        return;
+                    }
+
+                    // Only mark as processed the updates that were successfully applied to items
+                    selectedUpdates = selectedUpdates
+                        .Where(id => appliedUpdateIds.Contains(id))
+                        .ToList();
+
+                    auditEntries = auditEntries
+                        .Where(a => a.EntityId.HasValue && appliedUpdateIds.Contains(a.EntityId.Value))
+                        .ToList();
+
+                    var skippedCount = originalSelectionCount - selectedUpdates.Count;
+
+                    // If a repair action was selected, log repair history entries
+                    if (!string.IsNullOrWhiteSpace(repairAction))
+                    {
+                        var appliedDtos = selectedDtosForProcessing
+                            .Where(d => appliedUpdateIds.Contains(d.UpdateId))
+                            .ToList();
+
+                        if (appliedDtos.Count > 0)
+                        {
+                            await _repairHistoryRepository.LogRepairsAsync(
+                                appliedDtos,
+                                selectedConditionId,
+                                selectedConditionName,
+                                processedById,
+                                processedByName,
+                                repairAction);
+                        }
+                    }
+
+                    const int batchSize = 10;
+                    for (int i = 0; i < selectedUpdates.Count; i += batchSize)
+                    {
+                        var batch = selectedUpdates.Skip(i).Take(batchSize).ToList();
+                        var batchAuditEntries = auditEntries.Skip(i).Take(batchSize).ToList();
+
+                        try
+                        {
+                            var batchResult = await _repository.MarkAsProcessedBatchAsync(batch, processedById, processedByName);
+                            processedCount += batchResult;
+
+                            foreach (var auditEntry in batchAuditEntries)
+                            {
+                                auditEntry.NewValues = JsonConvert.SerializeObject(new
+                                {
+                                    Processed = true,
+                                    ProcessedBy = processedByName,
+                                    ProcessedAt = DateTime.Now,
+                                    ConditionId = selectedConditionId,
+                                    ConditionName = selectedConditionName
+                                });
+                                await _auditRepository.LogAsync(auditEntry);
+                            }
+
+                            await LogConditionChangeAuditAsync(
+                                selectedDtosForProcessing,
+                                batch,
+                                appliedUpdateIds,
+                                selectedConditionName,
+                                repairAction,
+                                processedByName);
+
+                            progressBar.Value = Math.Min(progressBar.Value + batch.Count, progressBar.Maximum);
+                            await Task.Delay(100);
+                        }
+                        catch (Exception ex)
+                        {
+                            errorCount += batch.Count;
+                            foreach (var auditEntry in batchAuditEntries)
+                            {
+                                auditEntry.Notes = "Error marking as processed: " + ex.Message;
+                                auditEntry.NewValues = JsonConvert.SerializeObject(new { Error = ex.Message });
+                                await _auditRepository.LogAsync(auditEntry);
+                            }
+                        }
+                    }
+
+                    string message = $"Successfully processed {processedCount} update(s).";
+                    if (skippedCount > 0)
+                    {
+                        message += $"\n{skippedCount} update(s) were skipped because no matching item was found. They remain unprocessed.";
+                    }
+                    if (errorCount > 0)
+                    {
+                        message += $"\nFailed to process {errorCount} update(s). Check audit log for details.";
+                    }
+
+                    MessageBox.Show(message, "Processing Complete",
+                        MessageBoxButtons.OK,
+                        errorCount == 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+
+                    await LoadUpdatesAsync();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("An error occurred while processing updates: " + ex.Message, "Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                finally
+                {
+                    progressBar.Visible = false;
+                    SetControlsEnabled(true);
+                }
+            }
+        }
+
+        private async Task DeleteSelectedUpdatesAsync()
+        {
+            if (dgvUpdates.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select at least one update to delete.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var confirm = MessageBox.Show(
+                $"Delete {dgvUpdates.SelectedRows.Count} selected update(s)?\n\n" +
+                "This only removes them from the Mobile Updates list. Items and inventory are not changed.",
+                "Confirm Delete",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirm != DialogResult.Yes)
+                return;
+
+            try
+            {
+                SetControlsEnabled(false);
+                progressBar.Visible = true;
+                progressBar.Style = ProgressBarStyle.Marquee;
+
+                var selectedIds = new List<int>();
+                foreach (DataGridViewRow row in dgvUpdates.SelectedRows)
+                {
+                    if (row.DataBoundItem is SetItemUpdateDto dto)
+                    {
+                        selectedIds.Add(dto.UpdateId);
+                    }
+                }
+
+                if (selectedIds.Count == 0)
+                {
+                    MessageBox.Show("No valid updates were found in the selection.", "Nothing to Delete",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                var idList = string.Join(",", selectedIds);
+                var sql = @"DELETE FROM dbo.SetItemUpdate
+WHERE UpdateId IN (SELECT value FROM STRING_SPLIT(@UpdateIds, ','));";
+
+                int affected;
+                using (var con = new SqlConnection(GetConnectionString()))
+                using (var cmd = new SqlCommand(sql, con))
+                {
+                    cmd.Parameters.AddWithValue("@UpdateIds", idList);
+
+                    await con.OpenAsync();
+                    affected = await cmd.ExecuteNonQueryAsync();
+                }
+
+                MessageBox.Show($"Deleted {affected} update(s).", "Delete Complete",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                await LoadUpdatesAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Failed to delete updates: " + ex.Message, "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                progressBar.Visible = false;
+                SetControlsEnabled(true);
+            }
+        }
+
+        private async Task<HashSet<int>> ApplyConditionToItemsAsync(List<SetItemUpdateDto> updates, int? conditionId, int processedByUserId, string processedByUserName, string repairAction)
+        {
+            var appliedUpdateIds = new HashSet<int>();
+
+            if (updates == null || updates.Count == 0)
+            {
+                return appliedUpdateIds;
+            }
+
+            var isSpareToInventory = !string.IsNullOrWhiteSpace(repairAction)
+                && repairAction.Equals("Repaired - Spare inventory", StringComparison.OrdinalIgnoreCase);
+
+            using (var con = new SqlConnection(GetConnectionString()))
+            {
+                await con.OpenAsync();
+                using (var tx = con.BeginTransaction())
+                {
+                    try
+                    {
+                        // Load a default category for auto-created items (first active category)
+                        int? defaultCategoryId = null;
+                        string defaultCategoryName = null;
+
+                        using (var cmdCategory = new SqlCommand(@"SELECT TOP (1) CategoryId, Name FROM dbo.ItemCategory WHERE Active = 1 ORDER BY CategoryId", con, tx))
+                        using (var rdr = await cmdCategory.ExecuteReaderAsync())
+                        {
+                            if (await rdr.ReadAsync())
+                            {
+                                defaultCategoryId = rdr.GetInt32(0);
+                                defaultCategoryName = rdr.GetString(1);
+                            }
+                        }
+
+                        // Determine a safe, existing ConditionId to use for both inserts and updates
+                        int? effectiveConditionId = null;
+
+                        // 1) Try the condition selected in the dialog, if any
+                        if (conditionId.HasValue && conditionId.Value > 0)
+                        {
+                            using (var cmdCheck = new SqlCommand(@"SELECT ConditionID FROM dbo.[Condition] WHERE ConditionID = @ConditionId", con, tx))
+                            {
+                                cmdCheck.Parameters.AddWithValue("@ConditionId", conditionId.Value);
+                                var result = await cmdCheck.ExecuteScalarAsync();
+                                if (result != null && result != DBNull.Value)
+                                {
+                                    effectiveConditionId = Convert.ToInt32(result);
+                                }
+                            }
+                        }
+
+                        // 2) If the selected condition is invalid or none was selected, fall back to any existing condition
+                        if (!effectiveConditionId.HasValue)
+                        {
+                            using (var cmdDefaultCond = new SqlCommand(@"SELECT TOP (1) ConditionID FROM dbo.[Condition] ORDER BY ConditionID", con, tx))
+                            {
+                                var result = await cmdDefaultCond.ExecuteScalarAsync();
+                                if (result != null && result != DBNull.Value)
+                                {
+                                    effectiveConditionId = Convert.ToInt32(result);
+                                }
+                            }
+                        }
+
+                        const string insertItemSql = @"INSERT INTO dbo.Item 
+(Name, Description, ModelNumber, Active, CategoryId, Category,
+ SerialNumber, UnitOfMeasure, StockOnHand, DateCreated, CreatedBy, DateModified, ModifiedBy, ItemType, StartDate, EndDate, ConditionId)
+VALUES
+ (@Name, @Description, @ModelNumber, @Active, @CategoryId, @Category,
+  @SerialNumber, @UnitOfMeasure, @StockOnHand, @DateCreated, @CreatedBy, @DateModified, @ModifiedBy, @ItemType, @StartDate, @EndDate, @ConditionId);
+SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                        foreach (var dto in updates)
+                        {
+                            int? itemId = dto.ItemId;
+
+                            // Try to match an existing item by serial number
+                            if (!itemId.HasValue && !string.IsNullOrWhiteSpace(dto.SerialNumber))
+                            {
+                                using (var cmdFind = new SqlCommand(@"SELECT TOP (1) ItemId FROM dbo.Item WHERE SerialNumber = @SerialNumber ORDER BY ItemId", con, tx))
+                                {
+                                    cmdFind.Parameters.AddWithValue("@SerialNumber", dto.SerialNumber);
+                                    var result = await cmdFind.ExecuteScalarAsync();
+                                    if (result != null && result != DBNull.Value)
+                                    {
+                                        itemId = Convert.ToInt32(result);
+                                    }
+                                }
+                            }
+
+                            // If still not found, auto-create an Item so it appears in View Items
+                            if (!itemId.HasValue && isSpareToInventory)
+                            {
+                                if (!defaultCategoryId.HasValue || !effectiveConditionId.HasValue)
+                                {
+                                    // No category or no valid condition available \u2014 cannot safely create an item
+                                    continue;
+                                }
+
+                                using (var cmdInsertItem = new SqlCommand(insertItemSql, con, tx))
+                                {
+                                    var now = DateTime.Now;
+
+                                    var name = !string.IsNullOrWhiteSpace(dto.ItemType)
+                                        ? dto.ItemType.Trim()
+                                        : (!string.IsNullOrWhiteSpace(dto.ModelNumber)
+                                            ? dto.ModelNumber.Trim()
+                                            : (!string.IsNullOrWhiteSpace(dto.SerialNumber)
+                                                ? $"Item {dto.SerialNumber.Trim()}"
+                                                : "Mobile item"));
+
+                                    var description = string.IsNullOrWhiteSpace(dto.Remark)
+                                        ? $"Auto-created from mobile update for set {dto.SetCode}"
+                                        : dto.Remark.Trim();
+
+                                    // Normalize ItemType to satisfy CK_Item_ItemType (Hardware, Software/License, Services)
+                                    var rawItemType = dto.ItemType?.Trim();
+                                    string normalizedItemType;
+                                    if (string.IsNullOrWhiteSpace(rawItemType))
+                                    {
+                                        normalizedItemType = "Hardware";
+                                    }
+                                    else if (rawItemType.Equals("Hardware", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        normalizedItemType = "Hardware";
+                                    }
+                                    else if (rawItemType.Equals("Software/License", StringComparison.OrdinalIgnoreCase)
+                                             || rawItemType.Equals("Software", StringComparison.OrdinalIgnoreCase)
+                                             || rawItemType.Equals("Software License", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        normalizedItemType = "Software/License";
+                                    }
+                                    else if (rawItemType.Equals("Services", StringComparison.OrdinalIgnoreCase)
+                                             || rawItemType.Equals("Service", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        normalizedItemType = "Service";
+                                    }
+                                    else
+                                    {
+                                        // Fallback for any unexpected value
+                                        normalizedItemType = "Hardware";
+                                    }
+
+                                    // Choose a valid ConditionId for the new item from the validated effectiveConditionId
+                                    var insertConditionId = effectiveConditionId.Value;
+
+                                    cmdInsertItem.Parameters.AddWithValue("@Name", name);
+                                    cmdInsertItem.Parameters.AddWithValue("@Description", (object)description ?? DBNull.Value);
+                                    cmdInsertItem.Parameters.AddWithValue("@ModelNumber", (object)(dto.ModelNumber ?? (object)DBNull.Value) ?? DBNull.Value);
+                                    cmdInsertItem.Parameters.AddWithValue("@Active", true);
+                                    cmdInsertItem.Parameters.AddWithValue("@CategoryId", defaultCategoryId.Value);
+                                    cmdInsertItem.Parameters.AddWithValue("@Category", (object)defaultCategoryName ?? DBNull.Value);
+                                    var serialNumber = string.IsNullOrWhiteSpace(dto.SerialNumber) ? null : dto.SerialNumber.Trim();
+                                    cmdInsertItem.Parameters.AddWithValue("@SerialNumber", (object)serialNumber ?? DBNull.Value);
+                                    cmdInsertItem.Parameters.AddWithValue("@UnitOfMeasure", "Unit");
+                                    // Start with 0 — stock will be incremented below together with an Inventory entry
+                                    cmdInsertItem.Parameters.AddWithValue("@StockOnHand", 0);
+                                    cmdInsertItem.Parameters.AddWithValue("@DateCreated", now);
+                                    cmdInsertItem.Parameters.AddWithValue("@CreatedBy", processedByUserId);
+                                    cmdInsertItem.Parameters.AddWithValue("@DateModified", now);
+                                    cmdInsertItem.Parameters.AddWithValue("@ModifiedBy", processedByUserId);
+                                    cmdInsertItem.Parameters.AddWithValue("@ItemType", normalizedItemType);
+                                    cmdInsertItem.Parameters.AddWithValue("@StartDate", DBNull.Value);
+                                    cmdInsertItem.Parameters.AddWithValue("@EndDate", DBNull.Value);
+                                    cmdInsertItem.Parameters.AddWithValue("@ConditionId", insertConditionId);
+
+                                    var newIdObj = await cmdInsertItem.ExecuteScalarAsync();
+                                    if (newIdObj != null && newIdObj != DBNull.Value)
+                                    {
+                                        itemId = Convert.ToInt32(newIdObj);
+                                    }
+                                }
+                            }
+
+                            if (!itemId.HasValue)
+                            {
+                                // Still no item \u2014 leave this update unprocessed
+                                continue;
+                            }
+
+                            // CHECK: Does the item still exist in the active items table?
+                            // This prevents FK_Inventory_Item conflicts if the item was hard-deleted or archived.
+                            bool itemExists = false;
+                            using (var cmdCheckExists = new SqlCommand(@"SELECT COUNT(*) FROM dbo.Item WHERE ItemId = @ItemId", con, tx))
+                            {
+                                cmdCheckExists.Parameters.AddWithValue("@ItemId", itemId.Value);
+                                var existsResult = await cmdCheckExists.ExecuteScalarAsync();
+                                itemExists = Convert.ToInt32(existsResult) > 0;
+                            }
+
+                            if (!itemExists)
+                            {
+                                // Item missing (likely deleted or archived) - skip and alert handled in caller if needed
+                                // but for now we just skip to avoid the FK error
+                                continue;
+                            }
+
+                            // Only update ConditionId if we resolved a valid existing condition
+                            if (effectiveConditionId.HasValue)
+                            {
+                                using (var cmdUpdate = new SqlCommand(@"UPDATE dbo.Item SET ConditionId = @ConditionId WHERE ItemId = @ItemId", con, tx))
+                                {
+                                    cmdUpdate.Parameters.AddWithValue("@ConditionId", effectiveConditionId.Value);
+                                    cmdUpdate.Parameters.AddWithValue("@ItemId", itemId.Value);
+                                    await cmdUpdate.ExecuteNonQueryAsync();
+                                }
+                            }
+
+                            if (isSpareToInventory)
+                            {
+                                using (var cmdUpdateStock = new SqlCommand(@"UPDATE dbo.Item SET StockOnHand = ISNULL(StockOnHand, 0) + 1 WHERE ItemId = @ItemId", con, tx))
+                                {
+                                    cmdUpdateStock.Parameters.AddWithValue("@ItemId", itemId.Value);
+                                    await cmdUpdateStock.ExecuteNonQueryAsync();
+                                }
+
+                                using (var cmdInsertInventory = new SqlCommand(@"INSERT INTO dbo.Inventory 
+(Description, EntryType, Quantity, DatePosted, PostedBy, ReqId, ItemId)
+VALUES (@Description, @EntryType, @Quantity, SYSDATETIME(), @PostedBy, @ReqId, @ItemId);", con, tx))
+                                {
+                                    cmdInsertInventory.Parameters.AddWithValue("@Description", (object)($"Mobile update processed for set {dto.SetCode}, serial {dto.SerialNumber}") ?? DBNull.Value);
+                                    cmdInsertInventory.Parameters.AddWithValue("@EntryType", "Positive");
+                                    cmdInsertInventory.Parameters.AddWithValue("@Quantity", 1);
+                                    cmdInsertInventory.Parameters.AddWithValue("@PostedBy", processedByUserId);
+                                    cmdInsertInventory.Parameters.AddWithValue("@ReqId", DBNull.Value);
+                                    cmdInsertInventory.Parameters.AddWithValue("@ItemId", itemId.Value);
+                                    await cmdInsertInventory.ExecuteNonQueryAsync();
+                                }
+
+                                // Detach from set: remove the request association so it no longer appears in View Set
+                                if (dto.SetId.HasValue)
+                                {
+                                    int? reqIdToDetach = null;
+
+                                    if (!string.IsNullOrWhiteSpace(dto.SerialNumber))
+                                    {
+                                        using (var cmdFindReq = new SqlCommand(@"SELECT TOP (1) r.ReqId
+FROM dbo.Request r
+INNER JOIN dbo.Item i ON i.ItemId = r.ItemId
+WHERE r.SetId = @SetId AND i.SerialNumber = @SerialNumber
+ORDER BY r.ReqId;", con, tx))
+                                        {
+                                            cmdFindReq.Parameters.AddWithValue("@SetId", dto.SetId.Value);
+                                            cmdFindReq.Parameters.AddWithValue("@SerialNumber", dto.SerialNumber);
+                                            var reqObj = await cmdFindReq.ExecuteScalarAsync();
+                                            if (reqObj != null && reqObj != DBNull.Value)
+                                            {
+                                                reqIdToDetach = Convert.ToInt32(reqObj);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        using (var cmdFindReq = new SqlCommand(@"SELECT TOP (1) ReqId
+FROM dbo.Request
+WHERE SetId = @SetId AND ItemId = @ItemId
+ORDER BY ReqId;", con, tx))
+                                        {
+                                            cmdFindReq.Parameters.AddWithValue("@SetId", dto.SetId.Value);
+                                            cmdFindReq.Parameters.AddWithValue("@ItemId", itemId.Value);
+                                            var reqObj = await cmdFindReq.ExecuteScalarAsync();
+                                            if (reqObj != null && reqObj != DBNull.Value)
+                                            {
+                                                reqIdToDetach = Convert.ToInt32(reqObj);
+                                            }
+                                        }
+                                    }
+
+                                    if (reqIdToDetach.HasValue)
+                                    {
+                                        using (var cmdDetach = new SqlCommand(@"UPDATE dbo.Request
+SET SetId = NULL
+WHERE ReqId = @ReqId;", con, tx))
+                                        {
+                                            cmdDetach.Parameters.AddWithValue("@ReqId", reqIdToDetach.Value);
+                                            await cmdDetach.ExecuteNonQueryAsync();
+                                        }
+                                    }
+                                }
+                            }
+
+                            appliedUpdateIds.Add(dto.UpdateId);
+                        }
+
+                        tx.Commit();
+                    }
+                    catch
+                    {
+                        tx.Rollback();
+                        throw;
+                    }
+                }
+            }
+
+            return appliedUpdateIds;
+        }
+
+        private async Task LogConditionChangeAuditAsync(
+            List<SetItemUpdateDto> selectedDtosForProcessing,
+            List<int> batchUpdateIds,
+            HashSet<int> appliedUpdateIds,
+            string selectedConditionName,
+            string repairAction,
+            string processedByName)
+        {
+            try
+            {
+                if (selectedDtosForProcessing == null || selectedDtosForProcessing.Count == 0)
+                    return;
+
+                if (batchUpdateIds == null || batchUpdateIds.Count == 0)
+                    return;
+
+                var appliedDtosInBatch = selectedDtosForProcessing
+                    .Where(d => batchUpdateIds.Contains(d.UpdateId))
+                    .Where(d => appliedUpdateIds.Contains(d.UpdateId))
+                    .ToList();
+
+                if (appliedDtosInBatch.Count == 0)
+                    return;
+
+                var itemAuditRepo = new ItemAuditTrailRepository();
+                var now = DateTime.Now;
+
+                foreach (var upd in appliedDtosInBatch)
+                {
+                    int? itemId = upd.ItemId;
+                    if (!itemId.HasValue && !string.IsNullOrWhiteSpace(upd.SerialNumber))
+                    {
+                        itemId = await GetItemIdBySerialAsync(upd.SerialNumber);
+                    }
+
+                    if (!itemId.HasValue)
+                        continue;
+
+                    var notes = $"Condition changed to '{selectedConditionName}'";
+                    if (!string.IsNullOrWhiteSpace(repairAction))
+                        notes += $" | Action: {repairAction}";
+
+                    await itemAuditRepo.LogActionAsync(new ItemAuditTrailDto
+                    {
+                        ItemId = itemId.Value,
+                        SerialNumber = upd.SerialNumber,
+                        Action = "Condition Changed",
+                        ActionTime = now,
+                        Status = "Completed",
+                        BranchName = upd.BranchName,
+                        DepartmentName = upd.DepartmentName,
+                        ReferenceType = "Update",
+                        ReferenceId = upd.UpdateId,
+                        SetCode = upd.SetCode,
+                        Notes = notes,
+                        CreatedBy = processedByName ?? "System"
+                    }).ConfigureAwait(false);
+                }
+            }
+            catch
+            {
+                // Intentionally swallow so processing isn't blocked by audit failures.
+            }
+        }
+
+        private async Task<int?> GetItemIdBySerialAsync(string serialNumber)
+        {
+            if (string.IsNullOrWhiteSpace(serialNumber))
+                return null;
+
+            using (var con = new SqlConnection(GetConnectionString()))
+            using (var cmd = new SqlCommand(@"SELECT TOP (1) ItemId FROM dbo.Item WHERE SerialNumber = @SerialNumber ORDER BY ItemId", con))
+            {
+                cmd.Parameters.AddWithValue("@SerialNumber", serialNumber);
+                await con.OpenAsync();
+                var result = await cmd.ExecuteScalarAsync();
+                if (result == null || result == DBNull.Value)
+                    return null;
+                return Convert.ToInt32(result);
+            }
+        }
+
+        #if false
+        private void ApplyTheme()
+        {
+            if (_isDarkTheme)
+            {
+                // Overall background
+                BackColor = Color.FromArgb(18, 22, 35);
+                bodyPanel.BackColor = BackColor;
+
+                // Header + button bar
+                headerPanel.BackColor = Color.FromArgb(24, 32, 48);
+                buttonBarPanel.BackColor = Color.FromArgb(24, 32, 48);
+                titleLabel.ForeColor = Color.White;
+
+                // Summary area
+                summaryPanel.BackColor = Color.FromArgb(24, 32, 48);
+                cardTotalPanel.BackColor = Color.FromArgb(36, 44, 64);
+                cardProcessedPanel.BackColor = Color.FromArgb(28, 53, 45);
+                cardUnprocessedPanel.BackColor = Color.FromArgb(58, 34, 40);
+
+                lblTotalCount.ForeColor = Color.White;
+                lblProcessedCount.ForeColor = Color.FromArgb(46, 204, 113);
+                lblUnprocessedCount.ForeColor = Color.FromArgb(231, 76, 60);
+
+                // Filter strip
+                filterPanel.BackColor = Color.FromArgb(24, 32, 48);
+                lblDateFrom.ForeColor = Color.White;
+                lblDateTo.ForeColor = Color.White;
+                lblStatus.ForeColor = Color.White;
+                lblSetCode.ForeColor = Color.White;
+
+                dtpDateFrom.BackColor = Color.FromArgb(36, 44, 64);
+                dtpDateTo.BackColor = Color.FromArgb(36, 44, 64);
+                cmbStatus.BackColor = Color.FromArgb(36, 44, 64);
+                txtSetCode.BackColor = Color.FromArgb(36, 44, 64);
+                if (txtSearch != null)
+                    txtSearch.BackColor = Color.FromArgb(36, 44, 64);
+
+                // Grid card - keep white for clean pills in dark mode too
+                gridPanel.BackColor = Color.FromArgb(24, 32, 48);
+                dgvUpdates.BackgroundColor = Color.White;
+                dgvUpdates.GridColor = Color.White;
+                dgvUpdates.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 73, 94);
+                dgvUpdates.DefaultCellStyle.BackColor = Color.White;
+                dgvUpdates.AlternatingRowsDefaultCellStyle.BackColor = Color.White;
+                dgvUpdates.DefaultCellStyle.ForeColor = Color.FromArgb(40, 40, 40);
+
+                // Theme toggle visuals (HopeButton)
+                if (btnThemeToggle != null)
+                {
+                    btnThemeToggle.Text = "Light";
+                    btnThemeToggle.DefaultColor = Color.FromArgb(52, 73, 94);
+                    btnThemeToggle.TextColor = Color.White;
+                }
+            }
+            else
+            {
+                // Overall background
+                BackColor = Color.FromArgb(240, 240, 240);
+                bodyPanel.BackColor = BackColor;
+
+                // Header + button bar
+                headerPanel.BackColor = Color.FromArgb(41, 128, 185);
+                buttonBarPanel.BackColor = Color.FromArgb(41, 128, 185);
+                titleLabel.ForeColor = Color.White;
+
+                // Summary area
+                summaryPanel.BackColor = Color.Transparent;
+                cardTotalPanel.BackColor = Color.White;
+                cardProcessedPanel.BackColor = Color.FromArgb(235, 248, 240);
+                cardUnprocessedPanel.BackColor = Color.FromArgb(253, 236, 234);
+
+                lblTotalCount.ForeColor = Color.FromArgb(44, 62, 80);
+                lblProcessedCount.ForeColor = Color.FromArgb(39, 174, 96);
+                lblUnprocessedCount.ForeColor = Color.FromArgb(192, 57, 43);
+
+                // Filter strip
+                filterPanel.BackColor = Color.White;
+                lblDateFrom.ForeColor = Color.FromArgb(64, 64, 64);
+                lblDateTo.ForeColor = Color.FromArgb(64, 64, 64);
+                lblStatus.ForeColor = Color.FromArgb(64, 64, 64);
+                lblSetCode.ForeColor = Color.FromArgb(64, 64, 64);
+
+                dtpDateFrom.BackColor = Color.White;
+                dtpDateTo.BackColor = Color.White;
+                cmbStatus.BackColor = Color.White;
+                txtSetCode.BackColor = Color.White;
+                if (txtSearch != null)
+                    txtSearch.BackColor = Color.White;
+
+                // Grid card - pure white for clean pills
+                gridPanel.BackColor = Color.White;
+                dgvUpdates.BackgroundColor = Color.White;
+                dgvUpdates.GridColor = Color.White;
+                dgvUpdates.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+                dgvUpdates.DefaultCellStyle.BackColor = Color.White;
+                dgvUpdates.AlternatingRowsDefaultCellStyle.BackColor = Color.White;
+                dgvUpdates.DefaultCellStyle.ForeColor = Color.FromArgb(40, 40, 40);
+
+                // Theme toggle visuals (HopeButton)
+                if (btnThemeToggle != null)
+                {
+                    btnThemeToggle.Text = "Dark";
+                    btnThemeToggle.DefaultColor = Color.FromArgb(52, 152, 219);
+                    btnThemeToggle.TextColor = Color.White;
+                }
+            }
+        }
+        #endif
+
+        private void DgvUpdates_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+        {
+            // Skip header row
+            if (e.RowIndex < 0) return;
+
+            var grid = sender as DataGridView;
+            if (grid == null) return;
+
+            bool isSelected = grid.Rows[e.RowIndex].Selected;
+            bool isFirstColumn = e.ColumnIndex == 0;
+            bool isLastColumn = e.ColumnIndex == grid.Columns.Count - 1;
+
+            var dto = grid.Rows[e.RowIndex].DataBoundItem as SetItemUpdateDto;
+
+            // Alternating pill colors
+            Color pillColor = (e.RowIndex % 2 == 0)
+                ? Color.FromArgb(227, 242, 253)  // Light blue
+                : Color.FromArgb(232, 245, 233); // Light green
+
+            if (dto != null)
+            {
+                if (dto.IsMissing)
+                {
+                    pillColor = Color.FromArgb(255, 243, 224); // Light orange (Missing)
+                }
+                else if (dto.IsArchived)
+                {
+                    pillColor = Color.FromArgb(245, 245, 245); // Light gray (Archived)
+                }
+            }
+
+            if (isSelected)
+            {
+                if (dto != null && dto.IsMissing)
+                {
+                    pillColor = Color.FromArgb(255, 152, 0); // Orange (Missing selected)
+                }
+                else if (dto != null && dto.IsArchived)
+                {
+                    pillColor = Color.FromArgb(158, 158, 158); // Gray (Archived selected)
+                }
+                else
+                {
+                    pillColor = Color.FromArgb(41, 128, 185);
+                }
+            }
+
+            // Clear background with white first (creates gap effect)
+            e.Graphics.FillRectangle(Brushes.White, e.CellBounds);
+
+            // Calculate pill bounds with padding for gap effect
+            int topPadding = 4;
+            int bottomPadding = 4;
+            int leftPadding = isFirstColumn ? 8 : 0;
+            int rightPadding = isLastColumn ? 8 : 0;
+            int cornerRadius = 12;
+
+            Rectangle pillBounds = new Rectangle(
+                e.CellBounds.X + leftPadding,
+                e.CellBounds.Y + topPadding,
+                e.CellBounds.Width - leftPadding - rightPadding,
+                e.CellBounds.Height - topPadding - bottomPadding
+            );
+
+            // Draw rounded corners only on first and last columns
+            using (var brush = new SolidBrush(pillColor))
+            {
+                if (isFirstColumn)
+                {
+                    // Left rounded edge
+                    e.Graphics.FillEllipse(brush, pillBounds.X, pillBounds.Y, cornerRadius * 2, pillBounds.Height);
+                    e.Graphics.FillRectangle(brush, pillBounds.X + cornerRadius, pillBounds.Y, pillBounds.Width - cornerRadius, pillBounds.Height);
+                }
+                else if (isLastColumn)
+                {
+                    // Right rounded edge
+                    e.Graphics.FillEllipse(brush, pillBounds.Right - cornerRadius * 2, pillBounds.Y, cornerRadius * 2, pillBounds.Height);
+                    e.Graphics.FillRectangle(brush, pillBounds.X, pillBounds.Y, pillBounds.Width - cornerRadius, pillBounds.Height);
+                }
+                else
+                {
+                    // Middle cells - just fill rectangle
+                    e.Graphics.FillRectangle(brush, pillBounds);
+                }
+            }
+
+            // Determine text color
+            Color textColor = isSelected ? Color.White : Color.FromArgb(40, 40, 40);
+
+            // Paint cell content
+            if (e.Value != null)
+            {
+                using (var textBrush = new SolidBrush(textColor))
+                {
+                    var format = new StringFormat
+                    {
+                        Alignment = StringAlignment.Near,
+                        LineAlignment = StringAlignment.Center,
+                        Trimming = StringTrimming.EllipsisCharacter
+                    };
+                    var textRect = new Rectangle(
+                        e.CellBounds.X + leftPadding + 10,
+                        e.CellBounds.Y + topPadding,
+                        e.CellBounds.Width - leftPadding - rightPadding - 20,
+                        e.CellBounds.Height - topPadding - bottomPadding
+                    );
+                    e.Graphics.DrawString(e.FormattedValue?.ToString() ?? "", e.CellStyle.Font, textBrush, textRect, format);
+                }
+            }
+
+            e.Handled = true;
+        }
+
+        private void DgvUpdates_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.ColumnIndex < 0 || e.ColumnIndex >= dgvUpdates.Columns.Count)
+            {
+                return;
+            }
+
+            if (dgvUpdates.Columns[e.ColumnIndex].Name != "Status")
+            {
+                return;
+            }
+
+            var row = dgvUpdates.Rows[e.RowIndex];
+            var dto = row.DataBoundItem as SetItemUpdateDto;
+            if (dto == null)
+            {
+                return;
+            }
+
+            bool processed = dto.Processed;
+            string statusText = processed ? "Processed" : "Unprocessed";
+            
+            if (dto.IsMissing) statusText += " (Missing)";
+            else if (dto.IsArchived) statusText += " (Archived)";
+            
+            e.Value = statusText;
+
+            var cell = row.Cells[e.ColumnIndex];
+            cell.Style.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
+            if (processed)
+            {
+                cell.Style.ForeColor = Color.FromArgb(39, 174, 96);
+            }
+            else
+            {
+                if (dto.IsArchived || dto.IsMissing)
+                {
+                    cell.Style.ForeColor = Color.FromArgb(230, 126, 34); // Warning orange
+                }
+                else
+                {
+                    cell.Style.ForeColor = Color.FromArgb(192, 57, 43);
+                }
+            }
+        }
+
+        private void SetControlsEnabled(bool enabled)
+        {
+            if (_layout?.RefreshButton != null)
+                _layout.RefreshButton.Enabled = enabled;
+
+            if (_btnMarkProcessed != null)
+                _btnMarkProcessed.Enabled = enabled;
+            if (_btnViewDetails != null)
+                _btnViewDetails.Enabled = enabled;
+            if (_btnDelete != null)
+                _btnDelete.Enabled = enabled;
+            if (_btnApplyFilter != null)
+                _btnApplyFilter.Enabled = enabled;
+            if (_btnAuditTimeline != null)
+                _btnAuditTimeline.Enabled = enabled;
+
+            if (_layout?.SearchBox != null)
+                _layout.SearchBox.Enabled = enabled;
+
+            if (dtpDateFrom != null) dtpDateFrom.Enabled = enabled;
+            if (dtpDateTo != null) dtpDateTo.Enabled = enabled;
+            if (cmbStatus != null) cmbStatus.Enabled = enabled;
+            if (txtSetCode != null) txtSetCode.Enabled = enabled;
+            if (_chkProblemsOnly != null) _chkProblemsOnly.Enabled = enabled;
+            if (_cmbPageSize != null) _cmbPageSize.Enabled = enabled;
+            if (dgvUpdates != null) dgvUpdates.Enabled = enabled;
+        }
+
+        private void ApplyRoundedButtonStyle(System.Windows.Forms.Button button, bool primary = false)
+        {
+            if (button == null)
+                return;
+
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 1;
+
+            Color backColor;
+            Color foreColor;
+            Color borderColor;
+
+            if (primary)
+            {
+                backColor = Color.FromArgb(52, 152, 219);
+                foreColor = Color.White;
+                borderColor = Color.FromArgb(41, 128, 185);
+            }
+            else
+            {
+                backColor = Color.White;
+                foreColor = Color.FromArgb(41, 128, 185);
+                borderColor = Color.FromArgb(41, 128, 185);
+            }
+
+            button.BackColor = backColor;
+            button.ForeColor = foreColor;
+            button.FlatAppearance.BorderColor = borderColor;
+
+            button.Resize += (s, e) =>
+            {
+                var rect = button.ClientRectangle;
+                rect.Inflate(-1, -1);
+                int radius = 8;
+
+                using (var path = new GraphicsPath())
+                {
+                    path.AddArc(rect.X, rect.Y, radius, radius, 180, 90);
+                    path.AddArc(rect.Right - radius, rect.Y, radius, radius, 270, 90);
+                    path.AddArc(rect.Right - radius, rect.Bottom - radius, radius, radius, 0, 90);
+                    path.AddArc(rect.X, rect.Bottom - radius, radius, radius, 90, 90);
+                    path.CloseFigure();
+                    button.Region = new Region(path);
+                }
+            };
+        }
+
+        internal class ConditionSelectionDialog : Form
+        {
+            private ComboBox _cmbCondition;
+            private ComboBox _cmbRepairAction;
+            private System.Windows.Forms.Button _btnOk;
+            private System.Windows.Forms.Button _btnCancel;
+
+            public int SelectedConditionId { get; private set; }
+            public string SelectedConditionName { get; private set; }
+            public string SelectedRepairAction { get; private set; }
+
+            public ConditionSelectionDialog()
+            {
+                Text = "Select Item Condition";
+                FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+                StartPosition = FormStartPosition.CenterParent;
+                MaximizeBox = false;
+                MinimizeBox = false;
+                Size = new Size(360, 200);
+
+                var lbl = new Label
+                {
+                    Text = "Condition:",
+                    Left = 15,
+                    Top = 20,
+                    AutoSize = true
+                };
+
+                _cmbCondition = new ComboBox
+                {
+                    Left = 110,
+                    Top = 16,
+                    Width = 220,
+                    DropDownStyle = ComboBoxStyle.DropDownList
+                };
+
+                _cmbCondition.Items.Add(new ConditionItem(1, "Good"));
+                _cmbCondition.Items.Add(new ConditionItem(2, "Damaged"));
+
+                if (_cmbCondition.Items.Count > 0)
+                {
+                    _cmbCondition.SelectedIndex = 0;
+                }
+
+                var lblRepair = new Label
+                {
+                    Text = "Repair handling:",
+                    Left = 15,
+                    Top = 55,
+                    AutoSize = true
+                };
+
+                _cmbRepairAction = new ComboBox
+                {
+                    Left = 110,
+                    Top = 51,
+                    Width = 220,
+                    DropDownStyle = ComboBoxStyle.DropDownList
+                };
+
+                _cmbRepairAction.Items.AddRange(new object[]
+                {
+                    "None (not a repair)",
+                    "Repaired - Returned to requester",
+                    "Repaired - Spare inventory"
+                });
+                _cmbRepairAction.SelectedIndex = 0;
+
+                _btnOk = new System.Windows.Forms.Button
+                {
+                    Text = "OK",
+                    DialogResult = DialogResult.OK,
+                    Left = 160,
+                    Top = 110,
+                    Width = 80
+                };
+
+                _btnCancel = new System.Windows.Forms.Button
+                {
+                    Text = "Cancel",
+                    DialogResult = DialogResult.Cancel,
+                    Left = 250,
+                    Top = 110,
+                    Width = 80
+                };
+
+                _btnOk.Click += (s, e) =>
+                {
+                    if (_cmbCondition.SelectedItem is ConditionItem item)
+                    {
+                        SelectedConditionId = item.Id;
+                        SelectedConditionName = item.Name;
+                        SelectedRepairAction = _cmbRepairAction != null
+                            ? _cmbRepairAction.SelectedItem as string
+                            : "None (not a repair)";
+                    }
+                    else
+                    {
+                        DialogResult = DialogResult.None;
+                    }
+                };
+
+                Controls.Add(lbl);
+                Controls.Add(_cmbCondition);
+                Controls.Add(lblRepair);
+                Controls.Add(_cmbRepairAction);
+                Controls.Add(_btnOk);
+                Controls.Add(_btnCancel);
+
+                AcceptButton = _btnOk;
+                CancelButton = _btnCancel;
+            }
+
+            private class ConditionItem
+            {
+                public int Id { get; }
+                public string Name { get; }
+
+                public ConditionItem(int id, string name)
+                {
+                    Id = id;
+                    Name = name;
+                }
+
+                public override string ToString()
+                {
+                    return Name;
+                }
+            }
+        }
+
+        // ===== SORTING IMPLEMENTATION =====
+
+        private void EnableSortingGlyphs()
+        {
+            if (dgvUpdates == null) return;
+
+            foreach (DataGridViewColumn col in dgvUpdates.Columns)
+            {
+                col.SortMode =
+                    col is DataGridViewCheckBoxColumn ||
+                    col is DataGridViewButtonColumn ||
+                    col is DataGridViewImageColumn
+                        ? DataGridViewColumnSortMode.NotSortable
+                        : DataGridViewColumnSortMode.Programmatic;
+            }
+
+            dgvUpdates.EnableHeadersVisualStyles = false;
+            dgvUpdates.ColumnHeaderMouseClick -= DgvUpdates_ColumnHeaderMouseClick;
+            dgvUpdates.ColumnHeaderMouseClick += DgvUpdates_ColumnHeaderMouseClick;
+        }
+
+        private void DgvUpdates_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (dgvUpdates == null || e.ColumnIndex < 0) return;
+
+            var col = dgvUpdates.Columns[e.ColumnIndex];
+            if (col.SortMode == DataGridViewColumnSortMode.NotSortable)
+                return;
+
+            string propertyName = !string.IsNullOrWhiteSpace(col.DataPropertyName)
+                ? col.DataPropertyName
+                : col.Name;
+
+            if (string.IsNullOrWhiteSpace(propertyName))
+                return;
+
+            // Store column index for later reference
+            int columnIndex = e.ColumnIndex;
+
+            var dir = col.HeaderCell.SortGlyphDirection == System.Windows.Forms.SortOrder.Ascending
+                ? System.ComponentModel.ListSortDirection.Descending
+                : System.ComponentModel.ListSortDirection.Ascending;
+
+            _sortColumn = col;
+            _sortOrder = dir == System.ComponentModel.ListSortDirection.Ascending
+                ? System.Windows.Forms.SortOrder.Ascending
+                : System.Windows.Forms.SortOrder.Descending;
+
+            SortDataSource(propertyName, dir);
+
+            // Sync the Sort By dropdown with the column header sort
+            if (_layout?.SortByComboBox != null && _sortColumn != null)
+            {
+                DefaultListPageTemplate.SyncSortByDropdown(_layout.SortByComboBox, _sortColumn, _sortOrder);
+            }
+
+            UpdatePagination();
+
+            // Get fresh column reference AFTER pagination rebind
+            if (columnIndex >= 0 && columnIndex < dgvUpdates.Columns.Count)
+            {
+                // Clear all glyphs
+                foreach (DataGridViewColumn c in dgvUpdates.Columns)
+                    c.HeaderCell.SortGlyphDirection = System.Windows.Forms.SortOrder.None;
+
+                // Set glyph on sorted column using fresh reference
+                var sortedColumn = dgvUpdates.Columns[columnIndex];
+                sortedColumn.HeaderCell.SortGlyphDirection =
+                    dir == System.ComponentModel.ListSortDirection.Ascending
+                        ? System.Windows.Forms.SortOrder.Ascending
+                        : System.Windows.Forms.SortOrder.Descending;
+
+                _sortColumn = sortedColumn;
+                dgvUpdates.Invalidate();
+                ScheduleSaveState();
+            }
+        }
+
+        private void SortDataSource(string propertyName, System.ComponentModel.ListSortDirection direction)
+        {
+            if (_filteredUpdates == null || string.IsNullOrWhiteSpace(propertyName))
+                return;
+
+            try
+            {
+                var key = propertyName.Trim();
+                IEnumerable<SetItemUpdateDto> sorted;
+
+                switch (key)
+                {
+                    case "CreatedAt":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.CreatedAt)
+                            : _filteredUpdates.OrderByDescending(x => x.CreatedAt);
+                        break;
+                    case "UpdateId":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.UpdateId)
+                            : _filteredUpdates.OrderByDescending(x => x.UpdateId);
+                        break;
+                    case "SetId":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.SetId ?? int.MaxValue)
+                            : _filteredUpdates.OrderByDescending(x => x.SetId ?? int.MinValue);
+                        break;
+                    case "ItemId":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.ItemId ?? int.MaxValue)
+                            : _filteredUpdates.OrderByDescending(x => x.ItemId ?? int.MinValue);
+                        break;
+                    case "SetCode":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.SetCode, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.SetCode, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "ItemType":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.ItemType, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.ItemType, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "SerialNumber":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.SerialNumber, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.SerialNumber, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "ModelNumber":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.ModelNumber, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.ModelNumber, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "BranchName":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.BranchName, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.BranchName, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "DepartmentName":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.DepartmentName, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.DepartmentName, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "PreviousStatus":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.PreviousStatus, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.PreviousStatus, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "NewStatus":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.NewStatus, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.NewStatus, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "Remark":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.Remark, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.Remark, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "UpdatedByName":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.UpdatedByName, StringComparer.OrdinalIgnoreCase)
+                            : _filteredUpdates.OrderByDescending(x => x.UpdatedByName, StringComparer.OrdinalIgnoreCase);
+                        break;
+                    case "Processed":
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.Processed)
+                            : _filteredUpdates.OrderByDescending(x => x.Processed);
+                        break;
+                    case "Status":
+                        // Displayed status is derived from Processed/IsMissing/IsArchived; use a stable sort key.
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates
+                                .OrderBy(x => x.Processed) // false (Unprocessed) first
+                                .ThenByDescending(x => x.IsMissing)
+                                .ThenByDescending(x => x.IsArchived)
+                            : _filteredUpdates
+                                .OrderByDescending(x => x.Processed) // true (Processed) first
+                                .ThenByDescending(x => x.IsMissing)
+                                .ThenByDescending(x => x.IsArchived);
+                        break;
+                    default:
+                        sorted = direction == System.ComponentModel.ListSortDirection.Ascending
+                            ? _filteredUpdates.OrderBy(x => x.GetType().GetProperty(propertyName)?.GetValue(x, null))
+                            : _filteredUpdates.OrderByDescending(x => x.GetType().GetProperty(propertyName)?.GetValue(x, null));
+                        break;
+                }
+
+                _filteredUpdates = sorted.ToList();
+            }
+            catch
+            {
+                // Ignore sorting errors
+            }
+        }
+
+        private void CmbFilterBy_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_layout?.FilterByComboBox == null || _filteredUpdates == null)
+                return;
+
+            string selectedFilter = _layout.FilterByComboBox.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(selectedFilter))
+                return;
+
+            // SetItemUpdate uses CreatedAt for date sorting
+            string dateColumn = "CreatedAt";
+
+            // Apply filter-based sorting
+            System.ComponentModel.ListSortDirection? dir = null;
+            if (selectedFilter == "Most Recently Added")
+                dir = System.ComponentModel.ListSortDirection.Descending;
+            else if (selectedFilter == "Oldest Added")
+                dir = System.ComponentModel.ListSortDirection.Ascending;
+
+            if (dir.HasValue)
+            {
+                // Sort by the date column
+                SortDataSource(dateColumn, dir.Value);
+                _sortOrder = dir.Value == System.ComponentModel.ListSortDirection.Ascending
+                    ? System.Windows.Forms.SortOrder.Ascending
+                    : System.Windows.Forms.SortOrder.Descending;
+            }
+
+            // Refresh display - this rebinds the DataSource
+            UpdatePagination();
+
+            // Set glyphs AFTER UpdatePagination to ensure they persist
+            if (dgvUpdates != null)
+            {
+                // Clear all existing sort glyphs
+                foreach (DataGridViewColumn col in dgvUpdates.Columns)
+                {
+                    col.HeaderCell.SortGlyphDirection = System.Windows.Forms.SortOrder.None;
+                }
+
+                if (dir.HasValue)
+                {
+                    // Set sort glyph on the date column using fresh reference
+                    var dateCol = dgvUpdates.Columns
+                        .Cast<DataGridViewColumn>()
+                        .FirstOrDefault(c => string.Equals(c.DataPropertyName, dateColumn, StringComparison.OrdinalIgnoreCase));
+
+                    if (dateCol != null)
+                    {
+                        dateCol.HeaderCell.SortGlyphDirection = _sortOrder;
+                        _sortColumn = dateCol;
+
+                        if (_layout?.SortByComboBox != null)
+                            DefaultListPageTemplate.SyncSortByDropdown(_layout.SortByComboBox, dateCol, _sortOrder);
+
+                        dgvUpdates.Invalidate();
+                        ScheduleSaveState();
+                    }
+                }
+            }
+        }
+    }
+}
+

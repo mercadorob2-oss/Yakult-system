@@ -1,0 +1,821 @@
+/*
+ * Requester Portal Styles
+ * THEME: Yakult Red (matching Login page)
+ * Enhanced with comprehensive responsive breakpoints for all screen sizes
+ */
+
+/* Yakult red theme variables now live in root.css (loaded before this file) */
+
+/* Diagonal alternating Yakult-bottle background pattern.
+   Resize the tile purely via --yakult-pattern-size (or override background-size directly). */
+.yakult-pattern-bg {
+  --yakult-pattern-size: 140px;
+  background-image: url('/images/yakult-bottles-repeating-pattern.png');
+  background-repeat: repeat;
+  background-size: var(--yakult-pattern-size) var(--yakult-pattern-size);
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+}
+
+html {
+  font-size: 14px;
+  position: relative;
+}
+
+/* Responsive font sizes */
+@media (min-width: 576px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+body {
+  background-color: #f5f6fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Content padding utility - use this for sections that need padding */
+.content-padded {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 0.75rem;
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem var(--yakult-red);
+}
+
+/* Portal Header — white/cream surface with a slim red brand accent,
+   replacing the old solid-red band (red is now used sparingly, per the
+   Yakult-inspired palette: 70% white, 15% cream, 10% blue, 5% red). */
+.portal-header {
+  background-color: var(--surface);
+  color: var(--text-strong);
+  padding: 10px 24px;
+  margin: 0;
+  margin-bottom: 0.75rem;
+  border-radius: 0;
+  border-bottom: 3px solid var(--yakult-red);
+  width: 100%;
+  /* height (not min-height) + overflow:hidden — a min-height is a floor, not
+     a ceiling, so if this header's content (icon + two lines of text) ever
+     needs more than --header-height, it grows past it while the offcanvas
+     nav header (fixed height, can't grow) doesn't, and the two red borders
+     land on different rows. A hard height clips content instead of letting
+     the box grow, guaranteeing both borders sit on the same Y coordinate. */
+  height: var(--header-height);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.portal-header h1 {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 0;
+  color: var(--text-strong);
+}
+
+.portal-header .subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0;
+}
+
+/* The hamburger/menu toggle button in portal-header was styled for the old
+   solid-red background (text-white); on the new white surface it needs to
+   read as a normal dark icon instead. Specificity (not just !important)
+   is what wins here over Bootstrap's .text-white utility. */
+.portal-header .btn-link.text-white {
+  color: var(--text-strong) !important;
+}
+.portal-header .btn-link.text-white:hover {
+  color: var(--yakult-red) !important;
+}
+
+/* Navigation Tabs - RED THEME */
+.nav-tabs-container .nav-tabs {
+  border-bottom: none;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nav-tabs-container .nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tabs-container .nav-link {
+  color: #888;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 0;
+}
+
+.nav-tabs-container .nav-link:hover {
+  color: var(--yakult-blue);
+  border-color: transparent;
+}
+
+/* Selected nav state uses the soft blue accent, not red — red is reserved
+   for primary actions/branding, blue is the workhorse for nav highlights. */
+.nav-tabs-container .nav-link.active {
+  color: var(--yakult-blue-hover);
+  background-color: transparent;
+  border-bottom: 3px solid var(--yakult-blue);
+}
+
+/* Request Card */
+.request-card {
+  background-color: white;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.request-card.request-card-wide {
+  max-width: 1400px;
+}
+
+.request-card .card-body {
+  padding: 1.25rem;
+}
+
+/* Form Labels */
+.col-form-label.fw-bold {
+  color: #3c3c3c;
+  font-size: 0.95rem;
+}
+
+/* Destination Section Header - informational, so blue rather than red */
+.destination-header {
+  color: var(--yakult-blue-hover);
+  font-weight: bold;
+  border-bottom: 2px solid var(--yakult-blue);
+  padding-bottom: 0.5rem;
+}
+
+/* Buttons - RED THEME */
+.btn-submit {
+  background-color: var(--yakult-red);
+  border-color: var(--yakult-red);
+  font-weight: bold;
+  padding: 0.6rem 1.5rem;
+}
+
+.btn-submit:hover {
+  background-color: var(--yakult-red-hover);
+  border-color: var(--yakult-red-hover);
+}
+
+.btn-clear {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  font-weight: bold;
+  padding: 0.6rem 1.5rem;
+}
+
+/* Table Header — soft cream surface with dark text, matches the
+   "cleaner headers, softer borders" table modernization goal. */
+.table-header {
+  background-color: var(--surface-cream);
+  color: var(--text-strong);
+  border-bottom: 2px solid var(--border-muted);
+}
+
+.table-header th {
+  font-weight: 700;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  padding: 0.85rem 0.75rem;
+  border: none;
+}
+
+/* Status Colors - matches WinForms DgvMyRequests_CellFormatting */
+.text-primary {
+  color: #007bff !important; /* Blue - Submitted */
+}
+
+.text-warning {
+  color: #ffc107 !important; /* Orange - Received */
+}
+
+.text-success {
+  color: #28a745 !important; /* Green - Completed/Replaced */
+}
+
+.text-danger {
+  color: #dc3545 !important; /* Red - Cancelled/Rejected */
+}
+
+/* Footer */
+.footer {
+  margin-top: auto;
+  width: 100%;
+  padding: 4px 0;
+  line-height: 1.4;
+  background-color: #f8f9fa;
+  font-size: 0.72rem;
+}
+
+.footer .container {
+  text-align: center;
+}
+
+/* Navbar - RED THEME */
+.navbar-portal {
+  background-color: var(--yakult-red) !important;
+}
+
+.navbar-portal .navbar-brand,
+.navbar-portal .nav-link {
+  color: white !important;
+}
+
+.navbar-portal .nav-link:hover {
+  color: #e6e6e6 !important;
+}
+
+/* Form Controls - RED THEME */
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--yakult-red);
+  box-shadow: 0 0 0 0.2rem var(--yakult-red-shadow);
+}
+
+/* Radio buttons - RED THEME */
+.form-check-input:checked {
+  background-color: var(--yakult-red);
+  border-color: var(--yakult-red);
+}
+
+/* =========================================
+   FIX: STABLE LAYOUT FOR HELPER TEXT
+   Prevents UI shifts when quantity helper text appears
+   ========================================= */
+
+/* Reserved space for helper text below quantity inputs */
+.qty-input-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.qty-helper-container {
+  min-height: 20px; /* Fixed height to prevent layout shift */
+  display: block;
+  margin-top: 2px;
+}
+
+.qty-helper {
+  display: block;
+  font-size: 0.75rem;
+  margin: 0;
+  line-height: 1.2;
+  min-height: 18px;
+  transition: opacity 0.2s ease;
+}
+
+/* Ensure table cells don't expand when helper text appears */
+.cartridge-row td {
+  vertical-align: top;
+  padding: 0.5rem;
+}
+
+/* Prevent form control height changes */
+.form-control,
+.form-select {
+  min-height: calc(2.25rem + 2px);
+}
+
+/* =========================================
+   CARTRIDGE TABLE - FLEXIBLE RESPONSIVE LAYOUT
+   ========================================= */
+
+/* Auto layout at all sizes; stacked card layout added below at < 768px */
+.cartridge-table {
+  table-layout: auto;
+}
+
+/* Shrink-to-fit action column */
+.cartridge-table th:nth-child(5),
+.cartridge-table td:nth-child(5) {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* Desktop input size classes */
+.qty-number-input {
+  max-width: 90px;
+}
+
+.good-empty-input,
+.damaged-empty-input {
+  width: 80px;
+  min-width: 60px;
+}
+
+/* Tablet and up: minimum width for Good/Damaged column to fit two inputs */
+@media (min-width: 768px) {
+  .cartridge-table th:nth-child(4),
+  .cartridge-table td:nth-child(4) {
+    min-width: 185px;
+  }
+}
+
+/* Large screens: give the Available Models column extra width */
+@media (min-width: 992px) {
+  .request-card.request-card-wide .cartridge-table th:nth-child(2),
+  .request-card.request-card-wide .cartridge-table td:nth-child(2) {
+    width: 35%;
+  }
+}
+
+/* =========================================
+   RESPONSIVE BREAKPOINTS & MOBILE OPTIMIZATION
+   ========================================= */
+
+/* Foldable devices and ultra-narrow phones (< 320px) */
+@media (max-width: 319.98px) {
+  .portal-header {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .portal-header h1 {
+    font-size: 0.9rem;
+  }
+
+  .portal-header .subtitle {
+    display: none;
+  }
+
+  .content-padded {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .nav-tabs-container .nav-link {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.72rem;
+  }
+
+  .request-card .card-body {
+    padding: 0.75rem;
+  }
+
+  .btn-submit,
+  .btn-clear {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Mobile devices (< 576px) */
+@media (max-width: 575.98px) {
+  /* Portal Header - keep single row, shrink content */
+  .portal-header {
+    padding: 8px 14px;
+    gap: 8px;
+  }
+
+  .portal-header h1 {
+    font-size: 0.95rem;
+  }
+
+  .portal-header .subtitle {
+    display: none;
+  }
+
+  /* Content padding - reduce on mobile */
+  .content-padded {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.75rem;
+  }
+
+  /* Navigation Tabs - Smaller text on mobile */
+  .nav-tabs-container .nav-tabs {
+    flex-wrap: nowrap;
+  }
+
+  .nav-tabs-container .nav-link {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+
+  /* Request Card - Full width on mobile */
+  .request-card {
+    border-radius: 4px;
+    margin: 0;
+  }
+
+  .request-card .card-body {
+    padding: 1rem;
+  }
+
+  /* Form Layout - Stack labels above inputs on mobile */
+  .request-card .row.mb-3 {
+    margin-bottom: 1rem !important;
+  }
+
+  .request-card .col-form-label {
+    padding-bottom: 0.25rem;
+    font-size: 0.875rem;
+  }
+
+  /* Destination header */
+  .destination-header {
+    font-size: 1rem;
+    margin-top: 1.5rem !important;
+  }
+
+  /* Table - Better mobile display */
+  .table-responsive {
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+
+  .table-sm th,
+  .table-sm td {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.8rem;
+  }
+
+  /* Buttons - Full width on mobile */
+  .btn-submit,
+  .btn-clear {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Remove offset on mobile - buttons stack */
+  .col-md-9.offset-md-3 {
+    margin-left: 0 !important;
+  }
+
+  /* Form controls - Better touch targets */
+  .form-control,
+  .form-select {
+    font-size: 1rem;
+    padding: 0.75rem;
+  }
+
+  /* Radio buttons - Better spacing */
+  .form-check-inline {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Table action buttons */
+  .btn-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  /* Alert messages */
+  .alert {
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Footer */
+  .footer {
+    font-size: 0.72rem;
+    line-height: 1.4;
+  }
+
+  /* Add row button */
+  #addRowBtn {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  /* Input quantity field - full width on mobile */
+  input[type="number"] {
+    max-width: 100% !important;
+  }
+
+  /* Table cell input fields - better mobile sizing */
+  .table input.form-control,
+  .table select.form-select {
+    font-size: 0.875rem;
+  }
+
+  /* Better touch targets for remove buttons */
+  .table .btn.remove-row {
+    white-space: nowrap;
+  }
+
+  /* Validation messages */
+  .text-danger {
+    font-size: 0.8rem;
+    display: block;
+    margin-top: 0.25rem;
+  }
+
+  /* Helper text */
+  small.form-text {
+    font-size: 0.75rem;
+  }
+
+  /* Improved touch targets for checkboxes and radios */
+  .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+  }
+
+  .form-check-label {
+    padding-left: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  /* Confirmation page cards */
+  .card {
+    border-radius: 4px;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .card-header h5 {
+    font-size: 1rem;
+  }
+
+  /* Reduce badge size */
+  .badge {
+    font-size: 0.75rem;
+  }
+
+  /* Borders on mobile confirmation view */
+  .border-start {
+    padding-left: 0.75rem !important;
+  }
+
+  .col-md-6,
+  .col-md-4,
+  .col-md-3 {
+    margin-bottom: 1rem;
+  }
+
+  /* Empty state icons */
+  .display-1 {
+    font-size: 3rem !important;
+  }
+
+  /* Bi icons in buttons - ensure proper spacing */
+  .btn .bi {
+    margin-right: 0.25rem;
+  }
+}
+
+/* Small tablets (576px - 767.98px) */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .portal-header {
+    padding: 10px 20px;
+  }
+
+  .portal-header h1 {
+    font-size: 1rem;
+  }
+
+  .content-padded {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .request-card .card-body {
+    padding: 1.5rem;
+  }
+
+  /* Buttons side by side on small tablets */
+  .btn-submit,
+  .btn-clear {
+    width: auto;
+    min-width: 120px;
+  }
+}
+
+/* Medium devices (tablets 768px - 991.98px) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .portal-header {
+    padding: 8px 24px;
+  }
+
+  .request-card {
+    max-width: 100%;
+  }
+
+  .request-card .card-body {
+    padding: 1.25rem;
+  }
+}
+
+/* Large devices (desktops 992px+) */
+@media (min-width: 992px) {
+  .request-card {
+    max-width: 900px;
+  }
+
+  .portal-header h1 {
+    font-size: 1.1rem;
+  }
+}
+
+/* Laptop (1024px – 1199.98px) */
+@media (min-width: 1024px) and (max-width: 1199.98px) {
+  .content-padded {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+}
+
+/* Extra large devices (1200px – 1399.98px) */
+@media (min-width: 1200px) {
+  .content-padded {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+
+  .portal-header {
+    padding: 8px 28px;
+  }
+}
+
+/* Wide desktop (1400px+) */
+@media (min-width: 1400px) {
+  .content-padded {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .portal-header {
+    padding: 8px 32px;
+  }
+
+  .request-card {
+    max-width: 960px;
+  }
+}
+
+/* =========================================
+   CARTRIDGE TABLE - STACKED CARD LAYOUT (< 768px)
+   Applies to portrait phones and most landscape phones.
+   Each row becomes a labelled card; columns reflow vertically.
+   ========================================= */
+@media (max-width: 767.98px) {
+  /* Hide column headers — labels come from data-label ::before */
+  .cartridge-table thead {
+    display: none;
+  }
+
+  /* Table and tbody become block containers */
+  .cartridge-table,
+  .cartridge-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  /* Each row is a card */
+  .cartridge-table tr.cartridge-row {
+    display: block;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    margin-bottom: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  /* Each cell: stack label above content */
+  .cartridge-table tr.cartridge-row > td {
+    display: flex;
+    flex-direction: column;
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    padding: 0.5rem 0.35rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .cartridge-table tr.cartridge-row > td:last-child {
+    border-bottom: none;
+  }
+
+  /* Field label from data-label attribute */
+  .cartridge-table tr.cartridge-row > td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6c757d;
+    margin-bottom: 0.3rem;
+  }
+
+  /* All inputs and selects fill full cell width */
+  .cartridge-table tr.cartridge-row > td .form-control,
+  .cartridge-table tr.cartridge-row > td .form-select {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* qty-input-wrapper: override inline-block to block for flex column layout */
+  .cartridge-table tr.cartridge-row > td .qty-input-wrapper {
+    display: block;
+    width: 100%;
+  }
+
+  /* Good / Damaged inputs: keep side-by-side, fill available width equally */
+  .cartridge-table tr.cartridge-row > td .d-flex {
+    width: 100%;
+  }
+
+  .cartridge-table tr.cartridge-row > td .d-flex > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Remove button: full width for touch usability */
+  .cartridge-table .remove-row {
+    width: 100%;
+  }
+
+  /* Add another model button: full width at this breakpoint */
+  #addRowBtn {
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Landscape mobile orientation adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+  .portal-header {
+    padding: 10px 20px;
+    margin-bottom: 1rem;
+  }
+
+  .portal-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .portal-header .subtitle {
+    display: none;
+  }
+
+  .content-padded {
+    padding-top: 0.5rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .portal-header,
+  .nav-tabs-container,
+  .btn,
+  .footer {
+    display: none;
+  }
+
+  .request-card {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  body {
+    background-color: white;
+  }
+}

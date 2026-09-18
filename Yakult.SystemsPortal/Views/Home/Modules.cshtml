@@ -1,0 +1,141 @@
+@using Yakult.SystemsPortal.Models
+@{
+    ViewData["Title"] = "Modules";
+    var groups = SubsystemCatalog.Groups;
+    var totalCount = SubsystemCatalog.TotalSubsystemCount;
+}
+
+@functions {
+    string GetIconSvg(string iconName)
+    {
+        return iconName switch
+        {
+            "package" => "<path d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/><polyline points='8.5 14.5,12 12,15.5 14.5'/><line x1='12' y1='12' x2='12' y2='21'/>",
+            "users" => "<path d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M23 21v-2a4 4 0 0 0-3-3.87'/><path d='M16 3.13a4 4 0 0 1 0 7.75'/>",
+            "clipboard" => "<path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/><rect x='8' y='2' width='8' height='4' rx='1' ry='1'/>",
+            "tool" => "<path d='M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'/>",
+            "database" => "<ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M21 12c0 1.66-4 3-9 3s-9-1.34-9-3'/><path d='M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5'/>",
+            "layers" => "<polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/>",
+            "bar-chart" => "<line x1='12' y1='20' x2='12' y2='10'/><line x1='18' y1='20' x2='18' y2='4'/><line x1='6' y1='20' x2='6' y2='16'/>",
+            _ => "<circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/>"
+        };
+    }
+}
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-text">
+        <span class="eyebrow">@groups.Count systems · @totalCount features</span>
+        <h1 class="hero-title">Yakult Inventory <span class="accent">Modules</span></h1>
+        <p class="hero-sub">A quick reference for what's inside the Yakult Inventory desktop application. Each system is a major area of the app; each feature is a screen you can open.</p>
+    </div>
+</section>
+
+<section class="modules-toolbar" aria-label="Module search">
+    <input type="text" id="moduleSearch" placeholder="Search modules and features..." autocomplete="off" />
+    <button type="button" id="expandAllModules">Expand all</button>
+    <button type="button" id="collapseAllModules">Collapse all</button>
+</section>
+
+@foreach (var group in groups)
+{
+    var iconSvg = GetIconSvg(group.Icon);
+    var expandedClass = group.StartExpanded ? "is-expanded" : "is-collapsed";
+    var panelId = $"panel-{group.Slug}";
+
+    <section class="modules-section @expandedClass" data-group="@group.Name" id="@group.Slug">
+        <button type="button" class="modules-section__header" aria-expanded="@(group.StartExpanded ? "true" : "false")" aria-controls="@panelId" data-toggle="@panelId">
+            <span class="group-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">@Html.Raw(iconSvg)</svg>
+            </span>
+            <span class="modules-section__title">@group.Name</span>
+            <span class="group-count">@group.Subsystems.Count feature@(group.Subsystems.Count == 1 ? "" : "s")</span>
+            <span class="modules-section__chevron" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points='6 9 12 15 18 9'/></svg>
+            </span>
+        </button>
+
+        <p class="group-summary">@group.Summary</p>
+
+        <div class="modules-section__panel" id="@panelId">
+            @if (group.IsCardDriven)
+            {
+                <div class="modules-grid">
+                    @foreach (var sub in group.Subsystems)
+                    {
+                        <article class="subsystem-card">
+                            <h3 class="subsystem-name">@sub.Name</h3>
+                            <p class="subsystem-desc">@sub.Description</p>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="subsystem-list">
+                    @foreach (var sub in group.Subsystems)
+                    {
+                        <article class="subsystem-card subsystem-card--summary">
+                            <h3 class="subsystem-name">@sub.Name</h3>
+                            <p class="subsystem-desc">@sub.Description</p>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var search = document.getElementById('moduleSearch');
+            var expandAll = document.getElementById('expandAllModules');
+            var collapseAll = document.getElementById('collapseAllModules');
+
+            function setExpanded(section, expanded) {
+                var btn = section.querySelector('.modules-section__header');
+                section.classList.toggle('is-expanded', expanded);
+                section.classList.toggle('is-collapsed', !expanded);
+                if (btn) btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            }
+
+            document.querySelectorAll('.modules-section__header').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var section = btn.closest('.modules-section');
+                    if (!section) return;
+                    var isExpanded = section.classList.contains('is-expanded');
+                    setExpanded(section, !isExpanded);
+                });
+            });
+
+            if (expandAll) {
+                expandAll.addEventListener('click', function () {
+                    document.querySelectorAll('.modules-section').forEach(function (section) {
+                        section.style.display = '';
+                        setExpanded(section, true);
+                    });
+                });
+            }
+
+            if (collapseAll) {
+                collapseAll.addEventListener('click', function () {
+                    document.querySelectorAll('.modules-section').forEach(function (section) {
+                        setExpanded(section, false);
+                    });
+                });
+            }
+
+            if (search) {
+                search.addEventListener('input', function () {
+                    var term = search.value.toLowerCase().trim();
+                    document.querySelectorAll('.modules-section').forEach(function (section) {
+                        var match = !term || section.textContent.toLowerCase().includes(term);
+                        section.style.display = match ? '' : 'none';
+                        if (term && match) setExpanded(section, true);
+                    });
+                });
+            }
+        });
+    </script>
+}

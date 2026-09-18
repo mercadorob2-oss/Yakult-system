@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Internal Request Portal — User Guide</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.65;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 270px;
+      min-width: 270px;
+      background: #0f172a;
+      color: #cbd5e1;
+      padding: 28px 0 40px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo {
+      padding: 0 24px 20px;
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: 16px;
+    }
+
+    .sidebar-logo .app-title {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-logo .guide-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f1f5f9;
+      line-height: 1.3;
+    }
+
+    .toc-section-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #475569;
+      padding: 14px 24px 6px;
+      font-weight: 700;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 7px 24px;
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.15s, background 0.15s;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar a:hover {
+      color: #f1f5f9;
+      background: #1e293b;
+      border-left-color: #d50032;
+    }
+
+    .sidebar a.sub { padding-left: 38px; font-size: 12.5px; }
+
+    .main { flex: 1; padding: 48px 56px; max-width: 900px; }
+
+    .page-header {
+      margin-bottom: 48px;
+      padding-bottom: 24px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .page-header .badge {
+      display: inline-block;
+      background: #d50032;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .page-header h1 { font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+    .page-header p  { color: #64748b; font-size: 14px; max-width: 640px; }
+
+    .section { margin-bottom: 56px; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .section-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .icon-teal   { background: #ccfbf1; }
+    .icon-orange { background: #ffedd5; }
+    .icon-green  { background: #dcfce7; }
+    .icon-red    { background: #fee2e2; }
+    .icon-blue   { background: #dbeafe; }
+    .icon-purple { background: #ede9fe; }
+    .icon-amber  { background: #fef3c7; }
+    .icon-gray   { background: #f1f5f9; }
+
+    .section-header h2       { font-size: 20px; font-weight: 700; color: #0f172a; }
+    .section-header .section-num { font-size: 12px; color: #94a3b8; font-weight: 600; }
+
+    .subsection { margin-bottom: 32px; }
+
+    .subsection h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subsection h3::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: #d50032;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ── Step Lists ── */
+    .steps { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+    .steps > li { color: #374151; padding-left: 4px; }
+
+    .step-label { font-weight: 700; color: #d50032; margin-right: 4px; }
+
+    .steps > li strong { font-weight: 700; color: #0f172a; }
+
+    /* ── Bullets ── */
+    .bullets { list-style: none; display: flex; flex-direction: column; gap: 5px; margin-top: 6px; margin-left: 8px; }
+
+    .bullets li { padding-left: 16px; position: relative; color: #374151; }
+
+    .bullets li::before { content: '-'; position: absolute; left: 0; color: #94a3b8; }
+
+    /* ── Callouts ── */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      font-size: 13.5px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .callout .callout-icon { font-size: 16px; line-height: 1.4; flex-shrink: 0; }
+    .callout .callout-body { flex: 1; }
+    .callout .callout-body strong { display: block; margin-bottom: 2px; font-weight: 700; }
+
+    .callout-info    { background: #eff6ff; border-left: 4px solid #3b82f6; }
+    .callout-warn    { background: #fffbeb; border-left: 4px solid #f59e0b; }
+    .callout-danger  { background: #fef2f2; border-left: 4px solid #ef4444; }
+    .callout-success { background: #f0fdf4; border-left: 4px solid #22c55e; }
+    .callout-tip     { background: #fff1f2; border-left: 4px solid #d50032; }
+
+    /* ── Tags ── */
+    .tag {
+      display: inline-block;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.03em;
+    }
+
+    .tag-teal   { background: #ccfbf1; color: #0f766e; }
+    .tag-orange { background: #ffedd5; color: #c2410c; }
+    .tag-green  { background: #dcfce7; color: #15803d; }
+    .tag-red    { background: #fee2e2; color: #b91c1c; }
+    .tag-blue   { background: #dbeafe; color: #1d4ed8; }
+    .tag-gray   { background: #f1f5f9; color: #475569; }
+    .tag-amber  { background: #fef3c7; color: #92400e; }
+    .tag-purple { background: #ede9fe; color: #6d28d9; }
+
+    /* ── Feature Cards ── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 14px;
+      margin: 16px 0;
+    }
+
+    .feature-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; }
+    .feature-card .fc-title { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+    .feature-card p { font-size: 12.5px; color: #64748b; line-height: 1.5; }
+
+    /* ── Wizard ── */
+    .wizard-step { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+
+    .wizard-step-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wizard-step-num { background: #d50032; color: #fff; font-size: 12px; font-weight: 700; border-radius: 6px; padding: 3px 10px; flex-shrink: 0; }
+    .wizard-step-title { font-weight: 700; font-size: 14px; color: #0f172a; }
+    .wizard-step-body { padding: 14px 16px; }
+
+    /* ── Table ── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+    .data-table th { background: #f1f5f9; text-align: left; padding: 8px 12px; font-weight: 700; color: #374151; border-bottom: 2px solid #e2e8f0; }
+    .data-table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; color: #374151; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #f8fafc; }
+
+    /* ── Role badges ── */
+    .role-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+    .role-badge {
+      flex-shrink: 0;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      min-width: 130px;
+      text-align: center;
+    }
+    .role-badge.employee { background: #dbeafe; color: #1d4ed8; }
+    .role-badge.approver { background: #ede9fe; color: #6d28d9; }
+    .role-badge.it-staff { background: #fef3c7; color: #92400e; }
+    .role-desc { font-size: 13px; color: #374151; }
+
+    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 32px 0; }
+
+    .page-footer { margin-top: 64px; padding-top: 24px; border-top: 2px solid #e2e8f0; color: #94a3b8; font-size: 12px; }
+
+    /* ── Amber banner (IT Assisted) ── */
+    .assisted-banner {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #92400e;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="app-title">YIMS Internal</div>
+      <div class="guide-title">Internal Request Portal<br>User Guide</div>
+    </div>
+
+    <div class="toc-section-label">Overview</div>
+    <a href="#overview">Portal Overview</a>
+    <a href="#roles">Roles &amp; Access</a>
+
+    <div class="toc-section-label">Normal Employees</div>
+    <a href="#new-request">Submitting a Request</a>
+    <a href="#my-requests">My Requests Tab</a>
+    <a href="#auth-history">Authorization History Tab</a>
+
+    <div class="toc-section-label">Higher-Ups (Approvers)</div>
+    <a href="#approver-landing">Approver Landing Panel</a>
+    <a href="#approver-area">Authorizing Requests</a>
+
+    <div class="toc-section-label">IT Staff</div>
+    <a href="#assisted-request">Assisted Request Tab</a>
+
+    <div class="toc-section-label">Reference</div>
+    <a href="#request-statuses">Request Statuses</a>
+    <a href="#fulfillment-methods">Fulfillment Methods</a>
+  </nav>
+
+  <main class="main">
+
+    <div class="page-header">
+      <div class="badge">User Guide</div>
+      <h1>Internal Request Portal</h1>
+      <p>Reference guide for the desktop Internal Request Portal in YIMS. Covers self-service requests, supervisor authorization, and IT-assisted workflows for all user roles.</p>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="section" id="overview">
+      <div class="section-header">
+        <div class="section-icon icon-red">&#128203;</div>
+        <div>
+          <div class="section-num">Introduction</div>
+          <h2>Portal Overview</h2>
+        </div>
+      </div>
+      <p>The Internal Request Portal is a desktop application that allows Yakult employees to request printer cartridges from the IT department. The portal adapts its interface based on the user's role — normal employees see the standard request tabs, while supervisors and managers see additional authorization controls, and IT staff gain an extra tab to submit requests on behalf of others.</p>
+      <div class="feature-grid" style="margin-top:20px;">
+        <div class="feature-card">
+          <div class="fc-title">New Request</div>
+          <p>Submit a cartridge request by selecting model and quantity. Supports multiple models in a single submission.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-title">My Requests</div>
+          <p>View, filter, and track the status of all requests you have previously submitted.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-title">Authorization History</div>
+          <p>See every supervisor signature and approval action recorded against your requests.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-title">Approver Area</div>
+          <p>For supervisors and managers — review and sign off on pending cartridge requests from their department.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-title">Assisted Request</div>
+          <p>IT staff only — create a request on behalf of any employee in the system.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROLES -->
+    <div class="section" id="roles">
+      <div class="section-header">
+        <div class="section-icon icon-purple">&#128100;</div>
+        <div>
+          <div class="section-num">Section 1</div>
+          <h2>Roles &amp; Access</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">The portal automatically detects your role from your employee profile. You do not need to select a role manually. The tabs and panels you see will differ based on the following access levels.</p>
+
+      <div class="role-row">
+        <span class="role-badge employee">Normal Employee</span>
+        <span class="role-desc">Access to <strong>New Request</strong>, <strong>My Requests</strong>, and <strong>Authorization History</strong> tabs. Cannot approve or assist others.</span>
+      </div>
+      <div class="role-row">
+        <span class="role-badge approver">Higher-Up (Approver)</span>
+        <span class="role-desc">All employee tabs plus the <strong>Approver Landing Panel</strong> and <strong>Approver Area</strong>. Can authorize pending requests from their own department. Can also submit their own request. Applies to: Supervisor, Manager, Coordinator, Account Coordinator, Asst. Coordinator, Jr. Asst. Manager, Asst. Manager, and related acting titles.</span>
+      </div>
+      <div class="role-row">
+        <span class="role-badge it-staff">IT Staff</span>
+        <span class="role-desc">All employee tabs plus the <strong>Assisted Request</strong> tab (amber header). Can create requests on behalf of any employee in the system.</span>
+      </div>
+
+      <div class="callout callout-info" style="margin-top:16px;">
+        <div class="callout-icon">&#8505;&#65039;</div>
+        <div class="callout-body">
+          <strong>Role is determined by your Position field</strong>
+          Your access level is set by your employee position in the YIMS database and cannot be changed from within the portal. Contact your administrator if your access appears incorrect.
+        </div>
+      </div>
+    </div>
+
+    <!-- NEW REQUEST -->
+    <div class="section" id="new-request">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#128196;</div>
+        <div>
+          <div class="section-num">Section 2 — Normal Employees</div>
+          <h2>Submitting a Request</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">Use the <strong>New Request</strong> tab to submit a cartridge request. Your company, branch, and department are auto-filled from your profile and cannot be changed — requests must be for your own department.</p>
+
+      <div class="subsection">
+        <h3>Step-by-Step: Single Model</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Open the <strong>New Request</strong> tab. Your destination details (Company, Branch, Department) are pre-filled automatically and are read-only.</li>
+          <li><span class="step-label">Step 2:</span> In the cartridge row, select a cartridge model from the dropdown. The dropdown shows the model name along with current available stock, e.g. <em>HP 680 – Black (Available: 3)</em>. Only models with stock on hand are listed.</li>
+          <li><span class="step-label">Step 3:</span> Enter the <strong>Quantity</strong> you need. The field enforces a maximum equal to the available stock shown. A helper text "Max: X" is displayed below the field.</li>
+          <li><span class="step-label">Step 4:</span> Select the <strong>Cartridge Condition</strong>:
+            <ul class="bullets">
+              <li><strong>With Cartridge</strong> — you will return your used cartridges when picking up the new ones.</li>
+              <li><strong>Without Cartridge</strong> — you have no cartridge to return. Enter the number of Good Empty and/or Damaged Empty cartridges if applicable.</li>
+            </ul>
+          </li>
+          <li><span class="step-label">Step 5:</span> Choose the <strong>Fulfillment Method</strong>:
+            <ul class="bullets">
+              <li><strong>Pickup</strong> — you or a designated employee will collect the cartridges from the IT office. Select the receiving employee from the <em>Received By</em> dropdown.</li>
+              <li><strong>Delivery</strong> — IT will deliver cartridges to your location. No receiver selection is required.</li>
+            </ul>
+          </li>
+          <li><span class="step-label">Step 6:</span> Optionally enter any <strong>Remarks</strong> (up to 500 characters) for additional context.</li>
+          <li><span class="step-label">Step 7:</span> Click <strong>Submit Request</strong>. A confirmation dialog will appear. Click Confirm to send the request to IT for fulfillment.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Requesting Multiple Models at Once</h3>
+        <p style="margin-bottom:10px;">You can add multiple cartridge models to a single submission. All models will be linked together as one session so IT can process them together.</p>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Fill in the first cartridge row as described above.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Add Row</strong> to add another cartridge line. Repeat for each additional model you need.</li>
+          <li><span class="step-label">Step 3:</span> To remove a row, click the <strong>Remove</strong> (×) button on that row.</li>
+          <li><span class="step-label">Step 4:</span> Click <strong>Submit Request</strong>. All rows are submitted together as a single multi-model session.</li>
+        </ul>
+        <div class="callout callout-tip">
+          <div class="callout-icon">&#128161;</div>
+          <div class="callout-body">
+            <strong>One submission = one session</strong>
+            Fulfillment Method and Remarks apply to the entire submission. Each cartridge model gets its own request record, but IT sees them grouped together so all models can be processed in one exchange.
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Rules &amp; Restrictions</h3>
+        <ul class="bullets">
+          <li>You can only request for your own department. The destination fields are locked to your employee profile.</li>
+          <li>Quantity cannot exceed the available stock shown in the dropdown at the time of submission.</li>
+          <li>Portal requests are intent-only — they do not immediately reduce stock. Inventory is only deducted when IT fulfills the request.</li>
+          <li>You cannot select a model that has zero available stock.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MY REQUESTS -->
+    <div class="section" id="my-requests">
+      <div class="section-header">
+        <div class="section-icon icon-blue">&#128203;</div>
+        <div>
+          <div class="section-num">Section 3 — Normal Employees</div>
+          <h2>My Requests Tab</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">The <strong>My Requests</strong> tab shows the full history of all cartridge requests you have submitted, with filtering and pagination.</p>
+
+      <div class="subsection">
+        <h3>Browsing Your Requests</h3>
+        <ul class="bullets">
+          <li>Requests are displayed 10 per page. Use the pagination controls at the bottom to navigate.</li>
+          <li>Summary cards at the top show the total count broken down by status (Total, Under Review, On Hold, Submitted, Completed).</li>
+          <li>Click on any row to open the <strong>Request Detail</strong> dialog showing full information for that request: model, quantity, status, date, description, and fulfillment details.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Filtering &amp; Searching</h3>
+        <ul class="bullets">
+          <li>Use the <strong>Status</strong> dropdown to filter by a specific request status.</li>
+          <li>Use the <strong>Search</strong> field to search by model, request number, description, or other request details.</li>
+          <li>Use the <strong>Sort</strong> controls to reorder results by date, status, or other columns.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Actions</h3>
+        <table class="data-table">
+          <thead><tr><th>Action</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-gray">Archive</span></td><td>Hides selected completed requests from the default view. Archived requests can still be found via search.</td></tr>
+            <tr><td><span class="tag tag-red">Delete</span></td><td>Permanently removes a request. Only available for requests that have not yet been processed.</td></tr>
+            <tr><td><span class="tag tag-blue">Export PDF</span></td><td>Generates a printable PDF summary of the selected request(s).</td></tr>
+            <tr><td><span class="tag tag-green">Mark Submitted</span></td><td>Manually marks a request as Submitted when it has been handed off outside the system.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AUTHORIZATION HISTORY -->
+    <div class="section" id="auth-history">
+      <div class="section-header">
+        <div class="section-icon icon-green">&#9999;&#65039;</div>
+        <div>
+          <div class="section-num">Section 4 — Normal Employees</div>
+          <h2>Authorization History Tab</h2>
+        </div>
+      </div>
+      <p>The <strong>Authorization History</strong> tab gives you a read-only view of every supervisor authorization recorded against your requests. Use this tab to confirm that your requests have been signed off.</p>
+      <ul class="bullets" style="margin-top:12px;">
+        <li>Displays the approver's name, their position, the date and time of approval, and the approval decision.</li>
+        <li>Includes a preview of the approver's signature.</li>
+        <li>Requests that are still awaiting authorization will show a <span class="tag tag-amber">Pending</span> status.</li>
+        <li>Rejected requests show a <span class="tag tag-red">Rejected</span> status with any notes left by the approver.</li>
+      </ul>
+      <div class="callout callout-info" style="margin-top:16px;">
+        <div class="callout-icon">&#8505;&#65039;</div>
+        <div class="callout-body">
+          <strong>Authorization is required before fulfillment</strong>
+          IT will not fulfill a request until a supervisor from your department has authorized it. If your request is taking longer than expected, check this tab to confirm it has been signed.
+        </div>
+      </div>
+    </div>
+
+    <!-- APPROVER LANDING -->
+    <div class="section" id="approver-landing">
+      <div class="section-header">
+        <div class="section-icon icon-purple">&#128081;</div>
+        <div>
+          <div class="section-num">Section 5 — Higher-Ups</div>
+          <h2>Approver Landing Panel</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">When you log in as a supervisor, manager, or coordinator, you will see the <strong>Approver Landing Panel</strong> — a three-card dashboard that provides a quick summary of pending authorization activity for your department.</p>
+
+      <table class="data-table">
+        <thead><tr><th>Card</th><th>What It Shows</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-amber">Pending Authorizations</span></td><td>The number of requests from your department awaiting your signature. Badge updates in real time.</td></tr>
+          <tr><td><span class="tag tag-blue">Submit a Request</span></td><td>Quick access to submit your own personal cartridge request, same as the New Request tab.</td></tr>
+          <tr><td><span class="tag tag-green">Authorization History</span></td><td>Shortcut to view all past authorizations you have signed.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout callout-tip" style="margin-top:16px;">
+        <div class="callout-icon">&#128161;</div>
+        <div class="callout-body">
+          <strong>Your department only</strong>
+          The pending count and approval queue show only requests from employees in your department. You cannot authorize requests from other departments.
+        </div>
+      </div>
+    </div>
+
+    <!-- APPROVER AREA -->
+    <div class="section" id="approver-area">
+      <div class="section-header">
+        <div class="section-icon icon-purple">&#9989;</div>
+        <div>
+          <div class="section-num">Section 6 — Higher-Ups</div>
+          <h2>Authorizing Requests</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">Use the <strong>Approver Area</strong> to review and sign off on pending cartridge requests from employees in your department. Authorization is required before IT can fulfill any request.</p>
+
+      <div class="subsection">
+        <h3>How to Authorize a Request</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Click <strong>Authorize Cartridge Requests</strong> from the landing panel, or navigate to the Approver Area tab. The queue shows all pending requests from your department filtered by your DepartmentId.</li>
+          <li><span class="step-label">Step 2:</span> Click on a request row to view the full details: employee name, cartridge model, quantity requested, branch, and department.</li>
+          <li><span class="step-label">Step 3:</span> Review the <strong>pre-formatted authorization statement</strong> that summarizes the request in plain language.</li>
+          <li><span class="step-label">Step 4:</span> Provide your signature using one of the following methods:
+            <ul class="bullets">
+              <li><strong>Draw</strong> — use the signature canvas to draw your signature with your mouse or stylus.</li>
+              <li><strong>Upload</strong> — click the upload button to import a saved signature image file.</li>
+            </ul>
+          </li>
+          <li><span class="step-label">Step 5:</span> Click <strong>Approve</strong> to authorize the request, or <strong>Reject</strong> to decline it. You may optionally add notes before confirming either action.</li>
+          <li><span class="step-label">Step 6:</span> After approval, the request moves to <span class="tag tag-green">Approved</span> status and becomes visible to IT for fulfillment. The timestamp and your name are recorded.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Approval Queue</h3>
+        <ul class="bullets">
+          <li>Displays <span class="tag tag-amber">Pending</span> and <span class="tag tag-green">Approved</span> requests side by side for reference.</li>
+          <li>Each row shows the employee, model, quantity, and the date the request was submitted.</li>
+          <li>Signature previews are shown inline for requests you have already signed.</li>
+          <li>You can re-open any previously authorized request to review the signature record.</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-icon">&#9888;&#65039;</div>
+        <div class="callout-body">
+          <strong>Rejections notify the requester</strong>
+          When you reject a request, the employee will be able to see the rejection and any notes you added in their Authorization History tab. Use clear and professional language in rejection notes.
+        </div>
+      </div>
+    </div>
+
+    <!-- ASSISTED REQUEST -->
+    <div class="section" id="assisted-request">
+      <div class="section-header">
+        <div class="section-icon icon-amber">&#128736;&#65039;</div>
+        <div>
+          <div class="section-num">Section 7 — IT Staff</div>
+          <h2>Assisted Request Tab</h2>
+        </div>
+      </div>
+
+      <div class="assisted-banner">&#9888; IT Staff Only — This tab is only visible to users with IT Staff access (Developer, Admin, IT Manager, Supervisor, Tech Support roles).</div>
+
+      <p style="margin-bottom:16px;">The <strong>Assisted Request</strong> tab allows IT staff to create a cartridge request on behalf of any employee in the system. This is used when an employee is unable to access the portal themselves or needs hands-on assistance. The tab header is displayed in amber to visually distinguish it from self-request tabs.</p>
+
+      <div class="subsection">
+        <h3>How to Submit an Assisted Request</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Navigate to the <strong>Assisted Request</strong> tab (amber header). This tab is only visible to IT staff accounts.</li>
+          <li><span class="step-label">Step 2:</span> Search for the target employee using the employee search or dropdown. Their <strong>Company, Branch, and Department</strong> will auto-fill from their employee profile — do not change these unless the employee profile is incorrect.</li>
+          <li><span class="step-label">Step 3:</span> If the employee is not listed (non-master employee), click <strong>Quick Add Employee</strong> to register them in the system with minimal details before proceeding.</li>
+          <li><span class="step-label">Step 4:</span> Select the cartridge model and quantity, condition, and fulfillment method exactly as you would for a self-request (see Section 2 above for details).</li>
+          <li><span class="step-label">Step 5:</span> For <strong>Pickup</strong>, select the <em>Received By</em> employee. This can be the requesting employee or a designated colleague.</li>
+          <li><span class="step-label">Step 6:</span> Click <strong>Submit Request</strong>. The request is created and tagged as <span class="tag tag-amber">PORTAL_ASSISTED</span> in the system so IT staff can distinguish it from self-submitted requests.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Assisted vs. Self-Request: Key Differences</h3>
+        <table class="data-table">
+          <thead><tr><th>Feature</th><th>Self-Request</th><th>Assisted Request</th></tr></thead>
+          <tbody>
+            <tr><td>Who fills the form</td><td>The requesting employee</td><td>IT staff on behalf of the employee</td></tr>
+            <tr><td>Destination fields</td><td>Locked to logged-in user's profile</td><td>Auto-filled from selected employee's profile</td></tr>
+            <tr><td>Request Source tag</td><td><span class="tag tag-blue">PORTAL</span></td><td><span class="tag tag-amber">PORTAL_ASSISTED</span></td></tr>
+            <tr><td>Tab color</td><td>Standard</td><td>Amber header</td></tr>
+            <tr><td>Quick Add Employee</td><td>Not available</td><td>Available for non-master employees</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-icon">&#9888;&#65039;</div>
+        <div class="callout-body">
+          <strong>Assisted requests still require supervisor authorization</strong>
+          Even when created by IT staff, an assisted request must be authorized by the employee's department supervisor before IT can fulfill it — unless the IT staff member is also an authorized approver for that department.
+        </div>
+      </div>
+    </div>
+
+    <!-- REQUEST STATUSES -->
+    <div class="section" id="request-statuses">
+      <div class="section-header">
+        <div class="section-icon icon-gray">&#128313;</div>
+        <div>
+          <div class="section-num">Reference</div>
+          <h2>Request Statuses</h2>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-amber">Awaiting Authorization</span></td><td>The request has been submitted and is waiting for a supervisor in your department to sign off.</td></tr>
+          <tr><td><span class="tag tag-green">Approved</span></td><td>A supervisor has authorized the request. IT can now proceed with fulfillment.</td></tr>
+          <tr><td><span class="tag tag-blue">Pending</span></td><td>The request is with IT and is being processed.</td></tr>
+          <tr><td><span class="tag tag-orange">Under Review</span></td><td>IT or a supervisor is reviewing the request before taking action.</td></tr>
+          <tr><td><span class="tag tag-gray">On Hold</span></td><td>The request has been temporarily suspended. Check with IT for details.</td></tr>
+          <tr><td><span class="tag tag-teal">Completed</span></td><td>The request has been fulfilled and the employee has been notified.</td></tr>
+          <tr><td><span class="tag tag-red">Rejected</span></td><td>The request was declined by a supervisor. See the Authorization History tab for notes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FULFILLMENT METHODS -->
+    <div class="section" id="fulfillment-methods">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#128666;</div>
+        <div>
+          <div class="section-num">Reference</div>
+          <h2>Fulfillment Methods</h2>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Method</th><th>Description</th><th>Receiver Required?</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tag tag-blue">Pickup</span></td>
+            <td>The requesting employee or a designated colleague collects the cartridges directly from the IT office. A <em>Received By</em> employee must be selected from the dropdown at submission time. IT will confirm or update the receiver at fulfillment.</td>
+            <td>Yes — select an employee</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-green">Delivery</span></td>
+            <td>IT will deliver the fulfilled cartridges to the employee's registered branch and department location. No receiver selection is needed at submission time.</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="page-footer">
+      YIMS Internal &mdash; Internal Request Portal User Guide &mdash; For internal use only.
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

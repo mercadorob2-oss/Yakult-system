@@ -1,0 +1,133 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Item.SerialNumbersDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize"
+        Width="480" Height="420"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Background" Value="#3A8EF6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#2272D9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecBtn" TargetType="Button">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#5B6A7D"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#C8D0DC"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border CornerRadius="10" Background="White" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="52"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="60"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0" Background="#3A8EF6" CornerRadius="10,10,0,0"
+                    MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
+                <DockPanel Margin="18,0,10,0" VerticalAlignment="Center">
+                    <TextBlock DockPanel.Dock="Right" Text="✕" FontSize="14" FontWeight="Bold"
+                               Foreground="#CFE3FF" Cursor="Hand" VerticalAlignment="Center"
+                               Padding="8,0" MouseLeftButtonDown="OnCloseClick"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="LblItemName" Text="Serial Numbers" FontSize="13" FontWeight="Bold" Foreground="White"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Text="One dbo.Item is created per serial. Leave blank for a single non-serialized line."
+                                   FontSize="10" Foreground="#D6E8FF" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- Serial number entry -->
+            <Border Grid.Row="1" Padding="18,14,18,4">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Text="Enter one serial number per line. Duplicates (including ones already used elsewhere on this invoice) are removed automatically."
+                               FontSize="10.5" Foreground="#8A94A6" TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+                    <TextBox x:Name="TxtSerials" Grid.Row="1"
+                             AcceptsReturn="True" TextWrapping="NoWrap"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             FontFamily="Consolas" FontSize="12.5"
+                             Padding="8" BorderBrush="#C8D0DC" BorderThickness="1"/>
+                </Grid>
+            </Border>
+
+            <!-- Live count -->
+            <Border Grid.Row="2" Padding="18,0,18,8">
+                <TextBlock x:Name="LblCount" Text="0 serial number(s)" FontSize="11" FontWeight="SemiBold" Foreground="#374151"/>
+            </Border>
+
+            <!-- Footer -->
+            <Border Grid.Row="3" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10">
+                <DockPanel Margin="16,0" VerticalAlignment="Center" LastChildFill="False">
+                    <Button DockPanel.Dock="Right" Content="Save" Style="{StaticResource PrimaryBtn}"
+                            Click="BtnSave_Click"/>
+                    <Button DockPanel.Dock="Right" Content="Cancel" Style="{StaticResource SecBtn}" Margin="0,0,8,0"
+                            Click="BtnCancel_Click" IsCancel="True"/>
+                    <Button DockPanel.Dock="Left" Content="Clear All" Style="{StaticResource SecBtn}"
+                            Click="BtnClearAll_Click"/>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,192 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Warranty.Views.WarrantyPageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls"
+             xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+             Background="#F0F2F6"
+             FontFamily="Segoe UI"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <conv:BoolToCardBrushConverter x:Key="BoolToCardBrush"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ Page header: title (left) + compact summary cards (right) ═════ -->
+        <Border Grid.Row="0" Style="{StaticResource PageHeaderBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE9F5;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                               Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel>
+                        <TextBlock Text="Warranty" Style="{StaticResource PageTitle}"/>
+                        <TextBlock Text="Track warranty coverage and upcoming expirations" Style="{StaticResource PageSubtitle}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <Border Style="{StaticResource StatCardClickable}" Cursor="Hand" Background="{Binding IsTotalCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding TotalCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="TOTAL" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding TotalCount}" Style="{StaticResource StatCardValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Cursor="Hand" Background="{Binding IsActiveCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ActiveCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="ACTIVE" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding ActiveCount}" Style="{StaticResource StatCardValue}" Foreground="{StaticResource SuccessBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Cursor="Hand" Background="{Binding IsExpiringCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ExpiringCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="EXPIRING (≤90)" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding ExpiringCount}" Style="{StaticResource StatCardValue}" Foreground="#F39C12"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Margin="0" Cursor="Hand" Background="{Binding IsExpiredCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ExpiredCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="EXPIRED" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding ExpiredCount}" Style="{StaticResource StatCardValue}" Foreground="{StaticResource DangerBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Button Grid.Column="2" Style="{StaticResource PrimaryBtn}" Command="{Binding RefreshCommand}" Margin="0">
+                    <TextBlock Text="⟳  Refresh"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- ══ Toolbar: search + Advanced Filters ═══════════════════════════ -->
+        <Border Grid.Row="1" Style="{StaticResource ToolbarBar}">
+            <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,8" Foreground="#7A8A9A"/>
+                <TextBox Style="{StaticResource SearchBox}" Width="260" Margin="0,0,8,8"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Search by name, serial, or model..."/>
+
+                <ToggleButton x:Name="AdvancedFiltersToggle" Style="{StaticResource CategoryFilterToggleBtn}"
+                              Width="140" Height="30" Margin="0,0,8,8" Content="Advanced Filters"/>
+                <Popup PlacementTarget="{Binding ElementName=AdvancedFiltersToggle}"
+                       IsOpen="{Binding IsChecked, ElementName=AdvancedFiltersToggle, Mode=TwoWay}"
+                       StaysOpen="False" Placement="Bottom" AllowsTransparency="True">
+                    <Border Background="White" BorderBrush="{StaticResource BorderBrush1}" BorderThickness="1"
+                            CornerRadius="8" Padding="18" Width="280">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="#1A2333"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="Advanced Filters" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Type" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch" Margin="0,0,0,12"
+                                      ItemsSource="{Binding ItemTypeOptions}"
+                                      SelectedItem="{Binding SelectedItemType, Mode=TwoWay}"/>
+
+                            <CheckBox Content="Show expired only" IsChecked="{Binding ShowExpiredOnly}"
+                                      FontSize="11" Foreground="{StaticResource TextSubtleBrush}" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Filter By" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch" Margin="0,0,0,12"
+                                      ItemsSource="{Binding FilterByOptions}"
+                                      SelectedItem="{Binding SelectedFilterBy, Mode=TwoWay}"/>
+
+                            <TextBlock Text="Sort By" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                            <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding SortByOptions}"
+                                      SelectedItem="{Binding SelectedSortBy, Mode=TwoWay}"/>
+
+                            <Separator Margin="0,12,0,12"/>
+
+                            <Button HorizontalAlignment="Right" Style="{StaticResource SmallBtn}" Command="{Binding ResetFiltersCommand}" ClickMode="Press" Margin="0">
+                                <TextBlock Text="↺  Reset Filters"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+            </WrapPanel>
+        </Border>
+
+        <!-- ══ Grid ═════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="White" Margin="14,0,14,0">
+            <DataGrid x:Name="WarrantyGrid"
+                      Style="{StaticResource ListDataGridChrome}"
+                      IsReadOnly="True"
+                      SelectionMode="Single" SelectionUnit="FullRow"
+                      ItemsSource="{Binding PagedItems}"
+                      MouseDoubleClick="WarrantyGrid_MouseDoubleClick"
+                      Sorting="WarrantyGrid_Sorting">
+                <DataGrid.Resources>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                </DataGrid.Resources>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Item Name" Binding="{Binding Name}" Width="2*" MinWidth="200" SortMemberPath="Name">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource WrapCellText}">
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Header="Type" Binding="{Binding ItemType}" Width="*" MinWidth="110" SortMemberPath="ItemType"/>
+                    <DataGridTextColumn Header="Set Code" Binding="{Binding SetCode}" Width="*" MinWidth="90" SortMemberPath="SetCode"/>
+                    <DataGridTextColumn Header="Serial Number" Binding="{Binding SerialNumber}" Width="*" MinWidth="120" SortMemberPath="SerialNumber"/>
+                    <DataGridTextColumn Header="Model Number" Binding="{Binding ModelNumber}" Width="*" MinWidth="120" SortMemberPath="ModelNumber"/>
+                    <DataGridTextColumn Header="Start Date" Binding="{Binding StartDate, StringFormat=MM/dd/yyyy}" Width="*" MinWidth="95" SortMemberPath="StartDate"/>
+                    <DataGridTextColumn Header="End Date" Binding="{Binding EndDate, StringFormat=MM/dd/yyyy}" Width="*" MinWidth="95" SortMemberPath="EndDate"/>
+                    <DataGridTextColumn Header="Warranty (Years)" Binding="{Binding WarrantyYears}" Width="*" MinWidth="90" SortMemberPath="WarrantyYears"/>
+                    <DataGridTextColumn Header="Warranty Start" Binding="{Binding WarrantyStartDate, StringFormat=MM/dd/yyyy}" Width="*" MinWidth="100" SortMemberPath="WarrantyStartDate"/>
+                    <DataGridTextColumn Header="Warranty End" Binding="{Binding WarrantyEndDate, StringFormat=MM/dd/yyyy}" Width="*" MinWidth="100" SortMemberPath="WarrantyEndDate"/>
+                    <DataGridTextColumn Header="Days Remaining" Binding="{Binding DaysRemaining}" Width="*" MinWidth="100" SortMemberPath="DaysRemaining"/>
+                    <DataGridTextColumn Header="Status" Binding="{Binding WarrantyStatus}" Width="*" MinWidth="130" SortMemberPath="WarrantyStatus"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- ══ Pagination ═══════════════════════════════════════════════════ -->
+        <Border Grid.Row="3" Style="{StaticResource FooterBar}">
+            <shared:PagingControl HorizontalAlignment="Left"
+                                   FirstPageCommand="{Binding FirstPageCommand}"
+                                   PrevPageCommand="{Binding PrevPageCommand}"
+                                   NextPageCommand="{Binding NextPageCommand}"
+                                   LastPageCommand="{Binding LastPageCommand}"
+                                   PageInfoText="{Binding PageInfoText}"/>
+        </Border>
+    </Grid>
+</UserControl>

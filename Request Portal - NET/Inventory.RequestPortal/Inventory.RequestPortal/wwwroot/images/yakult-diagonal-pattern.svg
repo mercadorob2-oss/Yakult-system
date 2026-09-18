@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <clipPath id="yk-bottle-clip">
+      <path d="M -20,-100
+               L 20,-100
+               C 24,-100 26,-96 25,-90
+               L 23,-78
+               C 40,-70 48,-50 47,-30
+               L 47,5
+               C 47,15 44,22 40,28
+               C 36,34 34,40 34,46
+               C 34,55 38,60 40,65
+               C 46,72 48,80 48,90
+               C 48,98 44,102 36,103
+               L -36,103
+               C -44,102 -48,98 -48,90
+               C -48,80 -46,72 -40,65
+               C -38,60 -34,55 -34,46
+               C -34,40 -36,34 -40,28
+               C -44,22 -47,15 -47,5
+               L -47,-30
+               C -48,-50 -40,-70 -23,-78
+               L -25,-90
+               C -26,-96 -24,-100 -20,-100
+               Z" />
+    </clipPath>
+
+    <path id="yk-outline" d="M -20,-100 L 20,-100 C 24,-100 26,-96 25,-90 L 23,-78 C 40,-70 48,-50 47,-30 L 47,5 C 47,15 44,22 40,28 C 36,34 34,40 34,46 C 34,55 38,60 40,65 C 46,72 48,80 48,90 C 48,98 44,102 36,103 L -36,103 C -44,102 -48,98 -48,90 C -48,80 -46,72 -40,65 C -38,60 -34,55 -34,46 C -34,40 -36,34 -40,28 C -44,22 -47,15 -47,5 L -47,-30 C -48,-50 -40,-70 -23,-78 L -25,-90 C -26,-96 -24,-100 -20,-100 Z" />
+
+    <!-- Original (red) bottle: cream body, red foil, red "Yakult" wordmark,
+         red brand band + cream/red oval emblem near the base. -->
+    <g id="yk-bottle-red">
+      <g clip-path="url(#yk-bottle-clip)">
+        <rect x="-50" y="-105" width="100" height="215" fill="#f8ddc8" />
+
+        <!-- foil cap: red / grey / red -->
+        <rect x="-20" y="-100" width="13.3" height="22" fill="#d81f2a" />
+        <rect x="-6.7" y="-100" width="13.4" height="22" fill="#d4d4d4" />
+        <rect x="6.7" y="-100" width="13.3" height="22" fill="#d81f2a" />
+
+        <!-- main wordmark on the cream body -->
+        <text x="0" y="-3" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+              font-style="italic" font-weight="700" font-size="21" fill="#d81f2a">Yakult</text>
+
+        <!-- brand band -->
+        <rect x="-50" y="63" width="100" height="15" fill="#d81f2a" />
+        <text x="0" y="73.5" text-anchor="middle" font-family="Arial, sans-serif"
+              font-weight="700" font-size="6.5" letter-spacing="0.4" fill="#f8ddc8">CULTURED MILK</text>
+
+        <!-- oval emblem -->
+        <ellipse cx="0" cy="91" rx="22" ry="9" fill="#f8ddc8" stroke="#d81f2a" stroke-width="2" />
+        <text x="0" y="94.5" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+              font-style="italic" font-weight="700" font-size="10" fill="#d81f2a">Yakult</text>
+      </g>
+      <use href="#yk-outline" fill="none" stroke="#c4a488" stroke-width="1.5" />
+    </g>
+
+    <!-- Light (blue) bottle: cream top with a diagonal wave into blue at the
+         base, grey/blue foil, green "Probiotics" wordmark, white brand text,
+         white/red oval emblem, "Light" lock-up. -->
+    <g id="yk-bottle-blue">
+      <g clip-path="url(#yk-bottle-clip)">
+        <rect x="-50" y="-105" width="100" height="215" fill="#f8ddc8" />
+
+        <!-- foil cap: grey / blue / grey -->
+        <rect x="-20" y="-100" width="13.3" height="22" fill="#c9c9c9" />
+        <rect x="-6.7" y="-100" width="13.4" height="22" fill="#1f3f7a" />
+        <rect x="6.7" y="-100" width="13.3" height="22" fill="#c9c9c9" />
+
+        <!-- diagonal wave: cream shoulder/body into a blue lower body -->
+        <path d="M -50,44 C -12,28 18,58 50,18 L 50,110 L -50,110 Z" fill="#1a4d8f" />
+        <path d="M -50,44 C -12,28 18,58 50,18" fill="none" stroke="#c9c9c9" stroke-width="2.5" />
+
+        <!-- "Probiotics" wordmark on the cream shoulder -->
+        <text x="0" y="-5" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+              font-style="italic" font-weight="700" font-size="13" fill="#1e7d32">Probiotics</text>
+
+        <!-- brand text on the blue body -->
+        <text x="0" y="76" text-anchor="middle" font-family="Arial, sans-serif"
+              font-weight="700" font-size="6.5" letter-spacing="0.3" fill="#ffffff">CULTURED MILK</text>
+
+        <!-- oval emblem -->
+        <ellipse cx="0" cy="89" rx="20" ry="8" fill="#ffffff" stroke="#d81f2a" stroke-width="1.8" />
+        <text x="0" y="92" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif"
+              font-style="italic" font-weight="700" font-size="9" fill="#d81f2a">Yakult</text>
+
+        <!-- "Light" lock-up -->
+        <text x="0" y="100" text-anchor="middle" font-family="Arial, sans-serif"
+              font-weight="700" font-size="8.5" fill="#ffffff">Light</text>
+      </g>
+      <use href="#yk-outline" fill="none" stroke="#c4a488" stroke-width="1.5" />
+    </g>
+  </defs>
+
+  <!-- 2x2 checkerboard supercell: tiles seamlessly with background-repeat, -->
+  <!-- and the 45deg rotation makes both bottle orientation and the -->
+  <!-- alternating repeat read as diagonal. -->
+  <use href="#yk-bottle-red"  transform="translate(100,100) rotate(45) scale(0.85,0.72)" />
+  <use href="#yk-bottle-blue" transform="translate(300,100) rotate(45) scale(0.85,0.72)" />
+  <use href="#yk-bottle-blue" transform="translate(100,300) rotate(45) scale(0.85,0.72)" />
+  <use href="#yk-bottle-red"  transform="translate(300,300) rotate(45) scale(0.85,0.72)" />
+</svg>

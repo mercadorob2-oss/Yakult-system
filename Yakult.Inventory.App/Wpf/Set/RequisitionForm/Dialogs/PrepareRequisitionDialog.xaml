@@ -1,0 +1,250 @@
+<Window x:Class="Yakult.Inventory.App.WPF.Set.RequisitionForm.Dialogs.PrepareRequisitionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Prepare Requisition Form"
+        Width="520" Height="600"
+        MinWidth="460" MinHeight="520"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="False"
+        ResizeMode="CanResizeWithGrip"
+        Background="#F0F2F6">
+
+    <Window.Resources>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#DDE1E8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="6"/>
+            <Setter Property="Padding"         Value="16,12"/>
+            <Setter Property="Margin"          Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#4E9AFC"/>
+            <Setter Property="Margin"     Value="0,0,0,10"/>
+        </Style>
+
+        <Style x:Key="FormLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily"        Value="Segoe UI"/>
+            <Setter Property="FontSize"          Value="12"/>
+            <Setter Property="Foreground"        Value="#444"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Width"             Value="100"/>
+        </Style>
+
+        <Style x:Key="ReadOnlyValue" TargetType="TextBlock">
+            <Setter Property="FontFamily"        Value="Segoe UI"/>
+            <Setter Property="FontSize"          Value="12"/>
+            <Setter Property="Foreground"        Value="#1A2340"/>
+            <Setter Property="FontWeight"        Value="SemiBold"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize"   Value="11.5"/>
+            <Setter Property="Foreground" Value="#666"/>
+            <Setter Property="Margin"     Value="0,0,0,4"/>
+        </Style>
+
+        <Style x:Key="Input" TargetType="TextBox">
+            <Setter Property="FontFamily"              Value="Segoe UI"/>
+            <Setter Property="FontSize"                Value="12"/>
+            <Setter Property="Height"                  Value="32"/>
+            <Setter Property="Padding"                 Value="8,0"/>
+            <Setter Property="BorderBrush"              Value="#C8CDD8"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="ComboInput" TargetType="ComboBox">
+            <Setter Property="FontFamily"      Value="Segoe UI"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="BorderBrush"     Value="#C8CDD8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <!-- ItemsSource is an ICollectionView (for filtering-as-you-type), and
+                 ComboBox defaults to keeping SelectedItem synced with that view's
+                 CurrentItem. Every keystroke calls Refresh() on the filter, which
+                 shifts CurrentItem — and without this, the combo silently snaps
+                 SelectedItem (and the Text bound to it) to whatever that is,
+                 fighting the user's typing and backspacing. -->
+            <Setter Property="IsSynchronizedWithCurrentItem" Value="False"/>
+            <!-- The employee list can be large; virtualize the dropdown so opening it
+                 doesn't build a ComboBoxItem for every employee up front (that full
+                 realization is what stalls the UI thread when the list opens). -->
+            <Setter Property="VirtualizingPanel.IsVirtualizing"       Value="True"/>
+            <Setter Property="VirtualizingPanel.VirtualizationMode"   Value="Recycling"/>
+            <Setter Property="ScrollViewer.CanContentScroll"          Value="True"/>
+            <Setter Property="ItemsPanel">
+                <Setter.Value>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel/>
+                    </ItemsPanelTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ActionBtn" TargetType="Button">
+            <Setter Property="FontFamily"      Value="Segoe UI"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Height"          Value="36"/>
+            <Setter Property="MinWidth"        Value="110"/>
+            <Setter Property="Padding"         Value="18,0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ── Header ──────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="White"
+                BorderBrush="#DDE1E8" BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <StackPanel>
+                <TextBlock Text="Prepare Requisition Form"
+                           FontFamily="Segoe UI" FontSize="16" FontWeight="SemiBold"
+                           Foreground="#1A2340"/>
+                <TextBlock Text="Complete the signatories below before generating the printable requisition form."
+                           FontFamily="Segoe UI" FontSize="11.5" Foreground="#5A6380"
+                           Margin="0,4,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Scrollable form body ─────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="16,12">
+            <StackPanel>
+
+                <!-- Summary card -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="REQUEST SUMMARY" Style="{StaticResource SectionHeader}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                            <TextBlock Text="Department:" Style="{StaticResource FormLabel}"/>
+                            <TextBlock Text="{Binding Department}" Style="{StaticResource ReadOnlyValue}"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Date:" Style="{StaticResource FormLabel}"/>
+                            <TextBlock Text="{Binding DateDisplay}" Style="{StaticResource ReadOnlyValue}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Signatories card -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="SIGNATORIES" Style="{StaticResource SectionHeader}"/>
+
+                        <StackPanel Margin="0,0,0,10">
+                            <TextBlock Text="Prepared By" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="_preparedByCombo"
+                                      Style="{StaticResource ComboInput}"
+                                      ItemsSource="{Binding PreparedByView}"
+                                      SelectedItem="{Binding SelectedPreparedBy}"
+                                      DisplayMemberPath="Name"
+                                      IsEditable="True"
+                                      StaysOpenOnEdit="True"
+                                      IsTextSearchEnabled="False"
+                                      TextBoxBase.TextChanged="OnPreparedByTextChanged"
+                                      PreviewMouseLeftButtonDown="OnComboFieldPreviewMouseDown"
+                                      PreviewKeyDown="OnComboFieldPreviewKeyDown"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,0,10">
+                            <TextBlock Text="Noted By" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="_notedByCombo"
+                                      Style="{StaticResource ComboInput}"
+                                      ItemsSource="{Binding NotedByView}"
+                                      SelectedItem="{Binding SelectedNotedBy}"
+                                      DisplayMemberPath="Name"
+                                      IsEditable="True"
+                                      StaysOpenOnEdit="True"
+                                      IsTextSearchEnabled="False"
+                                      TextBoxBase.TextChanged="OnNotedByTextChanged"
+                                      PreviewMouseLeftButtonDown="OnComboFieldPreviewMouseDown"
+                                      PreviewKeyDown="OnComboFieldPreviewKeyDown"/>
+                        </StackPanel>
+
+                        <StackPanel>
+                            <TextBlock Text="Approved By" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="_approvedByCombo"
+                                      Style="{StaticResource ComboInput}"
+                                      ItemsSource="{Binding ApprovedByView}"
+                                      SelectedItem="{Binding SelectedApprovedBy}"
+                                      DisplayMemberPath="Name"
+                                      IsEditable="True"
+                                      StaysOpenOnEdit="True"
+                                      IsTextSearchEnabled="False"
+                                      TextBoxBase.TextChanged="OnApprovedByTextChanged"
+                                      PreviewMouseLeftButtonDown="OnComboFieldPreviewMouseDown"
+                                      PreviewKeyDown="OnComboFieldPreviewKeyDown"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Receiver card -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="RECEIVED BY" Style="{StaticResource SectionHeader}"/>
+                        <ComboBox x:Name="_receivedByCombo"
+                                  Style="{StaticResource ComboInput}"
+                                  ItemsSource="{Binding ReceivedByView}"
+                                  SelectedItem="{Binding SelectedReceivedBy}"
+                                  DisplayMemberPath="Name"
+                                  IsEditable="True"
+                                  StaysOpenOnEdit="True"
+                                  IsTextSearchEnabled="False"
+                                  TextBoxBase.TextChanged="OnReceivedByTextChanged"
+                                  PreviewMouseLeftButtonDown="OnComboFieldPreviewMouseDown"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ── Footer buttons ──────────────────────────────────────────────── -->
+        <Border Grid.Row="2" Background="White"
+                BorderBrush="#DDE1E8" BorderThickness="0,1,0,0"
+                Padding="16,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           Text="Skip to close without printing the requisition form."
+                           FontFamily="Segoe UI" FontSize="11" FontStyle="Italic"
+                           Foreground="#999" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Style="{StaticResource ActionBtn}"
+                            Content="Cancel"
+                            Background="White" Foreground="#444"
+                            BorderBrush="#CCC"
+                            Margin="0,0,8,0"
+                            Click="OnCancel"/>
+                    <Button Style="{StaticResource ActionBtn}"
+                            Content="Skip"
+                            Background="White" Foreground="#888"
+                            BorderBrush="#CCC"
+                            Margin="0,0,8,0"
+                            Click="OnSkip"/>
+                    <Button Style="{StaticResource ActionBtn}"
+                            Content="Generate Preview"
+                            Background="#4E9AFC" Foreground="White"
+                            BorderBrush="#3D86E0"
+                            Click="OnContinue"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

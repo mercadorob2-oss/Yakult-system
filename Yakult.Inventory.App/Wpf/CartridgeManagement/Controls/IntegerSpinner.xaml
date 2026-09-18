@@ -1,0 +1,64 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ctrl="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters">
+
+    <Style TargetType="{x:Type ctrl:IntegerSpinner}">
+        <Setter Property="Width"  Value="90"/>
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ctrl:IntegerSpinner}">
+                    <Border BorderBrush="#3498DB" BorderThickness="1.5" CornerRadius="3">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="22"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox x:Name="PART_TextBox"
+                                     Grid.Column="0"
+                                     Text="{Binding Value, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                     VerticalAlignment="Stretch"
+                                     VerticalContentAlignment="Center"
+                                     Padding="6,0"
+                                     FontSize="12" FontWeight="SemiBold"
+                                     BorderThickness="0"
+                                     Background="White"/>
+
+                            <!-- Up/Down button stack -->
+                            <Grid Grid.Column="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <Button x:Name="PART_Up"
+                                        Grid.Row="0"
+                                        Content="▲"
+                                        FontSize="6"
+                                        Background="#F5F5F5"
+                                        BorderThickness="1,0,0,0.5"
+                                        BorderBrush="#D0D8E0"
+                                        Padding="0"
+                                        Cursor="Hand"
+                                        Focusable="False"/>
+
+                                <Button x:Name="PART_Down"
+                                        Grid.Row="1"
+                                        Content="▼"
+                                        FontSize="6"
+                                        Background="#F5F5F5"
+                                        BorderThickness="1,0.5,0,0"
+                                        BorderBrush="#D0D8E0"
+                                        Padding="0"
+                                        Cursor="Hand"
+                                        Focusable="False"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

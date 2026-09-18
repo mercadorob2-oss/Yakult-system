@@ -1,0 +1,41 @@
+using System.Windows.Forms;
+using System.Windows.Forms.Integration;
+using Yakult.Inventory.App.WPF.Export.RenewalsGrouped.Views;
+
+namespace Yakult.Inventory.App.Pages.Export
+{
+    public class ExportRenewalsGrouped : UserControl
+    {
+        private ElementHost _host;
+        private RenewalsGroupedExportView _view;
+
+        public ExportRenewalsGrouped()
+        {
+            Dock = DockStyle.Fill;
+
+            _view = new RenewalsGroupedExportView();
+            _view.BackRequested += () =>
+            {
+                var p = Parent;
+                if (p != null) { p.Controls.Clear(); p.Controls.Add(new ReportPickerPage()); }
+            };
+
+            _host = new ElementHost
+            {
+                Dock  = DockStyle.Fill,
+                Child = _view
+            };
+
+            Controls.Add(_host);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                try { _host?.Dispose(); } catch { }
+            }
+            base.Dispose(disposing);
+        }
+    }
+}

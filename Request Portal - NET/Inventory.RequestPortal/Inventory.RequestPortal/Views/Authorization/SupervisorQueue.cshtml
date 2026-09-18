@@ -1,0 +1,680 @@
+@model Inventory.RequestPortal.Models.ViewModels.SupervisorAuthorizationQueueViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Authorization Queue";
+
+    List<JsonElement>? ParseModels(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw) || !raw.TrimStart().StartsWith("[")) return null;
+        try { return JsonSerializer.Deserialize<List<JsonElement>>(raw); }
+        catch { return null; }
+    }
+
+    var filterBranches  = Model.Pending.Select(x => x.BranchName).Where(x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(x => x).ToList();
+    var filterDepts     = Model.Pending.Select(x => x.DepartmentName).Where(x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(x => x).ToList();
+    var filterCompanies = Model.Pending.Select(x => x.CompanyName).Where(x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(x => x).ToList();
+}
+
+<style>
+    .split-pane {
+        display: flex;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+        height: calc(100vh - 115px);
+        min-height: 400px;
+    }
+    .split-left {
+        width: 270px;
+        min-width: 270px;
+        border-right: 1px solid #dee2e6;
+        overflow-y: auto;
+        background: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+    }
+    .split-right {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.25rem 1.5rem;
+    }
+    .queue-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e9ecef;
+        cursor: pointer;
+        transition: background .15s;
+        user-select: none;
+    }
+    .queue-item:hover { background: #e9ecef; }
+    .queue-item.active { background: #d50032; color: #fff; }
+    .queue-item.active .qi-sub { color: rgba(255,255,255,.7) !important; }
+    .queue-item .qi-name { font-weight: 700; font-size: .95rem; margin-bottom: 2px; }
+    .queue-item .qi-sub  { font-size: .78rem; color: #6c757d; }
+    .split-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #adb5bd;
+        text-align: center;
+        gap: .5rem;
+    }
+
+    /* ── Mobile: single-panel master-detail ── */
+    @@media (max-width: 767.98px) {
+        .split-pane {
+            flex-direction: column;
+            height: auto;
+            min-height: 0;
+            border: none;
+            border-radius: 0;
+            box-shadow: none !important;
+        }
+        .split-left {
+            width: 100%;
+            min-width: 0;
+            border-right: none;
+            border-bottom: 1px solid #dee2e6;
+            overflow-y: visible;
+        }
+        .split-right {
+            display: none;
+            padding: 1rem;
+        }
+        /* When an item is selected on mobile */
+        .split-pane.detail-open .split-left {
+            display: none;
+        }
+        .split-pane.detail-open .split-right {
+            display: block;
+        }
+    }
+    @@media (min-width: 768px) {
+        .mobile-back-btn { display: none !important; }
+    }
+    .mobile-back-btn {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        margin-bottom: 1rem;
+        background: none;
+        border: none;
+        color: #d50032;
+        font-weight: 700;
+        font-size: .95rem;
+        padding: .25rem 0;
+        cursor: pointer;
+    }
+    .mobile-back-btn:hover { color: #b0002a; }
+
+    /* ── Status dot ── */
+    .status-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 3px;
+        background: #9e9e9e;
+        transition: background .3s;
+    }
+    .status-dot[data-level="PendingCoordinator"] { background: #9e9e9e; }
+    .status-dot[data-level="PendingSupervisor"]  { background: #f9a825; }
+    .status-dot[data-level="PendingManager"]     { background: #1976d2; }
+    .status-dot[data-level="Approved"]           { background: #43a047; }
+    .status-dot[data-level="Rejected"]           { background: #e53935; }
+    .queue-item.active .status-dot { outline: 2px solid rgba(255,255,255,.6); outline-offset: 1px; }
+
+    /* ── New-items nudge banner ── */
+    #newItemsBanner {
+        display: none;
+        cursor: pointer;
+        font-size: .78rem;
+        padding: 6px 14px;
+        background: #fff3cd;
+        border-bottom: 1px solid #ffc107;
+        color: #856404;
+    }
+    #newItemsBanner:hover { background: #ffe8a1; }
+
+    /* ── Filter bar ── */
+    .queue-filter-bar {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: .6rem .75rem;
+        margin-bottom: .5rem;
+    }
+    .queue-filter-bar .form-control { font-size: .82rem; }
+    #emptyFilter {
+        display: none;
+        padding: 1.25rem 1rem;
+        text-align: center;
+        color: #6c757d;
+        font-size: .85rem;
+    }
+
+    /* ── Custom searchable dropdown ── */
+    .cs-wrap { position: relative; }
+    .cs-input-row { display: flex; }
+    .cs-input-row .form-control {
+        border-right: none;
+        border-radius: 4px 0 0 4px;
+        font-size: .82rem;
+    }
+    .cs-input-row .form-control:focus {
+        border-color: #ced4da;
+        box-shadow: none;
+    }
+    .cs-arrow {
+        display: flex;
+        align-items: center;
+        padding: 0 7px;
+        border: 1px solid #ced4da;
+        border-left: none;
+        border-radius: 0 4px 4px 0;
+        background: #fff;
+        cursor: pointer;
+        color: #6c757d;
+        font-size: .7rem;
+        transition: background .15s;
+        flex-shrink: 0;
+    }
+    .cs-arrow:hover { background: #f8f9fa; }
+    .cs-list {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border: 1px solid #ced4da;
+        border-top: none;
+        border-radius: 0 0 6px 6px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1055;
+        list-style: none;
+        margin: 0;
+        padding: 2px 0;
+        box-shadow: 0 4px 10px rgba(0,0,0,.1);
+    }
+    .cs-list.open { display: block; }
+    .cs-list li {
+        padding: 5px 10px;
+        cursor: pointer;
+        font-size: .82rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .cs-list li:hover { background: #f0f4f8; }
+    .cs-list li.cs-clear { color: #6c757d; border-bottom: 1px solid #e9ecef; font-style: italic; }
+    .cs-list li.cs-hidden { display: none; }
+</style>
+
+@await Html.PartialAsync("_MasterNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Requester Portal</h1>
+        <p class="subtitle mb-0">Submit and track your cartridge requests</p>
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+        <button type="button"
+                id="approverQueueHelpBtn"
+                class="btn btn-link text-white p-0 lh-1"
+                style="font-size:1.15rem; text-decoration:none; opacity:.85;"
+                title="Start guided tour"
+                onclick="window.YakultTour && window.YakultTour.startTourForPage()">
+            <i class="bi bi-question-circle"></i>
+        </button>
+        @await Html.PartialAsync("_NotificationBell")
+    </div>
+</div>
+
+<div class="content-padded" style="padding-top:.5rem;">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!Model.Pending.Any())
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-check-circle display-1 text-success mb-3 d-block"></i>
+                <p class="text-muted">No pending authorizations in your department.</p>
+                <button class="btn btn-outline-secondary btn-sm mt-1" onclick="window.location.reload()" title="Refresh">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        @* ── Filter bar ── *@
+        <div class="queue-filter-bar">
+            <div class="row g-2 align-items-center">
+                <div class="col-12 col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="filterSearch" class="form-control border-start-0"
+                               placeholder="Search name, department, model..." oninput="applyFilters()">
+                    </div>
+                </div>
+                <div class="col-6 col-md-2">
+                    <input type="date" id="filterDateFrom" class="form-control form-control-sm"
+                           title="From date" onchange="applyFilters()">
+                </div>
+                <div class="col-6 col-md-2">
+                    <input type="date" id="filterDateTo" class="form-control form-control-sm"
+                           title="To date" onchange="applyFilters()">
+                </div>
+                <div class="col-sm-4 col-md-auto flex-md-grow-1">
+                    <div class="cs-wrap">
+                        <div class="cs-input-row">
+                            <input type="text" id="filterCompany" class="form-control form-control-sm"
+                                   placeholder="Company" oninput="csFilter(this)" autocomplete="off">
+                            <button type="button" class="cs-arrow" onclick="csToggle('filterCompany')">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        <ul class="cs-list" id="filterCompany-list">
+                            <li class="cs-clear" data-value="" onclick="csSelect('filterCompany', '')">All Companies</li>
+                            @foreach (var co in filterCompanies)
+                            {
+                                <li data-value="@co" onclick="csSelect('filterCompany', '@co')">@co</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-md-auto flex-md-grow-1">
+                    <div class="cs-wrap">
+                        <div class="cs-input-row">
+                            <input type="text" id="filterBranch" class="form-control form-control-sm"
+                                   placeholder="Branch" oninput="csFilter(this)" autocomplete="off">
+                            <button type="button" class="cs-arrow" onclick="csToggle('filterBranch')">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        <ul class="cs-list" id="filterBranch-list">
+                            <li class="cs-clear" data-value="" onclick="csSelect('filterBranch', '')">All Branches</li>
+                            @foreach (var br in filterBranches)
+                            {
+                                <li data-value="@br" onclick="csSelect('filterBranch', '@br')">@br</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-sm-4 col-md-auto flex-md-grow-1">
+                    <div class="cs-wrap">
+                        <div class="cs-input-row">
+                            <input type="text" id="filterDept" class="form-control form-control-sm"
+                                   placeholder="Department" oninput="csFilter(this)" autocomplete="off">
+                            <button type="button" class="cs-arrow" onclick="csToggle('filterDept')">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                        </div>
+                        <ul class="cs-list" id="filterDept-list">
+                            <li class="cs-clear" data-value="" onclick="csSelect('filterDept', '')">All Departments</li>
+                            @foreach (var dp in filterDepts)
+                            {
+                                <li data-value="@dp" onclick="csSelect('filterDept', '@dp')">@dp</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="clearFilters()" title="Clear all filters">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="split-pane shadow-sm">
+            @* ── Left: Queue List ── *@
+            <div class="split-left">
+                <div class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between" style="background:#fff;">
+                    <div>
+                        <span class="text-muted fw-bold" style="font-size:.78rem;">
+                            <i class="bi bi-shield-exclamation text-danger"></i>
+                            @(ViewBag.IsDeveloper == true ? "Pending — All Departments" : "Pending — My Department")
+                        </span>
+                        <span class="badge bg-danger ms-1" id="queueCountBadge" style="font-size:.7rem;">@Model.Pending.Count</span>
+                    </div>
+                    <button class="btn btn-link p-0 text-secondary" onclick="location.reload()" title="Refresh queue" style="font-size:1rem; line-height:1;">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div id="newItemsBanner" onclick="reloadQueueList()">
+                    <i class="bi bi-arrow-clockwise me-1"></i> New requests arrived — click to refresh list
+                </div>
+                @foreach (var a in Model.Pending)
+                {
+                    var sqItems = ParseModels(a.RequestedModels);
+                    var modelText = sqItems != null && sqItems.Count > 0
+                        ? string.Join(", ", sqItems.Select(e => e.GetProperty("model").GetString()))
+                        : (a.RequestedModels ?? "");
+                    <div class="queue-item"
+                         data-id="@a.AuthorizationId"
+                         data-name="@(a.EmployeeName?.ToLowerInvariant() ?? "")"
+                         data-dept="@(a.DepartmentName ?? "")"
+                         data-branch="@(a.BranchName ?? "")"
+                         data-company="@(a.CompanyName ?? "")"
+                         data-date="@a.CreatedDate.ToString("yyyy-MM-dd")"
+                         data-models="@modelText.ToLowerInvariant()"
+                         onclick="loadPanel(@a.AuthorizationId, this)">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div class="qi-name flex-grow-1">@a.EmployeeName</div>
+                            <span class="status-dot" data-level="@a.ApprovalLevel" title="@a.ApprovalLevelTooltip"></span>
+                        </div>
+                        <div class="qi-sub">@a.DepartmentName</div>
+                        <div class="qi-sub mt-1">@modelText</div>
+                        <div class="qi-sub">@a.CreatedDate.ToString("MM/dd/yyyy  h:mm tt")</div>
+                    </div>
+                }
+                <div id="emptyFilter">
+                    <i class="bi bi-funnel me-1"></i> No results match your filters.
+                </div>
+            </div>
+
+            @* ── Right: Detail Panel ── *@
+            <div class="split-right" id="detailsPanel">
+                <div class="split-placeholder">
+                    <i class="bi bi-arrow-left-circle" style="font-size:2.5rem;"></i>
+                    <span style="font-size:.95rem;">Select a request to view details</span>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+    function isMobile() { return window.innerWidth < 768; }
+
+    // ── Custom searchable dropdowns ──────────────────────────────────────────
+
+    function csToggle(inputId) {
+        const list = document.getElementById(inputId + '-list');
+        const isOpen = list.classList.contains('open');
+        csCloseAll();
+        if (!isOpen) {
+            // Show all items (input may have been cleared)
+            list.querySelectorAll('li').forEach(li => li.classList.remove('cs-hidden'));
+            list.classList.add('open');
+            document.getElementById(inputId).focus();
+        }
+    }
+
+    function csFilter(input) {
+        const val  = input.value.toLowerCase();
+        const list = document.getElementById(input.id + '-list');
+        document.querySelectorAll('.cs-list.open').forEach(l => { if (l !== list) l.classList.remove('open'); });
+        list.querySelectorAll('li').forEach(li => {
+            if (li.classList.contains('cs-clear')) { li.classList.remove('cs-hidden'); return; }
+            li.classList.toggle('cs-hidden', val !== '' && !li.textContent.toLowerCase().includes(val));
+        });
+        list.classList.add('open');
+        applyFilters();
+    }
+
+    function csSelect(inputId, value) {
+        document.getElementById(inputId).value = value;
+        document.getElementById(inputId + '-list').classList.remove('open');
+        applyFilters();
+    }
+
+    function csCloseAll() {
+        document.querySelectorAll('.cs-list.open').forEach(l => l.classList.remove('open'));
+    }
+
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.cs-wrap')) csCloseAll();
+    });
+
+    // ── Filtering ────────────────────────────────────────────────────────────
+
+    function applyFilters() {
+        const search   = (document.getElementById('filterSearch')?.value  ?? '').trim().toLowerCase();
+        const dateFrom = document.getElementById('filterDateFrom')?.value ?? '';
+        const dateTo   = document.getElementById('filterDateTo')?.value   ?? '';
+        const company  = document.getElementById('filterCompany')?.value  ?? '';
+        const branch   = document.getElementById('filterBranch')?.value   ?? '';
+        const dept     = document.getElementById('filterDept')?.value     ?? '';
+
+        let visible = 0;
+        document.querySelectorAll('.queue-item[data-id]').forEach(el => {
+            const eName    = el.dataset.name    ?? '';
+            const eDept    = el.dataset.dept    ?? '';
+            const eBranch  = el.dataset.branch  ?? '';
+            const eCo      = el.dataset.company ?? '';
+            const eDate    = el.dataset.date    ?? '';
+            const eModels  = el.dataset.models  ?? '';
+
+            const matchSearch  = !search  || eName.includes(search) || eDept.toLowerCase().includes(search) || eModels.includes(search);
+            const matchFrom    = !dateFrom || eDate >= dateFrom;
+            const matchTo      = !dateTo   || eDate <= dateTo;
+            const matchCompany = !company  || eCo.toLowerCase().includes(company.toLowerCase());
+            const matchBranch  = !branch   || eBranch.toLowerCase().includes(branch.toLowerCase());
+            const matchDept    = !dept     || eDept.toLowerCase().includes(dept.toLowerCase());
+
+            const show = matchSearch && matchFrom && matchTo && matchCompany && matchBranch && matchDept;
+            el.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        const emptyEl = document.getElementById('emptyFilter');
+        if (emptyEl) emptyEl.style.display = visible === 0 ? '' : 'none';
+
+        const badge = document.getElementById('queueCountBadge');
+        if (badge) badge.textContent = visible;
+    }
+
+    function clearFilters() {
+        ['filterSearch','filterDateFrom','filterDateTo','filterCompany','filterBranch','filterDept']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        // Unhide all list items in the custom dropdowns
+        document.querySelectorAll('.cs-list li').forEach(li => li.classList.remove('cs-hidden'));
+        applyFilters();
+    }
+
+    // ── Queue state ──────────────────────────────────────────────────────────
+
+    // Tracks which authorization ID is currently open in the right panel.
+    // null = nothing open. Set on loadPanel, cleared on showList.
+    let openAuthId = null;
+    let isExternallyCompleted = false;
+    // IDs present in the DOM on last poll tick — used to detect new arrivals.
+    let knownIds = new Set(
+        [...document.querySelectorAll('.queue-item[data-id]')]
+            .map(el => parseInt(el.dataset.id))
+    );
+
+    function showList() {
+        const pane = document.querySelector('.split-pane');
+        if (pane) pane.classList.remove('detail-open');
+        document.querySelectorAll('.queue-item').forEach(i => i.classList.remove('active'));
+        openAuthId = null;
+        isExternallyCompleted = false;
+    }
+
+    async function loadPanel(id, el) {
+        const mobile = isMobile();
+        const pane   = document.querySelector('.split-pane');
+
+        document.querySelectorAll('.queue-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+
+        openAuthId = id;
+        isExternallyCompleted = false;
+
+        const panel = document.getElementById('detailsPanel');
+        panel.innerHTML = `
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:200px;gap:.75rem;color:#6c757d;">
+                <div class="spinner-border text-danger" role="status" style="width:2rem;height:2rem;"></div>
+                <span>Loading...</span>
+            </div>`;
+
+        if (mobile && pane) pane.classList.add('detail-open');
+
+        try {
+            const resp = await fetch(`/Authorization/DetailsPanel/${id}`);
+            if (!resp.ok) {
+                panel.innerHTML = '<div class="alert alert-danger m-3">Failed to load. Please try again.</div>';
+                return;
+            }
+            const html = await resp.text();
+            panel.innerHTML = mobile
+                ? `<button class="mobile-back-btn" onclick="showList()"><i class="bi bi-arrow-left"></i> Back</button>` + html
+                : html;
+
+            panel.querySelectorAll('script').forEach(old => {
+                const s = document.createElement('script');
+                s.textContent = old.textContent;
+                document.body.appendChild(s);
+                document.body.removeChild(s);
+            });
+        } catch {
+            panel.innerHTML = '<div class="alert alert-danger m-3">Network error. Please try again.</div>';
+        }
+    }
+
+    // ── Real-time polling ────────────────────────────────────────────────────
+
+    async function pollStatus() {
+        try {
+            const resp = await fetch('/Authorization/PendingStatus');
+            if (!resp.ok) return;
+            const fresh = await resp.json();
+
+            const freshIds  = new Set(fresh.map(f => f.authorizationId));
+            const freshMap  = Object.fromEntries(fresh.map(f => [f.authorizationId, f]));
+
+            // 1. Update existing queue items in-place; remove completed non-open ones.
+            document.querySelectorAll('.queue-item[data-id]').forEach(el => {
+                const id = parseInt(el.dataset.id);
+                if (freshIds.has(id)) {
+                    // Still pending — update dot without touching the DOM structure.
+                    const dot = el.querySelector('.status-dot');
+                    if (dot) {
+                        dot.dataset.level = freshMap[id].approvalLevel;
+                        dot.title         = freshMap[id].tooltip;
+                    }
+                } else {
+                    // No longer in the pending list.
+                    if (openAuthId === id) {
+                        // Keep the card visible; show a non-disruptive banner and disable actions.
+                        if (!isExternallyCompleted) {
+                            isExternallyCompleted = true;
+                            const dot = el.querySelector('.status-dot');
+                            if (dot) { dot.dataset.level = 'Approved'; dot.title = 'Processed by another approver'; }
+                            showExternalCompletionBanner();
+                        }
+                    } else {
+                        // Safe to remove — it is not the open item.
+                        el.remove();
+                        knownIds.delete(id);
+                        updateQueueCount();
+                    }
+                }
+            });
+
+            // 2. Detect new arrivals — show a nudge banner rather than auto-inserting HTML.
+            const newOnes = fresh.filter(f => !knownIds.has(f.authorizationId));
+            if (newOnes.length > 0) {
+                newOnes.forEach(f => knownIds.add(f.authorizationId));
+                document.getElementById('newItemsBanner').style.display = 'block';
+            }
+
+            // Re-apply filters so count badge stays accurate after dot updates / removals.
+            applyFilters();
+
+        } catch { /* silent — network hiccups should not break the UI */ }
+    }
+
+    function updateQueueCount() {
+        const count = document.querySelectorAll('.queue-item[data-id]').length;
+        const badge = document.getElementById('queueCountBadge');
+        if (badge) badge.textContent = count;
+    }
+
+    function showExternalCompletionBanner() {
+        const panel = document.getElementById('detailsPanel');
+        if (!panel || panel.querySelector('#extCompletedBanner')) return;
+
+        const banner = document.createElement('div');
+        banner.id = 'extCompletedBanner';
+        banner.className = 'alert alert-warning d-flex align-items-center gap-2 mb-0 rounded-0 border-start-0 border-end-0 border-top-0';
+        banner.style.cssText = 'border-radius:0!important;margin:-1.25rem -1.5rem 1.25rem;padding:.75rem 1.5rem;';
+        banner.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>'
+            + '<span class="fw-semibold">This request has already been processed by another approver.</span>';
+        panel.prepend(banner);
+
+        // Disable the sign/approve and reject buttons so the user can't double-submit.
+        panel.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(btn => {
+            btn.disabled = true;
+            btn.title = 'Already processed by another approver';
+        });
+    }
+
+    async function reloadQueueList() {
+        // Re-fetch the full page and swap only the queue list inner HTML.
+        try {
+            const resp = await fetch(window.location.href);
+            const html = await resp.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            const freshLeft = doc.querySelector('.split-left');
+            const curLeft   = document.querySelector('.split-left');
+            if (freshLeft && curLeft) {
+                curLeft.innerHTML = freshLeft.innerHTML;
+                // Restore active state on the currently open item.
+                if (openAuthId) {
+                    const activeEl = curLeft.querySelector(`.queue-item[data-id="${openAuthId}"]`);
+                    if (activeEl) activeEl.classList.add('active');
+                }
+                // Rebuild knownIds from the refreshed DOM.
+                knownIds = new Set(
+                    [...curLeft.querySelectorAll('.queue-item[data-id]')]
+                        .map(el => parseInt(el.dataset.id))
+                );
+
+                // Re-apply current filters to the freshly loaded items.
+                applyFilters();
+            }
+        } catch { /* ignore */ }
+    }
+
+    // Start polling once the page is ready.
+    document.addEventListener('DOMContentLoaded', () => {
+        setInterval(pollStatus, 10000);
+
+        // Auto-select a specific item when redirected from a self-sign submission.
+        const preselect = @(ViewBag.SelectedAuthId != null ? ((int)ViewBag.SelectedAuthId).ToString() : "null");
+        if (preselect) {
+            const el = document.querySelector(`.queue-item[data-id="${preselect}"]`);
+            if (el) loadPanel(preselect, el);
+        }
+    });
+</script>
+
+@section Scripts {
+    <script src="~/js/tours/approver-queue.js" asp-append-version="true"></script>
+}

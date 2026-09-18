@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+  </ItemGroup>
+
+  <!-- Copy wwwroot to output directory so static files are served when running
+       the compiled exe directly (e.g. from Visual Studio or a publish folder). -->
+  <Target Name="CopyWwwrootToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <WwwrootFiles Include="$(MSBuildProjectDirectory)\wwwroot\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WwwrootFiles)"
+          DestinationFiles="@(WwwrootFiles->'$(OutputPath)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

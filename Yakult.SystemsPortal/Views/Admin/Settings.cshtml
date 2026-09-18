@@ -1,0 +1,308 @@
+@model PortalSettingsViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Portal Notice";
+}
+
+@Html.AntiForgeryToken()
+
+<section class="admin-workspace admin-workspace--single">
+    <div class="admin-list-panel">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Important Notice</h2>
+                <p>Publish a temporary homepage message for releases or operational alerts. Select <strong>Maintenance — full page</strong> to replace the whole site with a standalone error-style notice; developer accounts retain Admin access.</p>
+            </div>
+        </div>
+
+        <div class="admin-notice-state" id="noticeState" role="status">Checking notice state...</div>
+
+        <form class="admin-form">
+            @if (!Model.DatabaseSettingsAvailable)
+            {
+                <div class="preview-draft-banner">Portal notice saving is not available yet because the portal settings table is not connected.</div>
+            }
+            <label class="admin-check-row">
+                <input type="checkbox" id="noticeEnabled" @(Model.Notice.Enabled ? "checked" : "") />
+                <span>Show notice on the employee portal homepage</span>
+            </label>
+            <div class="admin-preset-row">
+                <button type="button" class="admin-button admin-button--ghost" data-notice-preset="inventory">Inventory maintenance</button>
+                <button type="button" class="admin-button admin-button--ghost" data-notice-preset="installer">Installer update</button>
+                <button type="button" class="admin-button admin-button--ghost" data-notice-preset="mobile">Mobile APK release</button>
+                <button type="button" class="admin-button admin-button--ghost" data-notice-preset="cadena">Cadena maintenance</button>
+            </div>
+            <div class="admin-form-grid">
+                <label>
+                    <span>Level</span>
+                    <select id="noticeLevel">
+                        <option value="Info" selected="@(Model.Notice.Level == "Info")">Info</option>
+                        <option value="Warning" selected="@(Model.Notice.Level == "Warning")">Warning</option>
+                        <option value="Critical" selected="@(Model.Notice.Level == "Critical")">Critical</option>
+                        <option value="Maintenance" selected="@(Model.Notice.Level == "Maintenance")">Maintenance — full page</option>
+                        <option value="Success" selected="@(Model.Notice.Level == "Success")">Success</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Title</span>
+                    <input type="text" id="noticeTitle" value="@Model.Notice.Title" autocomplete="off" />
+                </label>
+            </div>
+            <label>
+                <span>Message</span>
+                <textarea id="noticeMessage" rows="4">@Model.Notice.Message</textarea>
+            </label>
+            <div class="admin-form-grid admin-form-grid--schedule">
+                <label>
+                    <span>Start (Manila time)</span>
+                    <input type="datetime-local" id="noticeStartUtc" value="@ToManilaDateTimeLocal(Model.Notice.StartUtc)" />
+                </label>
+                <label>
+                    <span>End (Manila time)</span>
+                    <input type="datetime-local" id="noticeEndUtc" value="@ToManilaDateTimeLocal(Model.Notice.EndUtc)" />
+                </label>
+            </div>
+            <div class="admin-timezone-note" id="noticeSchedulePreview" role="status">
+                No schedule window set. Enter Manila time; the portal saves it safely as UTC.
+            </div>
+            <div class="admin-form-actions">
+                <span class="admin-save-status" id="noticeStatus">Ready.</span>
+                <button type="button" class="admin-button admin-button--primary" id="saveNoticeBtn">Save Notice</button>
+            </div>
+            <div class="admin-notice-preview" id="noticePreview">
+                <strong>Portal notice preview</strong>
+                <p>Update the title and message to preview the homepage banner.</p>
+            </div>
+        </form>
+    </div>
+</section>
+
+@functions {
+    string ToManilaDateTimeLocal(DateTime? value)
+    {
+        if (!value.HasValue) return string.Empty;
+        var utc = DateTime.SpecifyKind(value.Value, DateTimeKind.Utc);
+        var zoneId = OperatingSystem.IsWindows() ? "Singapore Standard Time" : "Asia/Manila";
+        var manila = TimeZoneInfo.ConvertTimeFromUtc(utc, TimeZoneInfo.FindSystemTimeZoneById(zoneId));
+        return manila.ToString("yyyy-MM-ddTHH:mm");
+    }
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('saveNoticeBtn');
+            const status = document.getElementById('noticeStatus');
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            const preview = document.getElementById('noticePreview');
+            const noticeState = document.getElementById('noticeState');
+            const schedulePreview = document.getElementById('noticeSchedulePreview');
+            const presets = {
+                inventory: {
+                    level: 'Warning',
+                    title: 'Yakult Inventory Maintenance',
+                    message: 'Yakult Inventory will be unavailable from 6:00 PM to 7:00 PM.'
+                },
+                installer: {
+                    level: 'Info',
+                    title: 'Installer Update',
+                    message: 'Use the Services & Portals instructions while the local installer is being updated.'
+                },
+                mobile: {
+                    level: 'Success',
+                    title: 'Mobile APK Available',
+                    message: 'A new Yakult Mobile APK version is now available for download.'
+                },
+                cadena: {
+                    level: 'Critical',
+                    title: 'Cadena Maintenance',
+                    message: 'Cadena is currently under maintenance. Please check again later.'
+                }
+            };
+
+            function manilaInputToDate(value) {
+                if (!value) return null;
+                const parsed = new Date(`${value}:00+08:00`);
+                return Number.isNaN(parsed.getTime()) ? null : parsed;
+            }
+
+            function fromDateTimeLocal(value) {
+                return manilaInputToDate(value)?.toISOString() || null;
+            }
+
+            function utcInputToDate(value) {
+                return manilaInputToDate(value);
+            }
+
+            function formatManilaTime(value) {
+                const date = utcInputToDate(value);
+                if (!date) return '';
+                return new Intl.DateTimeFormat('en-PH', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                    timeZone: 'Asia/Manila'
+                }).format(date);
+            }
+
+            function updateSchedulePreview() {
+                const startValue = document.getElementById('noticeStartUtc').value;
+                const endValue = document.getElementById('noticeEndUtc').value;
+                const startText = formatManilaTime(startValue);
+                const endText = formatManilaTime(endValue);
+                if (!startText && !endText) {
+                    schedulePreview.textContent = 'No schedule window set. Times are saved in UTC; Manila preview appears here.';
+                    return;
+                }
+                if (startText && endText) {
+                    schedulePreview.textContent = `Manila preview: ${startText} to ${endText}. Saved in UTC.`;
+                    return;
+                }
+                schedulePreview.textContent = startText
+                    ? `Manila preview starts ${startText}. Saved in UTC.`
+                    : `Manila preview ends ${endText}. Saved in UTC.`;
+            }
+
+            function scheduleIsValid(startValue, endValue) {
+                const startDate = utcInputToDate(startValue);
+                const endDate = utcInputToDate(endValue);
+                return !startDate || !endDate || endDate >= startDate;
+            }
+
+            function updateNoticeState() {
+                if (!noticeState) return;
+                const enabled = document.getElementById('noticeEnabled').checked;
+                const title = document.getElementById('noticeTitle').value.trim();
+                const message = document.getElementById('noticeMessage').value.trim();
+                const start = utcInputToDate(document.getElementById('noticeStartUtc').value);
+                const end = utcInputToDate(document.getElementById('noticeEndUtc').value);
+                const now = new Date();
+                let state = 'disabled';
+                let text = 'Disabled — this notice is not visible on the employee portal.';
+
+                if (enabled && !title && !message) {
+                    state = 'draft';
+                    text = 'Draft — add a title or message before this notice can appear.';
+                } else if (enabled && end && end < now) {
+                    state = 'expired';
+                    text = 'Expired — the scheduled end time has passed.';
+                } else if (enabled && start && start > now) {
+                    state = 'scheduled';
+                    text = `Scheduled — this notice will appear ${formatManilaTime(document.getElementById('noticeStartUtc').value)}.`;
+                } else if (enabled) {
+                    state = 'active';
+                    text = 'Active — this notice is currently visible on the employee portal.';
+                }
+
+                noticeState.className = `admin-notice-state is-${state}`;
+                noticeState.textContent = text;
+                return state;
+            }
+
+            function updatePreview() {
+                const level = document.getElementById('noticeLevel').value.toLowerCase();
+                const title = document.getElementById('noticeTitle').value || 'Portal notice preview';
+                const message = document.getElementById('noticeMessage').value || 'Update the title and message to preview the homepage banner.';
+                preview.className = `admin-notice-preview portal-notice--${level}`;
+                preview.querySelector('strong').textContent = title;
+                preview.querySelector('p').textContent = message;
+            }
+
+            document.querySelectorAll('[data-notice-preset]').forEach(button => {
+                button.addEventListener('click', function () {
+                    const preset = presets[this.dataset.noticePreset];
+                    if (!preset) return;
+                    document.getElementById('noticeEnabled').checked = true;
+                    document.getElementById('noticeLevel').value = preset.level;
+                    document.getElementById('noticeTitle').value = preset.title;
+                    document.getElementById('noticeMessage').value = preset.message;
+                    updatePreview();
+                    window.yakultToast?.('Notice preset applied.', 'info');
+                });
+            });
+
+            ['noticeLevel', 'noticeTitle', 'noticeMessage'].forEach(id => {
+                document.getElementById(id).addEventListener('input', function () { updatePreview(); updateNoticeState(); });
+                document.getElementById(id).addEventListener('change', function () { updatePreview(); updateNoticeState(); });
+            });
+            document.getElementById('noticeEnabled').addEventListener('change', updateNoticeState);
+            ['noticeStartUtc', 'noticeEndUtc'].forEach(id => {
+                document.getElementById(id).addEventListener('input', function () { updateSchedulePreview(); updateNoticeState(); });
+                document.getElementById(id).addEventListener('change', function () { updateSchedulePreview(); updateNoticeState(); });
+            });
+            updatePreview();
+            updateSchedulePreview();
+            updateNoticeState();
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+
+            btn.addEventListener('click', async function () {
+                const startValue = document.getElementById('noticeStartUtc').value;
+                const endValue = document.getElementById('noticeEndUtc').value;
+                if (!scheduleIsValid(startValue, endValue)) {
+                    status.textContent = 'End time must be after start time.';
+                    window.yakultToast?.('End time must be after start time.', 'error');
+                    return;
+                }
+                const isMaintenance = document.getElementById('noticeEnabled').checked
+                    && document.getElementById('noticeLevel').value === 'Maintenance';
+                if (isMaintenance) {
+                    const state = updateNoticeState();
+                    const timing = state === 'active'
+                        ? 'This will replace the employee portal with a full-page maintenance message now.'
+                        : 'This will schedule a full-page maintenance message that replaces the employee portal during its active window.';
+                    if (!window.confirm(`${timing}\n\nContinue and save this maintenance notice?`)) {
+                        status.textContent = 'Maintenance notice was not saved.';
+                        return;
+                    }
+                }
+                status.textContent = 'Saving...';
+                btn.disabled = true;
+                btn.classList.add('is-loading');
+                try {
+                    const response = await fetch('@Url.Action("SaveNotice", "Admin")', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify({
+                            enabled: document.getElementById('noticeEnabled').checked,
+                            level: document.getElementById('noticeLevel').value,
+                            title: document.getElementById('noticeTitle').value,
+                            message: document.getElementById('noticeMessage').value,
+                            startUtc: fromDateTimeLocal(startValue),
+                            endUtc: fromDateTimeLocal(endValue)
+                        })
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.success) throw new Error(result.message || 'Save failed.');
+                    if (result.maintenanceMode && !result.activeNow) {
+                        status.textContent = 'Saved — scheduled, but not active yet.';
+                        window.yakultToast?.('Maintenance saved, but its schedule is not active yet.', 'info');
+                    } else if (result.maintenanceMode) {
+                        status.textContent = 'Saved — maintenance is active now.';
+                        window.yakultToast?.('Whole-site maintenance is active.', 'success');
+                    } else {
+                        status.textContent = 'Saved.';
+                        window.yakultToast?.('Portal notice saved.', 'success');
+                    }
+                } catch (error) {
+                    status.textContent = error.message || 'Unable to save.';
+                    window.yakultToast?.(error.message || 'Unable to save.', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.classList.remove('is-loading');
+                    updateNoticeState();
+                }
+            });
+        });
+    </script>
+}

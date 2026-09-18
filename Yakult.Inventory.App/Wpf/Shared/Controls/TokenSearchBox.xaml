@@ -1,0 +1,5 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Shared.Controls.TokenSearchBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- UI is constructed entirely in code-behind -->
+</UserControl>

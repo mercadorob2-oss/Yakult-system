@@ -1,0 +1,158 @@
+@model EmployeeResourcesViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Employee Resources";
+}
+
+<header class="employee-resources-hero">
+    <div class="portal-container employee-resources-hero__inner">
+        <div>
+            <span class="portal-eyebrow">IT workplace references</span>
+            <h1>Employee Resources</h1>
+            <p>Find IT support guides, access references, cybersecurity guidance, and system procedures in one place.</p>
+        </div>
+        <div class="employee-resources-hero__summary" aria-label="Resource catalog summary">
+            <strong>@Model.Items.Count</strong>
+            <span>@(Model.IsDemoData ? "demo resources" : "published resources")</span>
+        </div>
+    </div>
+</header>
+
+<main class="portal-container employee-resources-page" id="employeeResourcesApp"
+      data-initial-query="@Model.Query"
+      data-initial-category="@Model.SelectedCategory"
+      data-initial-type="@Model.SelectedType">
+    @if (Model.IsDemoData)
+    {
+        <div class="demo-data-banner" role="status">
+            <span class="dummy-data-badge">DUMMY DATA</span>
+            <div>
+                <strong>Frontend preview only</strong>
+                <p>Every record on this page is sample data. Real files, permissions, and managed records will be used after the database migration is installed.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="demo-data-banner resource-managed-banner" role="status">
+            <span class="employee-resource-badge">MANAGED</span>
+            <div>
+                <strong>Published Employee Resources</strong>
+                <p>These records are maintained by authorized portal editors and are served from the managed resource catalog.</p>
+            </div>
+        </div>
+    }
+
+    <section class="employee-resources-intro" aria-labelledby="employeeResourcesHeading">
+        <div>
+            <span class="portal-eyebrow">Start with a topic</span>
+            <h2 id="employeeResourcesHeading">What do you need today?</h2>
+            @if (Model.IsDemoData)
+            {
+                <p>Use the search and filters to narrow the catalog. The files shown here are frontend demo attachments until portal storage is connected.</p>
+            }
+            else
+            {
+                <p>Use the search and filters to narrow the catalog. Published attachments are available according to the resource access rules.</p>
+            }
+        </div>
+        <a class="portal-button portal-button--outline" asp-controller="Public" asp-action="Help">Need help finding something? <span aria-hidden="true">→</span></a>
+    </section>
+
+    <form class="employee-resources-filters" id="employeeResourcesFilters" method="get" action="/EmployeeResources" role="search">
+        <div class="employee-resources-filter-field employee-resources-filter-field--search">
+            <label for="employeeResourceSearch">Search resources</label>
+            <input id="employeeResourceSearch" name="q" type="search" value="@Model.Query" placeholder="Search title, IT topic, system, or file name" autocomplete="off" />
+        </div>
+        <div class="employee-resources-filter-field">
+            <label for="employeeResourceCategory">IT category</label>
+            <select id="employeeResourceCategory" name="category">
+                <option value="">All IT categories</option>
+                @foreach (var category in Model.Categories)
+                {
+                    <option value="@category" selected="@(string.Equals(category, Model.SelectedCategory, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@category</option>
+                }
+            </select>
+        </div>
+        <div class="employee-resources-filter-field">
+            <label for="employeeResourceType">Resource type</label>
+            <select id="employeeResourceType" name="type">
+                <option value="">All types</option>
+                @foreach (var resourceType in Model.ResourceTypes)
+                {
+                    <option value="@resourceType" selected="@(string.Equals(resourceType, Model.SelectedType, StringComparison.OrdinalIgnoreCase) ? "selected" : null)">@resourceType</option>
+                }
+            </select>
+        </div>
+        <button class="employee-resources-clear" id="employeeResourceClear" type="button">Clear filters</button>
+    </form>
+
+    <div class="employee-resources-results-bar">
+        <p id="employeeResourceResultCount" aria-live="polite">@Model.Items.Count resources shown</p>
+        <span>@(Model.IsDemoData ? "IT-only demo reference material" : "Published reference material")</span>
+    </div>
+
+    <section class="employee-resource-grid" id="employeeResourceGrid" aria-label="Employee resources">
+        @foreach (var item in Model.Items)
+        {
+            <article class="employee-resource-card" data-resource-card data-category="@item.Category" data-type="@item.ResourceType" data-search-text="@item.SearchText">
+                <div class="employee-resource-card__topline">
+                    <span class="employee-resource-badge">@item.ResourceType</span>
+                    <span class="employee-resource-status employee-resource-status--published">@item.Status</span>
+                </div>
+                <div class="employee-resource-card__body">
+                    @if (item.IsDemoData)
+                    {
+                        <span class="dummy-data-badge dummy-data-badge--compact">DUMMY DATA</span>
+                    }
+                    <span class="employee-resource-card__category">@item.Category · @item.OwnerDepartment</span>
+                    <h2>@item.Title</h2>
+                    <p>@item.Summary</p>
+                </div>
+                <div class="employee-resource-card__meta">
+                    <span><strong>@item.Version</strong> · Updated @item.LastUpdatedUtc.ToLocalTime().ToString("MMM d, yyyy")</span>
+                    <span>@item.Attachments.Count attachment@(item.Attachments.Count == 1 ? "" : "s")</span>
+                </div>
+                <div class="employee-resource-card__footer">
+                    @if (item.ReviewDateUtc.HasValue)
+                    {
+                        <span class="employee-resource-review">Review by @item.ReviewDateUtc.Value.ToLocalTime().ToString("MMM d, yyyy")</span>
+                    }
+                    <a class="employee-resource-card__link" asp-route="EmployeeResourceDetails" asp-route-slug="@item.Slug">View resource <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+        }
+    </section>
+
+    <div class="employee-resources-empty" id="employeeResourceEmpty" hidden>
+        <span class="employee-resources-empty__mark" aria-hidden="true">⌕</span>
+        <h2>No resources match those filters</h2>
+        <p>Try a different keyword, IT category, or resource type.</p>
+        <button class="portal-button portal-button--outline" type="button" data-clear-resources>Clear filters</button>
+    </div>
+
+    @if (Model.IsDemoData)
+    {
+        <aside class="employee-resources-demo-note" aria-label="Frontend demo note">
+            <span class="employee-resources-demo-note__mark" aria-hidden="true">i</span>
+            <div>
+                <strong>Frontend preview</strong>
+                <p>Attachment names and metadata are ready for the managed resource catalog. Preview and download actions will be enabled after storage and access rules are implemented.</p>
+            </div>
+        </aside>
+    }
+    else
+    {
+        <aside class="employee-resources-demo-note" aria-label="Managed resource note">
+            <span class="employee-resources-demo-note__mark" aria-hidden="true">✓</span>
+            <div>
+                <strong>Managed resource catalog</strong>
+                <p>Attachment downloads are served from the published resource records. Contact the listed IT owner when a document needs review.</p>
+            </div>
+        </aside>
+    }
+</main>
+
+@section Scripts {
+    <script src="~/js/employee-resources.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,318 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Admin.UserActivityInsights.Views.UserActivityInsightsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             mc:Ignorable="d"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             d:DesignWidth="1400" d:DesignHeight="900"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType"
+             RenderOptions.ClearTypeHint="Enabled"
+             RenderOptions.BitmapScalingMode="HighQuality">
+
+    <!--
+        NOTE: deliberately NOT merging ui:ThemesDictionary / ui:ControlsDictionary here.
+        Every WPF-UI control that used to need them (Button, ComboBox, CheckBox,
+        ToggleSwitch) has since been replaced with a hand-rolled style below/in
+        InsightsPalette.xaml, because those Fluent styles depend on accent-color
+        resources that only Wpf.Ui.Appearance.ApplicationThemeManager.Apply(...) would
+        populate — a bootstrap this app can never call since Application.Current is
+        always null (ElementHost-hosted WPF inside WinForms, see CLAUDE.md). Leaving
+        those dictionaries merged caused intermittent, hard-to-pin-down styling glitches
+        on plain controls (e.g. a ComboBox's selected text going gray/invisible only
+        after some later interaction) even when those controls had their own explicit
+        Style. The one WPF-UI control still used here — ui:SymbolIcon — is a genuine
+        custom control with its own embedded default style (Themes/Generic.xaml in
+        Wpf.Ui.dll), which WPF resolves automatically without needing this app-level merge.
+    -->
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Admin/UserActivityInsights/Styles/InsightsPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="B2V"/>
+
+            <Style x:Key="ModeBtnBase" TargetType="Button" BasedOn="{StaticResource InsightsSecondaryBtn}">
+                <Setter Property="Margin" Value="0,0,6,0"/>
+                <Setter Property="Height" Value="32"/>
+            </Style>
+            <Style x:Key="MonthlyModeBtn" TargetType="Button" BasedOn="{StaticResource ModeBtnBase}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsMonthlyMode}" Value="True">
+                        <Setter Property="Background" Value="{StaticResource InsightsBlueBrush}"/>
+                        <Setter Property="Foreground" Value="White"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="CompareModeBtn" TargetType="Button" BasedOn="{StaticResource ModeBtnBase}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsCompareMode}" Value="True">
+                        <Setter Property="Background" Value="{StaticResource InsightsBlueBrush}"/>
+                        <Setter Property="Foreground" Value="White"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="QuarterlyModeBtn" TargetType="Button" BasedOn="{StaticResource ModeBtnBase}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsQuarterlyMode}" Value="True">
+                        <Setter Property="Background" Value="{StaticResource InsightsBlueBrush}"/>
+                        <Setter Property="Foreground" Value="White"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource InsightsBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ Filter bar ══════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Style="{StaticResource InsightsCard}" Margin="12,12,12,6">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                <StackPanel Margin="0,0,12,0">
+                    <TextBlock Text="From" Style="{StaticResource InsightsKpiSubtitle}"/>
+                    <DatePicker Style="{StaticResource InsightsDatePicker}" SelectedDate="{Binding DateFrom}" Width="140"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,12,0">
+                    <TextBlock Text="To" Style="{StaticResource InsightsKpiSubtitle}"/>
+                    <DatePicker Style="{StaticResource InsightsDatePicker}" SelectedDate="{Binding DateTo}" Width="140"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,12,0">
+                    <TextBlock Text="User" Style="{StaticResource InsightsKpiSubtitle}"/>
+                    <ComboBox Style="{StaticResource InsightsComboBox}"
+                              ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser}"
+                              Width="160" DisplayMemberPath="Name"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,12,0">
+                    <TextBlock Text="Action" Style="{StaticResource InsightsKpiSubtitle}"/>
+                    <ComboBox Style="{StaticResource InsightsComboBox}"
+                              ItemsSource="{Binding ActionTypes}" SelectedItem="{Binding SelectedAction}" Width="140"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,12,0">
+                    <TextBlock Text="Entity Type" Style="{StaticResource InsightsKpiSubtitle}"/>
+                    <ComboBox Style="{StaticResource InsightsComboBox}"
+                              ItemsSource="{Binding EntityTypes}" SelectedItem="{Binding SelectedEntityType}" Width="140"/>
+                </StackPanel>
+                <StackPanel Margin="0,0,16,0" VerticalAlignment="Bottom" Height="40" Orientation="Horizontal">
+                    <CheckBox Style="{StaticResource InsightsToggleSwitch}"
+                              Content="Include Audit Trail" IsChecked="{Binding IncludeAuditTrail}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Content="Clear" Command="{Binding ClearCommand}"
+                        Style="{StaticResource InsightsSecondaryBtn}"
+                        VerticalAlignment="Bottom" Margin="0,0,8,0"/>
+                <Button Content="Apply" Command="{Binding ApplyCommand}"
+                        Style="{StaticResource InsightsPrimaryBtn}"
+                        VerticalAlignment="Bottom"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ══ KPI cards ═══════════════════════════════════════════════ -->
+        <UniformGrid Grid.Row="1" Columns="4" Margin="12,0,12,6">
+            <Border Style="{StaticResource InsightsCard}" Margin="0,0,6,0">
+                <StackPanel>
+                    <TextBlock FontFamily="Segoe Fluent Icons" FontSize="24" Text="&#xF198;" Foreground="{StaticResource InsightsBlueBrush}"/>
+                    <TextBlock Text="Total Activities" Style="{StaticResource InsightsKpiTitle}" Margin="0,8,0,0"/>
+                    <TextBlock Text="{Binding TotalActivities}" Style="{StaticResource InsightsKpiValue}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource InsightsCard}" Margin="6,0">
+                <StackPanel>
+                    <TextBlock FontFamily="Segoe Fluent Icons" FontSize="24" Text="&#xF5B9;" Foreground="{StaticResource InsightsGreenBrush}"/>
+                    <TextBlock Text="Active Users" Style="{StaticResource InsightsKpiTitle}" Margin="0,8,0,0"/>
+                    <TextBlock Text="{Binding ActiveUsersCount}" Style="{StaticResource InsightsKpiValue}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource InsightsCard}" Margin="6,0">
+                <StackPanel>
+                    <TextBlock FontFamily="Segoe Fluent Icons" FontSize="24" Text="&#xF403;" Foreground="{StaticResource InsightsAmberBrush}"/>
+                    <TextBlock Text="Most Common Action" Style="{StaticResource InsightsKpiTitle}" Margin="0,8,0,0"/>
+                    <TextBlock Text="{Binding MostCommonAction}" Style="{StaticResource InsightsKpiValue}" FontSize="26"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource InsightsCard}" Margin="6,0,0,0">
+                <StackPanel>
+                    <TextBlock FontFamily="Segoe Fluent Icons" FontSize="24" Text="&#xF345;" Foreground="{StaticResource InsightsPurpleBrush}"/>
+                    <TextBlock Text="Most Active Entity Type" Style="{StaticResource InsightsKpiTitle}" Margin="0,8,0,0"/>
+                    <TextBlock Text="{Binding MostActiveEntityType}" Style="{StaticResource InsightsKpiValue}" FontSize="26"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <!-- ══ Charts (scrollable) ═════════════════════════════════════ -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Margin="12,0,12,12">
+            <StackPanel>
+
+                <!-- Row 2: Most Active Hours | Activities Over Time | Entity Type Distribution -->
+                <Grid Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Style="{StaticResource InsightsCard}" Margin="0,0,6,0" Height="300">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Most Active Hours" Style="{StaticResource InsightsSectionTitle}"/>
+                            <ContentControl x:Name="ChartMostActiveHours"/>
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource InsightsCard}" Margin="6,0" Height="300">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Activities Over Time" Style="{StaticResource InsightsSectionTitle}"/>
+                            <ContentControl x:Name="ChartActivitiesOverTime"/>
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource InsightsCard}" Margin="6,0,0,0" Height="300">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Entity Type Distribution" Style="{StaticResource InsightsSectionTitle}"/>
+                            <ContentControl x:Name="ChartEntityDistribution"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Monthly Activity Breakdown: Monthly / Compare (up to 5 months) / Quarterly -->
+                <Border Style="{StaticResource InsightsCard}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Monthly Activity Breakdown" Style="{StaticResource InsightsSectionTitle}"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Content="Monthly" Style="{StaticResource MonthlyModeBtn}"
+                                        Command="{Binding SetMonthlyModeCommand}" CommandParameter="0"/>
+                                <Button Content="Compare" Style="{StaticResource CompareModeBtn}"
+                                        Command="{Binding SetMonthlyModeCommand}" CommandParameter="1"/>
+                                <Button Content="Quarterly" Style="{StaticResource QuarterlyModeBtn}"
+                                        Command="{Binding SetMonthlyModeCommand}" CommandParameter="2"
+                                        Margin="0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Context controls, one row per mode -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10"
+                                    Visibility="{Binding IsMonthlyMode, Converter={StaticResource B2V}}">
+                            <TextBlock Text="Year" Style="{StaticResource InsightsKpiSubtitle}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox Style="{StaticResource InsightsComboBox}" Height="32" Width="90" Margin="0,0,14,0"
+                                      ItemsSource="{Binding AvailableYears}" SelectedItem="{Binding SelectedYear}"/>
+                            <TextBlock Text="Month" Style="{StaticResource InsightsKpiSubtitle}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox Style="{StaticResource InsightsComboBox}" Height="32" Width="90"
+                                      ItemsSource="{Binding MonthNames}" SelectedIndex="{Binding SelectedMonthIndex}"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10"
+                                    Visibility="{Binding IsCompareMode, Converter={StaticResource B2V}}">
+                            <TextBlock Text="Year" Style="{StaticResource InsightsKpiSubtitle}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox Style="{StaticResource InsightsComboBox}" Height="32" Width="90" Margin="0,0,14,0"
+                                      ItemsSource="{Binding AvailableYears}" SelectedItem="{Binding SelectedYear}"/>
+                            <TextBlock Text="Months (max 5)" Style="{StaticResource InsightsKpiSubtitle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ItemsControl ItemsSource="{Binding CompareMonths}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Style="{StaticResource InsightsCheckBox}"
+                                                  Content="{Binding Label}" IsChecked="{Binding IsChecked}" Margin="0,0,10,0"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10"
+                                    Visibility="{Binding IsQuarterlyMode, Converter={StaticResource B2V}}">
+                            <TextBlock Text="Years" Style="{StaticResource InsightsKpiSubtitle}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ItemsControl ItemsSource="{Binding QuarterlyYears}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Style="{StaticResource InsightsCheckBox}"
+                                                  Content="{Binding Year}" IsChecked="{Binding IsChecked}" Margin="0,0,10,0"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <ContentControl x:Name="ChartMonthlyBreakdown" Height="260"/>
+
+                        <!--
+                            A dominant month's line can visually squash the smaller months flat
+                            against the shared Y-axis even though their real totals are non-zero.
+                            These plain-text totals/deltas (same idea as the original WinForms
+                            dashboard's insight callouts) keep the real numbers visible regardless.
+                        -->
+                        <ItemsControl ItemsSource="{Binding CompareInsights}"
+                                      Visibility="{Binding IsCompareMode, Converter={StaticResource B2V}}"
+                                      Margin="0,10,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" FontSize="11.5"
+                                               Foreground="{StaticResource InsightsTextSecondaryBrush}"
+                                               Margin="0,2,0,0"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Row 3: Activities by Action | Top Users | Recent Activity -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Style="{StaticResource InsightsCard}" Margin="0,0,6,0" Height="320">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Activities by Action" Style="{StaticResource InsightsSectionTitle}"/>
+                            <ContentControl x:Name="ChartActivitiesByAction"/>
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource InsightsCard}" Margin="6,0" Height="320">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Top Users" Style="{StaticResource InsightsSectionTitle}"/>
+                            <ContentControl x:Name="ChartTopUsers"/>
+                        </DockPanel>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource InsightsCard}" Margin="6,0,0,0" Height="320">
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Top" Text="Recent Activity" Style="{StaticResource InsightsSectionTitle}"/>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding RecentActivities}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource InsightsBorderBrush}" BorderThickness="0,0,0,1" Padding="0,6">
+                                                <StackPanel>
+                                                    <TextBlock FontWeight="SemiBold" FontSize="12"
+                                                               Foreground="{StaticResource InsightsTextDarkBrush}"
+                                                               Text="{Binding Name}"/>
+                                                    <TextBlock FontSize="10.5" Foreground="{StaticResource InsightsTextSecondaryBrush}"
+                                                               Text="{Binding Description}" TextWrapping="Wrap"/>
+                                                    <TextBlock FontSize="9.5" Foreground="{StaticResource InsightsTextMutedBrush}"
+                                                               Text="{Binding CreatedDate, StringFormat='MMM d, yyyy h:mm tt'}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

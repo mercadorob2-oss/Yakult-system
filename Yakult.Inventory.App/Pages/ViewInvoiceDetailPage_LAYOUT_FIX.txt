@@ -1,0 +1,23 @@
+LAYOUT FIXES FOR ViewInvoiceDetailPage
+
+1. PANELTOP - Change height from 80 to 100 in Designer:
+   this.panelTop.Size = new System.Drawing.Size(1200, 100);
+
+2. ITEM COUNT - Update BuildItemCountDisplay():
+   Change Top from 50 to 65 (both labels)
+
+3. FINANCIAL PANEL - Update BuildEnhancedFinancialPanel():
+   - Change Height from 310 to 380
+   - Change column1X from 20 to 30
+   - Change column3X from 400 to 390
+   - Change labelWidth from 70 to 65
+   - Change inputWidth from 80 to 70
+   - Change startY from 200 to 210
+
+4. DATAGRIDVIEW - Update LoadInvoiceItemsAsync():
+   - Keep AutoSizeColumnsMode as None (already done)
+   - Ensure ScrollBars = ScrollBars.Both (already in designer)
+   
+The code file has WindowState = Maximized already, which is good!
+
+==== CHANGES TO MAKE ====

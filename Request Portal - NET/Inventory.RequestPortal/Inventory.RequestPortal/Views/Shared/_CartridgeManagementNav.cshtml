@@ -1,0 +1,138 @@
+@{
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    bool inMasterData  = currentController.Equals("CartridgeMasterData", StringComparison.OrdinalIgnoreCase);
+    bool inFulfillment = currentController.Equals("CartridgeExchange", StringComparison.OrdinalIgnoreCase)
+                      || currentController.Equals("CartridgeFulfillment", StringComparison.OrdinalIgnoreCase);
+
+    string SubLinkClass(string controller, string action)
+        => currentController.Equals(controller, StringComparison.OrdinalIgnoreCase) && currentAction.Equals(action, StringComparison.OrdinalIgnoreCase)
+            ? "cmenu-sublink active"
+            : "cmenu-sublink";
+
+    string GroupHeaderClass(bool expanded) => expanded ? "cmenu-group-header expanded" : "cmenu-group-header";
+}
+
+@* ── Dedicated side menu for the Cartridge Management portal (CartridgeMasterData /
+     CartridgeExchange / CartridgeFulfillment controllers) — mirrors, group-for-group and
+     item-for-item, Yakult.Inventory.App/Forms/CartridgeManagement/CartridgeManagementPortalForm.cs
+     PopulateSideMenu(): header label, top-level Send Notifications, then the five collapsible
+     groups (Cartridge Master Data, Cartridge Fulfillment, History & Monitoring, Batch Operations,
+     Disposal Categories) in that exact order, then Back to Portal / Logout. Groups whose desktop
+     pages have no web equivalent yet are rendered as disabled placeholders so the structure is
+     ready to fill in without another reshuffle. Design tokens from wwwroot/css/root.css:
+     white surface throughout, red reserved for the brand header accent and Logout, blue
+     for selected/expanded nav state (per the app-wide Yakult-inspired design system). ── *@
+<style>
+    /* height (not min-height) pinned to the same --header-height as
+       .portal-header so the red bottom-accent lines land on the same row
+       when this offcanvas slides open over a page. */
+    .cmenu-header { background:#fff; color:var(--yakult-red); border-bottom:3px solid var(--yakult-red); padding:0 1rem; height:var(--header-height); overflow:hidden; box-sizing:border-box; font-weight:700; font-size:.85rem; letter-spacing:.04em; text-transform:uppercase; }
+    .cmenu-header .btn-close { font-size:.8rem; }
+
+    .cmenu-link { display:block; padding:.75rem 1rem; text-decoration:none; color:var(--text-strong); border-bottom:1px solid var(--border-muted); font-size:.92rem; background:#fff; }
+    .cmenu-link:hover { background:var(--yakult-blue-light); }
+    .cmenu-link.disabled { color:#aab0b8; pointer-events:none; background:#fff; }
+
+    .cmenu-group { border-bottom:1px solid var(--border-muted); }
+
+    /* Selected/expanded state uses the soft blue nav-highlight, not red —
+       red stays reserved for the brand header accent and Logout. */
+    .cmenu-group-header { display:flex; align-items:center; justify-content:space-between; width:100%; border:0; border-left:4px solid transparent; background:#fff; padding:.75rem 1rem; font-weight:700; font-size:.92rem; color:var(--text-strong); text-align:left; }
+    .cmenu-group-header:hover { background:var(--yakult-blue-light); }
+    .cmenu-group-header.expanded { background:var(--yakult-blue-light); border-left-color:var(--yakult-blue); color:var(--yakult-blue-hover); }
+    .cmenu-group-header i { color:inherit; }
+    .cmenu-group-header:not(.collapsed) .bi-chevron-right { display:none; }
+    .cmenu-group-header.collapsed .bi-chevron-down { display:none; }
+
+    .cmenu-sublink { display:block; padding:.6rem 1rem .6rem 2rem; text-decoration:none; color:var(--text-strong); font-size:.88rem; border-top:1px solid var(--border-muted); background:var(--surface-muted); border-left:4px solid transparent; }
+    .cmenu-sublink:hover { background:var(--yakult-blue-light); }
+    .cmenu-sublink.active { color:var(--yakult-blue-hover); font-weight:700; border-left-color:var(--yakult-blue); background:var(--yakult-blue-light); }
+    .cmenu-sublink.disabled { color:#b7bec7; pointer-events:none; background:var(--surface-muted); }
+
+    .cmenu-footer-link { display:block; padding:.85rem 1rem; text-decoration:none; font-weight:700; font-size:.92rem; text-align:left; width:100%; border:0; }
+    .cmenu-footer-link.outline { background:#fff; color:var(--yakult-blue-hover); border-top:1px solid var(--border-muted); }
+    .cmenu-footer-link.outline:hover { background:var(--yakult-blue-light); }
+    .cmenu-footer-link.solid { background:var(--yakult-red-dark); color:#fff; }
+    .cmenu-footer-link.solid:hover { background:#6e0019; }
+</style>
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="navSidebar">
+    <div class="cmenu-header d-flex align-items-center justify-content-between">
+        <span>Cartridge Management</span>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0 d-flex flex-column">
+
+        <span class="cmenu-link disabled" title="Not yet available in the web portal">Send Notifications</span>
+
+        <div class="cmenu-group">
+            <button class="@GroupHeaderClass(inMasterData) @(inMasterData ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#grpMasterData">
+                Cartridge Master Data
+                <i class="bi bi-chevron-down"></i><i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="collapse @(inMasterData ? "show" : "")" id="grpMasterData">
+                <a class="@SubLinkClass("CartridgeMasterData", "Items")" asp-controller="CartridgeMasterData" asp-action="Items">View Cartridges</a>
+                <a class="@SubLinkClass("CartridgeMasterData", "Models")" asp-controller="CartridgeMasterData" asp-action="Models">Cartridge Models</a>
+            </div>
+        </div>
+
+        <div class="cmenu-group">
+            <button class="@GroupHeaderClass(inFulfillment) @(inFulfillment ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#grpFulfillment">
+                Cartridge Fulfillment
+                <i class="bi bi-chevron-down"></i><i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="collapse @(inFulfillment ? "show" : "")" id="grpFulfillment">
+                <a class="@SubLinkClass("CartridgeExchange", "Index")" asp-controller="CartridgeExchange" asp-action="Index">Cartridge Exchange</a>
+                <a class="@SubLinkClass("CartridgeFulfillment", "Unfulfilled")" asp-controller="CartridgeFulfillment" asp-action="Unfulfilled">Unfulfilled Cartridges</a>
+                <a class="@SubLinkClass("CartridgeFulfillment", "PartiallyFulfilled")" asp-controller="CartridgeFulfillment" asp-action="PartiallyFulfilled">Partially Fulfilled</a>
+                <a class="@SubLinkClass("CartridgeExchange", "History")" asp-controller="CartridgeExchange" asp-action="History">Fulfilled Cartridges</a>
+            </div>
+        </div>
+
+        <div class="cmenu-group">
+            <button class="cmenu-group-header collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#grpHistory">
+                History &amp; Monitoring
+                <i class="bi bi-chevron-down"></i><i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="collapse" id="grpHistory">
+                <span class="cmenu-sublink disabled">Sold Cartridges</span>
+                <span class="cmenu-sublink disabled">Disposed Cartridges</span>
+                <span class="cmenu-sublink disabled">Cartridge Tracking</span>
+                <span class="cmenu-sublink disabled">View Cartridge Sets</span>
+                <span class="cmenu-sublink disabled">Authorization Monitor</span>
+            </div>
+        </div>
+
+        <div class="cmenu-group">
+            <button class="cmenu-group-header collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#grpBatchOps">
+                Batch Operations
+                <i class="bi bi-chevron-down"></i><i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="collapse" id="grpBatchOps">
+                <span class="cmenu-sublink disabled">Dispose / Sell Cartridges</span>
+                <span class="cmenu-sublink disabled">Cartridge Refill Batch</span>
+            </div>
+        </div>
+
+        <div class="cmenu-group">
+            <button class="cmenu-group-header collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#grpDisposal">
+                Disposal Categories
+                <i class="bi bi-chevron-down"></i><i class="bi bi-chevron-right"></i>
+            </button>
+            <div class="collapse" id="grpDisposal">
+                <span class="cmenu-sublink disabled">Damaged Empty Cartridges</span>
+                <span class="cmenu-sublink disabled">Non-Refillable Cartridges</span>
+            </div>
+        </div>
+
+        <a class="cmenu-footer-link outline mt-auto" asp-controller="ConsumableManagement" asp-action="Index">
+            Back to Portal
+        </a>
+        <form asp-controller="Account" asp-action="Logout" method="post" class="mb-0">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="cmenu-footer-link solid">Logout</button>
+        </form>
+    </div>
+</div>

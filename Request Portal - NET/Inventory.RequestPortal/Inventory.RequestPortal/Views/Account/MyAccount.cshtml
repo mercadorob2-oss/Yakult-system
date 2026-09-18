@@ -1,0 +1,395 @@
+@model Inventory.RequestPortal.Models.UserAccountDto
+@{
+    Layout = null;
+    string rolesText = (Model.Roles != null && Model.Roles.Count > 0)
+        ? string.Join(", ", Model.Roles)
+        : "Requester";
+    if (Model.IsDeveloper && !rolesText.Split(',').Any(r => r.Trim().Equals("Developer", StringComparison.OrdinalIgnoreCase)))
+        rolesText = string.IsNullOrEmpty(rolesText) ? "Developer" : rolesText + ", Developer";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Account – Requester Portal</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/root.css" asp-append-version="true" />
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--surface-muted); }
+
+        /* Header — white/cream surface with a slim red brand accent,
+           matching the rest of the redesigned portal (was a dark-to-red
+           gradient band). */
+        .page-header {
+            background: var(--surface-cream);
+            padding: 20px 40px;
+            min-height: 72px;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 8px;
+            border-bottom: 3px solid var(--yakult-red);
+        }
+        .page-header .brand { font-size: 1.5rem; font-weight: 800; color: var(--yakult-red); }
+        .page-header .back-link {
+            color: var(--text-strong);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.15s;
+        }
+        .page-header .back-link:hover { color: var(--yakult-red); }
+
+        /* Content */
+        .page-body { max-width: 680px; margin: 40px auto; padding: 0 24px 60px; }
+
+        .section-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            padding: 28px 32px;
+            margin-bottom: 24px;
+        }
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title i { color: #d50032; font-size: 1.1rem; }
+
+        .info-row { display: flex; align-items: center; margin-bottom: 14px; }
+        .info-label {
+            width: 150px;
+            flex-shrink: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #666;
+        }
+        .info-value {
+            font-size: 0.95rem;
+            color: #222;
+            font-weight: 500;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .status-active { background: #e6f9f0; color: #1a7a4a; }
+        .status-inactive { background: #fdecea; color: #c62828; }
+
+        /* Form inputs */
+        .form-control-custom {
+            border: 1.5px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.95rem;
+            width: 100%;
+            transition: border-color 0.15s;
+            font-family: inherit;
+        }
+        .form-control-custom:focus {
+            outline: none;
+            border-color: #d50032;
+            box-shadow: 0 0 0 3px rgba(213,0,50,0.1);
+        }
+        .form-control-custom.readonly {
+            background: #f7f7f7;
+            color: #555;
+            cursor: default;
+        }
+
+        .btn-save {
+            background: #d50032;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 9px 22px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .btn-save:hover { background: #b8002a; }
+
+        .btn-outline-action {
+            background: #fff;
+            color: #d50032;
+            border: 1.5px solid #d50032;
+            border-radius: 6px;
+            padding: 9px 22px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+        .btn-outline-action:hover { background: #fff5f7; }
+
+        /* Change password modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: #fff;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 420px;
+            padding: 28px 28px 24px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+        }
+        .modal-box h5 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-box h5 i { color: #d50032; }
+        .modal-field { margin-bottom: 16px; }
+        .modal-field label { font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 5px; display: block; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+        .btn-cancel-modal {
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            padding: 9px 18px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #444;
+        }
+        .btn-cancel-modal:hover { background: #e4e4e4; }
+
+        @@media (max-width: 767.98px) {
+            .page-header { padding: 16px 24px; }
+            .page-header .brand { font-size: 1.15rem; }
+            .page-body { padding: 0 18px 40px; margin-top: 28px; }
+        }
+
+        @@media (max-width: 575.98px) {
+            .page-header { padding: 14px 16px; }
+            .page-header .brand { font-size: 1rem; }
+            .page-body { padding: 0 12px 40px; margin-top: 20px; }
+            .section-card { padding: 18px 14px; }
+            .info-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .info-label { width: auto; }
+            .modal-box { padding: 20px 16px 18px; max-width: 100%; }
+            .modal-actions { flex-wrap: wrap; }
+            .modal-actions .btn-save,
+            .modal-actions .btn-cancel-modal { flex: 1; text-align: center; }
+        }
+
+        @@media (max-width: 319.98px) {
+            .page-header { padding: 10px 12px; gap: 4px; }
+            .page-header .brand { font-size: 0.85rem; }
+            .page-body { padding: 0 8px 32px; margin-top: 16px; }
+            .section-card { padding: 14px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <div class="brand">YAKULT REQUESTER PORTAL</div>
+    @* MyAccount is reachable from several places now (PortalHub hub menu, the Request
+       Portal nav sidebar, etc.), so a single hardcoded destination doesn't fit every
+       entry point. Goes back in browser history when we arrived from somewhere in this
+       app; falls back to the hub page for a direct link/bookmark/new-tab open, where
+       there's no useful history to go back to. *@
+    <a class="back-link" href="/PortalHub/Index" id="backLink">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+<script>
+    (function () {
+        var link = document.getElementById('backLink');
+        if (document.referrer && document.referrer.indexOf(window.location.origin) === 0) {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                history.back();
+            });
+        }
+    })();
+</script>
+
+@if (TempData["AccountSuccess"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show mx-auto mt-3" style="max-width:680px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px;" role="alert">
+        @TempData["AccountSuccess"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["AccountError"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mx-auto mt-3" style="max-width:680px;margin-left:auto;margin-right:auto;padding-left:24px;padding-right:24px;" role="alert">
+        @TempData["AccountError"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="page-body">
+
+    <!-- Personal Information -->
+    <div class="section-card">
+        <div class="section-title"><i class="bi bi-person-circle"></i> Personal Information</div>
+
+        <div class="info-row">
+            <div class="info-label">Username</div>
+            <div class="info-value">@Model.Name</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Employee Name</div>
+            <div class="info-value">@(string.IsNullOrWhiteSpace(Model.EmployeeName) ? "Not linked" : Model.EmployeeName)</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Roles</div>
+            <div class="info-value">@rolesText</div>
+        </div>
+        <div class="info-row">
+            <div class="info-label">Status</div>
+            <div class="info-value">
+                <span class="status-badge @(Model.IsActive ? "status-active" : "status-inactive")">
+                    @(Model.IsActive ? "Active" : "Disabled")
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Address -->
+    <div class="section-card">
+        <div class="section-title"><i class="bi bi-envelope"></i> Email Address</div>
+        <form asp-controller="Account" asp-action="UpdateEmail" method="post">
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                <input type="email" name="email" id="emailInput"
+                       class="form-control-custom"
+                       value="@Model.EmailAddress"
+                       placeholder="your@email.com"
+                       required />
+                <div id="emailError" style="color:#d50032;font-size:0.82rem;margin-top:4px;display:none;">Invalid email format.</div>
+            </div>
+            <button type="submit" class="btn-save" id="saveEmailBtn">
+                <i class="bi bi-floppy"></i> Save Changes
+            </button>
+        </form>
+    </div>
+
+    <!-- Security -->
+    <div class="section-card">
+        <div class="section-title"><i class="bi bi-shield-lock"></i> Security</div>
+        <p style="font-size:0.9rem;color:#666;margin-bottom:16px;">Change your login password. You will need your current password to proceed.</p>
+        <button type="button" class="btn-outline-action" id="openChangePwdBtn">
+            <i class="bi bi-key"></i> Change Password
+        </button>
+    </div>
+
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="changePwdModal">
+    <div class="modal-box">
+        <h5><i class="bi bi-key"></i> Change Password</h5>
+        <form asp-controller="Account" asp-action="ChangePassword" method="post" id="changePwdForm">
+            @Html.AntiForgeryToken()
+            <div class="modal-field">
+                <label>Current Password</label>
+                <input type="password" name="currentPassword" class="form-control-custom" required />
+            </div>
+            <div class="modal-field">
+                <label>New Password</label>
+                <input type="password" name="newPassword" id="newPwdInput" class="form-control-custom" minlength="6" required />
+            </div>
+            <div class="modal-field">
+                <label>Confirm New Password</label>
+                <input type="password" name="confirmPassword" id="confirmPwdInput" class="form-control-custom" required />
+                <div id="pwdMismatch" style="color:#d50032;font-size:0.82rem;margin-top:4px;display:none;">Passwords do not match.</div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel-modal" id="closePwdModal">Cancel</button>
+                <button type="submit" class="btn-save">Change Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Email validation
+    var emailInput = document.getElementById('emailInput');
+    var emailError = document.getElementById('emailError');
+    var saveEmailBtn = document.getElementById('saveEmailBtn');
+    var originalEmail = emailInput.value;
+
+    function validateEmail(v) {
+        return /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(v);
+    }
+
+    emailInput.addEventListener('input', function () {
+        var v = this.value.trim();
+        if (v && !validateEmail(v)) {
+            emailError.style.display = 'block';
+            saveEmailBtn.disabled = true;
+        } else {
+            emailError.style.display = 'none';
+            saveEmailBtn.disabled = false;
+        }
+    });
+
+    // Change password modal
+    var modal = document.getElementById('changePwdModal');
+    document.getElementById('openChangePwdBtn').addEventListener('click', function () {
+        modal.classList.add('open');
+    });
+    document.getElementById('closePwdModal').addEventListener('click', function () {
+        modal.classList.remove('open');
+    });
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) modal.classList.remove('open');
+    });
+
+    // Password match validation
+    var confirmPwdInput = document.getElementById('confirmPwdInput');
+    var pwdMismatch = document.getElementById('pwdMismatch');
+    var changePwdForm = document.getElementById('changePwdForm');
+
+    confirmPwdInput.addEventListener('input', function () {
+        var match = this.value === document.getElementById('newPwdInput').value;
+        pwdMismatch.style.display = match ? 'none' : 'block';
+    });
+
+    changePwdForm.addEventListener('submit', function (e) {
+        if (document.getElementById('newPwdInput').value !== confirmPwdInput.value) {
+            e.preventDefault();
+            pwdMismatch.style.display = 'block';
+        }
+    });
+</script>
+</body>
+</html>

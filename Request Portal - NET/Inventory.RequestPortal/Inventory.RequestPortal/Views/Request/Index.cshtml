@@ -1,0 +1,1225 @@
+@model Inventory.RequestPortal.Models.ViewModels.NewRequestPageViewModel
+@{
+    ViewData["Title"] = "New Request";
+}
+
+@await Html.PartialAsync("_MasterNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Request Portal</h1>
+        <p class="subtitle mb-0">Submit and track your cartridge requests</p>
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+        @if (ViewBag.IsDeveloper != true)
+        {
+            <button type="button"
+                    class="btn btn-link text-white p-0 lh-1"
+                    style="font-size:1.25rem; text-decoration:none; opacity:0.8;"
+                    title="Start Guided Tour"
+                    onclick="YakultTour.startTourForPage()">
+                <i class="bi bi-question-circle"></i>
+            </button>
+        }
+        @await Html.PartialAsync("_NotificationBell")
+    </div>
+</div>
+
+<div class="content-padded">
+    <div class="nav-tabs-container mb-4">
+        @if (ViewBag.IsITStaff == true)
+        {
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" asp-action="Index">New Request</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-action="MyRequests">My Submitted Requests</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-action="AssistedRequest">IT Assisted Request</a>
+                </li>
+                @if (ViewBag.IsDeveloper == true)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Authorization" asp-action="DevQueue">Authorization Queue</a>
+                    </li>
+                }
+            </ul>
+        }
+        else if (ViewBag.IsApprover == true)
+        {
+            <div class="d-flex align-items-center">
+                <ul class="nav nav-tabs mb-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" asp-action="Index">New Request</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-action="MyRequests">My Submitted Requests</a>
+                    </li>
+                </ul>
+            </div>
+        }
+        else
+        {
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" asp-action="Index">New Request</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-action="MyRequests">My Submitted Requests</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Authorization" asp-action="EmployeeStatus">Authorization</a>
+                </li>
+            </ul>
+        }
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-start gap-2" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1"></i>
+            <div><strong>Error:</strong> @TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card request-card request-card-wide">
+    <div class="card-body">
+        <form id="requestForm" asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Count > 0))
+            {
+                <div class="alert alert-danger alert-dismissible fade show d-flex align-items-start gap-2 mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1"></i>
+                    <div>
+                        <strong>Please fix the following before submitting:</strong>
+                        <div asp-validation-summary="All" class="mb-0 mt-1"></div>
+                    </div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @*
+                CARTRIDGE INBOUND REQUEST FLOW:
+                - The typed model number is the PRIMARY input (authoritative)
+                - The dropdown is only a GUIDE to help users remember model names
+                - Dropdown selection auto-fills the textbox, but typed value takes precedence
+            *@
+
+            @*
+            Cartridge Model - FREE TEXT INPUT (PRIMARY/AUTHORITATIVE)
+            <div class="row mb-3">
+                <label class="col-md-3 col-form-label fw-bold">
+                    Cartridge Model <span class="text-danger">*</span>:
+                </label>
+                <div class="col-md-9">
+                    <input type="text"
+                           class="form-control"
+                           asp-for="Request.TypedModelNumber"
+                           id="typedModelInput"
+                           placeholder="e.g. WAR40XCART, HP 83A, Canon 051H"
+                           required />
+                    <span asp-validation-for="Request.TypedModelNumber" class="text-danger"></span>
+                    <small class="form-text text-muted">
+                        <i class="bi bi-info-circle"></i> Enter the cartridge model you are returning. This is the primary input.
+                    </small>
+                </div>
+            </div>
+
+            Cartridge Model Dropdown - REFERENCE/GUIDE ONLY
+            <div class="row mb-3">
+                <label class="col-md-3 col-form-label text-muted">
+                    Available Models <small>(Reference Only)</small>:
+                </label>
+                <div class="col-md-9">
+                    <select class="form-select" asp-for="Request.ModelKey" id="modelSelect">
+                        <option value="">-- Select to Auto-Fill Above --</option>
+                        @foreach (var m in Model.CartridgeModels)
+                        {
+                            <option value="@m.ModelKey"
+                                    data-available="@m.AvailableQuantity"
+                                    data-model="@m.ModelNumber">
+                                @m.DisplayName
+                            </option>
+                        }
+                    </select>
+                    <small id="availabilityText" class="form-text text-muted">
+                        <i class="bi bi-lightbulb"></i> Optional: Select from known models to auto-fill the field above
+                    </small>
+                </div>
+            </div>
+
+            Hidden field for ModelNumber (for display in request record)
+            <input type="hidden" asp-for="Request.ModelNumber" id="modelNumber" />
+
+            Quantity (max = available for selected model)
+            <div class="row mb-3">
+                <label class="col-md-3 col-form-label fw-bold">Quantity:</label>
+                <div class="col-md-9">
+                    <input type="number" class="form-control" asp-for="Request.Quantity"
+                           id="quantityInput" min="1" max="1" value="1" style="max-width: 150px;" />
+                    <span asp-validation-for="Request.Quantity" class="text-danger"></span>
+                    <small id="quantityHelp" class="form-text text-muted"></small>
+                </div>
+            </div>
+
+            Cartridge Condition
+            <div class="row mb-3">
+                <label class="col-md-3 col-form-label fw-bold">Cartridge Condition:</label>
+                <div class="col-md-9">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="Request.CartridgeCondition"
+                               value="With Cartridge" id="conditionWith" checked />
+                        <label class="form-check-label" for="conditionWith">With Cartridge</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="Request.CartridgeCondition"
+                               value="Without Cartridge" id="conditionWithout" />
+                        <label class="form-check-label" for="conditionWithout">Without Cartridge</label>
+                    </div>
+                    <span asp-validation-for="Request.CartridgeCondition" class="text-danger"></span>
+                </div>
+            </div>
+            *@
+
+            @* ── ITEM SELECTION — staging area for one item at a time; not bound to RequestItems ── *@
+            <h5 class="destination-header mt-4 mb-3">Item Selection</h5>
+
+            <div class="row mb-3">
+                <label class="col-sm-12 col-md-3 col-form-label fw-bold">Category</label>
+                <div class="col-sm-12 col-md-9">
+                    <select class="form-select" id="stagingCategory">
+                        <option value="Cartridge">Cartridge</option>
+                        <option value="Ink">Ink</option>
+                        <option value="Printerhead">Printerhead</option>
+                        <option value="Toner">Toner</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label class="col-sm-12 col-md-3 col-form-label fw-bold">Model</label>
+                <div class="col-sm-12 col-md-9">
+                    <select class="form-select" id="stagingModel">
+                        <option value="">-- Reference Only --</option>
+                        @foreach (var m in Model.CartridgeModels)
+                        {
+                            <option value="@m.ModelKey"
+                                    data-model="@m.ModelNumber"
+                                    data-available="@m.AvailableQuantity"
+                                    data-category="Cartridge">
+                                @m.DisplayName
+                            </option>
+                        }
+                        @foreach (var categoryModels in Model.ConsumableModelsByCategory)
+                        {
+                            @foreach (var m in categoryModels.Value)
+                            {
+                                <option value="@m.ModelKey"
+                                        data-model="@m.ModelNumber"
+                                        data-available="@m.AvailableQuantity"
+                                        data-category="@categoryModels.Key">
+                                    @m.DisplayName
+                                </option>
+                            }
+                        }
+                    </select>
+                    <div class="qty-helper-container" id="stagingAvailHelper"></div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <label class="col-sm-12 col-md-3 col-form-label fw-bold">Qty Requested</label>
+                <div class="col-sm-12 col-md-9">
+                    <input type="number" class="form-control" id="stagingQty" value="1" min="1" style="max-width:150px;" />
+                </div>
+            </div>
+            <div class="row mb-3" id="stagingReturnedRow">
+                <label class="col-sm-12 col-md-3 col-form-label fw-bold">Returned Empty Cartridges</label>
+                <div class="col-sm-12 col-md-9 d-flex gap-3">
+                    <div>
+                        <small class="fw-bold d-block mb-1">Good</small>
+                        <input type="number" class="form-control" id="stagingGood" value="0" min="0" style="max-width:100px;" />
+                    </div>
+                    <div>
+                        <small class="fw-bold d-block mb-1">Damaged</small>
+                        <input type="number" class="form-control" id="stagingDamaged" value="0" min="0" style="max-width:100px;" />
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-12 col-md-9 offset-md-3">
+                    <div id="stagingError" class="text-danger small mb-2" style="display:none;"></div>
+                    <button type="button" class="btn btn-success" id="addToRequestBtn">
+                        <i class="bi bi-plus-lg"></i> Add to Request
+                    </button>
+                </div>
+            </div>
+
+            @* ── REQUESTED ITEMS — the committed list that actually posts as RequestItems[i].* ── *@
+            <h5 class="destination-header mt-4 mb-3 d-flex align-items-center gap-2">
+                Requested Items
+                <span class="badge rounded-pill bg-danger" id="requestedItemsCount">0</span>
+                <span class="text-danger">*</span>
+            </h5>
+
+            <div class="row mb-3">
+                <div class="col-sm-12">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle cartridge-table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Model</th>
+                                    <th>Qty</th>
+                                    <th>Good</th>
+                                    <th>Damaged</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartridgeRowsBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="noItemsMessage" class="text-muted small py-2">No items added yet.</div>
+                    <div id="itemsRequiredError" class="text-danger small" style="display:none;">Please add at least one item to your request.</div>
+                    <input type="hidden" asp-for="Request.TypedModelNumber" />
+                    <input type="hidden" asp-for="Request.Quantity" />
+                </div>
+            </div>
+
+            @* With Cartridge — always required per business rule, hardcoded as default *@
+            <input type="hidden" asp-for="Request.CartridgeCondition" value="With Cartridge" />
+
+            @if (ViewBag.IsDeptAccount == true)
+            {
+                @* Department Account: searchable employee picker *@
+                <h5 class="destination-header mt-2 mb-3">Employee in Session</h5>
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-person-badge"></i> <strong>@ViewBag.DepartmentName (@ViewBag.BranchName)</strong> —
+                    Select the employee who is submitting this request.
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">
+                        Employee <span class="text-danger">*</span>:
+                    </label>
+                    <div class="col-sm-12 col-md-9">
+                        <div class="position-relative" id="deptEmpPickerWrapper">
+                            <input type="text" id="deptEmpInput" class="form-control pe-4"
+                                   placeholder="— Search employee —" autocomplete="off" required />
+                            <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d;">&#9660;</span>
+                            <input type="hidden" name="SelectedEmployeeId" id="deptEmpHidden" />
+                        </div>
+                        <small class="form-text text-muted">Select who is making this request.</small>
+                    </div>
+                </div>
+
+                @* Hidden fields populated by JS when employee is selected *@
+                <input type="hidden" asp-for="Request.EmployeeName" id="employeeName" />
+                <input type="hidden" asp-for="Request.EmployeePosition" id="employeePosition" />
+                <input type="hidden" asp-for="Request.DestinationCompanyId" id="destCompanyId" />
+                <input type="hidden" asp-for="Request.DestinationBranchId" id="destBranchId" />
+                <input type="hidden" asp-for="Request.DestinationDepartmentId" id="destDeptId" />
+
+                @* Read-only destination display (populated when employee selected) *@
+                <h5 class="destination-header mt-4 mb-3">Destination</h5>
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Company:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="text" class="form-control bg-light" id="dispCompany" readonly
+                               value="@ViewBag.CompanyName" />
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Branch:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="text" class="form-control bg-light" id="dispBranch" readonly
+                               value="@ViewBag.BranchName" />
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Department:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="text" class="form-control bg-light" id="dispDept" readonly
+                               value="@ViewBag.DepartmentName" />
+                    </div>
+                </div>
+            }
+            else
+            {
+                @* Normal employee: name and position read-only from session *@
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Your Name:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="text" class="form-control bg-light" asp-for="Request.EmployeeName"
+                               id="employeeName" readonly />
+                        <span asp-validation-for="Request.EmployeeName" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Your Position:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="text" class="form-control bg-light" asp-for="Request.EmployeePosition"
+                               id="employeePosition" readonly />
+                        <span asp-validation-for="Request.EmployeePosition" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <h5 class="destination-header mt-4 mb-3">Destination</h5>
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle"></i> <strong>Note:</strong> Requests are limited to your assigned department.
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Company:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="text" class="form-control bg-light" value="@ViewBag.CompanyName" readonly />
+                        <input type="hidden" asp-for="Request.DestinationCompanyId" />
+                        <small class="form-text text-muted">From your employee profile</small>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Branch:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="text" class="form-control bg-light" value="@ViewBag.BranchName" readonly />
+                        <input type="hidden" asp-for="Request.DestinationBranchId" />
+                        <small class="form-text text-muted">From your employee profile</small>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Department:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="text" class="form-control bg-light" value="@ViewBag.DepartmentName" readonly />
+                        <input type="hidden" asp-for="Request.DestinationDepartmentId" />
+                        <small class="form-text text-muted">From your employee profile</small>
+                    </div>
+                </div>
+            }
+
+            @* Distribution Method *@
+            <div class="row mb-3" id="distributionMethodRow">
+                <label class="col-sm-12 col-md-3 col-form-label fw-bold">Distribution Method:</label>
+                <div class="col-sm-12 col-md-9">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="Request.DistributionMethod"
+                               value="PICKUP" id="methodPickup" checked />
+                        <label class="form-check-label" for="methodPickup">PICKUP</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="Request.DistributionMethod"
+                               value="DELIVERY" id="methodDelivery" />
+                        <label class="form-check-label" for="methodDelivery">DELIVERY</label>
+                    </div>
+                    <span asp-validation-for="Request.DistributionMethod" class="text-danger"></span>
+                </div>
+            </div>
+
+            @* Received By - PICKUP only *@
+            <div class="row mb-3" id="receivedByRow">
+                <label class="col-sm-12 col-md-3 col-form-label fw-bold">
+                    To Be Received By: <span class="text-danger">*</span>
+                </label>
+                <div class="col-sm-12 col-md-9">
+                    @* Org filters *@
+                    <div id="rbFilterRow" class="row g-2 mb-2">
+                        <div class="col-12 col-sm">
+                            <small class="text-muted fw-semibold d-block mb-1" style="text-transform:uppercase; letter-spacing:.4px;">Company</small>
+                            <select id="rbFilterCompany" class="form-select form-select-sm">
+                                <option value="">All Companies</option>
+                                @foreach (var c in Model.Employees.Select(e => new { e.ComId, e.CompanyName }).Where(x => x.ComId > 0 && !string.IsNullOrEmpty(x.CompanyName)).DistinctBy(x => x.ComId).OrderBy(x => x.CompanyName))
+                                {
+                                    <option value="@c.ComId">@c.CompanyName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm">
+                            <small class="text-muted fw-semibold d-block mb-1" style="text-transform:uppercase; letter-spacing:.4px;">Branch</small>
+                            <select id="rbFilterBranch" class="form-select form-select-sm">
+                                <option value="">All Branches</option>
+                                @foreach (var b in Model.Employees.Select(e => new { e.BranchId, e.BranchName }).Where(x => x.BranchId > 0 && !string.IsNullOrEmpty(x.BranchName)).DistinctBy(x => x.BranchId).OrderBy(x => x.BranchName))
+                                {
+                                    <option value="@b.BranchId">@b.BranchName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm">
+                            <small class="text-muted fw-semibold d-block mb-1" style="text-transform:uppercase; letter-spacing:.4px;">Department</small>
+                            <select id="rbFilterDept" class="form-select form-select-sm">
+                                <option value="">All Departments</option>
+                                @foreach (var d in Model.Employees.Select(e => new { e.DeptId, e.DepartmentName }).Where(x => x.DeptId > 0 && !string.IsNullOrEmpty(x.DepartmentName)).DistinctBy(x => x.DeptId).OrderBy(x => x.DepartmentName))
+                                {
+                                    <option value="@d.DeptId">@d.DepartmentName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-auto d-flex flex-column">
+                            <small class="d-block mb-1" style="visibility:hidden;">x</small>
+                            <button type="button" id="rbFilterClear" class="btn btn-outline-secondary flex-fill" title="Clear filters"
+                                    style="width:38px; padding:0; line-height:1;">×</button>
+                        </div>
+                    </div>
+                    @* Name search *@
+                    <div class="position-relative" id="receivedByWrapper">
+                        <input type="text" id="receivedByInput" class="form-control"
+                               placeholder="Search by name (type any part)…" autocomplete="off" />
+                        <input type="hidden" asp-for="Request.ReceivedById" id="receivedByHidden" />
+                    </div>
+                    @* Selected chip *@
+                    <div id="rbSelectedChip" class="mt-2" style="display:none;">
+                        <span class="badge text-bg-success fs-6 fw-normal py-2 px-3" id="rbSelectedName"></span>
+                    </div>
+                    <span asp-validation-for="Request.ReceivedById" class="text-danger"></span>
+                    <small class="form-text text-muted">The person who will collect the cartridges at the IT office.</small>
+                </div>
+            </div>
+
+            @* Distribution summary preview *@
+            <div class="row mb-3">
+                <div class="col-sm-12 col-md-9 offset-md-3">
+                    <div id="distributionPreview" style="background:#f9f9fb; border:1px dashed #ccc; border-radius:8px; padding:10px 16px; font-size:.92rem; color:#333;">
+                        <span class="fw-bold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.4px;">
+                            <i class="bi bi-truck"></i> Distribution
+                        </span>
+                        <div class="mt-1">
+                            Mode of Distribution: <strong id="previewDistMethod">PICKUP</strong>
+                        </div>
+                        <div id="previewReceivedByRow" class="mt-1">
+                            To Be Received By: <strong id="previewReceivedByName" style="color:#d50032;">(select a person above)</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* Additional Remarks *@
+            <div class="row mb-4">
+                <label class="col-sm-12 col-md-3 col-form-label fw-bold">Additional Remarks:</label>
+                <div class="col-sm-12 col-md-9">
+                    <textarea class="form-control" asp-for="Request.AdditionalRemarks"
+                              rows="3" placeholder="Optional additional notes"></textarea>
+                    <span asp-validation-for="Request.AdditionalRemarks" class="text-danger"></span>
+                </div>
+            </div>
+
+            @* Buttons *@
+            <div class="row">
+                <div class="col-12 col-md-9 offset-md-3">
+                    <div class="d-grid d-sm-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-submit">Submit Request</button>
+                        <button type="reset" class="btn btn-secondary btn-clear">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @if (ViewBag.IsApprover == true)
+    {
+        <script src="~/js/tours/approver-submit-request.js" asp-append-version="true"></script>
+    }
+    else if (ViewBag.IsDeveloper != true)
+    {
+        <script src="~/js/tours/user-new-request.js" asp-append-version="true"></script>
+    }
+
+    <style>
+        /* Custom dropdown for stagingCategory/stagingModel — the panel is always anchored
+           directly below the control via CSS (top:100%), instead of relying on the native
+           <select> popup, which can flip open upward for long lists like Toner. */
+        .combo-native-select { display: none; }
+        .combo-wrap { position: relative; }
+        .combo-toggle { width: 100%; text-align: left; cursor: pointer; background-color: #fff; }
+        .combo-panel {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1055;
+            max-height: 280px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 0 0 .375rem .375rem;
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+        }
+        .combo-option { padding: .375rem .75rem; cursor: pointer; }
+        .combo-option:hover, .combo-option.active { background: #0d6efd; color: #fff; }
+    </style>
+
+    <script>
+        // Existing items, re-hydrated into the Requested Items list when the page is
+        // redisplayed after a validation error (server-side ModelState round-trip).
+        const initialRequestItems = @Html.Raw(Json.Serialize((Model.RequestItems ?? new List<Inventory.RequestPortal.Models.ViewModels.CartridgeRequestItemViewModel>())
+            .Where(x => x != null && !string.IsNullOrWhiteSpace(x.CartridgeModel))
+            .Select(x => new { category = x.Category, modelKey = x.ModelKey, cartridgeModel = x.CartridgeModel, quantity = x.Quantity, good = x.GoodEmptyQty, damaged = x.DamagedEmptyQty })));
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // ── Received By searchable combobox (PICKUP only) ────────────────────────
+            const receivedByRow   = document.getElementById('receivedByRow');
+            const receivedByInput = document.getElementById('receivedByInput');
+            const receivedByHidden = document.getElementById('receivedByHidden');
+
+            // Create dropdown on body so it's never clipped by overflow or stacking context
+            const receivedByDropdown = document.createElement('ul');
+            receivedByDropdown.id = 'receivedByDropdown';
+            receivedByDropdown.className = 'list-unstyled mb-0 border rounded bg-white shadow-sm';
+            receivedByDropdown.style.cssText = 'position:fixed; z-index:9999; max-height:200px; overflow-y:auto; display:none; padding:0; margin:0;';
+            document.body.appendChild(receivedByDropdown);
+
+            function positionReceivedByDropdown() {
+                if (!receivedByInput) return;
+                const rect = receivedByInput.getBoundingClientRect();
+                receivedByDropdown.style.top   = rect.bottom + 'px';
+                receivedByDropdown.style.left  = rect.left   + 'px';
+                receivedByDropdown.style.width = rect.width  + 'px';
+            }
+            const methodPickup       = document.getElementById('methodPickup');
+            const methodDelivery     = document.getElementById('methodDelivery');
+
+            // Employee data with full org info for cascading filters
+            const rbEmployees = [
+                @foreach (var emp in Model.Employees)
+                {
+                    @:{ id: @emp.EmpId,
+                    @:  name: '@Html.Raw(emp.DisplayName.Replace("\\", "\\\\").Replace("'", "\\'"))',
+                    @:  comId: @emp.ComId, branchId: @emp.BranchId, deptId: @emp.DeptId,
+                    @:  branchName: '@Html.Raw((emp.BranchName ?? "").Replace("\\", "\\\\").Replace("'", "\\'"))',
+                    @:  deptName:   '@Html.Raw((emp.DepartmentName ?? "").Replace("\\", "\\\\").Replace("'", "\\'"))' },
+                }
+            ];
+
+            const rbFilterCompanyEl = document.getElementById('rbFilterCompany');
+            const rbFilterBranchEl  = document.getElementById('rbFilterBranch');
+            const rbFilterDeptEl    = document.getElementById('rbFilterDept');
+            const rbFilterClearBtn  = document.getElementById('rbFilterClear');
+            const rbSelectedChip    = document.getElementById('rbSelectedChip');
+            const rbSelectedName    = document.getElementById('rbSelectedName');
+
+            function getActiveFilters() {
+                return {
+                    comId:    parseInt(rbFilterCompanyEl?.value) || 0,
+                    branchId: parseInt(rbFilterBranchEl?.value)  || 0,
+                    deptId:   parseInt(rbFilterDeptEl?.value)    || 0,
+                    q:        receivedByInput ? receivedByInput.value.trim() : ''
+                };
+            }
+
+            function getFilteredEmployees() {
+                const f = getActiveFilters();
+                return rbEmployees.filter(function(e) {
+                    if (f.comId    && e.comId    !== f.comId)    return false;
+                    if (f.branchId && e.branchId !== f.branchId) return false;
+                    if (f.deptId   && e.deptId   !== f.deptId)   return false;
+                    if (f.q && e.name.toLowerCase().indexOf(f.q.toLowerCase()) < 0) return false;
+                    return true;
+                }).sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            function hasAnyFilter() {
+                const f = getActiveFilters();
+                return f.comId > 0 || f.branchId > 0 || f.deptId > 0 || f.q.length > 0;
+            }
+
+            function selectEmployee(emp) {
+                if (receivedByInput)  receivedByInput.value  = emp.name;
+                if (receivedByHidden) receivedByHidden.value = emp.id;
+                if (rbSelectedName)   rbSelectedName.textContent = emp.name;
+                if (rbSelectedChip)   rbSelectedChip.style.display = '';
+                receivedByDropdown.style.display = 'none';
+
+                // Sync filter dropdowns to the selected employee's org (no .dispatchEvent — avoids clearing selection)
+                if (rbFilterCompanyEl) rbFilterCompanyEl.value = emp.comId || '';
+                if (rbFilterBranchEl)  rbFilterBranchEl.value  = emp.branchId || '';
+                if (rbFilterDeptEl)    rbFilterDeptEl.value    = emp.deptId || '';
+            }
+
+            function clearRbSelection() {
+                if (receivedByHidden) receivedByHidden.value = '';
+                if (rbSelectedChip)   rbSelectedChip.style.display = 'none';
+            }
+
+            function renderReceivedByDropdown(items) {
+                receivedByDropdown.innerHTML = '';
+                if (!hasAnyFilter() || items.length === 0) { receivedByDropdown.style.display = 'none'; return; }
+                items.forEach(function(emp) {
+                    const li = document.createElement('li');
+                    li.innerHTML = '<span style="font-weight:600;">' + emp.name + '</span>' +
+                        (emp.branchName || emp.deptName
+                            ? '<br><span style="font-size:.78rem; color:#6c757d;">' + [emp.branchName, emp.deptName].filter(Boolean).join(' · ') + '</span>'
+                            : '');
+                    li.style.cssText = 'padding:8px 12px; cursor:pointer; font-size:0.9rem; line-height:1.3;';
+                    li.addEventListener('mousedown', function(e) { e.preventDefault(); selectEmployee(emp); });
+                    li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
+                    li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                    receivedByDropdown.appendChild(li);
+                });
+                positionReceivedByDropdown();
+                receivedByDropdown.style.display = 'block';
+            }
+
+            // Dismiss floating dropdown when clicking outside the filter controls
+            document.addEventListener('mousedown', function(e) {
+                const insideFilter = (rbFilterCompanyEl && rbFilterCompanyEl.contains(e.target)) ||
+                                     (rbFilterBranchEl  && rbFilterBranchEl.contains(e.target))  ||
+                                     (rbFilterDeptEl    && rbFilterDeptEl.contains(e.target))    ||
+                                     (rbFilterClearBtn  && rbFilterClearBtn.contains(e.target))  ||
+                                     (receivedByInput   && receivedByInput.contains(e.target))   ||
+                                     receivedByDropdown.contains(e.target);
+                if (!insideFilter) receivedByDropdown.style.display = 'none';
+            });
+
+            [rbFilterCompanyEl, rbFilterBranchEl, rbFilterDeptEl].forEach(function(el) {
+                if (!el) return;
+                el.addEventListener('change', function() {
+                    clearRbSelection();
+                    setTimeout(function() { renderReceivedByDropdown(getFilteredEmployees()); }, 0);
+                });
+            });
+
+            if (rbFilterClearBtn) {
+                rbFilterClearBtn.addEventListener('click', function() {
+                    if (rbFilterCompanyEl) rbFilterCompanyEl.value = '';
+                    if (rbFilterBranchEl)  rbFilterBranchEl.value  = '';
+                    if (rbFilterDeptEl)    rbFilterDeptEl.value    = '';
+                    if (receivedByInput)   receivedByInput.value   = '';
+                    clearRbSelection();
+                    receivedByDropdown.style.display = 'none';
+                });
+            }
+
+            if (receivedByInput) {
+                receivedByInput.addEventListener('input', function() {
+                    clearRbSelection();
+                    renderReceivedByDropdown(getFilteredEmployees());
+                });
+
+                receivedByInput.addEventListener('focus', function() {
+                    if (hasAnyFilter()) renderReceivedByDropdown(getFilteredEmployees());
+                });
+
+                receivedByInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') { receivedByDropdown.style.display = 'none'; }
+                });
+            }
+
+            function updateReceivedByVisibility() {
+                const isPickup = methodPickup && methodPickup.checked;
+                if (receivedByRow) receivedByRow.style.display = isPickup ? '' : 'none';
+                if (receivedByInput) receivedByInput.required = isPickup;
+                if (!isPickup) {
+                    if (receivedByInput)  receivedByInput.value  = '';
+                    if (receivedByHidden) receivedByHidden.value = '';
+                    if (rbSelectedChip)   rbSelectedChip.style.display = 'none';
+                    if (receivedByDropdown) receivedByDropdown.style.display = 'none';
+                }
+            }
+
+            if (methodPickup)   methodPickup.addEventListener('change',   updateReceivedByVisibility);
+            if (methodDelivery) methodDelivery.addEventListener('change', updateReceivedByVisibility);
+
+            // Keep dropdown aligned when page scrolls or resizes while open
+            window.addEventListener('scroll', positionReceivedByDropdown, true);
+            window.addEventListener('resize', positionReceivedByDropdown);
+
+            // Run once on page load so initial state is correct
+            updateReceivedByVisibility();
+
+            // ── Distribution preview ──────────────────────────────────────────────────
+            const previewDistMethod      = document.getElementById('previewDistMethod');
+            const previewReceivedByRow   = document.getElementById('previewReceivedByRow');
+            const previewReceivedByName  = document.getElementById('previewReceivedByName');
+
+            function updateDistributionPreview() {
+                const isPickup = methodPickup && methodPickup.checked;
+                if (previewDistMethod) previewDistMethod.textContent = isPickup ? 'PICKUP' : 'DELIVERY';
+                if (previewReceivedByRow) previewReceivedByRow.style.display = isPickup ? '' : 'none';
+            }
+
+            // Update received-by name in the preview whenever a selection is made
+            function syncReceivedByPreview() {
+                if (!previewReceivedByName) return;
+                const name = receivedByInput ? receivedByInput.value.trim() : '';
+                previewReceivedByName.textContent = name || '(select a person above)';
+                previewReceivedByName.style.color = name ? '#222' : '#d50032';
+            }
+            if (receivedByInput) {
+                receivedByInput.addEventListener('input', syncReceivedByPreview);
+                receivedByInput.addEventListener('blur',  function() { setTimeout(syncReceivedByPreview, 160); });
+            }
+
+            if (methodPickup)   methodPickup.addEventListener('change',   updateDistributionPreview);
+            if (methodDelivery) methodDelivery.addEventListener('change', updateDistributionPreview);
+            updateDistributionPreview();
+            // ─────────────────────────────────────────────────────────────────────────
+
+            // ── Department Account employee picker ────────────────────────────────────
+            @if (ViewBag.IsDeptAccount == true)
+            {
+                <text>
+            const deptEmpInput   = document.getElementById('deptEmpInput');
+            const deptEmpHidden  = document.getElementById('deptEmpHidden');
+            const empNameHidden  = document.getElementById('employeeName');
+            const empPosHidden   = document.getElementById('employeePosition');
+            const destCompanyId  = document.getElementById('destCompanyId');
+            const destBranchId   = document.getElementById('destBranchId');
+            const destDeptId     = document.getElementById('destDeptId');
+            const dispCompany    = document.getElementById('dispCompany');
+            const dispBranch     = document.getElementById('dispBranch');
+            const dispDept       = document.getElementById('dispDept');
+
+            const deptEmpDropdown = document.createElement('ul');
+            deptEmpDropdown.className = 'list-unstyled mb-0 border rounded bg-white shadow-sm';
+            deptEmpDropdown.style.cssText = 'position:fixed; z-index:9999; max-height:220px; overflow-y:auto; display:none; padding:0; margin:0;';
+            document.body.appendChild(deptEmpDropdown);
+
+            function positionDeptEmpDropdown() {
+                if (!deptEmpInput) return;
+                const rect = deptEmpInput.getBoundingClientRect();
+                deptEmpDropdown.style.top   = rect.bottom + 'px';
+                deptEmpDropdown.style.left  = rect.left   + 'px';
+                deptEmpDropdown.style.width = rect.width  + 'px';
+            }
+
+            const deptEmployees = [
+                @foreach (var emp in Model.DeptAccountEmployees)
+                {
+                    @:{ id: @emp.EmpId,
+                    @:  name: '@Html.Raw(emp.Name.Replace("\\","\\\\").Replace("'","\\'"))',
+                    @:  position: '@Html.Raw((emp.Position ?? "").Replace("\\","\\\\").Replace("'","\\'"))',
+                    @:  companyId: @emp.ComId,
+                    @:  companyName: '@Html.Raw(emp.CompanyName.Replace("\\","\\\\").Replace("'","\\'"))',
+                    @:  branchId: @emp.BranchId,
+                    @:  branchName: '@Html.Raw(emp.BranchName.Replace("\\","\\\\").Replace("'","\\'"))',
+                    @:  deptId: @emp.DeptId,
+                    @:  deptName: '@Html.Raw(emp.DepartmentName.Replace("\\","\\\\").Replace("'","\\'"))' },
+                }
+            ];
+
+            function renderDeptEmpDropdown(items) {
+                deptEmpDropdown.innerHTML = '';
+                if (items.length === 0) { deptEmpDropdown.style.display = 'none'; return; }
+                items.forEach(function(emp) {
+                    const li = document.createElement('li');
+                    li.textContent = emp.name + (emp.position ? ' (' + emp.position + ')' : '');
+                    li.style.cssText = 'padding:8px 12px; cursor:pointer; font-size:0.9rem;';
+                    li.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        deptEmpInput.value   = emp.name;
+                        deptEmpHidden.value  = emp.id;
+                        if (empNameHidden) empNameHidden.value   = emp.name;
+                        if (empPosHidden)  empPosHidden.value    = emp.position;
+                        if (destCompanyId) destCompanyId.value   = emp.companyId;
+                        if (destBranchId)  destBranchId.value    = emp.branchId;
+                        if (destDeptId)    destDeptId.value      = emp.deptId;
+                        if (dispCompany)   dispCompany.value     = emp.companyName;
+                        if (dispBranch)    dispBranch.value      = emp.branchName;
+                        if (dispDept)      dispDept.value        = emp.deptName;
+                        deptEmpDropdown.style.display = 'none';
+                    });
+                    li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
+                    li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                    deptEmpDropdown.appendChild(li);
+                });
+                positionDeptEmpDropdown();
+                deptEmpDropdown.style.display = 'block';
+            }
+
+            if (deptEmpInput) {
+                deptEmpInput.addEventListener('input', function() {
+                    const q = this.value.trim().toLowerCase();
+                    deptEmpHidden.value = '';
+                    const matches = q ? deptEmployees.filter(e => e.name.toLowerCase().includes(q)) : deptEmployees;
+                    renderDeptEmpDropdown(matches);
+                });
+                deptEmpInput.addEventListener('focus', function() {
+                    const q = this.value.trim().toLowerCase();
+                    const matches = q ? deptEmployees.filter(e => e.name.toLowerCase().includes(q)) : deptEmployees;
+                    renderDeptEmpDropdown(matches);
+                });
+                deptEmpInput.addEventListener('blur', function() {
+                    setTimeout(function() { deptEmpDropdown.style.display = 'none'; }, 150);
+                    const q = deptEmpInput.value.trim().toLowerCase();
+                    const exact = deptEmployees.find(e => e.name.toLowerCase() === q);
+                    if (exact) {
+                        deptEmpHidden.value = exact.id;
+                        if (empNameHidden) empNameHidden.value = exact.name;
+                        if (empPosHidden)  empPosHidden.value  = exact.position;
+                        if (destCompanyId) destCompanyId.value = exact.companyId;
+                        if (destBranchId)  destBranchId.value  = exact.branchId;
+                        if (destDeptId)    destDeptId.value    = exact.deptId;
+                        if (dispCompany)   dispCompany.value   = exact.companyName;
+                        if (dispBranch)    dispBranch.value    = exact.branchName;
+                        if (dispDept)      dispDept.value      = exact.deptName;
+                    }
+                });
+                deptEmpInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') { deptEmpDropdown.style.display = 'none'; }
+                });
+            }
+            window.addEventListener('scroll', positionDeptEmpDropdown, true);
+            window.addEventListener('resize', positionDeptEmpDropdown);
+                </text>
+            }
+            // ─────────────────────────────────────────────────────────────────────────
+
+            // CARTRIDGE INBOUND REQUEST FLOW:
+            // - The typed model number is the PRIMARY input (authoritative)
+            // - The dropdown is only a GUIDE to help users remember model names
+            // - Dropdown selection auto-fills the textbox, but typed value takes precedence
+
+            const modelSelect = document.getElementById('modelSelect');
+            const typedModelInput = document.getElementById('typedModelInput');
+            const modelNumberInput = document.getElementById('modelNumber');
+            const quantityInput = document.getElementById('quantityInput');
+            const availabilityText = document.getElementById('availabilityText');
+            const quantityHelp = document.getElementById('quantityHelp');
+
+            const cartridgeRowsBody = document.getElementById('cartridgeRowsBody');
+
+            // Handle Model dropdown selection - AUTO-FILL the textbox (GUIDE only)
+            if (modelSelect && typedModelInput) {
+                modelSelect.addEventListener('change', function () {
+                    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+
+                    if (selectedOption && selectedOption.value) {
+                        const available = parseInt(selectedOption.getAttribute('data-available')) || 0;
+                        const modelNumber = selectedOption.getAttribute('data-model') || '';
+
+                        // AUTO-FILL the typed model input (user can still edit)
+                        typedModelInput.value = modelNumber;
+
+                        // Update hidden ModelNumber field
+                        if (modelNumberInput) {
+                            modelNumberInput.value = modelNumber;
+                        }
+
+                        // Update availability display
+                        {
+                            availabilityText.innerHTML = '<i class="bi bi-lightbulb"></i> Model selected as reference';
+                            availabilityText.className = 'form-text text-muted';
+
+                            quantityInput.removeAttribute('max');
+                            quantityInput.value = 1;
+                            quantityHelp.textContent = '';
+                        }
+                    } else {
+                        // No selection
+                        availabilityText.innerHTML = '<i class="bi bi-lightbulb"></i> Optional: Select from known models to auto-fill the field above';
+                        availabilityText.className = 'form-text text-muted';
+                        quantityInput.removeAttribute('max');
+                        quantityInput.value = 1;
+                        quantityHelp.textContent = '';
+                    }
+                });
+
+                // Validate quantity on change (no upper limit)
+                quantityInput.addEventListener('change', function () {
+                    const value = parseInt(quantityInput.value) || 1;
+
+                    if (value < 1) {
+                        quantityInput.value = 1;
+                    }
+                });
+            }
+
+            // ── Item Selection (staging) → Requested Items (committed list) ──────────
+            const noItemsMessage       = document.getElementById('noItemsMessage');
+            const itemsRequiredError  = document.getElementById('itemsRequiredError');
+            const requestedItemsCountBadge = document.getElementById('requestedItemsCount');
+
+            const stagingCategory    = document.getElementById('stagingCategory');
+            const stagingModel       = document.getElementById('stagingModel');
+            const stagingQty         = document.getElementById('stagingQty');
+            const stagingGood        = document.getElementById('stagingGood');
+            const stagingDamaged     = document.getElementById('stagingDamaged');
+            const stagingReturnedRow = document.getElementById('stagingReturnedRow');
+            const stagingError       = document.getElementById('stagingError');
+            const stagingAvailHelper = document.getElementById('stagingAvailHelper');
+            const addToRequestBtn    = document.getElementById('addToRequestBtn');
+
+            // enhanceSelectAsCombo is defined further below (function declarations are hoisted).
+            const stagingCategoryCombo = enhanceSelectAsCombo(stagingCategory);
+            const stagingModelCombo    = enhanceSelectAsCombo(stagingModel);
+
+            function updateItemsCountAndVisibility() {
+                const rows = cartridgeRowsBody ? cartridgeRowsBody.querySelectorAll('tr.cartridge-row') : [];
+                if (requestedItemsCountBadge) requestedItemsCountBadge.textContent = rows.length;
+                if (noItemsMessage) noItemsMessage.style.display = rows.length === 0 ? '' : 'none';
+            }
+
+            function reindexRequestItemRows() {
+                if (!cartridgeRowsBody) return;
+                const rows = cartridgeRowsBody.querySelectorAll('tr.cartridge-row');
+                rows.forEach((row, index) => {
+                    row.querySelectorAll('input[name]').forEach(el => {
+                        el.name = el.name.replace(/\[\d+\]/, `[${index}]`);
+                    });
+                });
+                updateItemsCountAndVisibility();
+            }
+
+            function committedQtyForModel(modelNumber) {
+                let total = 0;
+                if (!cartridgeRowsBody || !modelNumber) return total;
+                cartridgeRowsBody.querySelectorAll('tr.cartridge-row').forEach(row => {
+                    if (row.getAttribute('data-model-number') === modelNumber) {
+                        total += parseInt(row.querySelector('input[name$=".Quantity"]')?.value || '0');
+                    }
+                });
+                return total;
+            }
+
+            function updateStagingAvailability() {
+                if (!stagingAvailHelper || !stagingModel || !stagingQty) return;
+                stagingAvailHelper.innerHTML = '';
+                const selected = stagingModel.options[stagingModel.selectedIndex];
+                if (!selected || !selected.value) { stagingQty.removeAttribute('max'); return; }
+
+                const modelNumber = selected.getAttribute('data-model') || '';
+                const totalAvailable = parseInt(selected.getAttribute('data-available') || '0');
+                const remaining = Math.max(0, totalAvailable - committedQtyForModel(modelNumber));
+
+                if (remaining > 0) {
+                    stagingQty.max = remaining;
+                    if ((parseInt(stagingQty.value) || 1) > remaining) stagingQty.value = remaining;
+                    const helper = document.createElement('small');
+                    helper.className = 'form-text text-success';
+                    helper.textContent = 'Max: ' + remaining;
+                    stagingAvailHelper.appendChild(helper);
+                } else {
+                    stagingQty.removeAttribute('max');
+                }
+            }
+
+            // Show only the Available Models options matching the selected Category, and
+            // show/hide the Returned Empty Cartridges fields (Cartridge category only).
+            function filterStagingModelsByCategory() {
+                if (!stagingCategory || !stagingModel) return;
+                const category = stagingCategory.value || 'Cartridge';
+
+                Array.from(stagingModel.options).forEach(opt => {
+                    if (!opt.value) return; // keep the "-- Reference Only --" placeholder visible
+                    opt.hidden = opt.getAttribute('data-category') !== category;
+                });
+                const selected = stagingModel.options[stagingModel.selectedIndex];
+                if (selected && selected.hidden) stagingModel.value = '';
+                if (stagingModelCombo) stagingModelCombo.refresh();
+                if (stagingCategoryCombo) stagingCategoryCombo.refresh();
+
+                const isCartridge = category === 'Cartridge';
+                if (stagingReturnedRow) stagingReturnedRow.style.display = isCartridge ? '' : 'none';
+                if (!isCartridge) {
+                    if (stagingGood) stagingGood.value = '0';
+                    if (stagingDamaged) stagingDamaged.value = '0';
+                }
+                updateStagingAvailability();
+            }
+
+            function showStagingError(msg) {
+                if (!stagingError) return;
+                stagingError.textContent = msg;
+                stagingError.style.display = msg ? '' : 'none';
+            }
+
+            function buildRequestItemRow(category, modelKey, modelNumber, qty, good, damaged) {
+                const row = document.createElement('tr');
+                row.className = 'cartridge-row';
+                row.setAttribute('data-model-number', modelNumber);
+                // Good/Damaged empty-cartridge tracking only applies to the Cartridge category —
+                // show a dash for other categories rather than a misleading "0".
+                const isCartridge = category === 'Cartridge';
+                const goodDisplay = isCartridge ? good : '—';
+                const damagedDisplay = isCartridge ? damaged : '—';
+                row.innerHTML = `
+                    <td>${category}<input type="hidden" name="RequestItems[0].Category" value="${category}" /></td>
+                    <td>${modelNumber || '—'}
+                        <input type="hidden" name="RequestItems[0].CartridgeModel" value="${modelNumber}" />
+                        <input type="hidden" name="RequestItems[0].ModelKey" value="${modelKey}" />
+                    </td>
+                    <td>${qty}<input type="hidden" name="RequestItems[0].Quantity" value="${qty}" /></td>
+                    <td>${goodDisplay}<input type="hidden" name="RequestItems[0].GoodEmptyQty" value="${good}" /></td>
+                    <td>${damagedDisplay}<input type="hidden" name="RequestItems[0].DamagedEmptyQty" value="${damaged}" /></td>
+                    <td><button type="button" class="btn btn-outline-danger btn-sm remove-row">Remove</button></td>`;
+                row.querySelector('.remove-row').addEventListener('click', function () {
+                    row.remove();
+                    reindexRequestItemRows();
+                    updateStagingAvailability();
+                });
+                return row;
+            }
+
+            function addItemToRequest(category, modelKey, modelNumber, qty, good, damaged) {
+                if (!cartridgeRowsBody) return;
+                cartridgeRowsBody.appendChild(buildRequestItemRow(category, modelKey, modelNumber, qty, good, damaged));
+                reindexRequestItemRows();
+            }
+
+            if (stagingCategory) stagingCategory.addEventListener('change', filterStagingModelsByCategory);
+            if (stagingModel) stagingModel.addEventListener('change', updateStagingAvailability);
+            filterStagingModelsByCategory();
+
+            // Custom dropdown for stagingCategory/stagingModel — a native <select>'s option
+            // list opens upward whenever the browser decides there isn't enough room below,
+            // which can cover most of the page for a long list like Toner (30+ models).
+            // Replacing the popup with our own panel anchored via CSS (top:100%) removes that
+            // browser heuristic entirely: it always renders directly below the control and
+            // scrolls internally instead of ever flipping upward or overflowing the viewport.
+            function enhanceSelectAsCombo(selectEl) {
+                if (!selectEl) return null;
+
+                const wrap = document.createElement('div');
+                wrap.className = 'combo-wrap';
+                selectEl.parentNode.insertBefore(wrap, selectEl);
+                wrap.appendChild(selectEl);
+                selectEl.classList.add('combo-native-select');
+
+                const toggle = document.createElement('button');
+                toggle.type = 'button';
+                toggle.className = 'form-select combo-toggle';
+                wrap.appendChild(toggle);
+
+                const panel = document.createElement('div');
+                panel.className = 'combo-panel';
+                panel.setAttribute('role', 'listbox');
+                wrap.appendChild(panel);
+
+                function syncLabel() {
+                    const opt = selectEl.options[selectEl.selectedIndex];
+                    toggle.textContent = opt ? opt.text : '';
+                }
+
+                function closePanel() {
+                    panel.style.display = 'none';
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+
+                function buildPanel() {
+                    panel.innerHTML = '';
+                    Array.from(selectEl.options).forEach(opt => {
+                        if (opt.hidden) return;
+                        const row = document.createElement('div');
+                        row.className = 'combo-option' + (opt.value === selectEl.value ? ' active' : '');
+                        row.textContent = opt.text;
+                        row.setAttribute('role', 'option');
+                        row.addEventListener('click', () => {
+                            selectEl.value = opt.value;
+                            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                            syncLabel();
+                            closePanel();
+                        });
+                        panel.appendChild(row);
+                    });
+                }
+
+                function openPanel() {
+                    buildPanel();
+                    panel.style.display = 'block';
+                    toggle.setAttribute('aria-expanded', 'true');
+                }
+
+                toggle.addEventListener('click', () => {
+                    if (panel.style.display === 'block') closePanel(); else openPanel();
+                });
+                toggle.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') closePanel();
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPanel(); }
+                });
+                document.addEventListener('click', (e) => {
+                    if (!wrap.contains(e.target)) closePanel();
+                });
+
+                syncLabel();
+                return { refresh: syncLabel };
+            }
+
+            // Re-hydrate items carried over from a failed server-side submission
+            initialRequestItems.forEach(item => {
+                addItemToRequest(item.category, item.modelKey, item.cartridgeModel, item.quantity, item.good, item.damaged);
+            });
+
+            if (addToRequestBtn) {
+                addToRequestBtn.addEventListener('click', function () {
+                    showStagingError('');
+                    const category = stagingCategory.value || 'Cartridge';
+                    const selected = stagingModel.options[stagingModel.selectedIndex];
+                    const modelKey = selected ? selected.value : '';
+                    const modelNumber = selected ? (selected.getAttribute('data-model') || '') : '';
+                    const qty = parseInt(stagingQty.value) || 0;
+                    const isCartridge = category === 'Cartridge';
+                    const good = isCartridge ? (parseInt(stagingGood.value) || 0) : 0;
+                    const damaged = isCartridge ? (parseInt(stagingDamaged.value) || 0) : 0;
+
+                    if (!modelKey) { showStagingError('Please select a model from the list.'); return; }
+                    if (qty <= 0) { showStagingError('Quantity must be at least 1.'); return; }
+                    if (isCartridge && (good > 0 || damaged > 0) && good + damaged !== qty) {
+                        showStagingError(`Good (${good}) + Damaged (${damaged}) must equal the requested quantity (${qty}) when returning empties.`);
+                        return;
+                    }
+
+                    addItemToRequest(category, modelKey, modelNumber, qty, good, damaged);
+                    if (itemsRequiredError) itemsRequiredError.style.display = 'none';
+
+                    // Reset staging for the next entry
+                    stagingCategory.value = 'Cartridge';
+                    filterStagingModelsByCategory();
+                    stagingModel.value = '';
+                    if (stagingModelCombo) stagingModelCombo.refresh();
+                    stagingQty.value = 1;
+                    stagingGood.value = 0;
+                    stagingDamaged.value = 0;
+                    updateStagingAvailability();
+                });
+            }
+
+            updateItemsCountAndVisibility();
+
+            function updateRequestHeaderFieldsBeforeSubmit() {
+                const typedModelHidden = document.querySelector('input[name="Request.TypedModelNumber"]');
+                const qtyHidden = document.querySelector('input[name="Request.Quantity"]');
+
+                if (!cartridgeRowsBody) return;
+                const rows = cartridgeRowsBody.querySelectorAll('tr.cartridge-row');
+                let totalQty = 0;
+                let firstModel = '';
+
+                rows.forEach(row => {
+                    const modelInput = row.querySelector('input[name$=".CartridgeModel"]');
+                    const qtyInput = row.querySelector('input[name$=".Quantity"]');
+                    const model = modelInput ? modelInput.value.trim() : '';
+                    const qty = qtyInput ? parseInt(qtyInput.value || '0') : 0;
+                    if (!firstModel && model) firstModel = model;
+                    if (qty > 0) totalQty += qty;
+                });
+
+                if (typedModelHidden) typedModelHidden.value = firstModel;
+                if (qtyHidden) qtyHidden.value = totalQty > 0 ? totalQty : 1;
+            }
+
+            // Form validation before submit — target the request form specifically,
+            // not the logout form which is the first <form> in the DOM.
+            const form = document.getElementById('requestForm');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    updateRequestHeaderFieldsBeforeSubmit();
+
+                    const rows = cartridgeRowsBody ? cartridgeRowsBody.querySelectorAll('tr.cartridge-row') : [];
+                    if (rows.length === 0) {
+                        e.preventDefault();
+                        if (itemsRequiredError) itemsRequiredError.style.display = '';
+                    }
+                });
+            }
+        });
+    </script>
+}

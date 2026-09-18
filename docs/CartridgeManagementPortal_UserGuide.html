@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cartridge Management Portal — User Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #1a1a1a;
+      background: #f5f5f0;
+    }
+
+    .page-wrapper { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 270px;
+      min-width: 270px;
+      background: #ffffff;
+      color: #374151;
+      padding: 28px 0 40px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+      border-right: 1px solid #e8e5e0;
+    }
+
+    .sidebar-logo {
+      padding: 0 24px 20px;
+      border-bottom: 1px solid #e8e5e0;
+      margin-bottom: 16px;
+    }
+
+    .sidebar-logo .app-title {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-logo .guide-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.3;
+    }
+
+    .toc-section-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      padding: 14px 24px 6px;
+      font-weight: 700;
+    }
+
+    .sidebar a {
+      display: block;
+      padding: 7px 24px;
+      color: #4b5563;
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.15s, background 0.15s;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar a:hover {
+      color: #d50032;
+      background: #fdf7f8;
+      border-left-color: #d50032;
+    }
+
+    .sidebar a.sub { padding-left: 38px; font-size: 12.5px; }
+
+    .main { flex: 1; padding: 48px 56px; max-width: 900px; background: #ffffff; }
+
+    .page-header {
+      margin-bottom: 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #ece9e4;
+    }
+
+    .page-header .badge {
+      display: inline-block;
+      background: #d50032;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .page-header h1 { font-size: 27px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .page-header p  { color: #6b7280; font-size: 14px; max-width: 640px; }
+
+    .section { margin-bottom: 56px; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #ece9e4;
+    }
+
+    .section-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .icon-teal   { background: #ccfbf1; }
+    .icon-orange { background: #ffedd5; }
+    .icon-green  { background: #dcfce7; }
+    .icon-red    { background: #fee2e2; }
+    .icon-blue   { background: #dbeafe; }
+    .icon-purple { background: #ede9fe; }
+    .icon-amber  { background: #fef3c7; }
+    .icon-gray   { background: #f1f5f9; }
+
+    .section-header h2       { font-size: 20px; font-weight: 700; color: #1a1a1a; }
+    .section-header .section-num { font-size: 12px; color: #9ca3af; font-weight: 600; }
+
+    .subsection { margin-bottom: 32px; }
+
+    .subsection h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subsection h3::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: #d50032;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* ── Step Lists ── */
+    .steps { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+    .steps > li { color: #374151; padding-left: 4px; }
+
+    .step-label { font-weight: 700; color: #d50032; margin-right: 4px; }
+
+    .steps > li strong { font-weight: 700; color: #1a1a1a; }
+
+    /* ── Bullets ── */
+    .bullets { list-style: none; display: flex; flex-direction: column; gap: 5px; margin-top: 6px; margin-left: 8px; }
+
+    .bullets li { padding-left: 16px; position: relative; color: #374151; }
+
+    .bullets li::before { content: '-'; position: absolute; left: 0; color: #94a3b8; }
+
+    /* ── Callouts ── */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      font-size: 13.5px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .callout .callout-icon { font-size: 16px; line-height: 1.4; flex-shrink: 0; }
+    .callout .callout-body { flex: 1; }
+    .callout .callout-body strong { display: block; margin-bottom: 2px; font-weight: 700; }
+
+    .callout-info    { background: #eff6ff; border-left: 4px solid #3b82f6; }
+    .callout-warn    { background: #fffbeb; border-left: 4px solid #f59e0b; }
+    .callout-danger  { background: #fef2f2; border-left: 4px solid #ef4444; }
+    .callout-success { background: #f0fdf4; border-left: 4px solid #22c55e; }
+    .callout-tip     { background: #f0fdfa; border-left: 4px solid #0d9488; }
+
+    /* ── Tags ── */
+    .tag {
+      display: inline-block;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.03em;
+    }
+
+    .tag-teal   { background: #ccfbf1; color: #0f766e; }
+    .tag-orange { background: #ffedd5; color: #c2410c; }
+    .tag-green  { background: #dcfce7; color: #15803d; }
+    .tag-red    { background: #fee2e2; color: #b91c1c; }
+    .tag-blue   { background: #dbeafe; color: #1d4ed8; }
+    .tag-gray   { background: #f1f5f9; color: #475569; }
+    .tag-amber  { background: #fef3c7; color: #92400e; }
+
+    /* ── Feature Cards ── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 14px;
+      margin: 16px 0;
+    }
+
+    .feature-card { background: #faf9f7; border: 1px solid #ece9e4; border-radius: 10px; padding: 16px; }
+    .feature-card .fc-title { font-size: 13px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+    .feature-card p { font-size: 12.5px; color: #6b7280; line-height: 1.5; }
+
+    /* ── Wizard ── */
+    .wizard-step { background: #faf9f7; border: 1px solid #ece9e4; border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+
+    .wizard-step-header {
+      background: #f5f5f0;
+      border-bottom: 1px solid #ece9e4;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wizard-step-num { background: #d50032; color: #fff; font-size: 12px; font-weight: 700; border-radius: 6px; padding: 3px 10px; flex-shrink: 0; }
+    .wizard-step-title { font-weight: 700; font-size: 14px; color: #1a1a1a; }
+    .wizard-step-body { padding: 14px 16px; }
+
+    /* ── Table ── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+    .data-table th { background: #faf9f7; text-align: left; padding: 8px 12px; font-weight: 700; color: #374151; border-bottom: 1px solid #ece9e4; }
+    .data-table td { padding: 8px 12px; border-bottom: 1px solid #f0eeea; color: #374151; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #faf9f7; }
+
+    .divider { border: none; border-top: 1px solid #e8e5e0; margin: 32px 0; }
+
+    .page-footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid #ece9e4; color: #bbb; font-size: 12px; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="app-title">YIMS Internal</div>
+      <div class="guide-title">Cartridge Management Portal<br>User Guide</div>
+    </div>
+
+    <div class="toc-section-label">Overview</div>
+    <a href="#overview">Portal Overview</a>
+
+    <div class="toc-section-label">Cartridge Exchange</div>
+    <a href="#exchange">Cartridge Exchange Tab</a>
+    <a href="#exchange-pending" class="sub">Pending Requests Panel</a>
+    <a href="#exchange-fulfill" class="sub">Fulfilling a Request</a>
+    <a href="#exchange-unfulfilled" class="sub">Partial Fulfillment</a>
+
+    <div class="toc-section-label">Cartridge Data</div>
+    <a href="#view-cartridges">View Cartridges</a>
+    <a href="#cartridge-models">Cartridge Models</a>
+    <a href="#tracking">Cartridge Tracking</a>
+    <a href="#auth-monitor">Authorization Monitor</a>
+    <a href="#refill-batch">Cartridge Refill Batch</a>
+    <a href="#non-refillable">Non-Refillable Empties</a>
+    <a href="#damaged-empties">Damaged Empty Cartridges</a>
+    <a href="#outbound">Outbound Batches</a>
+    <a href="#unfulfilled">Unfulfilled Exchanges</a>
+    <a href="#partial">Partially Fulfilled</a>
+    <a href="#sets">View Cartridge Sets</a>
+    <a href="#notifications">Send Notifications</a>
+
+    <div class="toc-section-label">Shared Features</div>
+    <a href="#outbound-dialog">Outbound Assign Dialog</a>
+    <a href="#search-filter">Search &amp; Filter</a>
+    <a href="#status-colors">Status Colors</a>
+  </nav>
+
+  <main class="main">
+
+    <div class="page-header">
+      <div class="badge">User Guide</div>
+      <h1>Cartridge Management Portal</h1>
+      <p>Step-by-step reference for IT staff using the Cartridge Management Portal. Covers the Cartridge Exchange tab and all Cartridge Data sub-menus, including shared dialogs and workflow notes.</p>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="section" id="overview">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#128452;</div>
+        <div>
+          <div class="section-num">Introduction</div>
+          <h2>Portal Overview</h2>
+        </div>
+      </div>
+      <p>The Cartridge Management Portal is the IT staff's central workspace for managing the full lifecycle of printer cartridges — from fulfilling employee requests to sending empties to vendors for refill or disposal.</p>
+      <div class="feature-grid" style="margin-top:20px;">
+        <div class="feature-card">
+          <div class="fc-title">Cartridge Exchange</div>
+          <p>Fulfill pending requests from employees. Issue full cartridges and auto-record returned empties.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-title">Cartridge Data</div>
+          <p>A collapsible side menu with 12 sub-pages for inventory, models, tracking, batches, and more.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-title">Refill &amp; Outbound</div>
+          <p>Route returned empties — refillable models go to vendor refill batches; others go to Dispose or Sell batches.</p>
+        </div>
+        <div class="feature-card">
+          <div class="fc-title">Monitoring</div>
+          <p>Read-only views for cartridge movements, supervisor authorizations, and session sets.</p>
+        </div>
+      </div>
+      <div class="callout callout-tip" style="margin-top:20px;">
+        <div class="callout-icon">&#128161;</div>
+        <div class="callout-body">
+          <strong>Single source of truth</strong>
+          All stock calculations use dbo.Item (not the legacy Cartridge table). Stock is tracked with a delta model — positive rows are received stock, negative rows are deductions. The net total is always the sum of all rows for a model.
+        </div>
+      </div>
+    </div>
+
+    <!-- CARTRIDGE EXCHANGE -->
+    <div class="section" id="exchange">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#128260;</div>
+        <div>
+          <div class="section-num">Section 1</div>
+          <h2>Cartridge Exchange Tab</h2>
+        </div>
+      </div>
+      <p>The Cartridge Exchange tab is the primary fulfillment screen. It is split into two panels: the <strong>Pending Requests panel</strong> (left, 65%) and the <strong>Exchange panel</strong> (right, 35%).</p>
+
+      <div class="subsection" id="exchange-pending">
+        <h3>Pending Requests Panel</h3>
+        <p style="margin-bottom:10px;">Requests are grouped into <strong>session blocks</strong> by submission session. One portal submission = one session block, which may contain multiple cartridge models.</p>
+        <table class="data-table">
+          <thead><tr><th>Indicator</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-blue">Blue label</span></td><td>Multi-model session (more than one model in the submission)</td></tr>
+            <tr><td><span class="tag tag-amber">Peach label</span></td><td>Single-model session</td></tr>
+            <tr><td><span class="tag tag-green">Green overlay</span></td><td>Session fully fulfilled — all models issued</td></tr>
+          </tbody>
+        </table>
+        <ul class="bullets" style="margin-top:10px;">
+          <li>The grid inside each block shows all request rows for that session (ReqId, Model, Qty, Employee, Branch, Dept, Date).</li>
+          <li>Click any row to load it into the Exchange panel on the right.</li>
+          <li>The list auto-refreshes every <strong>30 seconds</strong>. A countdown timer is displayed. Click <strong>Refresh</strong> to reload immediately and reset the timer.</li>
+          <li>Click <strong>Open Request</strong> to open the full request detail page for the selected row.</li>
+        </ul>
+      </div>
+
+      <div class="subsection" id="exchange-fulfill">
+        <h3>Fulfilling a Request</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Click any row from a session block. The Exchange panel on the right populates with the request details: Requester, Model(s), Request #, Quantity, Condition, Company, Branch, and Department.</li>
+          <li><span class="step-label">Step 2:</span> Review the <strong>Issued (Full) Cartridges</strong> section. The system automatically queries available stock and shows Brand New and Refilled availability. Enter how many Brand New and/or Refilled cartridges to issue per model. The combined total per model cannot exceed that model's requested quantity.
+            <ul class="bullets">
+              <li><strong>Brand New available</strong> — cartridges with no prior refill history</li>
+              <li><strong>Refilled available</strong> — cartridges previously refilled by a vendor</li>
+            </ul>
+          </li>
+          <li><span class="step-label">Step 3:</span> Review the <strong>Returned (Empty) Cartridges</strong> section. This is read-only and auto-calculated based on the request details. No input is required here.</li>
+          <li><span class="step-label">Step 4:</span> Click <strong>Fulfill Request</strong>. All models in the session are fulfilled in one action. The system records issued cartridges, marks all requests as Fulfilled, auto-records empty returns, links all requests to a shared Set, and updates the session block with a green overlay immediately.</li>
+        </ul>
+        <div class="callout callout-tip" style="margin-top:16px;">
+          <div class="callout-icon">&#128161;</div>
+          <div class="callout-body">
+            <strong>Multi-model sessions</strong>
+            All models within a session are fulfilled together in a single click. You do not need to select and submit each model row separately. The green overlay appears on the session block as soon as the whole session is submitted.
+          </div>
+        </div>
+        <hr class="divider" />
+        <p style="margin-bottom:12px;"><strong>Other buttons in the Exchange panel:</strong></p>
+        <table class="data-table">
+          <thead><tr><th>Button</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-gray">Clear</span></td><td>Resets all quantity fields and clears the Exchange panel. No database changes.</td></tr>
+            <tr><td><span class="tag tag-red">Force Delete</span></td><td>Permanently removes the selected request record. Use only in exceptional cases (e.g., duplicate or invalid submission). A confirmation dialog is shown first.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subsection" id="exchange-unfulfilled">
+        <h3>Partial Fulfillment</h3>
+        <p>If there is not enough stock to fully fulfill a request, you can issue whatever is available. The system records the issued quantity and tracks the remaining unfulfilled quantity in the <a href="#unfulfilled">Unfulfilled Cartridge Exchanges</a> page for follow-up once stock is replenished.</p>
+      </div>
+    </div>
+
+    <!-- VIEW CARTRIDGES -->
+    <div class="section" id="view-cartridges">
+      <div class="section-header">
+        <div class="section-icon icon-blue">&#128230;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 1</div>
+          <h2>View Cartridges</h2>
+        </div>
+      </div>
+      <p>A read-only inventory list of all cartridge items in the system. Displays 10 rows per page with full pagination controls.</p>
+
+      <div class="subsection">
+        <h3>Browsing &amp; Searching</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Open the page — all active cartridges load automatically, sorted by most recently added.</li>
+          <li><span class="step-label">Step 2:</span> Use the <strong>search box</strong> — searches across Name, Model Number, Serial Number, Vendor, Condition, Status, and Remarks simultaneously.</li>
+          <li><span class="step-label">Step 3:</span> Use the <strong>Serial # field</strong> for an exact serial number lookup.</li>
+          <li><span class="step-label">Step 4:</span> Check <strong>Show Inactive</strong> to include items where Active = false.</li>
+          <li><span class="step-label">Step 5:</span> Click any column header to toggle ascending/descending sort, or use the Sort By dropdown.</li>
+          <li><span class="step-label">Step 6:</span> Use the First / Previous / Next / Last buttons to paginate. The page indicator shows current position and total count.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Row Color Indicators</h3>
+        <table class="data-table">
+          <thead><tr><th>Color</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-orange">Orange row</span></td><td>Item is mapped to the "Unassigned" default cartridge model</td></tr>
+            <tr><td><span class="tag" style="background:#ede9fe;color:#6d28d9;">Purple</span></td><td>Inactive — Unavailable</td></tr>
+            <tr><td><span class="tag tag-gray">Gray</span></td><td>Inactive — No Activity</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CARTRIDGE MODELS -->
+    <div class="section" id="cartridge-models">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#127991;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 2</div>
+          <h2>Cartridge Models</h2>
+        </div>
+      </div>
+      <p>The master list of cartridge model types. This is where models are created and managed. Supports full CRUD operations.</p>
+
+      <div class="subsection">
+        <h3>Adding a Model</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Click <strong>Add Model</strong> — opens the Add Cartridge Model dialog.</li>
+          <li><span class="step-label">Step 2:</span> Fill in the details — Model Number (required), Vendor (required), Requestable (if checked, employees can request this model from the portal), and Refillable (if checked, returned empties will be routed to vendor refill batches).</li>
+          <li><span class="step-label">Step 3:</span> Click <strong>Confirm</strong> — the model is created and the grid refreshes.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Editing a Model</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Click the <strong>Edit button</strong> on the row you want to modify.</li>
+          <li><span class="step-label">Step 2:</span> Update the fields — Model Number, Vendor, Requestable, and Refillable are all editable.</li>
+          <li><span class="step-label">Step 3:</span> Click <strong>Confirm</strong> — changes are saved and the grid refreshes.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Archiving Models</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Check one or more model rows using the checkboxes. The header checkbox selects or deselects all visible rows.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Archive</strong>.</li>
+          <li><span class="step-label">Step 3:</span> Confirm the prompt — archived models are hidden from employee request dropdowns but their data is preserved.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Deleting Models</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Check one or more model rows.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Delete</strong>.</li>
+          <li><span class="step-label">Step 3:</span> If any cartridge items are linked to the model, a prompt offers two choices: Mark as Inactive (keeps the model but deactivates linked items) or Delete Permanently (removes the model and unlinks all associated items).</li>
+          <li><span class="step-label">Step 4:</span> Confirm — the action is applied and the grid refreshes.</li>
+        </ul>
+        <div class="callout callout-danger" style="margin-top:10px;">
+          <div class="callout-icon">&#128680;</div>
+          <div class="callout-body"><strong>Permanent deletion cannot be undone.</strong> Prefer archiving unless the model was created in error.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARTRIDGE TRACKING -->
+    <div class="section" id="tracking">
+      <div class="section-header">
+        <div class="section-icon icon-gray">&#128269;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 3</div>
+          <h2>Cartridge Tracking</h2>
+        </div>
+      </div>
+      <p>A read-only audit trail of every cartridge movement in the system (issuances, returns, refills, adjustments). No editing is possible on this page.</p>
+
+      <div class="subsection">
+        <h3>Using the Filters</h3>
+        <table class="data-table">
+          <thead><tr><th>Filter</th><th>Options</th></tr></thead>
+          <tbody>
+            <tr><td>Item</td><td>(All Items) or select a specific cartridge item</td></tr>
+            <tr><td>Employee</td><td>(All Employees) or select a specific employee</td></tr>
+            <tr><td>Movement Type</td><td>All · StockIn · Issued · Returned · RefillIn · Adjustment</td></tr>
+            <tr><td>Search box</td><td>Partial match on Item Name</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px;">Changing any filter immediately reloads the results. Default sort is most recent first.</p>
+      </div>
+    </div>
+
+    <!-- AUTHORIZATION MONITOR -->
+    <div class="section" id="auth-monitor">
+      <div class="section-header">
+        <div class="section-icon icon-purple">&#9989;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 4</div>
+          <h2>Authorization Monitor</h2>
+        </div>
+      </div>
+      <p>A read-only view of all CartridgeAuthorization records — the supervisor sign-offs required before employees can submit cartridge requests from the portal.</p>
+      <ul class="bullets" style="margin-top:10px;">
+        <li>Click <strong>Refresh</strong> to reload. The status bar shows the row count and last refresh time.</li>
+        <li>No data entry is available on this page — it is monitoring only.</li>
+      </ul>
+      <table class="data-table" style="margin-top:14px;">
+        <thead><tr><th>Status</th><th>Color</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>Approved</td><td><span class="tag tag-green">Green</span></td><td>Supervisor has signed off — request can proceed</td></tr>
+          <tr><td>Pending</td><td><span class="tag tag-amber">Amber</span></td><td>Awaiting supervisor signature</td></tr>
+          <tr><td>Rejected</td><td><span class="tag tag-red">Red</span></td><td>Supervisor declined — request will not proceed</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- CARTRIDGE REFILL BATCH -->
+    <div class="section" id="refill-batch">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#9851;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 5</div>
+          <h2>Cartridge Refill Batch</h2>
+        </div>
+      </div>
+      <p>Manages batches of returned empty cartridges (from <strong>Refillable</strong> models) that are collected and sent to vendors for refilling.</p>
+
+      <div class="subsection">
+        <h3>Creating a Batch</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Click <strong>Create Batch</strong>.</li>
+          <li><span class="step-label">Step 2:</span> Select a vendor from the dropdown and optionally set a threshold (auto-dispatch at a certain unit count).</li>
+          <li><span class="step-label">Step 3:</span> Confirm — a new batch is created with Status = Active.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Assigning Returns to a Batch</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Select the batch row you want to assign cartridges to.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Assign Returns</strong>.</li>
+          <li><span class="step-label">Step 3:</span> In the dialog, select the unassigned returned cartridges to add.</li>
+          <li><span class="step-label">Step 4:</span> Confirm — selected cartridges are linked to the batch. The audit trail below updates.</li>
+        </ul>
+        <div class="callout callout-info" style="margin-top:10px;">
+          <div class="callout-icon">&#8505;</div>
+          <div class="callout-body">You can right-click a row in the audit trail to <strong>Transfer to Another Batch</strong> or <strong>Remove from Batch</strong> (returns it to unassigned status).</div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Editing a Batch</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Select the batch row.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Edit Batch</strong> — update the threshold or assigned vendor.</li>
+          <li><span class="step-label">Step 3:</span> Confirm.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Sending to Vendor</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Select an Active batch.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Send to Vendor</strong>.</li>
+          <li><span class="step-label">Step 3:</span> Confirm the prompt which shows Vendor name and unit count.</li>
+          <li><span class="step-label">Step 4:</span> Batch status changes to Sent for Refill and the dispatch date is recorded.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Deleting a Batch</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Select the batch and click <strong>Delete Batch</strong>.</li>
+          <li><span class="step-label">Step 2:</span> Confirm — the batch is removed and all assigned cartridges are returned to unassigned status (they can be reassigned to another batch).</li>
+        </ul>
+      </div>
+
+      <div class="callout callout-warn">
+        <div class="callout-icon">&#9888;</div>
+        <div class="callout-body"><strong>Damaged cartridges</strong> are excluded from refill batches. A yellow alert panel is shown if any damaged returns are detected. Route those through the <a href="#damaged-empties">Damaged Empty Cartridges</a> page instead.</div>
+      </div>
+    </div>
+
+    <!-- NON-REFILLABLE -->
+    <div class="section" id="non-refillable">
+      <div class="section-header">
+        <div class="section-icon icon-amber">&#128683;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 6</div>
+          <h2>Non-Refillable Empty Cartridges</h2>
+        </div>
+      </div>
+      <p>Lists returned empty cartridges from models that are <strong>not eligible for vendor refill</strong> (Refillable = false). These must be routed to a Dispose or Sell outbound batch.</p>
+      <p style="margin-top:8px;">Rows are grouped by Request ID + Model + Condition for clarity.</p>
+
+      <div class="subsection">
+        <h3>Assigning to an Outbound Batch</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Select one or more rows using the checkboxes.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Assign to Outbound Batch</strong>.</li>
+          <li><span class="step-label">Step 3:</span> The Outbound Batch Assignment dialog opens — pre-filtered to show only non-refillable cartridges. Follow the two-step wizard. See <a href="#outbound-dialog">Outbound Batch Assignment Dialog</a> for full steps.</li>
+          <li><span class="step-label">Step 4:</span> On completion, the assigned rows disappear from this page and appear in the relevant outbound batch.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- DAMAGED EMPTIES -->
+    <div class="section" id="damaged-empties">
+      <div class="section-header">
+        <div class="section-icon icon-red">&#9888;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 7</div>
+          <h2>Damaged Empty Cartridges</h2>
+        </div>
+      </div>
+      <p>Lists returned empty cartridges in <span class="tag tag-red">Damaged</span> condition. These are automatically excluded from all refill batches and must be assigned to an outbound batch (Dispose or Sell).</p>
+
+      <div class="subsection">
+        <h3>Assigning to an Outbound Batch</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Select one or more rows using the checkboxes.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Assign to Outbound Batch</strong>.</li>
+          <li><span class="step-label">Step 3:</span> The Outbound Batch Assignment dialog opens — shows all unassigned non-refillable and damaged cartridges. Follow the two-step wizard. See <a href="#outbound-dialog">Outbound Batch Assignment Dialog</a> for full steps.</li>
+        </ul>
+        <div class="callout callout-info" style="margin-top:10px;">
+          <div class="callout-icon">&#8505;</div>
+          <div class="callout-body">The dialog opened from this page does not pre-filter by non-refillable status — all unassigned damaged cartridges are shown.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTBOUND BATCHES -->
+    <div class="section" id="outbound">
+      <div class="section-header">
+        <div class="section-icon icon-orange">&#128228;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 8</div>
+          <h2>Outbound Batches (Dispose / Sell)</h2>
+        </div>
+      </div>
+      <p>Manages <span class="tag tag-orange">DISPOSE</span> and <span class="tag tag-green">SELL</span> batches for non-refillable and damaged empty cartridges that need to be sent to a disposal or sale company.</p>
+
+      <div class="subsection">
+        <h3>Creating a New Outbound Batch</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Click <strong>New Outbound Batch</strong>.</li>
+          <li><span class="step-label">Step 2:</span> The Outbound Batch Assignment dialog opens — showing all unassigned non-refillable and damaged cartridges. Follow the two-step wizard to select cartridges and configure the batch. See <a href="#outbound-dialog">Outbound Batch Assignment Dialog</a> for full steps.</li>
+          <li><span class="step-label">Step 3:</span> On completion, the new batch appears in the grid.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Finalizing a Batch</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Locate the batch row and click its <strong>Finalize</strong> button.</li>
+          <li><span class="step-label">Step 2:</span> Review the confirmation which shows: vendor, models, total unit count, and the action (Disposed or Sold). This cannot be undone.</li>
+          <li><span class="step-label">Step 3:</span> Confirm — the batch status is set to Finalized, all linked cartridges are marked as Disposed or Sold, and the batch is removed from the active list.</li>
+        </ul>
+        <div class="callout callout-danger" style="margin-top:10px;">
+          <div class="callout-icon">&#128680;</div>
+          <div class="callout-body"><strong>Finalization is permanent.</strong> Verify the vendor, unit count, and batch purpose before confirming. If the batch has no assigned cartridges, the system will offer to delete it instead.</div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Deleting a Batch</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Select the batch row and click <strong>Delete Batch</strong>.</li>
+          <li><span class="step-label">Step 2:</span> Confirm — the batch is removed and all assigned cartridges return to unassigned status.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Viewing the Disposed/Sold Report</h3>
+        <ul class="bullets">
+          <li>Click <strong>Disposed/Sold Report</strong> to open a full summary of all finalized batches.</li>
+          <li>The report shows both DISPOSE and SELL batches with vendor, model breakdown, and dates.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- UNFULFILLED -->
+    <div class="section" id="unfulfilled">
+      <div class="section-header">
+        <div class="section-icon icon-amber">&#128336;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 9</div>
+          <h2>Unfulfilled Cartridge Exchanges</h2>
+        </div>
+      </div>
+      <p>Tracks exchange requests where the issued quantity was less than the requested quantity — either because stock was insufficient at the time, or a partial amount was intentionally issued. Records are processed in <strong>FIFO order</strong> (oldest pending first).</p>
+
+      <div class="subsection">
+        <h3>Viewing &amp; Filtering</h3>
+        <ul class="bullets">
+          <li>Use the <strong>Status filter</strong> to switch between All, Pending, and Fulfilled views. Default is Pending.</li>
+          <li>Use the <strong>Search box</strong> to filter by Requester, Branch, Department, Model, or Request #. Use the Filter By dropdown to narrow which field is searched.</li>
+          <li>Records are grouped into session cards (same submission session = one card). Summary cards at the top show total pending count, unfulfilled unit count, and a by-model breakdown.</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Fulfilling a Pending Record</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Click a row inside a session card to select it. Remarks for the row appear at the bottom.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Fulfill Selected</strong> — the Fulfillment dialog opens.</li>
+          <li><span class="step-label">Step 3:</span> In the dialog, for each pending model in the session, review the Requested Qty, Already Issued, and Pending Qty. Enter Brand New qty and/or Refilled qty to issue now. The dialog calculates Issued After and Pending After in real time. Add optional Remarks.</li>
+          <li><span class="step-label">Step 4:</span> Click <strong>Fulfill Selected</strong> — movements are recorded, the unfulfilled record is updated, and the grid refreshes. If all models in a session are now fulfilled, the session card is marked complete.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PARTIALLY FULFILLED -->
+    <div class="section" id="partial">
+      <div class="section-header">
+        <div class="section-icon icon-amber">&#9203;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 10</div>
+          <h2>Partially Fulfilled Cartridges</h2>
+        </div>
+      </div>
+      <p>Similar to Unfulfilled Exchanges but focused specifically on <strong>multi-model sessions</strong> where some models have been fulfilled and others remain pending. This gives IT staff a clear view of in-progress multi-model submissions without mixing them with fully pending records.</p>
+      <p style="margin-top:8px;">The layout, filters, and fulfill workflow are identical to the <a href="#unfulfilled">Unfulfilled Cartridge Exchanges</a> page.</p>
+    </div>
+
+    <!-- VIEW CARTRIDGE SETS -->
+    <div class="section" id="sets">
+      <div class="section-header">
+        <div class="section-icon icon-blue">&#128194;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 11</div>
+          <h2>View Cartridge Sets</h2>
+        </div>
+      </div>
+      <p>Shows all cartridge Sets — logical groupings that link related exchange requests from the same portal submission. Sets are created automatically when requests are fulfilled.</p>
+
+      <div class="subsection">
+        <h3>Actions</h3>
+        <table class="data-table">
+          <thead><tr><th>Action</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Open</strong></td><td>Select a row and click Open to view the full set detail, including all linked requests and movement history.</td></tr>
+            <tr><td><strong>Archive</strong></td><td>Select a row and click Archive. Confirm the prompt. The set is hidden from the main list but data is preserved.</td></tr>
+            <tr><td><strong>Delete</strong></td><td>Select a row and click Delete. Confirm the warning — this removes the set and all cascading detail records permanently.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subsection">
+        <h3>Summary Cards</h3>
+        <ul class="bullets">
+          <li><strong>Total</strong> — count of all active sets</li>
+          <li><strong>Expired</strong> — sets where the expiry date has passed</li>
+          <li><strong>With QR</strong> — sets that have a generated QR code</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- SEND NOTIFICATIONS -->
+    <div class="section" id="notifications">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#128231;</div>
+        <div>
+          <div class="section-num">Cartridge Data — 12</div>
+          <h2>Send Notifications</h2>
+        </div>
+      </div>
+      <p>Allows IT staff to send email notifications to employees informing them that their cartridge request has been fulfilled or that there is an update on an unfulfilled exchange.</p>
+      <ul class="steps" style="margin-top:14px;">
+        <li><span class="step-label">Step 1:</span> Select the requestor from the filter dropdown to narrow the list.</li>
+        <li><span class="step-label">Step 2:</span> Select the request from the list to be notified about.</li>
+        <li><span class="step-label">Step 3:</span> Compose or review the notification message using the template.</li>
+        <li><span class="step-label">Step 4:</span> Click <strong>Send</strong> — the email is dispatched and logged.</li>
+      </ul>
+    </div>
+
+    <!-- OUTBOUND DIALOG -->
+    <div class="section" id="outbound-dialog">
+      <div class="section-header">
+        <div class="section-icon icon-orange">&#128703;</div>
+        <div>
+          <div class="section-num">Shared Feature</div>
+          <h2>Outbound Batch Assignment Dialog</h2>
+        </div>
+      </div>
+      <p>This two-step wizard is shared across three pages. It behaves slightly differently depending on which page opens it:</p>
+
+      <table class="data-table" style="margin-bottom:20px;">
+        <thead><tr><th>Opened from</th><th>Cartridge filter applied</th></tr></thead>
+        <tbody>
+          <tr><td>Non-Refillable Empty Cartridges</td><td>Shows non-refillable cartridges only</td></tr>
+          <tr><td>Damaged Empty Cartridges</td><td>Shows all unassigned cartridges (non-refillable + damaged)</td></tr>
+          <tr><td>Outbound Batches - New Batch</td><td>Shows all unassigned cartridges (non-refillable + damaged)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="wizard-step">
+        <div class="wizard-step-header">
+          <div class="wizard-step-num">Step 1</div>
+          <div class="wizard-step-title">Select Cartridges</div>
+        </div>
+        <div class="wizard-step-body">
+          <ul class="steps">
+            <li><span class="step-label">Step 1:</span> Review the cartridge list — shows unassigned returns that match the page's filter context (see table above).</li>
+            <li><span class="step-label">Step 2:</span> Use the <strong>Model filter</strong> dropdown at the top to narrow by cartridge model if needed.</li>
+            <li><span class="step-label">Step 3:</span> Check the rows you want to include in the batch. The header checkbox selects or deselects all visible rows. The selection count and total units are shown at the bottom of the dialog.</li>
+            <li><span class="step-label">Step 4:</span> Click <strong>Next</strong> — only enabled when at least one row is selected.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="wizard-step">
+        <div class="wizard-step-header">
+          <div class="wizard-step-num">Step 2</div>
+          <div class="wizard-step-title">Batch Details</div>
+        </div>
+        <div class="wizard-step-body">
+          <p style="margin-bottom:12px;">A summary of selected cartridges is shown at the top (count and by-model breakdown). Choose one of two modes:</p>
+
+          <div class="subsection" style="margin-bottom:18px;">
+            <h3>Option A — Create New Batch</h3>
+            <ul class="steps">
+              <li><span class="step-label">Step 1:</span> Select the batch purpose: <strong>DISPOSE</strong> or <strong>SELL</strong>. The vendor dropdown refreshes to show only vendors of the matching type.</li>
+              <li><span class="step-label">Step 2:</span> Select a vendor from the dropdown (required).</li>
+              <li><span class="step-label">Step 3:</span> Add optional remarks for internal notes.</li>
+              <li><span class="step-label">Step 4:</span> If any selected cartridges are damaged, a warning is displayed as a reminder.</li>
+              <li><span class="step-label">Step 5:</span> Click <strong>Create Batch</strong> — the batch is created, all selected cartridges are assigned to it, and the calling page refreshes.</li>
+            </ul>
+          </div>
+
+          <div class="subsection">
+            <h3>Option B — Use Existing Active Batch</h3>
+            <ul class="steps">
+              <li><span class="step-label">Step 1:</span> Select the radio button for "Use Existing Active Batch".</li>
+              <li><span class="step-label">Step 2:</span> Choose a batch from the dropdown — listed as "Batch #ID – Vendor – Purpose (X units)".</li>
+              <li><span class="step-label">Step 3:</span> Click <strong>Create Batch</strong> (the button label stays the same) — selected cartridges are added to the chosen existing batch without creating a new record.</li>
+            </ul>
+          </div>
+
+          <div class="callout callout-tip" style="margin-top:10px;">
+            <div class="callout-icon">&#128161;</div>
+            <div class="callout-body">Click <strong>Back</strong> on Step 2 to return to Step 1. Your row selections and filters are preserved. Click <strong>Cancel</strong> on either step to close without saving.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEARCH & FILTER -->
+    <div class="section" id="search-filter">
+      <div class="section-header">
+        <div class="section-icon icon-gray">&#128270;</div>
+        <div>
+          <div class="section-num">Shared Feature</div>
+          <h2>Search, Filter &amp; Pagination</h2>
+        </div>
+      </div>
+      <p>Most Cartridge Data pages share a consistent search and navigation pattern:</p>
+      <table class="data-table" style="margin-top:12px;">
+        <thead><tr><th>Control</th><th>Behavior</th></tr></thead>
+        <tbody>
+          <tr><td>Search box</td><td>Partial text match across relevant columns. Results update as you type or on Enter.</td></tr>
+          <tr><td>Filter By dropdown</td><td>Restricts which column the search box matches against (e.g., Requester only, or Model only).</td></tr>
+          <tr><td>Sort By dropdown</td><td>Applies a named sort order (Most Recently Added, Oldest Added, etc.).</td></tr>
+          <tr><td>Column header click</td><td>Toggles ascending / descending sort on that column.</td></tr>
+          <tr><td>Show Inactive checkbox</td><td>Includes soft-deleted or inactive records in the list.</td></tr>
+          <tr><td>Pagination buttons</td><td>First, Previous, Next, Last — with a "Page X of Y (Z records)" label.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- STATUS COLORS -->
+    <div class="section" id="status-colors">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#127912;</div>
+        <div>
+          <div class="section-num">Shared Feature</div>
+          <h2>Status Colors &amp; Labels</h2>
+        </div>
+      </div>
+      <p>The portal uses a consistent color language across all pages:</p>
+      <table class="data-table" style="margin-top:12px;">
+        <thead><tr><th>Color</th><th>Used for</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-teal">Teal</span></td><td>Primary actions, page headers, step indicators</td></tr>
+          <tr><td><span class="tag tag-orange">Orange</span></td><td>DISPOSE batches, warnings, important actions</td></tr>
+          <tr><td><span class="tag tag-green">Green</span></td><td>SELL batches, fulfilled sessions, success states</td></tr>
+          <tr><td><span class="tag tag-red">Red</span></td><td>Destructive actions (delete, force delete, damaged condition)</td></tr>
+          <tr><td><span class="tag tag-gray">Gray</span></td><td>Secondary / neutral actions, disabled states</td></tr>
+          <tr><td><span class="tag tag-blue">Blue</span></td><td>Multi-model session labels, informational states</td></tr>
+          <tr><td><span class="tag tag-amber">Amber / Peach</span></td><td>Single-model session labels, pending states, warnings</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="page-footer">
+      <p>Yakult Inventory Monitoring System (YIMS) — Internal IT Reference</p>
+      <p style="margin-top:4px;">Cartridge Management Portal · Generated 2026</p>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

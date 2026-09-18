@@ -1,0 +1,1150 @@
+<UserControl
+    x:Class="Yakult.Inventory.App.WPF.RequestPortal.AuthorizeRequest.Views.AuthorizeRequestView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ink="clr-namespace:System.Windows.Ink;assembly=PresentationCore"
+    xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.RequestPortal.AuthorizeRequest.ViewModels"
+    Background="#F0F2F6"
+    FontFamily="Segoe UI"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType"
+    RenderOptions.ClearTypeHint="Enabled">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Yakult.Inventory.App;component/WPF/RequestPortal/RequestPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ HEADER BAR ══════════════════════════════════════════════════════ -->
+        <Border x:Name="tourHeaderBar" Grid.Row="0" Background="{StaticResource YakultBlue}" Padding="24,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Authorize Cartridge Requests"
+                               FontSize="18" FontWeight="Bold" Foreground="White"
+                               VerticalAlignment="Center"/>
+                    <Border Background="#22000000" CornerRadius="10"
+                            Padding="10,3" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding QueueCount}"
+                                   FontSize="12" FontWeight="Bold" Foreground="White"/>
+                    </Border>
+                    <Border Background="#22000000" CornerRadius="10"
+                            Padding="10,3" Margin="6,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="pending"
+                                   FontSize="11" Foreground="#CCFFFFFF"/>
+                    </Border>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="&#x21BB;  Refresh"
+                        Command="{Binding RefreshCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        Background="{StaticResource YakultDarkBlue}"
+                        Height="34" Padding="16,0"/>
+            </Grid>
+        </Border>
+
+        <!-- ══ BODY ════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" MinWidth="240" MaxWidth="380"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── LEFT: Pending Queue Panel ─────────────────────────────────── -->
+            <Border x:Name="tourQueuePanel"
+                    Grid.Column="0"
+                    Background="White"
+                    BorderBrush="{StaticResource CardBorder}"
+                    BorderThickness="0,0,1,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Search area -->
+                    <Border x:Name="tourSearchArea" Grid.Row="0" Padding="14,12"
+                            BorderBrush="{StaticResource CardBorder}"
+                            BorderThickness="0,0,0,1">
+                        <Grid>
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource InputBox}"
+                                     Padding="34,8,11,8"/>
+                            <!-- Search icon overlay -->
+                            <TextBlock Text="&#x1F50D;" FontSize="13"
+                                       Foreground="{StaticResource TextMuted}"
+                                       VerticalAlignment="Center"
+                                       Margin="11,0,0,0"
+                                       IsHitTestVisible="False"/>
+                            <!-- Placeholder -->
+                            <TextBlock Text="Search requests..."
+                                       FontSize="12" Foreground="{StaticResource TextMuted}"
+                                       VerticalAlignment="Center"
+                                       Margin="34,0,0,0"
+                                       IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SearchText}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+
+                    <!-- Queue list -->
+                    <Grid Grid.Row="1">
+                        <!-- Empty queue state -->
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="16">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding QueueCount}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <TextBlock Text="&#x2713;" FontSize="40" FontWeight="Bold"
+                                       Foreground="{StaticResource SuccessGreen}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="All caught up!"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMuted}"
+                                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                            <TextBlock Text="No pending requests at this time."
+                                       FontSize="11" Foreground="{StaticResource TextMuted}"
+                                       HorizontalAlignment="Center" TextAlignment="Center"
+                                       TextWrapping="Wrap" Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <ListBox x:Name="tourQueueList"
+                                 ItemsSource="{Binding FilteredQueue}"
+                                 SelectedItem="{Binding SelectedRequest}"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 HorizontalContentAlignment="Stretch">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="Margin"  Value="0"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border x:Name="itemBorder"
+                                                        Background="White"
+                                                        BorderBrush="{StaticResource CardBorder}"
+                                                        BorderThickness="0,0,0,1">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="4"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Left accent bar -->
+                                                        <Border x:Name="accentBar"
+                                                                Grid.Column="0"
+                                                                Background="Transparent"
+                                                                Margin="0,10,0,10"
+                                                                CornerRadius="2"/>
+
+                                                        <!-- Content -->
+                                                        <Grid Grid.Column="1" Margin="12,12,14,12">
+                                                            <!-- Status dot (top-right) -->
+                                                            <Border x:Name="statusDot"
+                                                                    Width="11" Height="11"
+                                                                    CornerRadius="5.5"
+                                                                    Background="#BDBDBD"
+                                                                    HorizontalAlignment="Right"
+                                                                    VerticalAlignment="Top"
+                                                                    Margin="0,1,0,0"
+                                                                    ToolTip="{Binding StatusTooltip}"/>
+
+                                                            <!-- Text content -->
+                                                            <StackPanel>
+                                                                <TextBlock x:Name="nameText"
+                                                                           Text="{Binding EmployeeName}"
+                                                                           FontWeight="SemiBold"
+                                                                           FontSize="13"
+                                                                           Foreground="{StaticResource TextPrimary}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           Margin="0,0,18,0"/>
+                                                                <TextBlock Text="{Binding OrgLine}"
+                                                                           FontSize="11"
+                                                                           Foreground="{StaticResource TextMuted}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           Margin="0,2,0,0"/>
+                                                                <StackPanel Orientation="Horizontal"
+                                                                            Margin="0,4,0,0">
+                                                                    <TextBlock Text="&#x1F4C5; "
+                                                                               FontSize="10"
+                                                                               Foreground="{StaticResource TextMuted}"/>
+                                                                    <TextBlock Text="{Binding CreatedDateText}"
+                                                                               FontSize="11"
+                                                                               Foreground="{StaticResource TextMuted}"/>
+                                                                </StackPanel>
+                                                                <TextBlock Text="{Binding ModelList}"
+                                                                           FontSize="10"
+                                                                           Foreground="{StaticResource TextMuted}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           Margin="0,2,0,0"
+                                                                           FontStyle="Italic"/>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <!-- Status dot colors -->
+                                                    <DataTrigger Binding="{Binding ApprovalLevel}" Value="PendingCoordinator">
+                                                        <Setter TargetName="statusDot" Property="Background" Value="#BDBDBD"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ApprovalLevel}" Value="PendingSupervisor">
+                                                        <Setter TargetName="statusDot" Property="Background" Value="#F9A825"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ApprovalLevel}" Value="PendingManager">
+                                                        <Setter TargetName="statusDot" Property="Background" Value="#1976D2"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ApprovalLevel}" Value="Approved">
+                                                        <Setter TargetName="statusDot" Property="Background" Value="#43A047"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ApprovalLevel}" Value="Rejected">
+                                                        <Setter TargetName="statusDot" Property="Background" Value="#E53935"/>
+                                                    </DataTrigger>
+                                                    <!-- Selection / hover -->
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="itemBorder"  Property="Background" Value="#EBF5FB"/>
+                                                        <Setter TargetName="accentBar"   Property="Background" Value="{StaticResource YakultBlue}"/>
+                                                        <Setter TargetName="nameText"    Property="Foreground" Value="{StaticResource YakultDarkBlue}"/>
+                                                    </Trigger>
+                                                    <MultiTrigger>
+                                                        <MultiTrigger.Conditions>
+                                                            <Condition Property="IsMouseOver" Value="True"/>
+                                                            <Condition Property="IsSelected"  Value="False"/>
+                                                        </MultiTrigger.Conditions>
+                                                        <Setter TargetName="itemBorder" Property="Background" Value="#F5F9FF"/>
+                                                    </MultiTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- ── RIGHT: Detail Panel ────────────────────────────────────────── -->
+            <Grid Grid.Column="1">
+
+                <!-- No-selection empty state -->
+                <Border Visibility="{Binding NoSelection, Converter={StaticResource BoolToVis}}"
+                        Background="#F0F2F6">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="&#x1F4CB;" FontSize="52"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Select a request from the list"
+                                   FontSize="16" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                        <TextBlock Text="Review the authorization details and sign to approve."
+                                   FontSize="12" Foreground="{StaticResource TextMuted}"
+                                   HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Detail area (visible when selection exists) -->
+                <ScrollViewer x:Name="tourDetailScroll"
+                              Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="0,0,6,0">
+                    <StackPanel Margin="20,16,20,24">
+
+                        <!-- ── Employee Info Card ───────────────────────────── -->
+                        <Border x:Name="tourRequestDetailsCard" Style="{StaticResource SectionCard}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Style="{StaticResource SectionLabel}"
+                                           Text="REQUEST DETAILS"/>
+
+                                <!-- Employee name + position -->
+                                <StackPanel Grid.Row="1" Margin="0,0,0,16">
+                                    <TextBlock Text="{Binding SelectedRequest.EmployeeName}"
+                                               FontSize="20" FontWeight="Bold"
+                                               Foreground="{StaticResource TextPrimary}"/>
+                                    <TextBlock Text="{Binding SelectedRequest.EmployeePosition}"
+                                               FontSize="13" Foreground="{StaticResource TextMuted}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+
+                                <!-- 4-column info grid -->
+                                <Grid Grid.Row="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Department -->
+                                    <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                                        <TextBlock Text="DEPARTMENT"
+                                                   Style="{StaticResource FieldLabel}"
+                                                   FontSize="10"/>
+                                        <TextBlock Text="{Binding SelectedRequest.DepartmentName}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimary}"
+                                                   Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Branch -->
+                                    <StackPanel Grid.Column="1" Margin="0,0,12,0">
+                                        <TextBlock Text="BRANCH"
+                                                   Style="{StaticResource FieldLabel}"
+                                                   FontSize="10"/>
+                                        <TextBlock Text="{Binding SelectedRequest.BranchName}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimary}"
+                                                   Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Company -->
+                                    <StackPanel Grid.Column="2" Margin="0,0,12,0">
+                                        <TextBlock Text="COMPANY"
+                                                   Style="{StaticResource FieldLabel}"
+                                                   FontSize="10"/>
+                                        <TextBlock Text="{Binding SelectedRequest.CompanyName}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimary}"
+                                                   Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Requested on -->
+                                    <StackPanel Grid.Column="3">
+                                        <TextBlock Text="REQUESTED ON"
+                                                   Style="{StaticResource FieldLabel}"
+                                                   FontSize="10"/>
+                                        <TextBlock Text="{Binding SelectedRequest.CreatedDateText}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimary}"
+                                                   Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <!-- ── Cartridge DataGrid Card ──────────────────────── -->
+                        <Border x:Name="tourCartridgeCard" Style="{StaticResource SectionCard}" Padding="0">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Style="{StaticResource SectionLabel}"
+                                           Text="REQUESTED CARTRIDGES"
+                                           Margin="28,22,28,12"/>
+
+                                <DataGrid Grid.Row="1"
+                                          ItemsSource="{Binding CartridgeLines}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          IsReadOnly="True"
+                                          SelectionMode="Single"
+                                          SelectionUnit="FullRow"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="Horizontal"
+                                          HorizontalGridLinesBrush="#F0F3F7"
+                                          BorderThickness="0"
+                                          Background="White"
+                                          RowHeaderWidth="0"
+                                          ColumnHeaderHeight="36"
+                                          MinRowHeight="40"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Cartridge Model"
+                                                            Binding="{Binding Model}"
+                                                            Width="*">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                                    <Setter Property="Padding"           Value="14,0"/>
+                                                    <Setter Property="FontWeight"        Value="SemiBold"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="Qty"
+                                                            Binding="{Binding Qty}"
+                                                            Width="80">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="VerticalAlignment"  Value="Center"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                    <Setter Property="FontWeight"         Value="Bold"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="Submitted (Good)"
+                                                            Binding="{Binding Good}"
+                                                            Width="140">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="VerticalAlignment"  Value="Center"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+
+                                        <DataGridTextColumn Header="Submitted (Damaged)"
+                                                            Binding="{Binding Damaged}"
+                                                            Width="150">
+                                            <DataGridTextColumn.ElementStyle>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="VerticalAlignment"  Value="Center"/>
+                                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                </Style>
+                                            </DataGridTextColumn.ElementStyle>
+                                        </DataGridTextColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+
+                        <!-- ── Authorization Statement Preview Card ─────────── -->
+                        <Border x:Name="tourPreviewCard" Style="{StaticResource SectionCard}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Style="{StaticResource SectionLabel}"
+                                           Text="CARTRIDGE REQUEST PREVIEW"/>
+
+                                <!-- Document-style container -->
+                                <Border Grid.Row="1"
+                                        Background="White"
+                                        BorderBrush="{StaticResource CardBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Padding="28,22">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="6" ShadowDepth="1"
+                                                          Opacity="0.05" Color="#0A1A2A" Direction="270"/>
+                                    </Border.Effect>
+                                    <StackPanel>
+
+                                        <!-- Statement prose (mixed bold/normal) -->
+                                        <TextBlock TextWrapping="Wrap"
+                                                   LineHeight="22"
+                                                   FontSize="12.5"
+                                                   Foreground="#323232">
+                                            <Run Text="I, "/>
+                                            <Run Text="{Binding SignerName, Mode=OneWay}"   FontWeight="Bold"/>
+                                            <Run Text=", the "/>
+                                            <Run Text="{Binding SignerPosition, Mode=OneWay}" FontWeight="Bold"/>
+                                            <LineBreak/>
+                                            <Run Text="of "/>
+                                            <Run Text="{Binding SignerOrgLine, Mode=OneWay}" FontWeight="Bold"/>
+                                            <Run Text=","/>
+                                            <LineBreak/>
+                                            <Run Text="hereby authorize the Cartridge Refill Request/s"/>
+                                            <LineBreak/>
+                                            <Run Text="submitted by "/>
+                                            <Run Text="{Binding RequesterName,     Mode=OneWay}" FontWeight="Bold"/>
+                                            <Run Text=" ("/>
+                                            <Run Text="{Binding RequesterPosition, Mode=OneWay}" FontWeight="Bold"/>
+                                            <Run Text=") for the following cartridges:"/>
+                                        </TextBlock>
+
+                                        <!-- Cartridge table inside the document -->
+                                        <Border Margin="0,16,0,0"
+                                                BorderBrush="{StaticResource CardBorder}"
+                                                BorderThickness="1"
+                                                CornerRadius="4">
+                                            <DataGrid ItemsSource="{Binding CartridgeLines}"
+                                                      AutoGenerateColumns="False"
+                                                      CanUserAddRows="False"
+                                                      IsReadOnly="True"
+                                                      HeadersVisibility="Column"
+                                                      GridLinesVisibility="Horizontal"
+                                                      HorizontalGridLinesBrush="#F0F3F7"
+                                                      BorderThickness="0"
+                                                      Background="White"
+                                                      RowHeaderWidth="0"
+                                                      ColumnHeaderHeight="30"
+                                                      MinRowHeight="32"
+                                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                                      FontSize="11.5">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="Cartridge Model"
+                                                                        Binding="{Binding Model}" Width="*">
+                                                        <DataGridTextColumn.ElementStyle>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                                                <Setter Property="Padding"           Value="10,0"/>
+                                                                <Setter Property="FontWeight"        Value="SemiBold"/>
+                                                            </Style>
+                                                        </DataGridTextColumn.ElementStyle>
+                                                    </DataGridTextColumn>
+                                                    <DataGridTextColumn Header="Qty"
+                                                                        Binding="{Binding Qty}" Width="70">
+                                                        <DataGridTextColumn.ElementStyle>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="VerticalAlignment"   Value="Center"/>
+                                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                            </Style>
+                                                        </DataGridTextColumn.ElementStyle>
+                                                    </DataGridTextColumn>
+                                                    <DataGridTextColumn Header="Good"
+                                                                        Binding="{Binding Good}" Width="80">
+                                                        <DataGridTextColumn.ElementStyle>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="VerticalAlignment"   Value="Center"/>
+                                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                            </Style>
+                                                        </DataGridTextColumn.ElementStyle>
+                                                    </DataGridTextColumn>
+                                                    <DataGridTextColumn Header="Damaged"
+                                                                        Binding="{Binding Damaged}" Width="80">
+                                                        <DataGridTextColumn.ElementStyle>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="VerticalAlignment"   Value="Center"/>
+                                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                            </Style>
+                                                        </DataGridTextColumn.ElementStyle>
+                                                    </DataGridTextColumn>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </Border>
+
+                                        <!-- Distribution / Received By -->
+                                        <StackPanel Margin="0,12,0,0"
+                                                    Visibility="{Binding HasFulfillmentMethod, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock TextWrapping="Wrap"
+                                                       FontSize="12.5"
+                                                       Foreground="#323232">
+                                                <Run Text="Mode of Distribution: "/>
+                                                <Run Text="{Binding FulfillmentMethod, Mode=OneWay}" FontWeight="Bold"/>
+                                            </TextBlock>
+                                            <TextBlock TextWrapping="Wrap"
+                                                       FontSize="12.5"
+                                                       Foreground="#323232"
+                                                       Margin="0,4,0,0"
+                                                       Visibility="{Binding ShowReceivedBy, Converter={StaticResource BoolToVis}}">
+                                                <Run Text="To Be Received By: "/>
+                                                <Run Text="{Binding ReceivedByName, Mode=OneWay}" FontWeight="Bold"/>
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <!-- Signature line -->
+                                        <Grid Margin="0,24,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="260"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Noted by:"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,0,0,6"/>
+                                                <!-- Live signature preview -->
+                                                <Image Source="{Binding PreviewSignatureSource}"
+                                                       MaxHeight="64" MaxWidth="220"
+                                                       Stretch="Uniform"
+                                                       HorizontalAlignment="Left"
+                                                       Margin="0,0,0,0"
+                                                       Visibility="{Binding HasPreviewSignature, Converter={StaticResource BoolToVis}}"/>
+                                                <!-- Placeholder when no signature yet -->
+                                                <TextBlock Text="(signature will appear here)"
+                                                           FontSize="10.5"
+                                                           Foreground="#AAAAAA"
+                                                           FontStyle="Italic"
+                                                           Margin="0,0,0,4"
+                                                           Visibility="{Binding HasPreviewSignature, Converter={StaticResource InvBoolToVis}}"/>
+                                                <TextBlock Text="{Binding SignerName, Mode=OneWay}"
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimary}"/>
+                                                <TextBlock Text="{Binding SignerPosition, Mode=OneWay}"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,2,0,0"/>
+                                                <TextBlock Text="{Binding SignerOrgLine, Mode=OneWay}"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,1,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Bottom"
+                                                        HorizontalAlignment="Right">
+                                                <TextBlock Foreground="{StaticResource TextMuted}"
+                                                           FontSize="11">
+                                                    <Run Text="Date Signed: "/>
+                                                    <Run Text="{Binding TodayFormatted, Mode=OneWay}"
+                                                         FontWeight="SemiBold"
+                                                         Foreground="{StaticResource TextPrimary}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- ── Electronic Signature Card ────────────────────── -->
+                        <Border x:Name="tourSignatureCard" Style="{StaticResource SectionCard}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Style="{StaticResource SectionLabel}"
+                                           Text="ELECTRONIC SIGNATURE"/>
+
+                                <!-- Tab switcher -->
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,14">
+                                    <Button x:Name="tourDrawTabBtn"
+                                            Content="Draw Signature"
+                                            Command="{Binding SwitchToDrawCommand}"
+                                            Height="34" Padding="18,0" Margin="0,0,8,0"
+                                            FontSize="12" FontWeight="SemiBold" Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="tabBorder"
+                                                                    Background="{StaticResource YakultBlue}"
+                                                                    CornerRadius="5"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                                  VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDrawTab}" Value="False">
+                                                                    <Setter TargetName="tabBorder" Property="Background" Value="White"/>
+                                                                    <Setter TargetName="tabBorder" Property="BorderBrush" Value="{StaticResource CardBorder}"/>
+                                                                    <Setter TargetName="tabBorder" Property="BorderThickness" Value="1"/>
+                                                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsDrawTab}" Value="True">
+                                                                    <Setter Property="Foreground" Value="White"/>
+                                                                </DataTrigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="tabBorder" Property="Opacity" Value="0.88"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+
+                                    <Button x:Name="tourUploadTabBtn"
+                                            Content="Upload Image"
+                                            Command="{Binding SwitchToUploadCommand}"
+                                            Height="34" Padding="18,0"
+                                            FontSize="12" FontWeight="SemiBold" Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="tabBorder"
+                                                                    Background="White"
+                                                                    BorderBrush="{StaticResource CardBorder}"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="5"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                                  VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <DataTrigger Binding="{Binding IsUploadTab}" Value="True">
+                                                                    <Setter TargetName="tabBorder" Property="Background"    Value="{StaticResource YakultBlue}"/>
+                                                                    <Setter TargetName="tabBorder" Property="BorderThickness" Value="0"/>
+                                                                    <Setter Property="Foreground" Value="White"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsUploadTab}" Value="False">
+                                                                    <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                                                </DataTrigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="tabBorder" Property="Opacity" Value="0.88"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+
+                                <!-- ── Draw tab ─────────────────────────────── -->
+                                <Border Grid.Row="2"
+                                        Visibility="{Binding IsDrawTab, Converter={StaticResource BoolToVis}}"
+                                        BorderBrush="{StaticResource CardBorder}"
+                                        BorderThickness="1.5"
+                                        CornerRadius="8"
+                                        Background="White"
+                                        Height="240"
+                                        ClipToBounds="True">
+                                    <Grid>
+                                        <!-- Signature guide line at ~72% height -->
+                                        <Border BorderBrush="#DDE3EC"
+                                                BorderThickness="0,0,0,1"
+                                                VerticalAlignment="Bottom"
+                                                Margin="28,0,28,62"
+                                                IsHitTestVisible="False"/>
+
+                                        <!-- "Sign here" label beside the guide -->
+                                        <StackPanel Orientation="Horizontal"
+                                                    VerticalAlignment="Bottom"
+                                                    HorizontalAlignment="Left"
+                                                    Margin="32,0,0,44"
+                                                    IsHitTestVisible="False">
+                                            <Border Width="12" Height="1"
+                                                    Background="#C0C8D4"
+                                                    VerticalAlignment="Center"
+                                                    Margin="0,0,6,0"/>
+                                            <TextBlock Text="sign here"
+                                                       FontSize="9" FontStyle="Italic"
+                                                       Foreground="#B0BAC8"/>
+                                        </StackPanel>
+
+                                        <!-- InkCanvas — transparent so strokes float over guide -->
+                                        <InkCanvas x:Name="inkCanvas"
+                                                   Background="Transparent"
+                                                   Cursor="Pen">
+                                            <InkCanvas.DefaultDrawingAttributes>
+                                                <ink:DrawingAttributes Width="2.8" Height="2.8"
+                                                                       Color="#FF1A2333"
+                                                                       FitToCurve="True"
+                                                                       IsHighlighter="False"/>
+                                            </InkCanvas.DefaultDrawingAttributes>
+                                        </InkCanvas>
+
+                                        <!-- Hint text — hidden once strokes exist -->
+                                        <TextBlock x:Name="drawHint"
+                                                   FontSize="11" FontStyle="Italic"
+                                                   Foreground="#B8C0CC"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Bottom"
+                                                   Margin="0,0,0,14"
+                                                   IsHitTestVisible="False">
+                                            Draw your signature using mouse or stylus
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+
+                                <!-- ── Upload tab ────────────────────────────── -->
+                                <Border Grid.Row="2"
+                                        Visibility="{Binding IsUploadTab, Converter={StaticResource BoolToVis}}"
+                                        BorderBrush="{StaticResource CardBorder}"
+                                        BorderThickness="1.5"
+                                        CornerRadius="8"
+                                        Background="{StaticResource SurfaceGray}"
+                                        Height="240">
+                                    <Grid>
+                                        <!-- Empty state -->
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Visibility="{Binding HasUploadedImage, Converter={StaticResource InvBoolToVis}}">
+                                            <TextBlock Text="&#x1F4F7;" FontSize="36"
+                                                       HorizontalAlignment="Center"/>
+                                            <TextBlock Text="No image selected"
+                                                       FontSize="12" Foreground="{StaticResource TextMuted}"
+                                                       HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                            <TextBlock Text="PNG or JPG · max 2 MB"
+                                                       FontSize="10" Foreground="{StaticResource TextMuted}"
+                                                       HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                            <Button Content="Browse for Image…"
+                                                    Command="{Binding BrowseImageCommand}"
+                                                    Style="{StaticResource SecondaryButton}"
+                                                    Margin="0,14,0,0" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <!-- Uploaded image display -->
+                                        <Grid Visibility="{Binding HasUploadedImage, Converter={StaticResource BoolToVis}}">
+                                            <Image Source="{Binding UploadedImageSource}"
+                                                   Stretch="Uniform"
+                                                   MaxHeight="220" Margin="12"/>
+                                            <Button Content="Change"
+                                                    Command="{Binding BrowseImageCommand}"
+                                                    Style="{StaticResource SecondaryButton}"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                    Margin="0,8,10,0" Height="28" Padding="12,0"
+                                                    FontSize="11"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+
+                                <!-- ── Clear button ──────────────────────────── -->
+                                <StackPanel x:Name="tourClearBtnRow" Grid.Row="3" Orientation="Horizontal" Margin="0,12,0,0">
+                                    <Button Content="&#x274C;  Clear Signature"
+                                            Command="{Binding ClearSignatureCommand}"
+                                            Style="{StaticResource SecondaryButton}"
+                                            Height="32" Padding="14,0" FontSize="11"/>
+                                </StackPanel>
+
+                                <!-- ── Live document preview ─────────────────── -->
+                                <Border Grid.Row="4"
+                                        Visibility="{Binding HasPreviewSignature, Converter={StaticResource BoolToVis}}"
+                                        Margin="0,20,0,0"
+                                        Background="#FAFBFC"
+                                        BorderBrush="{StaticResource CardBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Padding="0">
+                                    <!-- Header strip -->
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Border Grid.Row="0"
+                                                Background="#EEF2F7"
+                                                CornerRadius="8,8,0,0"
+                                                Padding="16,9">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Border Width="3" CornerRadius="1.5"
+                                                        Background="{StaticResource YakultBlue}"
+                                                        Margin="0,0,9,0"/>
+                                                <TextBlock Text="SIGNATURE PREVIEW"
+                                                           FontSize="10" FontWeight="Bold"
+                                                           Foreground="{StaticResource YakultBlue}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Text="  —  how it will appear on the document"
+                                                           FontSize="10"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Document snippet -->
+                                        <Border Grid.Row="1"
+                                                Background="White"
+                                                CornerRadius="0,0,8,8"
+                                                Padding="24,18,24,20">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" MinWidth="220"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Left: Noted by + signature overlay + name block -->
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="Noted by:"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,2"/>
+
+                                                    <!-- Signature floated over the underline -->
+                                                    <Grid Height="70" Width="220"
+                                                          HorizontalAlignment="Left">
+                                                        <!-- Transparent signature image sits above the line -->
+                                                        <Image Source="{Binding PreviewSignatureSource}"
+                                                               Stretch="Uniform"
+                                                               MaxHeight="66" MaxWidth="216"
+                                                               HorizontalAlignment="Left"
+                                                               VerticalAlignment="Bottom"
+                                                               Margin="0,0,0,4"
+                                                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                    </Grid>
+
+                                                    <TextBlock Text="{Binding SignerName, Mode=OneWay}"
+                                                               FontSize="12.5" FontWeight="Bold"
+                                                               Foreground="{StaticResource TextPrimary}"
+                                                               Margin="0,6,0,0"/>
+                                                    <TextBlock Text="{Binding SignerPosition, Mode=OneWay}"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,2,0,0"/>
+                                                    <TextBlock Text="{Binding SignerOrgLine, Mode=OneWay}"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               TextWrapping="Wrap"
+                                                               Margin="0,1,0,0"/>
+                                                </StackPanel>
+
+                                                <!-- Right: date -->
+                                                <StackPanel Grid.Column="1"
+                                                            VerticalAlignment="Bottom"
+                                                            HorizontalAlignment="Right"
+                                                            Margin="12,0,0,0">
+                                                    <TextBlock FontSize="11"
+                                                               Foreground="{StaticResource TextMuted}">
+                                                        <Run Text="Date Signed: "/>
+                                                        <Run Text="{Binding TodayFormatted, Mode=OneWay}"
+                                                             FontWeight="SemiBold"
+                                                             Foreground="{StaticResource TextPrimary}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- ── Action Card (Notes + Buttons + Status) ──────── -->
+                        <Border x:Name="tourActionCard" Style="{StaticResource SectionCard}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- External completion banner -->
+                                <Border Grid.Row="0"
+                                        Background="#FFF8E1"
+                                        BorderBrush="#FFD54F"
+                                        BorderThickness="0,0,0,1"
+                                        Padding="14,10"
+                                        Margin="0,0,0,14"
+                                        CornerRadius="6"
+                                        Visibility="{Binding IsExternallyCompleted, Converter={StaticResource BoolToVis}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#x26A0; "
+                                                   FontSize="14"
+                                                   Foreground="#F57F17"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding ExternalCompletionMessage}"
+                                                   FontSize="12"
+                                                   Foreground="#5D4037"
+                                                   FontWeight="SemiBold"
+                                                   TextWrapping="Wrap"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <TextBlock Grid.Row="1"
+                                           Style="{StaticResource SectionLabel}"
+                                           Text="NOTES (OPTIONAL)"/>
+
+                                <TextBox x:Name="tourNotesBox"
+                                         Grid.Row="2"
+                                         Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource InputBox}"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         Height="72"
+                                         VerticalContentAlignment="Top"
+                                         Padding="11,8"
+                                         Margin="0,0,0,20"/>
+
+                                <!-- Action buttons -->
+                                <Grid Grid.Row="3" Margin="0,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="16"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Approve -->
+                                    <Button x:Name="tourApproveBtn"
+                                            Grid.Column="0"
+                                            Command="{Binding ApproveCommand}"
+                                            IsEnabled="{Binding CanAct}"
+                                            Height="44" FontSize="14" FontWeight="Bold"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="root"
+                                                                    Background="{StaticResource SuccessGreen}"
+                                                                    CornerRadius="7"
+                                                                    Padding="0">
+                                                                <TextBlock Text="&#x2713;  Approve &amp; Sign"
+                                                                           Foreground="White"
+                                                                           FontSize="14" FontWeight="Bold"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="root" Property="Opacity" Value="0.88"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsPressed" Value="True">
+                                                                    <Setter TargetName="root" Property="Opacity" Value="0.72"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter TargetName="root" Property="Opacity" Value="0.38"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+
+                                    <!-- Reject -->
+                                    <Button x:Name="tourRejectBtn"
+                                            Grid.Column="2"
+                                            Command="{Binding RejectCommand}"
+                                            IsEnabled="{Binding CanAct}"
+                                            Height="44" FontSize="14" FontWeight="Bold"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="root"
+                                                                    Background="White"
+                                                                    BorderBrush="{StaticResource ErrorRed}"
+                                                                    BorderThickness="1.5"
+                                                                    CornerRadius="7"
+                                                                    Padding="0">
+                                                                <TextBlock Text="&#x2715;  Reject"
+                                                                           Foreground="{StaticResource ErrorRed}"
+                                                                           FontSize="14" FontWeight="Bold"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="root" Property="Background" Value="#FFF0F0"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsPressed" Value="True">
+                                                                    <Setter TargetName="root" Property="Opacity" Value="0.8"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter TargetName="root" Property="Opacity" Value="0.38"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Status message -->
+                                <Border Grid.Row="4"
+                                        Margin="0,14,0,0"
+                                        Padding="14,10"
+                                        CornerRadius="6"
+                                        Visibility="{Binding HasStatus, Converter={StaticResource BoolToVis}}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                    <Setter Property="Background" Value="#FFF3F3"/>
+                                                    <Setter Property="BorderBrush" Value="#FFCDD2"/>
+                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSuccess}" Value="True">
+                                                    <Setter Property="Background" Value="#F0FFF4"/>
+                                                    <Setter Property="BorderBrush" Value="#B2EFD0"/>
+                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{Binding StatusMessage}"
+                                               TextWrapping="Wrap"
+                                               FontSize="12" FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsError}"   Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource ErrorRed}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsSuccess}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource SuccessGreen}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- ── Loading overlay (full span) ────────────────────────────────── -->
+            <Border Grid.ColumnSpan="2"
+                    Background="#CCFFFFFF"
+                    Panel.ZIndex="100"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="&#x27F3;" FontSize="40"
+                               Foreground="{StaticResource YakultBlue}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Loading pending authorizations…"
+                               FontSize="13" Foreground="{StaticResource TextMuted}"
+                               HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Processing overlay (right pane only) ───────────────────────── -->
+            <Border Grid.Column="1"
+                    Background="#BBFFFFFF"
+                    Panel.ZIndex="50"
+                    Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVis}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="&#x27F3;" FontSize="36"
+                               Foreground="{StaticResource YakultBlue}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="13" Foreground="{StaticResource TextMuted}"
+                               HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+        </Grid>
+    </Grid>
+</UserControl>

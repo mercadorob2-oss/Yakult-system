@@ -1,0 +1,785 @@
+@model Inventory.RequestPortal.Models.ViewModels.AuthorizationDetailsViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Authorization Details";
+    var a = Model.Authorization;
+    string signerName     = ViewBag.CurrentUserName  ?? "";
+    string signerFullName = ViewBag.SignerFullName   ?? "";
+    string signerPos      = ViewBag.SignerPosition   ?? "";
+    string signerCo       = ViewBag.SignerCompany    ?? "";
+    string signerBr       = ViewBag.SignerBranch     ?? "";
+    string signerDept     = ViewBag.SignerDepartment ?? "";
+
+    // Parse RequestedModels — may be JSON array (new) or plain text (legacy)
+    List<(string Model, int Qty, int Good, int Damaged)>? requestedItems = null;
+    if (!string.IsNullOrWhiteSpace(a.RequestedModels) && a.RequestedModels.TrimStart().StartsWith("["))
+    {
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<List<JsonElement>>(a.RequestedModels);
+            requestedItems = parsed?.Select(e => (
+                Model:   e.GetProperty("model").GetString() ?? "",
+                Qty:     e.GetProperty("qty").GetInt32(),
+                Good:    e.GetProperty("good").GetInt32(),
+                Damaged: e.GetProperty("damaged").GetInt32()
+            )).ToList();
+        }
+        catch { }
+    }
+    bool isStructured = requestedItems?.Count > 0;
+}
+
+@await Html.PartialAsync("_MasterNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Request Portal</h1>
+        <p class="subtitle mb-0">Submit and track your cartridge requests</p>
+    </div>
+    <div class="ms-auto">
+        @await Html.PartialAsync("_NotificationBell")
+    </div>
+</div>
+
+<div class="content-padded">
+    <!-- Nav -->
+    <div class="nav-tabs-container mb-4">
+        @if (ViewBag.IsApprover == true)
+        {
+            <ul class="nav nav-tabs mb-0">
+                <li class="nav-item">
+                    <a class="nav-link active" asp-controller="Approval" asp-action="Index">Approvals</a>
+                </li>
+            </ul>
+        }
+        else
+        {
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Request" asp-action="Index">New Request</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Request" asp-action="MyRequests">My Submitted Requests</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Authorization" asp-action="EmployeeStatus">Authorization</a>
+                </li>
+            </ul>
+        }
+    </div>
+
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="bi bi-shield-check"></i> Authorization #@a.AuthorizationId</h5>
+        <a asp-action="SupervisorQueue" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Queue
+        </a>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Employee info -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h6 class="text-muted mb-3"><i class="bi bi-person"></i> Requesting Employee</h6>
+            <div class="row g-3">
+                <div class="col-sm-4">
+                    <small class="text-muted d-block">Name</small>
+                    <strong>@a.EmployeeName</strong>
+                </div>
+                <div class="col-sm-4">
+                    <small class="text-muted d-block">Department</small>
+                    <strong>@a.DepartmentName</strong>
+                </div>
+                <div class="col-sm-4">
+                    <small class="text-muted d-block">Requested On</small>
+                    <span>@a.CreatedDate.ToString("MMMM dd, yyyy  h:mm tt")</span>
+                </div>
+                <div class="col-sm-4">
+                    <small class="text-muted d-block">Status</small>
+                    <span class="badge fs-6 @(a.IsPending ? "bg-warning text-dark" : a.IsApproved ? "bg-success" : "bg-danger")">
+                        @a.Status
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (a.IsPending)
+    {
+        <!-- ═══ SIGNATURE FORM ═══ -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white">
+                <h6 class="mb-0"><i class="bi bi-hand-index"></i> Sign &amp; Authorize</h6>
+            </div>
+            <div class="card-body">
+
+                @if (ViewBag.IsSelfSign == true)
+                {
+                    <div class="alert alert-success mb-4" style="border-radius:10px; border:none; background:rgba(76,175,80,0.08);">
+                        <i class="bi bi-check2-circle"></i>
+                        Your request has been submitted. Please sign below to authorize it.
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-4" style="border-radius:10px; border:none; background:rgba(33,150,243,0.08);">
+                        <i class="bi bi-info-circle"></i>
+                        Once you sign, this authorization is locked and no other supervisor can modify it.
+                    </div>
+                }
+
+                <form id="approveForm" asp-action="Approve" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="AuthorizationId"  value="@a.AuthorizationId" />
+                    <input type="hidden" name="SignatureData"     id="hdnSignatureData" />
+                    <input type="hidden" name="SignatureSource"   id="hdnSignatureSource" value="draw" />
+                    <input type="hidden" name="SignatureFileName" id="hdnSignatureFileName" />
+                    <input type="hidden" name="IsSelfSign"        value="@(ViewBag.IsSelfSign == true ? "true" : "false")" />
+
+                    <!-- Step 1: Cartridge Details -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <span class="badge bg-danger me-1">1</span>
+                            Cartridge Details Being Authorized
+                        </label>
+                        @if (isStructured && requestedItems != null)
+                        {
+                            <input type="hidden" name="RequestedModels" id="hdnRequestedModels" value="@a.RequestedModels" />
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm mb-1" style="border-radius:10px; overflow:hidden;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Cartridge Model</th>
+                                            <th class="text-center">Qty</th>
+                                            <th class="text-center">Returned Cartridges (Good)</th>
+                                            <th class="text-center">Returned Cartridges (Damaged)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in requestedItems)
+                                        {
+                                            <tr>
+                                                <td><strong>@item.Model</strong></td>
+                                                <td class="text-center">@item.Qty</td>
+                                                <td class="text-center">@item.Good</td>
+                                                <td class="text-center">@item.Damaged</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <small class="text-muted">Details submitted by the employee. Review before signing.</small>
+                        }
+                        else
+                        {
+                            <input type="text" name="RequestedModels" id="inputModels"
+                                   class="form-control"
+                                   placeholder="e.g. HP 85A, Canon 337, Epson T664"
+                                   value="@(a.RequestedModels ?? "")"
+                                   style="border-radius:10px;" required />
+                            <small class="text-muted">Separate multiple models with commas.</small>
+                        }
+                    </div>
+
+                    <!-- Step 2: Authorization Statement Preview -->
+                    <div class="mb-4 p-3" style="background:#f9f9fb; border:1px dashed #ccc; border-radius:12px;">
+                        <p class="text-muted small mb-2 fw-bold" style="text-transform:uppercase; letter-spacing:.5px;">
+                            <i class="bi bi-file-text"></i> Cartridge Request Preview
+                        </p>
+                        <p class="mb-1" style="font-style:italic; line-height:1.8; color:#333;">
+                            @{
+                                var stmtOrgParts2 = new[] { signerCo, signerDept }.Where(s => !string.IsNullOrWhiteSpace(s));
+                                var stmtOrg2      = string.Join(" – ", stmtOrgParts2);
+                            }
+                            I, <strong>@signerFullName</strong>, <strong>@signerPos</strong>
+                            @if (!string.IsNullOrWhiteSpace(stmtOrg2)) { <text>of <strong>@stmtOrg2</strong></text> }
+                            @if (!string.IsNullOrWhiteSpace(signerBr)) { <text>, based at the <strong>@signerBr</strong></text> },
+                            hereby authorize the cartridge refill request(s)
+                            submitted and facilitated by <strong>@a.EmployeeName</strong>.
+                        </p>
+                        <p class="mb-2" style="font-style:italic; line-height:1.8; color:#333;">
+                            The items listed below have been reviewed and are approved for processing in
+                            accordance with company policies and operational requirements.
+                        </p>
+                        @if (isStructured && requestedItems != null)
+                        {
+                            <div class="table-responsive mb-2">
+                                <table class="table table-bordered table-sm mb-0" style="background:#fff;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Cartridge Model</th>
+                                            <th class="text-center">Qty</th>
+                                            <th class="text-center">Returned Cartridges (Good)</th>
+                                            <th class="text-center">Returned Cartridges (Damaged)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in requestedItems)
+                                        {
+                                            <tr>
+                                                <td><strong>@item.Model</strong></td>
+                                                <td class="text-center">@item.Qty</td>
+                                                <td class="text-center">@item.Good</td>
+                                                <td class="text-center">@item.Damaged</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="mb-2" style="font-style:italic; color:#333;">
+                                Model/s: <strong><span id="previewModels" style="color:#d50032;">@(string.IsNullOrWhiteSpace(a.RequestedModels) ? "(fill in above)" : a.RequestedModels)</span></strong>
+                            </p>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(a.FulfillmentMethod))
+                        {
+                            <p class="mb-1 mt-2" style="font-style:italic; line-height:1.8; color:#333;">
+                                Mode of Distribution: <strong>@a.FulfillmentMethod</strong>
+                                @if (a.FulfillmentMethod == "Pickup" && !string.IsNullOrWhiteSpace(a.ReceivedByName))
+                                {
+                                    <span> &mdash; To Be Received by: <strong>@a.ReceivedByName</strong></span>
+                                }
+                            </p>
+                        }
+                        <div class="mt-3 pt-2" style="border-top:1px solid #e0e0e0;">
+                            <p style="font-size:.75rem; color:#999; margin-bottom:6px;">Noted by:</p>
+                            <div id="previewSigBox" style="min-height:64px; color:#ccc; font-style:italic; font-size:.88rem; padding-left:2px;">
+                                (signature will appear here)
+                            </div>
+                            <div style="margin-top:4px; max-width:320px;">
+                                <strong style="font-size:.95rem; color:#111; display:block;">@signerFullName</strong>
+                                @if (!string.IsNullOrWhiteSpace(signerPos) || !string.IsNullOrWhiteSpace(signerCo))
+                                {
+                                    <span style="font-size:.8rem; color:#555; font-style:italic;">@signerPos@(string.IsNullOrWhiteSpace(signerCo) ? "" : $" — {signerCo}")</span>
+                                }
+                            </div>
+                            <small class="text-muted d-block mt-2">Date Signed: @DateTime.Now.ToString("MMMM dd, yyyy")</small>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Signature Input -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <span class="badge bg-danger me-1">2</span>
+                            Your Signature
+                        </label>
+
+                        <!-- Method toggle -->
+                        <div class="btn-group mb-3 d-flex" style="max-width:320px;" role="group">
+                            <button type="button" id="btnTabDraw" class="btn btn-danger btn-sm flex-fill"
+                                    onclick="switchSigTab('draw')">
+                                <i class="bi bi-pencil-square"></i> Draw
+                            </button>
+                            <button type="button" id="btnTabUpload" class="btn btn-outline-secondary btn-sm flex-fill"
+                                    onclick="switchSigTab('upload')">
+                                <i class="bi bi-upload"></i> Upload
+                            </button>
+                        </div>
+
+                        <!-- Draw panel -->
+                        <div id="panelDraw">
+                            <div style="border:2px solid #e0e0e0; border-radius:12px; overflow:hidden; background:#fff; touch-action:none; cursor:crosshair; display:inline-block; width:100%;">
+                                <canvas id="sigCanvas" height="180"
+                                        style="display:block; width:100%; touch-action:none;"></canvas>
+                            </div>
+                            <div class="mt-2 d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearCanvas()">
+                                    <i class="bi bi-trash"></i> Clear
+                                </button>
+                                <small class="text-muted align-self-center">
+                                    Draw with mouse, stylus, or finger
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Upload panel -->
+                        <div id="panelUpload" style="display:none;">
+                            <label class="form-label text-muted small">Upload an image or PDF of your signature</label>
+                            <input type="file" id="sigFileInput" class="form-control mb-2"
+                                   accept="image/*,.pdf" style="border-radius:10px;" />
+                            <div id="uploadPreview" style="display:none; margin-top:8px;">
+                                <p class="text-muted small mb-1">Preview:</p>
+                                <img id="previewImg" src="" alt="Signature preview"
+                                     style="max-height:150px; max-width:100%; border:1px solid #e0e0e0; border-radius:8px; display:none;" />
+                                <embed id="previewPdf" src="" type="application/pdf"
+                                       style="width:100%; height:200px; border:1px solid #e0e0e0; border-radius:8px; display:none;" />
+                                <p id="previewFileName" class="text-muted small mt-1"></p>
+                                <button type="button" id="btnDeleteUpload"
+                                        class="btn btn-sm btn-outline-danger mt-1"
+                                        onclick="deleteUpload()">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="d-flex gap-3 align-items-center flex-wrap">
+                        <button type="submit" class="btn btn-success px-4"
+                                style="border-radius:10px; font-weight:700;">
+                            <i class="bi bi-check-circle-fill"></i> Sign &amp; Approve
+                        </button>
+                        <small class="text-muted">This action cannot be undone once submitted.</small>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Reject (separate form, understated) -->
+        <div class="card shadow-sm border-danger-subtle mb-4">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">
+                        <i class="bi bi-x-circle text-danger"></i>
+                        If this request should not be authorized, you may reject it instead.
+                    </span>
+                    <form asp-action="Reject" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="authorizationId" value="@a.AuthorizationId" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Reject this authorization for @Html.Raw(a.EmployeeName)?')">
+                            <i class="bi bi-x-circle"></i> Reject
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- ═══ SIGNED DOCUMENT (read-only) ═══ -->
+        <div class="card shadow-sm mb-4"
+             style="border: @(a.IsApproved ? "2px solid #4CAF50" : "2px solid #f44336");">
+            <div class="card-header"
+                 style="background: @(a.IsApproved ? "rgba(76,175,80,0.08)" : "rgba(244,67,54,0.08)"); border:none;">
+                <h6 class="mb-0">
+                    <i class="bi @(a.IsApproved ? "bi-patch-check-fill text-success" : "bi-x-circle-fill text-danger")"></i>
+                    @(a.IsApproved ? "Signed Authorization Document" : "Rejected")
+                </h6>
+            </div>
+            <div class="card-body">
+                @if (a.IsApproved)
+                {
+                    <!-- Formal statement -->
+                    <div class="p-4 mb-4" style="background:#fafafa; border:1px solid #e0e0e0; border-radius:12px;">
+                        <p style="font-style:italic; line-height:2; color:#333; font-size:1rem; margin:0 0 6px 0;">
+                            I, <strong>@(a.SignedByName ?? "")</strong>,
+                            <strong>@(a.SignerPosition ?? "")</strong> of
+                            <strong>@(a.SignerCompany ?? "")</strong>
+                            @if (!string.IsNullOrWhiteSpace(a.DepartmentName))
+                            {
+                                <span>&#8211; <strong>@a.DepartmentName</strong></span>
+                            },
+                            based at the <strong>@(a.SignerBranch ?? "")</strong>, hereby authorize the cartridge refill request(s)
+                            submitted and facilitated by <strong>@a.EmployeeName</strong>.
+                        </p>
+                        <p style="font-style:italic; line-height:2; color:#333; font-size:1rem; margin:0 0 12px 0;">
+                            The items listed below have been reviewed and are approved for processing in
+                            accordance with company policies and operational requirements.
+                        </p>
+                        @if (isStructured && requestedItems != null)
+                        {
+                            <div class="table-responsive mb-3">
+                                <table class="table table-bordered table-sm mb-0" style="background:#fff;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Cartridge Model</th>
+                                            <th class="text-center">Qty</th>
+                                            <th class="text-center">Returned Cartridges (Good)</th>
+                                            <th class="text-center">Returned Cartridges (Damaged)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in requestedItems)
+                                        {
+                                            <tr>
+                                                <td><strong>@item.Model</strong></td>
+                                                <td class="text-center">@item.Qty</td>
+                                                <td class="text-center">@item.Good</td>
+                                                <td class="text-center">@item.Damaged</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p style="font-style:italic; color:#333; margin:0 0 12px 0;">
+                                Model/s: <strong style="color:#d50032;">@(a.RequestedModels ?? "—")</strong>
+                            </p>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(a.FulfillmentMethod))
+                    {
+                        <p style="font-style:italic; line-height:2; color:#333; font-size:1rem; margin:0 0 6px 0;">
+                            Mode of Distribution: <strong>@a.FulfillmentMethod</strong>
+                            @if (a.FulfillmentMethod == "Pickup" && !string.IsNullOrWhiteSpace(a.ReceivedByName))
+                            {
+                                <span> &mdash; To Be Received by: <strong>@a.ReceivedByName</strong></span>
+                            }
+                        </p>
+                    }
+
+                    <!-- Signature image or PDF -->
+                    @if (!string.IsNullOrEmpty(a.SignatureData))
+                    {
+                        <div class="mb-3">
+                            <p class="text-muted small mb-1 fw-bold">SIGNATURE</p>
+                            @if (a.SignatureSource == "upload"
+                                 && !string.IsNullOrEmpty(a.SignatureFileName)
+                                 && a.SignatureFileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <embed src="@a.SignatureData" type="application/pdf"
+                                       style="width:100%; height:300px; border:1px solid #e0e0e0; border-radius:8px;" />
+                                <p class="text-muted small mt-1">
+                                    <i class="bi bi-file-earmark-pdf text-danger"></i> @a.SignatureFileName
+                                </p>
+                            }
+                            else
+                            {
+                                <img src="@a.SignatureData" alt="Signature"
+                                     style="max-height:160px; border:1px solid #e0e0e0; border-radius:8px; background:#fff; padding:8px;" />
+                            }
+                        </div>
+                    }
+
+                    <!-- Footer metadata -->
+                    <div class="row g-2 mt-2 pt-2" style="border-top:1px solid #e0e0e0;">
+                        <div class="col-sm-4">
+                            <small class="text-muted d-block">Signed By</small>
+                            <strong>@a.SignedByName</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <small class="text-muted d-block">Date Signed</small>
+                            <strong>@(a.SignedDate?.ToString("MMMM dd, yyyy  h:mm tt") ?? "—")</strong>
+                        </div>
+                        <div class="col-sm-4">
+                            <small class="text-muted d-block">Method</small>
+                            <span class="badge bg-secondary">
+                                @(a.SignatureSource == "draw" ? "Drawn" : a.SignatureSource == "upload" ? "Uploaded" : "—")
+                            </span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-danger mb-0">
+                        <i class="bi bi-x-circle-fill"></i>
+                        This authorization was <strong>rejected</strong>
+                        @if (a.SignedDate.HasValue)
+                        {
+                            <span> on @a.SignedDate.Value.ToString("MMMM dd, yyyy  h:mm tt")</span>
+                        }
+                        @if (!string.IsNullOrEmpty(a.SignedByName))
+                        {
+                            <span> by <strong>@a.SignedByName</strong></span>
+                        }.
+                        The employee will need to submit a new authorization request.
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    /* ── Models preview (legacy plain-text path only) ───────────────── */
+    const inputModels   = document.getElementById('inputModels');
+    const previewModels = document.getElementById('previewModels');
+
+    if (inputModels && previewModels) {
+        if (inputModels.value.trim()) {
+            previewModels.textContent = inputModels.value.trim();
+        }
+        inputModels.addEventListener('input', function () {
+            previewModels.textContent = this.value.trim() || '(fill in above)';
+        });
+    }
+
+    /* ── Tab switching ──────────────────────────────────────────────── */
+    window.switchSigTab = function (tab) {
+        const drawPanel   = document.getElementById('panelDraw');
+        const uploadPanel = document.getElementById('panelUpload');
+        const btnDraw     = document.getElementById('btnTabDraw');
+        const btnUpload   = document.getElementById('btnTabUpload');
+        const hdnSource   = document.getElementById('hdnSignatureSource');
+
+        if (tab === 'draw') {
+            drawPanel.style.display   = '';
+            uploadPanel.style.display = 'none';
+            btnDraw.className   = 'btn btn-danger btn-sm flex-fill';
+            btnUpload.className = 'btn btn-outline-secondary btn-sm flex-fill';
+            hdnSource.value = 'draw';
+        } else {
+            drawPanel.style.display   = 'none';
+            uploadPanel.style.display = '';
+            btnDraw.className   = 'btn btn-outline-secondary btn-sm flex-fill';
+            btnUpload.className = 'btn btn-danger btn-sm flex-fill';
+            hdnSource.value = 'upload';
+        }
+    };
+
+    /* ── Canvas drawing ─────────────────────────────────────────────── */
+    const canvas = document.getElementById('sigCanvas');
+    if (canvas) {
+        // Size canvas to its CSS width
+        function resizeCanvas() {
+            const w = canvas.offsetWidth;
+            // Preserve existing drawing on resize
+            const tmp = canvas.toDataURL();
+            canvas.width  = w;
+            canvas.height = 180;
+            // Restore
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, 0, 0);
+            img.src = tmp;
+            styleCtx();
+        }
+
+        const ctx = canvas.getContext('2d');
+        function styleCtx() {
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth   = 2.5;
+            ctx.lineCap     = 'round';
+            ctx.lineJoin    = 'round';
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let drawing = false, lx = 0, ly = 0;
+
+        function pos(e) {
+            const r = canvas.getBoundingClientRect();
+            const scaleX = canvas.width  / r.width;
+            const scaleY = canvas.height / r.height;
+            let cx, cy;
+            if (e.touches && e.touches.length) {
+                cx = (e.touches[0].clientX - r.left) * scaleX;
+                cy = (e.touches[0].clientY - r.top)  * scaleY;
+            } else {
+                cx = (e.clientX - r.left) * scaleX;
+                cy = (e.clientY - r.top)  * scaleY;
+            }
+            return { x: Math.max(0, Math.min(canvas.width,  cx)),
+                     y: Math.max(0, Math.min(canvas.height, cy)) };
+        }
+
+        canvas.addEventListener('mousedown',  e => { e.preventDefault(); drawing = true; const p = pos(e); lx = p.x; ly = p.y; });
+        canvas.addEventListener('mousemove',  e => {
+            if (!drawing) return;
+            e.preventDefault();
+            const p = pos(e);
+            ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(p.x, p.y); ctx.stroke();
+            lx = p.x; ly = p.y;
+        });
+        canvas.addEventListener('mouseup',    e => { e.preventDefault(); drawing = false; updateSigPreview(); });
+        canvas.addEventListener('mouseleave', () => { drawing = false; updateSigPreview(); });
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault(); drawing = true; const p = pos(e); lx = p.x; ly = p.y;
+        }, { passive: false });
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (!drawing) return;
+            const touch = e.touches[0];
+            const r = canvas.getBoundingClientRect();
+            if (touch.clientX < r.left || touch.clientX > r.right ||
+                touch.clientY < r.top  || touch.clientY > r.bottom) {
+                drawing = false; updateSigPreview(); return;
+            }
+            const p = pos(e);
+            ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(p.x, p.y); ctx.stroke();
+            lx = p.x; ly = p.y;
+        }, { passive: false });
+        canvas.addEventListener('touchend',    () => { drawing = false; updateSigPreview(); });
+        canvas.addEventListener('touchcancel', () => { drawing = false; updateSigPreview(); });
+
+        // Returns a data URL cropped tightly to the drawn content (strips blank margins).
+        // The canvas itself is never modified — only the exported image is cropped.
+        function getCroppedDataURL() {
+            const w = canvas.width, h = canvas.height;
+            const data = ctx.getImageData(0, 0, w, h).data;
+            let minX = w, maxX = 0, minY = h, maxY = 0, found = false;
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    if (data[(y * w + x) * 4 + 3] > 10) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                        found = true;
+                    }
+                }
+            }
+            if (!found) return canvas.toDataURL('image/png');
+            const pad = 4;
+            const sx = Math.max(0, minX - pad);
+            const sy = Math.max(0, minY - pad);
+            const sw = Math.min(w, maxX + pad + 1) - sx;
+            const sh = Math.min(h, maxY + pad + 1) - sy;
+            const tmp = document.createElement('canvas');
+            tmp.width = sw; tmp.height = sh;
+            tmp.getContext('2d').drawImage(canvas, -sx, -sy);
+            return tmp.toDataURL('image/png');
+        }
+
+        window.clearCanvas = function () {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updateSigPreview();
+        };
+
+        function isBlank() {
+            const blank = document.createElement('canvas');
+            blank.width = canvas.width; blank.height = canvas.height;
+            return canvas.toDataURL() === blank.toDataURL();
+        }
+
+        function updateSigPreview() {
+            const box = document.getElementById('previewSigBox');
+            if (!box) return;
+            const source = document.getElementById('hdnSignatureSource').value;
+            if (source !== 'draw') return;
+            if (isBlank()) {
+                box.innerHTML = '<span style="color:#aaa; font-style:italic;">(signature will appear here)</span>';
+            } else {
+                box.innerHTML = '<img src="' + getCroppedDataURL() + '" style="max-height:48px; max-width:220px;" />';
+            }
+        }
+
+        window._isCanvasBlank = isBlank;
+        window._getCanvasData = getCroppedDataURL;
+    }
+
+    /* ── File upload ────────────────────────────────────────────────── */
+    const fileInput = document.getElementById('sigFileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File is too large. Maximum size is 5 MB.');
+                this.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const dataUrl = e.target.result;
+                document.getElementById('hdnSignatureFileName').value = file.name;
+
+                const preview     = document.getElementById('uploadPreview');
+                const previewImg  = document.getElementById('previewImg');
+                const previewPdf  = document.getElementById('previewPdf');
+                const previewName = document.getElementById('previewFileName');
+
+                preview.style.display = '';
+                previewName.textContent = file.name;
+
+                if (file.type === 'application/pdf') {
+                    previewImg.style.display = 'none';
+                    previewPdf.src = dataUrl;
+                    previewPdf.style.display = '';
+                } else {
+                    previewPdf.style.display = 'none';
+                    previewImg.src = dataUrl;
+                    previewImg.style.display = '';
+                }
+
+                // Update the signature preview box
+                const box = document.getElementById('previewSigBox');
+                if (box) {
+                    if (file.type === 'application/pdf') {
+                        box.innerHTML = '<span class="text-muted small"><i class="bi bi-file-earmark-pdf text-danger"></i> ' + file.name + ' uploaded</span>';
+                    } else {
+                        box.innerHTML = '<img src="' + dataUrl + '" style="max-height:48px; max-width:220px;" />';
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /* ── Upload delete ──────────────────────────────────────────────── */
+    window.deleteUpload = function () {
+        const fileInput   = document.getElementById('sigFileInput');
+        const preview     = document.getElementById('uploadPreview');
+        const previewImg  = document.getElementById('previewImg');
+        const previewPdf  = document.getElementById('previewPdf');
+        const previewName = document.getElementById('previewFileName');
+        const box         = document.getElementById('previewSigBox');
+        const hdnData     = document.getElementById('hdnSignatureData');
+        const hdnFileName = document.getElementById('hdnSignatureFileName');
+
+        if (fileInput)   fileInput.value = '';
+        if (preview)     preview.style.display = 'none';
+        if (previewImg)  { previewImg.src = ''; previewImg.style.display = 'none'; }
+        if (previewPdf)  { previewPdf.src = ''; previewPdf.style.display = 'none'; }
+        if (previewName) previewName.textContent = '';
+        if (hdnData)     hdnData.value = '';
+        if (hdnFileName) hdnFileName.value = '';
+        if (box)         box.innerHTML = '<span style="color:#aaa; font-style:italic;">(signature will appear here)</span>';
+    };
+
+    /* ── Form submit validation ─────────────────────────────────────── */
+    const form = document.getElementById('approveForm');
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            const source = document.getElementById('hdnSignatureSource').value;
+            const hdnData = document.getElementById('hdnSignatureData');
+
+            if (source === 'draw') {
+                if (window._isCanvasBlank && window._isCanvasBlank()) {
+                    e.preventDefault();
+                    alert('Please draw your signature before approving.');
+                    return;
+                }
+                hdnData.value = window._getCanvasData ? window._getCanvasData() : '';
+            } else {
+                // upload: data URL was set in the preview — read from preview img/embed
+                const previewImg = document.getElementById('previewImg');
+                const previewPdf = document.getElementById('previewPdf');
+                const src = (previewImg && previewImg.style.display !== 'none' && previewImg.src)
+                          || (previewPdf && previewPdf.style.display !== 'none' && previewPdf.src)
+                          || '';
+                if (!src || src.startsWith('http')) {
+                    e.preventDefault();
+                    alert('Please upload a signature file before approving.');
+                    return;
+                }
+                hdnData.value = src;
+            }
+
+            // structured path uses hdnRequestedModels; legacy path uses inputModels
+            const modelsField = document.getElementById('hdnRequestedModels')
+                             || document.getElementById('inputModels');
+            if (!modelsField || !modelsField.value.trim()) {
+                e.preventDefault();
+                alert('Please fill in the cartridge model/s.');
+                modelsField && modelsField.focus();
+            }
+        });
+    }
+})();
+</script>
+@if (ViewBag.IsApprover == true) {
+    <script src="~/js/tours/approver-self-sign.js"></script>
+}
+}

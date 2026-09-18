@@ -1,0 +1,488 @@
+@model HelpItSubmitViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Submit an IT Ticket";
+}
+
+<header class="section-hero">
+    <div class="portal-container">
+        <span class="portal-eyebrow">IT Help Center</span>
+        <h1>Submit an IT ticket</h1>
+        <p>Describe the issue, review the details, and explicitly confirm before anything is sent to the IT Call Monitoring queue.</p>
+        <div class="portal-cta-row" style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
+            <a class="portal-button portal-button--light" asp-controller="HelpIt" asp-action="Tracker">Track a ticket <span aria-hidden="true">→</span></a>
+        </div>
+    </div>
+</header>
+
+<section class="portal-container help-it-layout">
+    <div class="help-it-card">
+        @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="help-it-alert help-it-alert--error" role="alert">@Model.ErrorMessage</div>
+        }
+
+        @if (Model.IsAnonymous)
+        {
+            <div class="help-it-caller-summary help-it-caller-summary--anon">
+                <div class="help-it-field" style="margin-bottom: 0;">
+                    <label for="callerNameInput">Your name <span class="help-it-required">*</span></label>
+                    <input form="helpItTicketForm" type="text" id="callerNameInput" name="CallerNameInput" value="@Model.Request.CallerNameInput" required placeholder="So IT knows who to follow up with" />
+                    <span class="help-it-muted">You're not signed in, so enter the location where the problem happened. IT will use this to route your ticket.</span>
+                </div>
+            </div>
+
+            <div class="help-it-organization-picker">
+                <div class="help-it-field">
+                    <label for="companyId">Company <span class="help-it-required">*</span></label>
+                    <select id="companyId" name="CompanyId" required>
+                        <option value="">Select your company</option>
+                        @foreach (var company in Model.OrganizationOptions)
+                        {
+                            <option value="@company.CompanyId" selected="@(Model.Request.CompanyId == company.CompanyId)">@company.CompanyName</option>
+                        }
+                    </select>
+                </div>
+                <div class="help-it-field">
+                    <label for="departmentId">Department <span class="help-it-optional">(optional)</span></label>
+                    <select id="departmentId" name="DepartmentId" disabled>
+                        <option value="">Select department (optional)</option>
+                    </select>
+                </div>
+                <div class="help-it-field">
+                    <label for="branchId">Branch <span class="help-it-optional">(optional)</span></label>
+                    <select id="branchId" name="BranchId" disabled>
+                        <option value="">Select branch (optional)</option>
+                    </select>
+                </div>
+                @if (Model.OrganizationOptions.Count == 0)
+                {
+                    <p class="help-it-org-error">Organization choices are temporarily unavailable. Please contact IT directly.</p>
+                }
+                else
+                {
+                    <p class="help-it-org-help">Choose a department, a branch, or both. Some employee records have only one of these values.</p>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="help-it-caller-summary">
+                <div>
+                    <span class="help-it-caller-summary__label">Submitting as</span>
+                    <strong>@Model.CallerName</strong>
+                </div>
+                <div>
+                    <span class="help-it-caller-summary__label">Company</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.CompanyName) ? "—" : Model.CompanyName)</strong>
+                </div>
+                <div>
+                    <span class="help-it-caller-summary__label">Department</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.DepartmentName) ? "—" : Model.DepartmentName)</strong>
+                </div>
+                <div>
+                    <span class="help-it-caller-summary__label">Branch</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.BranchName) ? "—" : Model.BranchName)</strong>
+                </div>
+            </div>
+        }
+
+        <form id="helpItTicketForm" asp-controller="HelpIt" asp-action="Create" method="post" class="help-it-form">
+            @Html.AntiForgeryToken()
+            <input id="helpItConfirmedSubmission" type="hidden" name="ConfirmedSubmission" value="false" />
+            <input id="helpItConfirmedRepeatSubmission" type="hidden" name="ConfirmedRepeatSubmission" value="false" />
+
+            <div class="help-it-field">
+                <label for="issue">Describe the issue <span class="help-it-required">*</span></label>
+                <textarea id="issue" name="Issue" rows="6" required placeholder="What's going on? Include what you were doing, any error messages, and when it started.">@Model.Request.Issue</textarea>
+            </div>
+
+            <div class="help-it-field">
+                <label for="issueType">Issue type</label>
+                <select id="issueType" name="IssueType">
+                    <option value="">Select a type (optional)</option>
+                    @foreach (var option in HelpItSubmitViewModel.IssueTypeOptions)
+                    {
+                        <option value="@option" selected="@(Model.Request.IssueType == option)">@option</option>
+                    }
+                </select>
+            </div>
+
+            <button type="submit" class="portal-button help-it-submit">
+                Review ticket <span aria-hidden="true">→</span>
+            </button>
+            <p class="help-it-form-note">Your ticket is not sent until you select <strong>Confirm &amp; submit ticket</strong> in the review dialog.</p>
+        </form>
+    </div>
+
+    <aside class="help-it-side-panel">
+        <h2>What happens next</h2>
+        <ol>
+            <li>Review your request and contact information in the confirmation dialog.</li>
+            <li>After you explicitly confirm, your ticket is added to the IT Call Monitoring queue.</li>
+            <li>An IT staff member reviews it, sets the priority, and assigns it to themselves.</li>
+            <li>You can check progress anytime on the <a asp-controller="HelpIt" asp-action="Tracker">ticket tracker</a>.</li>
+        </ol>
+        <div class="help-it-side-panel__tip">
+            <strong>Tip:</strong> The more detail you include — what you were doing, exact error messages, and when it started — the faster IT can resolve it.
+        </div>
+    </aside>
+</section>
+
+<div class="help-it-review-overlay" id="helpItReviewDialog" hidden role="dialog" aria-modal="true" aria-labelledby="helpItReviewTitle" aria-describedby="helpItReviewDescription">
+    <div class="help-it-review-dialog" role="document">
+        <button type="button" class="help-it-review-close" id="helpItReviewClose" aria-label="Close review">×</button>
+
+        <section id="helpItReviewPanel">
+            <div class="help-it-review-mark" aria-hidden="true">1</div>
+            <span class="portal-eyebrow">Review before submitting</span>
+            <h2 id="helpItReviewTitle">Confirm your ticket details</h2>
+            <p id="helpItReviewDescription">Nothing has been sent yet. Check the details below, then explicitly confirm to create the ticket.</p>
+
+            <dl class="help-it-review-details">
+                <div><dt>Issue summary</dt><dd id="helpItReviewIssue" class="help-it-review-issue"></dd></div>
+                <div><dt>Issue type</dt><dd id="helpItReviewIssueType"></dd></div>
+                <div><dt>Requester</dt><dd id="helpItReviewRequester"></dd></div>
+                <div><dt>Company / department / branch</dt><dd id="helpItReviewOrganization"></dd></div>
+                @if (Model.RequiresContactEmail)
+                {
+                    <div class="help-it-review-contact-field">
+                        <dt><label for="helpItContactEmail">Department or branch contact email <span class="help-it-required">*</span></label></dt>
+                        <dd>
+                            <input form="helpItTicketForm" id="helpItContactEmail" type="email" name="ContactEmail" maxlength="255" autocomplete="email" value="@Model.Request.ContactEmail" placeholder="name@example.com" aria-describedby="helpItContactEmailHint" />
+                            <span id="helpItContactEmailHint">No active branch or department email is configured. This address is saved only on this ticket.</span>
+                        </dd>
+                    </div>
+                }
+                else
+                {
+                    <div><dt>Contact email</dt><dd>@Model.OrganizationContactEmail <span class="help-it-review-source">@Model.OrganizationContactEmailSource</span></dd></div>
+                }
+                <div><dt>Initial status</dt><dd>Pending</dd></div>
+                <div><dt>Initial priority</dt><dd>Medium</dd></div>
+            </dl>
+            @if (Model.HasPriorSubmission)
+            {
+                <div class="help-it-repeat-warning" role="alert">
+                    <strong>You've already submitted a ticket in this session.</strong>
+                    <span>
+                        @if (!string.IsNullOrWhiteSpace(Model.PriorTicketCode))
+                        {
+                            <text>Your previous ticket is <a asp-action="Details" asp-route-ticketCode="@Model.PriorTicketCode">@Model.PriorTicketCode</a>.</text>
+                        }
+                        Are you sure you want to submit another? Only continue if this is a separate issue.
+                    </span>
+                    <label class="help-it-repeat-check">
+                        <input form="helpItTicketForm" type="checkbox" id="helpItRepeatConfirm" />
+                        <span>I understand — this is a separate issue.</span>
+                    </label>
+                </div>
+            }
+            <p class="help-it-review-error" id="helpItReviewError" role="alert" hidden></p>
+            <p class="help-it-review-next-step">IT will review and assign your request after you confirm. Use the ticket code shown afterward to check future status updates.</p>
+            <div class="help-it-review-actions">
+                <button type="button" class="portal-button portal-button--outline" id="helpItReviewEdit">Back to edit</button>
+                <button type="button" class="portal-button" id="helpItReviewConfirm">Confirm &amp; submit ticket <span aria-hidden="true">→</span></button>
+            </div>
+        </section>
+
+        <section id="helpItSuccessPanel" hidden aria-labelledby="helpItSuccessTitle">
+            <div class="help-it-success-mark" aria-hidden="true">✓</div>
+            <span class="portal-eyebrow">IT Help Center</span>
+            <h2 id="helpItSuccessTitle">Your ticket was submitted</h2>
+            <p>IT has received your request. Keep this ticket code to check its status and updates.</p>
+            <div class="help-it-success-code"><span>Ticket code</span><strong id="helpItSuccessCode"></strong></div>
+            <dl class="help-it-review-details">
+                <div><dt>Issue summary</dt><dd id="helpItSuccessIssue"></dd></div>
+                <div><dt>Issue type</dt><dd id="helpItSuccessIssueType"></dd></div>
+                <div><dt>Requester</dt><dd id="helpItSuccessRequester"></dd></div>
+                <div><dt>Company / department / branch</dt><dd id="helpItSuccessOrganization"></dd></div>
+                <div><dt>Contact email</dt><dd id="helpItSuccessContact"></dd></div>
+                <div><dt>Status</dt><dd id="helpItSuccessStatus"></dd></div>
+                <div><dt>Priority</dt><dd id="helpItSuccessPriority"></dd></div>
+                <div><dt>Submitted</dt><dd id="helpItSuccessSubmitted"></dd></div>
+            </dl>
+            <p class="help-it-review-next-step">IT will review and assign your request. Use this ticket code to check future status updates.</p>
+            <div class="help-it-review-actions">
+                <a class="portal-button" id="helpItSuccessDetails" href="#">View ticket status <span aria-hidden="true">→</span></a>
+                <button type="button" class="portal-button portal-button--outline" id="helpItSuccessClose">Close</button>
+                <a class="portal-button portal-button--light" asp-controller="HelpIt" asp-action="Index">Submit another ticket</a>
+            </div>
+        </section>
+    </div>
+</div>
+
+<style>
+    .help-it-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .9fr); gap: 28px; align-items: start; }
+    @@media (max-width: 860px) { .help-it-layout { grid-template-columns: 1fr; } }
+    .help-it-card { padding: 28px; border: 1px solid rgba(15,23,42,.08); border-radius: 16px; background: #fff; }
+    .help-it-side-panel { position: sticky; top: 24px; padding: 24px; border: 1px solid rgba(15,23,42,.08); border-radius: 16px; background: rgba(15,23,42,.03); }
+    .help-it-side-panel h2 { margin: 0 0 14px; font-size: 1.05rem; }
+    .help-it-side-panel ol { display: flex; flex-direction: column; gap: 10px; margin: 0 0 18px; padding-left: 20px; color: #334155; font-size: .92rem; }
+    .help-it-side-panel ol a { color: var(--portal-red, #c0203a); font-weight: 600; }
+    .help-it-side-panel__tip { padding: 12px 14px; border: 1px solid rgba(15,23,42,.08); border-radius: 10px; background: #fff; color: #475569; font-size: .85rem; }
+    .help-it-caller-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 24px; padding: 16px; border-radius: 12px; background: rgba(15,23,42,.04); }
+    .help-it-caller-summary--anon { display: block; }
+    .help-it-organization-picker { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: -8px 0 24px; padding: 18px 16px 14px; border: 1px solid rgba(15,23,42,.08); border-radius: 12px; background: rgba(15,23,42,.025); }
+    .help-it-organization-picker .help-it-field { margin-bottom: 0; }
+    .help-it-organization-picker select:disabled { cursor: not-allowed; background: #eef2f6; color: #7a8794; }
+    .help-it-org-help, .help-it-org-error { grid-column: 1 / -1; margin: -2px 0 0; font-size: .78rem; }
+    .help-it-org-help { color: var(--portal-muted); }
+    .help-it-org-error { color: #b91c1c; font-weight: 700; }
+    .help-it-caller-summary__label { display: block; margin-bottom: 4px; font-size: .75rem; letter-spacing: .04em; opacity: .65; text-transform: uppercase; }
+    .help-it-field { margin-bottom: 16px; }
+    .help-it-field label { display: block; margin-bottom: 6px; font-size: .9rem; font-weight: 600; }
+    .help-it-field input, .help-it-field textarea, .help-it-field select { width: 100%; padding: 10px 12px; border: 1px solid rgba(15,23,42,.18); border-radius: 8px; font-family: inherit; font-size: .95rem; }
+    .help-it-field input:focus, .help-it-field textarea:focus, .help-it-field select:focus { border-color: var(--portal-red, #c0203a); outline: none; box-shadow: 0 0 0 3px rgba(192,32,58,.15); }
+    .help-it-required { color: #d71920; }
+    .help-it-submit { margin-top: 8px; border: 0; }
+    .help-it-form-note { margin: 11px 0 0; color: var(--portal-muted); font-size: .78rem; }
+    .help-it-muted { display: block; margin-top: 8px; font-size: .82rem; opacity: .7; }
+    .help-it-alert { margin-bottom: 20px; padding: 12px 16px; border-radius: 10px; font-size: .9rem; }
+    .help-it-alert--error { border: 1px solid rgba(239,68,68,.3); background: rgba(239,68,68,.1); color: #b91c1c; }
+
+    .help-it-review-overlay { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(15,31,50,.5); backdrop-filter: blur(3px); }
+    .help-it-review-overlay[hidden] { display: none; }
+    .help-it-review-dialog { position: relative; width: min(700px, 100%); max-height: min(760px, calc(100vh - 40px)); overflow-y: auto; padding: 32px; border: 1px solid var(--portal-line); border-radius: 16px; background: var(--portal-white); color: var(--portal-ink); box-shadow: 0 30px 80px rgba(20,38,60,.24); }
+    .help-it-review-dialog h2 { margin: 8px 0 6px; color: var(--portal-navy); }
+    .help-it-review-dialog h2 + p { margin: 0; color: var(--portal-muted); }
+    .help-it-review-close { position: absolute; top: 14px; right: 16px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--portal-soft); color: var(--portal-navy); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+    .help-it-review-mark, .help-it-success-mark { display: grid; width: 44px; height: 44px; place-items: center; margin-bottom: 14px; border-radius: 50%; background: var(--portal-red-soft); color: var(--portal-red-dark); font-size: 1.25rem; font-weight: 850; }
+    .help-it-review-details { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 13px 20px; margin: 22px 0 0; }
+    .help-it-review-details > div { min-width: 0; }
+    .help-it-review-details > div:first-child, .help-it-review-contact-field { grid-column: 1 / -1; }
+    .help-it-review-details dt { margin-bottom: 3px; color: var(--portal-muted); font-size: .73rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .help-it-review-details dd { margin: 0; overflow-wrap: anywhere; }
+    .help-it-review-issue { white-space: pre-wrap; }
+    .help-it-review-contact-field { padding: 14px; border: 1px solid #f0c7c9; border-radius: 10px; background: #fff8f8; }
+    .help-it-review-contact-field input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--portal-line); border-radius: 8px; color: var(--portal-ink); font: inherit; }
+    .help-it-review-contact-field input:focus { border-color: var(--portal-red); outline: 0; box-shadow: 0 0 0 3px rgba(215,25,32,.12); }
+    .help-it-review-contact-field span, .help-it-review-source { display: block; margin-top: 4px; color: var(--portal-muted); font-size: .72rem; }
+    .help-it-review-error { margin: 16px 0 0; padding: 10px 12px; border: 1px solid #efb3b5; border-radius: 8px; background: #fff1f1; color: var(--portal-red-dark); font-size: .8rem; font-weight: 750; }
+    .help-it-review-next-step { margin: 20px 0; padding: 12px 14px; border-left: 3px solid var(--portal-red); background: var(--portal-red-soft); color: var(--portal-ink); font-size: .84rem; }
+    .help-it-repeat-warning { margin: 18px 0 0; padding: 12px 14px; border: 1px solid #f0c7c9; border-radius: 10px; background: #fff8f8; color: var(--portal-ink); font-size: .84rem; }
+    .help-it-repeat-warning strong { display: block; margin-bottom: 4px; color: var(--portal-red-dark); }
+    .help-it-repeat-warning a { color: var(--portal-red-dark); font-weight: 700; }
+    .help-it-repeat-check { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; font-weight: 650; }
+    .help-it-repeat-check input { width: auto; margin-top: 2px; accent-color: var(--portal-red, #c0203a); }
+    .help-it-review-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .help-it-success-code { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 20px 0; padding: 14px 16px; border: 1px solid var(--portal-line); border-radius: 10px; background: var(--portal-soft); }
+    .help-it-success-code span { color: var(--portal-muted); font-size: .78rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+    .help-it-success-code strong { color: var(--portal-red-dark); font-size: 1.15rem; letter-spacing: .04em; }
+    @@media (max-width: 620px) { .help-it-review-dialog { padding: 24px 20px; } .help-it-review-details { grid-template-columns: 1fr; } .help-it-review-details > div:first-child, .help-it-review-contact-field { grid-column: auto; } .help-it-review-actions .portal-button { width: 100%; } }
+</style>
+
+<script>
+    (function () {
+        var form = document.getElementById('helpItTicketForm');
+        var overlay = document.getElementById('helpItReviewDialog');
+        if (!form || !overlay) return;
+
+        var issue = document.getElementById('issue');
+        var issueType = document.getElementById('issueType');
+        var caller = document.getElementById('callerNameInput');
+        var companySelect = document.getElementById('companyId');
+        var departmentSelect = document.getElementById('departmentId');
+        var branchSelect = document.getElementById('branchId');
+        var organizationOptions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OrganizationOptions));
+        var initialOrganization = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new { companyId = Model.Request.CompanyId, departmentId = Model.Request.DepartmentId, branchId = Model.Request.BranchId }));
+        var contactEmail = document.getElementById('helpItContactEmail');
+        var confirmed = document.getElementById('helpItConfirmedSubmission');
+        var confirmedRepeat = document.getElementById('helpItConfirmedRepeatSubmission');
+        var repeatCheckbox = document.getElementById('helpItRepeatConfirm');
+        var hasPriorSubmission = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.HasPriorSubmission));
+        var reviewPanel = document.getElementById('helpItReviewPanel');
+        var successPanel = document.getElementById('helpItSuccessPanel');
+        var closeButton = document.getElementById('helpItReviewClose');
+        var editButton = document.getElementById('helpItReviewEdit');
+        var confirmButton = document.getElementById('helpItReviewConfirm');
+        var successClose = document.getElementById('helpItSuccessClose');
+        var reviewError = document.getElementById('helpItReviewError');
+        var signedInCaller = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CallerName));
+        var signedInOrganizationLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize($"{Model.CompanyName ?? "—"} / {Model.DepartmentName ?? "—"} / {Model.BranchName ?? "—"}"));
+        var previousFocus = null;
+        var focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+        function setSelectOptions(select, placeholder, items, valueKey, textKey) {
+            if (!select) return;
+            select.innerHTML = '';
+            var placeholderOption = document.createElement('option');
+            placeholderOption.value = '';
+            placeholderOption.textContent = placeholder;
+            select.appendChild(placeholderOption);
+            (items || []).forEach(function (item) {
+                var option = document.createElement('option');
+                option.value = item[valueKey];
+                option.textContent = item[textKey];
+                select.appendChild(option);
+            });
+        }
+
+        function populateBranches(preservedBranchId) {
+            if (!branchSelect || !departmentSelect) return;
+            var company = organizationOptions.find(function (item) {
+                return String(item.CompanyId) === String(companySelect.value);
+            });
+            var branches = company ? company.Branches.slice() : [];
+            var selectedDepartmentId = departmentSelect.value;
+
+            if (company && selectedDepartmentId) {
+                var validBranchIds = company.Combinations
+                    .filter(function (item) {
+                        return String(item.DepartmentId) === String(selectedDepartmentId) && item.BranchId != null;
+                    })
+                    .map(function (item) { return String(item.BranchId); });
+                branches = branches.filter(function (item) {
+                    return validBranchIds.indexOf(String(item.BranchId)) >= 0;
+                });
+            }
+
+            setSelectOptions(branchSelect, 'Select branch (optional)', branches, 'BranchId', 'BranchName');
+            branchSelect.disabled = !company;
+            if (preservedBranchId && branches.some(function (item) { return String(item.BranchId) === String(preservedBranchId); })) {
+                branchSelect.value = String(preservedBranchId);
+            }
+        }
+
+        function populateDepartments(preservedDepartmentId, preservedBranchId) {
+            if (!companySelect || !departmentSelect) return;
+            var company = organizationOptions.find(function (item) {
+                return String(item.CompanyId) === String(companySelect.value);
+            });
+            setSelectOptions(departmentSelect, 'Select department (optional)', company ? company.Departments : [], 'DepartmentId', 'DepartmentName');
+            departmentSelect.disabled = !company;
+            if (preservedDepartmentId && company && company.Departments.some(function (item) { return String(item.DepartmentId) === String(preservedDepartmentId); })) {
+                departmentSelect.value = String(preservedDepartmentId);
+            }
+            populateBranches(preservedBranchId);
+        }
+
+        function selectedText(select) {
+            if (!select || !select.value || !select.selectedOptions.length) return '';
+            return select.selectedOptions[0].textContent.trim();
+        }
+
+        function organizationLabel() {
+            if (!companySelect) return signedInOrganizationLabel;
+            return [selectedText(companySelect) || '—', selectedText(departmentSelect) || '—', selectedText(branchSelect) || '—'].join(' / ');
+        }
+
+        function validateOrganizationSelection() {
+            if (!companySelect || !departmentSelect || !branchSelect) return true;
+            if (!companySelect.value) return true;
+            var hasDepartmentOrBranch = !!departmentSelect.value || !!branchSelect.value;
+            departmentSelect.setCustomValidity(hasDepartmentOrBranch ? '' : 'Select a department, a branch, or both.');
+            return hasDepartmentOrBranch;
+        }
+
+        if (companySelect) {
+            if (initialOrganization.companyId) companySelect.value = String(initialOrganization.companyId);
+            populateDepartments(initialOrganization.departmentId, initialOrganization.branchId);
+            companySelect.addEventListener('change', function () {
+                departmentSelect.setCustomValidity('');
+                populateDepartments(null, null);
+            });
+            departmentSelect.addEventListener('change', function () {
+                departmentSelect.setCustomValidity('');
+                populateBranches(null);
+            });
+            branchSelect.addEventListener('change', function () {
+                departmentSelect.setCustomValidity('');
+            });
+        }
+
+        function text(id, value) { document.getElementById(id).textContent = value || '—'; }
+        function showError(message) { reviewError.textContent = message; reviewError.hidden = !message; }
+        function closeDialog() {
+            overlay.hidden = true;
+            if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
+        }
+        function openReview() {
+            previousFocus = document.activeElement;
+            reviewPanel.hidden = false;
+            successPanel.hidden = true;
+            showError('');
+            if (repeatCheckbox) repeatCheckbox.checked = false;
+            text('helpItReviewIssue', issue.value.trim());
+            text('helpItReviewIssueType', issueType.value || 'Not specified');
+            text('helpItReviewRequester', caller ? caller.value.trim() : signedInCaller);
+            text('helpItReviewOrganization', organizationLabel());
+            overlay.hidden = false;
+            (contactEmail || confirmButton).focus();
+        }
+        function showSuccess(ticket) {
+            reviewPanel.hidden = true;
+            successPanel.hidden = false;
+            text('helpItSuccessCode', ticket.ticketCode);
+            text('helpItSuccessIssue', ticket.issue);
+            text('helpItSuccessIssueType', ticket.issueType || 'Not specified');
+            text('helpItSuccessRequester', ticket.callerName);
+            text('helpItSuccessOrganization', (ticket.company || '—') + ' / ' + (ticket.department || '—') + ' / ' + (ticket.branch || '—'));
+            text('helpItSuccessContact', ticket.contactEmail || '—');
+            text('helpItSuccessStatus', ticket.status);
+            text('helpItSuccessPriority', ticket.priority);
+            text('helpItSuccessSubmitted', ticket.submittedAt);
+            document.getElementById('helpItSuccessDetails').href = ticket.detailsUrl;
+            successClose.focus();
+        }
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (!validateOrganizationSelection() || !form.reportValidity()) return;
+            openReview();
+        });
+        closeButton.addEventListener('click', closeDialog);
+        editButton.addEventListener('click', closeDialog);
+        successClose.addEventListener('click', closeDialog);
+        overlay.addEventListener('click', function (event) { if (event.target === overlay) closeDialog(); });
+        document.addEventListener('keydown', function (event) {
+            if (overlay.hidden) return;
+            if (event.key === 'Escape') { closeDialog(); return; }
+            if (event.key !== 'Tab') return;
+            var focusable = Array.prototype.slice.call(overlay.querySelectorAll(focusableSelector));
+            if (!focusable.length) { event.preventDefault(); closeButton.focus(); return; }
+            var first = focusable[0], last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        });
+        confirmButton.addEventListener('click', async function () {
+            if (contactEmail && (!contactEmail.value.trim() || !contactEmail.checkValidity())) {
+                showError('Enter a valid department or branch contact email before submitting.');
+                contactEmail.focus();
+                return;
+            }
+
+            if (hasPriorSubmission && repeatCheckbox && !repeatCheckbox.checked) {
+                showError('Confirm that this is a separate issue before submitting another ticket.');
+                repeatCheckbox.focus();
+                return;
+            }
+
+            showError('');
+            confirmButton.disabled = true;
+            confirmButton.textContent = 'Submitting…';
+            confirmed.value = 'true';
+            if (confirmedRepeat) confirmedRepeat.value = 'true';
+            try {
+                var formData = new FormData(form);
+                formData.set('ConfirmedSubmission', 'true');
+                if (confirmedRepeat) formData.set('ConfirmedRepeatSubmission', 'true');
+                if (contactEmail) formData.set('ContactEmail', contactEmail.value.trim());
+                var response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                var payload = await response.json().catch(function () { return {}; });
+                if (!response.ok) throw new Error(payload.error || 'Unable to submit the ticket right now.');
+                showSuccess(payload);
+            } catch (error) {
+                confirmed.value = 'false';
+                showError(error && error.message ? error.message : 'Unable to submit the ticket right now.');
+                confirmButton.disabled = false;
+                confirmButton.innerHTML = 'Confirm &amp; submit ticket <span aria-hidden="true">→</span>';
+            }
+        });
+    })();
+</script>

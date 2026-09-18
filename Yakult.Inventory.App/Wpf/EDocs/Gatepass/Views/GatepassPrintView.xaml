@@ -1,0 +1,11 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.EDocs.Gatepass.Views.GatepassPrintView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#EEEEEE">
+    <!-- Host only. The preview pages (and the printed FixedDocument) are built
+         in code-behind from GatepassCopyElement instances, a direct port of the
+         mobile reference GatepassPrintUtils.kt. Default = one Legal sheet with
+         two identical copies of the selected form type. Print-all = sheet 1
+         (Gatepass + Transmittal) and sheet 2 (File + data-only summary). -->
+    <StackPanel x:Name="PagesHost" Margin="0,4,0,4"/>
+</UserControl>

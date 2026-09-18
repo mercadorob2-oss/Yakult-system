@@ -1,0 +1,189 @@
+@model AdminAuditViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Activity Log";
+    var totalCount = Model.Items.Count;
+    var createCount = Model.Items.Count(x => string.Equals(x.Action, "Create", StringComparison.OrdinalIgnoreCase));
+    var updateCount = Model.Items.Count(x => string.Equals(x.Action, "Update", StringComparison.OrdinalIgnoreCase));
+    var archiveCount = Model.Items.Count(x => string.Equals(x.Action, "Archive", StringComparison.OrdinalIgnoreCase));
+    var downloadCount = Model.Items.Count(x => string.Equals(x.Action, "Download", StringComparison.OrdinalIgnoreCase));
+    var groupedItems = Model.Items
+        .OrderByDescending(x => x.Timestamp)
+        .GroupBy(x => x.Timestamp.Date)
+        .ToList();
+}
+
+<section class="admin-card-summary admin-card-summary--audit" aria-label="Activity summary">
+    <div class="admin-stat">
+        <span class="admin-stat__value">@totalCount</span>
+        <span class="admin-stat__label">Events</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value">@updateCount</span>
+        <span class="admin-stat__label">Updates</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value">@archiveCount</span>
+        <span class="admin-stat__label">Archives</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value">@downloadCount</span>
+        <span class="admin-stat__label">Downloads</span>
+    </div>
+</section>
+
+<section class="admin-workspace admin-workspace--single">
+    <div class="admin-list-panel admin-audit-panel">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Recent Service Events</h2>
+                <p>Service changes, archives, downloads, and portal administration activity recorded in dbo.AuditTrail.</p>
+            </div>
+            <a class="admin-button admin-button--ghost" asp-controller="Admin" asp-action="Audit">Refresh</a>
+        </div>
+
+        <div class="admin-card-toolbar admin-card-toolbar--audit">
+            <input type="text" id="auditSearch" placeholder="Search action, entity, user, note, or IP..." autocomplete="off" />
+            <select id="auditFilter">
+                <option value="all">All actions</option>
+                <option value="create">Creates (@createCount)</option>
+                <option value="update">Updates (@updateCount)</option>
+                <option value="archive">Archives (@archiveCount)</option>
+                <option value="download">Downloads (@downloadCount)</option>
+            </select>
+            <select id="auditPeriod">
+                <option value="all">All dates</option>
+                <option value="today">Today</option>
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+            </select>
+        </div>
+
+        <div class="admin-audit-timeline" id="auditTimeline" data-page-size="24">
+            @if (Model.Items.Count == 0)
+            {
+                <div class="admin-empty-state admin-empty-state--action">
+                    <strong>No service activity found</strong>
+                    <span>Audit events will appear here after service, notice, account, or download activity is recorded.</span>
+                </div>
+            }
+            else
+            {
+                foreach (var group in groupedItems)
+                {
+                    var dayLabel = group.Key == DateTime.UtcNow.Date ? "Today" : group.Key.ToString("MMM d, yyyy");
+                    <section class="admin-audit-day" data-audit-day>
+                        <h3>@dayLabel</h3>
+                        <div class="admin-audit-list admin-audit-list--grouped">
+                            @foreach (var item in group)
+                            {
+                                var action = item.Action.ToLowerInvariant();
+                                var actionClass = $"admin-status-pill audit-action-{action}";
+                                var searchText = $"{item.Action} {item.EntityType} {item.UserName} {item.Notes} {item.IpAddress}".ToLowerInvariant();
+                                <article class="admin-audit-row admin-audit-row--timeline" data-audit-row data-audit-text="@searchText" data-audit-action="@action" data-audit-timestamp="@(item.Timestamp.ToUniversalTime().ToString("o"))">
+                                    <div class="admin-audit-row__main">
+                                        <span class="admin-audit-row__title"><span class="@actionClass">@item.Action</span> @item.EntityType</span>
+                                        <span class="admin-audit-row__desc">@(string.IsNullOrWhiteSpace(item.Notes) ? "No notes recorded." : item.Notes)</span>
+                                    </div>
+                                    <div class="admin-audit-row__meta">
+                                        <span>@(string.IsNullOrWhiteSpace(item.UserName) ? "System" : item.UserName)</span>
+                                        <span>@item.Timestamp.ToString("yyyy-MM-dd HH:mm")</span>
+                                        @if (!string.IsNullOrWhiteSpace(item.IpAddress))
+                                        {
+                                            <span>@item.IpAddress</span>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    </section>
+                }
+            }
+            <div class="admin-empty-state admin-empty-state--action" id="auditNoResults" hidden>
+                <strong>No activity matches</strong>
+                <span>Adjust search, action, or date filters to widen the results.</span>
+            </div>
+        </div>
+
+        <div class="admin-panel-pager admin-audit-pager" id="auditPager">
+            <button type="button" id="auditPrev">Previous</button>
+            <span id="auditPageStatus">Page 1 of 1</span>
+            <button type="button" id="auditNext">Next</button>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const search = document.getElementById('auditSearch');
+            const filter = document.getElementById('auditFilter');
+            const period = document.getElementById('auditPeriod');
+            const timeline = document.getElementById('auditTimeline');
+            const noResults = document.getElementById('auditNoResults');
+            const pager = document.getElementById('auditPager');
+            const prev = document.getElementById('auditPrev');
+            const next = document.getElementById('auditNext');
+            const status = document.getElementById('auditPageStatus');
+            const pageSize = Math.max(parseInt(timeline?.dataset.pageSize || '24', 10) || 24, 1);
+            let page = 0;
+
+            function rows() {
+                return Array.from(document.querySelectorAll('[data-audit-row]'));
+            }
+
+            function withinPeriod(row, value) {
+                if (value === 'all') return true;
+                const timestamp = Date.parse(row.dataset.auditTimestamp || '');
+                if (Number.isNaN(timestamp)) return true;
+                const now = new Date();
+                const rowDate = new Date(timestamp);
+                if (value === 'today') {
+                    return rowDate.getFullYear() === now.getFullYear()
+                        && rowDate.getMonth() === now.getMonth()
+                        && rowDate.getDate() === now.getDate();
+                }
+                const days = Number(value);
+                const cutoff = now.getTime() - days * 24 * 60 * 60 * 1000;
+                return timestamp >= cutoff;
+            }
+
+            function updateDayVisibility() {
+                document.querySelectorAll('[data-audit-day]').forEach(day => {
+                    day.hidden = !Array.from(day.querySelectorAll('[data-audit-row]')).some(row => !row.hidden);
+                });
+            }
+
+            function applyAuditFilters(resetPage) {
+                if (resetPage) page = 0;
+                const term = (search?.value || '').toLowerCase().trim();
+                const action = filter?.value || 'all';
+                const periodValue = period?.value || 'all';
+                const matched = rows().filter(row => {
+                    const matchesTerm = !term || (row.dataset.auditText || '').includes(term);
+                    const matchesAction = action === 'all' || row.dataset.auditAction === action;
+                    return matchesTerm && matchesAction && withinPeriod(row, periodValue);
+                });
+                const totalPages = Math.max(Math.ceil(matched.length / pageSize), 1);
+                page = Math.min(Math.max(page, 0), totalPages - 1);
+                const start = page * pageSize;
+                const visibleRows = new Set(matched.slice(start, start + pageSize));
+                rows().forEach(row => row.hidden = !visibleRows.has(row));
+                updateDayVisibility();
+                if (noResults) noResults.hidden = matched.length !== 0;
+                if (pager) pager.hidden = matched.length <= pageSize;
+                if (status) status.textContent = matched.length === 0 ? 'No pages' : `Page ${page + 1} of ${totalPages}`;
+                if (prev) prev.disabled = page <= 0;
+                if (next) next.disabled = page >= totalPages - 1;
+            }
+
+            search?.addEventListener('input', () => applyAuditFilters(true));
+            filter?.addEventListener('change', () => applyAuditFilters(true));
+            period?.addEventListener('change', () => applyAuditFilters(true));
+            prev?.addEventListener('click', () => { page -= 1; applyAuditFilters(false); });
+            next?.addEventListener('click', () => { page += 1; applyAuditFilters(false); });
+            applyAuditFilters(true);
+        });
+    </script>
+}
+

@@ -1,0 +1,201 @@
+@model ContentEditorViewModel
+@using System.Text.Json
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Learning Content Studio";
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var contentTypes = new[] { "Article", "Advisory", "Video", "Course", "FAQ", "Announcement", "Guide" };
+    var draftCount = Model.Items.Count(x => string.Equals(x.Status, "Draft", StringComparison.OrdinalIgnoreCase));
+    var publishedCount = Model.Items.Count(x => string.Equals(x.Status, "Published", StringComparison.OrdinalIgnoreCase));
+    var archivedCount = Model.Items.Count(x => string.Equals(x.Status, "Archived", StringComparison.OrdinalIgnoreCase));
+}
+
+@Html.AntiForgeryToken()
+
+<section class="admin-card-summary studio-summary" aria-label="Learning content summary">
+    <div class="admin-stat">
+        <span class="admin-stat__value">@Model.Items.Count</span>
+        <span class="admin-stat__label">Content items</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value">@draftCount</span>
+        <span class="admin-stat__label">Drafts</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value">@publishedCount</span>
+        <span class="admin-stat__label">Published</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value">@archivedCount</span>
+        <span class="admin-stat__label">Archived</span>
+    </div>
+</section>
+
+<div class="upload-dialog-backdrop" id="uploadDialog" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="uploadDialogTitle">
+    <div class="upload-dialog" id="uploadDialogPanel">
+        <div class="upload-dialog__head">
+            <span class="upload-dialog__spinner" aria-hidden="true"></span>
+            <span class="upload-dialog__check" id="uploadDialogIcon" aria-hidden="true">✓</span>
+            <div>
+                <h3 id="uploadDialogTitle">Uploading file</h3>
+                <p id="uploadDialogMessage">Preparing upload...</p>
+            </div>
+        </div>
+        <div class="upload-progress" aria-hidden="true"><span id="uploadDialogProgress"></span></div>
+        <div class="upload-dialog__meta"><span id="uploadDialogFile">Selected file</span><span id="uploadDialogPercent">0%</span></div>
+        <div class="upload-dialog__details" id="uploadDialogDetails" aria-live="polite"></div>
+        <div class="upload-dialog__actions"><button type="button" class="studio-btn studio-btn--primary" id="uploadDialogClose">OK</button></div>
+    </div>
+</div>
+<div class="studio-shell">
+    <section class="studio-panel" aria-label="Content library">
+        <header class="studio-head"><div><h2>Content library</h2><p>Find drafts, published resources, and archived learning content.</p></div><button type="button" class="studio-btn studio-btn--primary" id="newContent">New</button></header>
+        <div class="studio-toolbar">
+            <div class="studio-search-row"><input class="studio-input" id="librarySearch" type="search" placeholder="Search title, summary, category" autocomplete="off" /><button type="button" class="studio-btn" id="clearLibraryFilters">Clear</button></div>
+            <div class="studio-status-tabs" id="statusFilters" role="tablist" aria-label="Content status filters"><button type="button" class="studio-tab-chip is-active" data-status-filter="all">All</button><button type="button" class="studio-tab-chip" data-status-filter="Draft">Draft</button><button type="button" class="studio-tab-chip" data-status-filter="Published">Published</button><button type="button" class="studio-tab-chip" data-status-filter="Archived">Archived</button></div>
+            <div class="studio-filter-grid"><select class="studio-select" id="typeFilter"><option value="">All types</option>@foreach (var type in contentTypes){<option value="@type">@type</option>}</select><select class="studio-select" id="categoryFilter"><option value="">All categories</option>@foreach (var category in Model.Categories){<option value="@category.Slug">@category.Name</option>}</select></div>
+        </div>
+        <div class="studio-list" id="contentList"></div>
+    </section>
+
+    <section class="studio-panel" aria-label="Content editor">
+        <header class="studio-editor-head"><div class="studio-title-stack"><strong id="editorHeading">New content</strong><span id="editorMeta">Draft workspace</span></div><div><span class="studio-dirty" id="dirtyIndicator">Unsaved changes</span><span class="studio-pill studio-pill--Draft" id="statusPill">Draft</span></div></header>
+        <div class="studio-editor-tabs" role="tablist" aria-label="Content editor sections"><button type="button" class="studio-editor-tab is-active" data-editor-tab="content">Content</button><button type="button" class="studio-editor-tab" data-editor-tab="media">Media</button><button type="button" class="studio-editor-tab" data-editor-tab="links">Links</button><button type="button" class="studio-editor-tab" data-editor-tab="review">Review</button></div>
+        <form id="contentForm">
+            <div class="studio-workspace">
+                <div class="studio-form">
+                    <input type="hidden" id="contentId" />
+                    <section class="studio-pane is-active" data-editor-panel="content">
+                        <div class="studio-preset-row" aria-label="Content type presets"><button type="button" class="studio-tool-btn" data-type-preset="Video">Video lesson</button><button type="button" class="studio-tool-btn" data-type-preset="Course">Course</button><button type="button" class="studio-tool-btn" data-type-preset="FAQ">FAQ</button><button type="button" class="studio-tool-btn" data-type-preset="Guide">Guide</button><button type="button" class="studio-tool-btn" data-type-preset="Advisory">Advisory</button></div>
+                        <div class="studio-field-grid">
+                            <div class="studio-field"><label for="contentType">Type</label><select class="studio-select" id="contentType">@foreach (var type in contentTypes){<option>@type</option>}</select></div>
+                            <div class="studio-field"><label for="categoryId">Category</label><select class="studio-select" id="categoryId">@foreach (var category in Model.Categories){<option value="@category.CategoryId" data-slug="@category.Slug">@category.Name</option>}</select></div>
+                            <div class="studio-field studio-field--full"><label for="title">Title</label><input class="studio-input" id="title" maxlength="180" required /></div>
+                            <div class="studio-field studio-field--full"><label for="slug">Slug</label><input class="studio-input" id="slug" maxlength="200" placeholder="lowercase-hyphenated-title" required /><p class="studio-help">Used in the public content URL. Use lowercase letters, numbers, and hyphens.</p></div>
+                            <div class="studio-field studio-field--full"><label for="summary">Summary</label><textarea class="studio-textarea" id="summary" rows="3" maxlength="500"></textarea></div>
+                            <div class="studio-field studio-field--full"><div class="studio-field-label">Body</div><div class="studio-markdown-tools" aria-label="Markdown helpers"><button type="button" class="studio-tool-btn" data-markdown="heading">Heading</button><button type="button" class="studio-tool-btn" data-markdown="bold">Bold</button><button type="button" class="studio-tool-btn" data-markdown="bullet">Bullet</button><button type="button" class="studio-tool-btn" data-markdown="link">Link</button></div><textarea class="studio-textarea" id="body" rows="13" placeholder="Write the content body here."></textarea></div>
+                        </div>
+                    </section>
+                    <section class="studio-pane" data-editor-panel="media">
+                        <div class="studio-field-grid"><div class="studio-field"><label for="thumbnailUrl">Thumbnail URL or server path</label><input class="studio-input" id="thumbnailUrl" type="text" placeholder="/media/learning/thumbnails/thumbnail.jpg" /><div class="upload-row"><input class="studio-input" id="thumbnailFile" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,image/*" /><button type="button" class="studio-btn" id="uploadThumbnail">Upload</button></div></div><div class="studio-field"><label for="learningTrackGuide">Learning track guide</label><select class="studio-select" id="learningTrackGuide"><option value="">General content</option><option value="cybersecurity">IT Cybersecurity</option><option value="technical">IT Technical</option><option value="support">IT Support</option></select></div></div>
+                        <div class="studio-field"><div class="studio-field-label">Video or media source</div><div class="media-options" role="radiogroup" aria-label="Media source type"><label class="media-option"><input type="radio" name="mediaSource" value="external" checked /><strong>External URL</strong><span>YouTube, secure website, or hosted HTTPS video.</span></label><label class="media-option"><input type="radio" name="mediaSource" value="server" /><strong>Server path</strong><span>Use an existing /media path.</span></label><label class="media-option"><input type="radio" name="mediaSource" value="upload" /><strong>Upload file</strong><span>Upload video or document into media/learning.</span></label><label class="media-option"><input type="radio" name="mediaSource" value="import" /><strong>Import from URL</strong><span>Download an external MP4/WebM video into media/learning.</span></label></div></div>
+                        <div class="upload-panel" id="mediaUploadPanel"><div class="upload-row"><input class="studio-input" id="mediaFile" type="file" accept=".mp4,.webm,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,video/mp4,video/webm,application/pdf" /><button type="button" class="studio-btn" id="uploadMedia">Upload media</button></div><p class="studio-help">Videos are saved under /media/learning/videos. Documents are saved under /media/learning/documents.</p></div>
+                        <div class="upload-panel" id="urlImportPanel"><div class="upload-row"><input class="studio-input" id="importUrl" type="text" placeholder="https://example.com/training/video.mp4" /><button type="button" class="studio-btn" id="importMedia">Fetch &amp; save</button></div><p class="studio-help">YouTube links and direct .mp4/.webm file URLs are supported. Max 500 MB. Saved under /media/learning/videos.</p></div>
+                        <div class="media-input-row"><input class="studio-input" id="mediaUrl" type="text" placeholder="https://youtube.com/watch?v=..." /><button type="button" class="studio-btn" id="previewMedia">Preview</button></div><div class="media-preview" id="mediaPreview">Add a media URL or server path to preview it here.</div><p class="studio-help">Server path example: /media/learning/videos/phishing-basics.mp4.</p>
+                    </section>
+                    <section class="studio-pane links-pane" data-editor-panel="links"><div class="links-pane__head"><div><h2>Related links</h2><p>Add public HTTPS links or references shown with the content.</p></div><button type="button" class="studio-btn" id="addLinkRow">Add link</button></div><div class="link-table" id="linkRows"></div></section>
+                    
+                    <section class="studio-pane" data-editor-panel="review"><div class="review-summary"><div class="review-row"><span>Status</span><strong id="reviewStatus">Draft</strong></div><div class="review-row"><span>Last updated</span><strong id="reviewUpdated">-</strong></div><div class="review-row"><span>Public slug</span><strong id="reviewSlug">-</strong></div></div><div class="studio-preset-row">@if (Model.CanPublish){<button type="button" class="studio-btn studio-btn--primary" id="publishContent">Publish</button><button type="button" class="studio-btn studio-btn--danger" id="archiveContent">Archive</button><button type="button" class="studio-btn" id="restoreContent">Restore to draft</button>}</div></section>
+                </div>
+                <aside class="preview-card" aria-label="Live preview"><div class="preview-card__media" id="previewHero">Y</div><div class="preview-card__body"><div class="studio-item-meta"><span class="studio-pill" id="previewType">Article</span><span class="studio-pill" id="previewCategory">Category</span></div><h3 id="previewTitle">Untitled content</h3><p id="previewSummary">Summary preview appears here.</p><div class="preview-body" id="previewBody">Body preview appears here.</div><div class="preview-links" id="previewLinks"></div></div></aside>
+            </div>
+            <div class="studio-actions"><button type="submit" class="studio-btn studio-btn--primary" id="saveDraftBtn">Save draft</button><button type="button" class="studio-btn" id="discardChanges">Discard changes</button><span class="studio-help" id="actionHint">Ready.</span></div>
+        </form>
+    </section>
+</div>
+<div class="completion-dialog-backdrop" id="completionDialog" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="completionDialogTitle">
+    <div class="completion-dialog">
+        <div class="completion-dialog__head">
+            <div><h3 id="completionDialogTitle">Course completion</h3><p id="completionDialogSub">Loading completion...</p></div>
+            <button type="button" class="completion-dialog__close" id="completionDialogClose" aria-label="Close dialog">×</button>
+        </div>
+        <div class="completion-dialog__counts">
+            <span><strong id="completionStarted">0</strong> started</span>
+            <span><strong id="completionDone">0</strong> completed</span>
+        </div>
+        <div class="completion-dialog__table-wrap">
+            <table class="completion-dialog__table">
+                <thead><tr><th>Employee</th><th>Completed</th></tr></thead>
+                <tbody id="completionRows"><tr class="completion-dialog__status-row"><td colspan="2">Loading completion...</td></tr></tbody>
+            </table>
+        </div>
+        <div class="completion-dialog__pager">
+            <button type="button" class="studio-btn" id="completionPrev">← Prev</button>
+            <span id="completionPageInfo">Page 1 of 1</span>
+            <button type="button" class="studio-btn" id="completionNext">Next →</button>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+    const items = @Html.Raw(JsonSerializer.Serialize(Model.Items, jsonOptions));
+    const categories = @Html.Raw(JsonSerializer.Serialize(Model.Categories, jsonOptions));
+    const $ = id => document.getElementById(id);
+    let selected = null, statusFilter = 'all', isDirty = false, suspendDirty = false, completionState = null;
+    const fields = ['contentType','categoryId','title','slug','summary','body','thumbnailUrl','learningTrackGuide','mediaUrl'];
+    function safeText(v){return String(v||'')}
+    function escapeHtml(v){return safeText(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
+    function slugify(v){return safeText(v).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,200)}
+    function selectedCategory(){return categories.find(c=>String(c.categoryId)===String($('categoryId').value))||categories[0]||{categoryId:0,name:'Category',slug:''}}
+    function setDirty(v){if(suspendDirty)return;isDirty=v;$('dirtyIndicator').classList.toggle('is-visible',isDirty);$('actionHint').textContent=isDirty?'Unsaved changes.':'Ready.'}
+    function statusClass(s){return 'studio-pill studio-pill--'+safeText(s||'Draft')}
+    function updateStatusUi(s){$('statusPill').className=statusClass(s);$('statusPill').textContent=s||'Draft';$('reviewStatus').textContent=s||'Draft'}
+    function toDateTimeLocal(v){if(!v)return'';const d=new Date(v);if(Number.isNaN(d.getTime()))return'';const p=n=>String(n).padStart(2,'0');return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())}T${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`}
+    function fromDateTimeLocal(v){return v?`${v}:00Z`:null}
+    function mediaExtension(v){return /\.(mp4|webm)(\?.*)?$/i.test(v||'')}
+    function detectMediaMode(v){return safeText(v).trim().startsWith('/')?'server':'external'}
+    function mediaRadios(){return Array.from(document.querySelectorAll('input[name="mediaSource"]'))}
+    function syncUploadPanel(){const up=$('mediaUploadPanel'),ip=$('urlImportPanel');if(up)up.classList.toggle('is-visible',mediaRadios().some(x=>x.checked&&x.value==='upload'));if(ip)ip.classList.toggle('is-visible',mediaRadios().some(x=>x.checked&&x.value==='import'))}
+    function setMediaMode(mode){const r=mediaRadios().find(x=>x.value===mode&&!x.disabled)||mediaRadios()[0];mediaRadios().forEach(x=>x.checked=x===r);$('mediaUrl').placeholder=r.value==='server'?'/media/learning/videos/phishing-basics.mp4':r.value==='upload'?'Uploaded /media/learning path will appear here':r.value==='import'?'Imported /media/learning path will appear here':'https://youtube.com/watch?v=...';syncUploadPanel()}
+    function youtubeEmbed(v){try{const u=new URL(v);let id=null;if(u.hostname==='youtu.be')id=u.pathname.replace('/','').split('/')[0];else if(u.hostname.includes('youtube.com'))id=u.searchParams.get('v')||u.pathname.split('/embed/')[1]?.split('/')[0];return id?'https://www.youtube-nocookie.com/embed/'+id:null}catch{return null}}
+    function renderMediaPreview(){const p=$('mediaPreview'),v=$('mediaUrl').value.trim();p.replaceChildren();if(!v){p.textContent='Add a media URL or server path to preview it here.';return}const e=youtubeEmbed(v);if(e){const f=document.createElement('iframe');f.src=e;f.title='Video preview';f.allowFullscreen=true;p.appendChild(f);return}if(mediaExtension(v)){const video=document.createElement('video');video.controls=true;video.preload='metadata';video.src=v;p.appendChild(video);return}const a=document.createElement('a');a.href=v;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Open media link in a new tab';p.appendChild(a)}
+    function collectLinks(){return Array.from(document.querySelectorAll('[data-link-row]')).map(row=>({label:row.querySelector('[data-link-label]').value.trim(),url:row.querySelector('[data-link-url]').value.trim(),linkType:row.querySelector('[data-link-type]').value.trim()||'Related'})).filter(l=>l.label||l.url)}
+    function addLinkRow(link){const row=document.createElement('div');row.className='link-row';row.dataset.linkRow='true';row.innerHTML=`<div class="link-field"><label>Label</label><input class="studio-input" data-link-label placeholder="IBM training resource" value="${escapeHtml(link?.label||'')}" /></div><div class="link-field"><label>URL</label><input class="studio-input" data-link-url placeholder="https://example.com" value="${escapeHtml(link?.url||'')}" /></div><div class="link-field"><label>Type</label><input class="studio-input" data-link-type placeholder="Related" value="${escapeHtml(link?.linkType||'Related')}" /></div><button type="button" class="studio-btn" data-remove-link>Remove link</button>`;row.querySelectorAll('input').forEach(i=>i.addEventListener('input',()=>{setDirty(true);updatePreview()}));row.querySelector('[data-remove-link]').addEventListener('click',()=>{row.remove();setDirty(true);updatePreview()});$('linkRows').appendChild(row)}
+    function setLinks(links){$('linkRows').replaceChildren();(links||[]).forEach(addLinkRow);if(!links||links.length===0)addLinkRow({label:'',url:'',linkType:'Related'})}
+    function updatePreview(){const c=selectedCategory();$('previewType').textContent=$('contentType').value||'Article';$('previewCategory').textContent=c.name||'Category';$('previewTitle').textContent=$('title').value.trim()||'Untitled content';$('previewSummary').textContent=$('summary').value.trim()||'Summary preview appears here.';$('previewBody').textContent=$('body').value.trim()||'Body preview appears here.';const hero=$('previewHero');hero.replaceChildren();const thumb=$('thumbnailUrl').value.trim();if(thumb){const img=document.createElement('img');img.src=thumb;img.alt='';img.onerror=()=>{hero.textContent=($('title').value||'Y').slice(0,1).toUpperCase()};hero.appendChild(img)}else hero.textContent=($('title').value||'Y').slice(0,1).toUpperCase();const box=$('previewLinks');box.replaceChildren();collectLinks().slice(0,4).forEach(l=>{if(!l.label||!l.url)return;const a=document.createElement('a');a.href=l.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=l.label;box.appendChild(a)});$('reviewSlug').textContent=$('slug').value.trim()?'/content/'+$('slug').value.trim():'-'}
+    function itemMatches(item){const q=$('librarySearch').value.trim().toLowerCase(),type=$('typeFilter').value,cat=$('categoryFilter').value,hay=[item.title,item.summary,item.categoryName,item.contentType,item.status].join(' ').toLowerCase();return !(statusFilter!=='all'&&item.status!==statusFilter)&&!(type&&item.contentType!==type)&&!(cat&&item.categorySlug!==cat)&&!(q&&!hay.includes(q))}
+    function renderList(){const list=$('contentList');list.replaceChildren();const filtered=items.filter(itemMatches);if(!filtered.length){const e=document.createElement('div');e.className='studio-empty admin-empty-state admin-empty-state--action';e.innerHTML='<strong>No content matches this view</strong><span>Adjust search, status, type, or category filters.</span>';list.appendChild(e);return}filtered.forEach(item=>{const card=document.createElement('div');card.className='studio-item'+(selected&&selected.contentId===item.contentId?' is-active':'');card.innerHTML=`<strong>${escapeHtml(item.title||'Untitled content')}</strong><span>${escapeHtml(item.summary||'No summary')}</span><div class="studio-item-meta"><span class="${statusClass(item.status)}">${escapeHtml(item.status)}</span><span class="studio-pill">${escapeHtml(item.contentType)}</span><span class="studio-pill">${escapeHtml(item.categoryName)}</span></div>`;card.addEventListener('click',()=>chooseItem(item));if(item.contentType==='Course'){const statsBtn=document.createElement('button');statsBtn.type='button';statsBtn.className='studio-btn studio-btn--sm course-stats-trigger';statsBtn.textContent='Completion';statsBtn.title='View course completion';statsBtn.addEventListener('click',e=>{e.stopPropagation();openCompletionDialog(item)});card.appendChild(statsBtn)}list.appendChild(card)})}
+    function renderCompletionPage(){const d=$('completionDialog');if(!d||!completionState||completionState.loading)return;const s=completionState;s.loading=true;$('completionPrev').disabled=true;$('completionNext').disabled=true;$('completionRows').innerHTML=`<tr class="completion-dialog__status-row"><td colspan="2">Loading page ${s.page}...</td></tr>`;fetch(`/Admin/LearningContent/Stats/${s.contentId}?page=${s.page}&pageSize=${s.pageSize}`).then(r=>r.json()).then(data=>{s.loading=false;if(!data||data.success===false){$('completionRows').innerHTML=`<tr class="completion-dialog__status-row completion-dialog__status-row--error"><td colspan="2">${escapeHtml(data?.message||'Completion is not available.')}</td></tr>`;return}$('completionStarted').textContent=data.started||0;$('completionDone').textContent=data.completed||0;s.totalPages=data.totalPages||0;$('completionPageInfo').textContent=(data.completed||0)===0?'No completions yet':`Page ${data.page} of ${data.totalPages||1} · ${data.completed} completed`;const rows=(data.employees||[]).map(e=>`<tr><td>${escapeHtml(e.name)}</td><td>${escapeHtml(e.completedAtUtc)}</td></tr>`).join('')||'<tr class="completion-dialog__status-row"><td colspan="2">No completions yet.</td></tr>';$('completionRows').innerHTML=rows;$('completionPrev').disabled=!(s.page>1);$('completionNext').disabled=!(s.page<s.totalPages)}).catch(()=>{s.loading=false;$('completionRows').innerHTML='<tr class="completion-dialog__status-row completion-dialog__status-row--error"><td colspan="2">Unable to load completion.</td></tr>'})}
+    function openCompletionDialog(item){const d=$('completionDialog');if(!d)return;$('completionDialogTitle').textContent='Course completion';$('completionDialogSub').textContent=item.title||'Untitled course';$('completionStarted').textContent='0';$('completionDone').textContent='0';completionState={contentId:item.contentId,page:1,pageSize:50,totalPages:0,loading:false};$('completionRows').innerHTML='<tr class="completion-dialog__status-row"><td colspan="2">Loading completion...</td></tr>';d.classList.add('is-visible');d.setAttribute('aria-hidden','false');$('completionDialogClose').focus();renderCompletionPage()}
+    function closeCompletionDialog(){const d=$('completionDialog');if(!d)return;d.classList.remove('is-visible');d.setAttribute('aria-hidden','true')}
+    function inferTrackFromCategory(slug){if(slug==='cybersecurity')return'cybersecurity';if(slug==='learning'||slug==='it-services')return'technical';if(slug==='it-help'||slug==='it-help-center')return'support';return''}
+    function setCategoryBySlug(slug){const o=Array.from($('categoryId').options).find(x=>x.dataset.slug===slug);if(o)$('categoryId').value=o.value}
+    function fillEditor(item){suspendDirty=true;selected=item;$('contentId').value=item?.contentId||'';$('contentType').value=item?.contentType||'Article';const cat=item?categories.find(c=>c.slug===item.categorySlug):categories[0];$('categoryId').value=cat?.categoryId||'';$('title').value=item?.title||'';$('slug').value=item?.slug||'';$('summary').value=item?.summary||'';$('body').value=item?.body||'';$('thumbnailUrl').value=item?.thumbnailUrl||'';$('mediaUrl').value=item?.mediaUrl||'';$('learningTrackGuide').value=inferTrackFromCategory(item?.categorySlug||cat?.slug||'');setMediaMode(detectMediaMode(item?.mediaUrl||''));setLinks(item?.links||[]);updateStatusUi(item?.status||'Draft');$('editorHeading').textContent=item?.title||'New content';$('editorMeta').textContent=item?.contentId?`${item.contentType} in ${item.categoryName}`:'Draft workspace';$('reviewUpdated').textContent=item?.updatedAtUtc?new Date(item.updatedAtUtc).toLocaleString():'-';renderMediaPreview();updatePreview();suspendDirty=false;isDirty=false;setDirty(false);renderList()}
+    function chooseItem(item){if(isDirty&&!window.confirm('Discard unsaved changes and open another item?'))return;fillEditor(item)}
+    function clearEditor(){if(isDirty&&!window.confirm('Discard unsaved changes and start new content?'))return;fillEditor(null);renderList()}
+    function applyPreset(type){$('contentType').value=type;if(!$('body').value.trim()){const t={Video:'Overview\n\nKey points:\n- \n- \n- \n\nPractice prompt:\n',Course:'Objective\n\nBy the end of this course you will be able to:\n- \n- \n\nLesson notes:\n',FAQ:'Question\n\nAnswer\n',Guide:'Purpose\n\nSteps:\n1. \n2. \n3. \n\nNotes:\n',Advisory:'What is happening\n\nWho is affected\n\nRecommended action\n'};$('body').value=t[type]||''}if((type==='Video'||type==='Course')&&!$('learningTrackGuide').value)$('learningTrackGuide').value='cybersecurity';setDirty(true);updatePreview()}
+    function applyMarkdown(kind){const t=$('body'),s=t.selectionStart,e=t.selectionEnd,sel=t.value.slice(s,e)||(kind==='link'?'link text':'text');let n=sel;if(kind==='heading')n='## '+sel;if(kind==='bold')n='**'+sel+'**';if(kind==='bullet')n=sel.split('\n').map(line=>line.startsWith('- ')?line:'- '+line).join('\n');if(kind==='link')n='['+sel+'](https://example.com)';t.setRangeText(n,s,e,'end');t.focus();setDirty(true);updatePreview()}
+    async function post(action,data){const r=await fetch('/Admin/LearningContent/'+action,{method:'POST',headers:{'Content-Type':'application/json','RequestVerificationToken':token},body:JSON.stringify(data)});const p=await r.json().catch(()=>({}));if(!r.ok||p.success===false)throw new Error(p.message||'Operation failed.');return p}
+    function formatUploadSize(bytes){if(!Number.isFinite(bytes)||bytes<=0)return'';const units=['B','KB','MB','GB'];let size=bytes,index=0;while(size>=1024&&index<units.length-1){size/=1024;index++}return `${size.toFixed(size>=10||index===0?0:1)} ${units[index]}`}
+    function renderUploadDetails(details){const box=$('uploadDialogDetails');if(!box)return;const rows=[['Original file',details?.originalName],['Upload type',details?.uploadType],['Transferred',details?.transferredText],['Stored as',details?.storedName],['Server path',details?.storedPath]].filter(row=>row[1]);box.replaceChildren(...rows.map(([label,value])=>{const row=document.createElement('div'),labelNode=document.createElement('span'),valueNode=document.createElement('strong');labelNode.textContent=label;valueNode.textContent=value;row.append(labelNode,valueNode);return row}))}
+    function setUploadDialog(state,title,message,percent,fileText,details){const overlay=$('uploadDialog'),panel=$('uploadDialogPanel'),bar=$('uploadDialogProgress'),pct=$('uploadDialogPercent'),name=$('uploadDialogFile'),icon=$('uploadDialogIcon');if(!overlay||!panel)return;overlay.classList.add('is-visible');overlay.setAttribute('aria-hidden','false');panel.classList.toggle('is-complete',state==='complete');panel.classList.toggle('is-error',state==='error');if(icon)icon.textContent=state==='error'?'!':'✓';$('uploadDialogTitle').textContent=title;$('uploadDialogMessage').textContent=message;if(bar)bar.style.width=`${Math.max(0,Math.min(percent||0,100))}%`;if(pct)pct.textContent=`${Math.round(Math.max(0,Math.min(percent||0,100)))}%`;if(name)name.textContent=fileText||'Selected file';renderUploadDetails(details)}
+    function hideUploadDialog(){const overlay=$('uploadDialog');if(!overlay)return;overlay.classList.remove('is-visible');overlay.setAttribute('aria-hidden','true')}
+    function uploadRequest(data,onProgress){return new Promise((resolve,reject)=>{const xhr=new XMLHttpRequest();xhr.open('POST','/Admin/LearningContent/Upload');xhr.setRequestHeader('RequestVerificationToken',token);xhr.upload.onprogress=event=>{if(event.lengthComputable&&onProgress)onProgress({percent:Math.round((event.loaded/event.total)*100),loaded:event.loaded,total:event.total})};xhr.onload=()=>{let payload={};try{payload=JSON.parse(xhr.responseText||'{}')}catch{}if(xhr.status<200||xhr.status>=300||payload.success===false)reject(new Error(payload.message||'Upload failed.'));else resolve(payload)};xhr.onerror=()=>reject(new Error('Upload failed because the connection was interrupted.'));xhr.onabort=()=>reject(new Error('Upload was cancelled.'));xhr.send(data)})}
+    async function uploadFile(target,inputId,destinationId){const input=$(inputId);if(!input.files||!input.files.length){window.yakultToast?.('Choose a file first.','error');return}const file=input.files[0],label=target==='thumbnail'?'thumbnail':'media';const button=target==='thumbnail'?$('uploadThumbnail'):$('uploadMedia');const fileSize=formatUploadSize(file.size);const fileText=`${file.name}${fileSize?' · '+fileSize:''}`;const baseDetails={originalName:file.name,uploadType:target==='thumbnail'?'Thumbnail image':'Learning media',transferredText:fileSize?`0 B of ${fileSize}`:'',storedName:'Assigned after upload',storedPath:'Assigned after upload'};const data=new FormData();data.append('target',target);data.append('file',file);try{if(button){button.disabled=true;button.classList.add('is-loading')}setUploadDialog('uploading',`Uploading ${label}`,`Sending ${file.name} to the server...`,0,fileText,baseDetails);const p=await uploadRequest(data,progress=>{const transferred=progress?.total?`${formatUploadSize(progress.loaded)} of ${formatUploadSize(progress.total)}`:baseDetails.transferredText;setUploadDialog('uploading',`Uploading ${label}`,`Sending ${file.name} to the server...`,progress?.percent||0,fileText,{...baseDetails,transferredText:transferred})});const storedPath=p.url||'',storedName=storedPath?storedPath.split(/[\/]/).pop():'';setUploadDialog('complete','Upload complete',`${p.fileName||file.name} was renamed and is ready to use.`,100,fileText,{...baseDetails,transferredText:fileSize?`${fileSize} of ${fileSize}`:'',storedName:storedName||p.fileName||file.name,storedPath});$(destinationId).value=storedPath;input.value='';setMediaMode(destinationId==='mediaUrl'?'server':detectMediaMode($(destinationId).value));setDirty(true);renderMediaPreview();updatePreview();window.yakultToast?.('File uploaded.','success')}catch(error){setUploadDialog('error','Upload failed',error.message||'Unable to upload the selected file.',100,fileText,baseDetails);throw error}finally{if(button){button.disabled=false;button.classList.remove('is-loading')}}}
+    async function importFromUrl(){const url=$('importUrl').value.trim();if(!/^https?:\/\//i.test(url)){window.yakultToast?.('Enter a full http:// or https:// URL.','error');return}const button=$('importMedia'),fileText=url;const baseDetails={originalName:url,uploadType:'Learning media',transferredText:'Downloading…',storedName:'Assigned after download',storedPath:'Assigned after download'};try{if(button){button.disabled=true;button.classList.add('is-loading')}setUploadDialog('uploading','Importing media',`Downloading ${url} to the server...`,50,fileText,baseDetails);const p=await post('ImportUrl',{url});const storedPath=p.url||'',storedName=storedPath?storedPath.split(/[\/]/).pop():'';setUploadDialog('complete','Import complete',`${p.fileName||url} was downloaded and saved to the portal.`,100,fileText,{...baseDetails,transferredText:'Downloaded',storedName:storedName||p.fileName,storedPath});$('mediaUrl').value=storedPath;$('importUrl').value='';setMediaMode('server');setDirty(true);renderMediaPreview();updatePreview();window.yakultToast?.('Media imported.','success')}catch(error){setUploadDialog('error','Import failed',error.message||'Unable to download the video.',100,fileText,baseDetails);throw error}finally{if(button){button.disabled=false;button.classList.remove('is-loading')}}}
+    $('uploadDialogClose')?.addEventListener('click',hideUploadDialog);
+    $('completionDialogClose').addEventListener('click',closeCompletionDialog);
+    $('completionDialog').addEventListener('click',e=>{if(e.target===$('completionDialog'))closeCompletionDialog()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('completionDialog').classList.contains('is-visible'))closeCompletionDialog()});
+    $('completionPrev').addEventListener('click',()=>{if(completionState&&completionState.page>1){completionState.page--;renderCompletionPage()}});
+    $('completionNext').addEventListener('click',()=>{if(completionState&&completionState.page<completionState.totalPages){completionState.page++;renderCompletionPage()}});
+    function buildPayload(){const links=collectLinks(),bad=links.find(l=>!l.label||!l.url);if(bad)throw new Error('Each related link needs both a label and a URL.');return{contentId:$('contentId').value?Number($('contentId').value):null,contentType:$('contentType').value,title:$('title').value,slug:$('slug').value,summary:$('summary').value,body:$('body').value,categoryId:Number($('categoryId').value),thumbnailUrl:$('thumbnailUrl').value||null,mediaUrl:$('mediaUrl').value||null,isFeatured:selected?.isFeatured??false,sortOrder:Number.isFinite(selected?.sortOrder)?selected.sortOrder:0,publishStartUtc:selected?.publishStartUtc||null,publishEndUtc:selected?.publishEndUtc||null,links}}
+    async function saveDraft(){await post('Save',buildPayload());window.yakultToast?.('Draft saved.','success');isDirty=false;setDirty(false);window.location.reload()}
+    async function flow(action,expected){const id=Number($("contentId").value),current=$("reviewStatus").textContent;if(!id){window.yakultToast?.('Save the draft first.','error');return}if(isDirty){window.yakultToast?.('Save or discard changes before workflow actions.','error');return}if(expected&&current!==expected){window.yakultToast?.('This action requires '+expected+' status.','error');return}try{await post(action,{contentId:id,remarks:null});window.yakultToast?.('Workflow updated.','success');window.location.reload()}catch(e){window.yakultToast?.(e.message,'error')}}
+    fields.forEach(id=>{const el=$(id);if(!el)return;el.addEventListener('input',()=>{if(id==='title'&&!$('contentId').value&&!$('slug').value.trim())$('slug').value=slugify($('title').value);if(id==='mediaUrl')setMediaMode(detectMediaMode($('mediaUrl').value));setDirty(true);updatePreview()});el.addEventListener('change',()=>{setDirty(true);updatePreview()})});
+    document.querySelectorAll('[data-editor-tab]').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('[data-editor-tab]').forEach(x=>x.classList.toggle('is-active',x===tab));document.querySelectorAll('[data-editor-panel]').forEach(p=>p.classList.toggle('is-active',p.dataset.editorPanel===tab.dataset.editorTab))}));
+    document.querySelectorAll('[data-status-filter]').forEach(btn=>btn.addEventListener('click',()=>{statusFilter=btn.dataset.statusFilter;document.querySelectorAll('[data-status-filter]').forEach(x=>x.classList.toggle('is-active',x===btn));renderList()}));
+    document.querySelectorAll('[data-type-preset]').forEach(btn=>btn.addEventListener('click',()=>applyPreset(btn.dataset.typePreset)));
+    document.querySelectorAll('[data-markdown]').forEach(btn=>btn.addEventListener('click',()=>applyMarkdown(btn.dataset.markdown)));
+    mediaRadios().forEach(r=>r.addEventListener('change',()=>setMediaMode(r.value)));
+    $('uploadThumbnail').addEventListener('click',async()=>{try{await uploadFile('thumbnail','thumbnailFile','thumbnailUrl')}catch(e){window.yakultToast?.(e.message,'error')}});
+    $('uploadMedia').addEventListener('click',async()=>{try{await uploadFile('media','mediaFile','mediaUrl')}catch(e){window.yakultToast?.(e.message,'error')}});
+    $('importMedia').addEventListener('click',async()=>{try{await importFromUrl()}catch(e){window.yakultToast?.(e.message,'error')}});
+    $('newContent').addEventListener('click',clearEditor);
+    $('clearLibraryFilters').addEventListener('click',()=>{$('librarySearch').value='';$('typeFilter').value='';$('categoryFilter').value='';statusFilter='all';document.querySelectorAll('[data-status-filter]').forEach(x=>x.classList.toggle('is-active',x.dataset.statusFilter==='all'));renderList()});
+    ['librarySearch','typeFilter','categoryFilter'].forEach(id=>{$(id).addEventListener('input',renderList);$(id).addEventListener('change',renderList)});
+    $('learningTrackGuide').addEventListener('change',()=>{const map={cybersecurity:'cybersecurity',technical:'learning',support:'it-help'};if(map[$('learningTrackGuide').value])setCategoryBySlug(map[$('learningTrackGuide').value]);if($('learningTrackGuide').value==='cybersecurity')$('contentType').value='Video';setDirty(true);updatePreview()});
+    $('previewMedia').addEventListener('click',renderMediaPreview);
+    $('addLinkRow').addEventListener('click',()=>{addLinkRow({label:'',url:'',linkType:'Related'});setDirty(true)});
+    $('discardChanges').addEventListener('click',()=>fillEditor(selected));
+    $('contentForm').addEventListener('submit',async e=>{e.preventDefault();try{await saveDraft()}catch(error){window.yakultToast?.(error.message,'error')}});
+    const publish=$("publishContent"),archive=$("archiveContent"),restore=$("restoreContent");
+    if(publish)publish.addEventListener('click',()=>flow('Publish','Draft'));
+    if(archive)archive.addEventListener('click',()=>flow('Archive','Published'));
+    if(restore)restore.addEventListener('click',()=>flow('Restore','Archived'));
+    window.addEventListener('beforeunload',event=>{if(!isDirty)return;event.preventDefault();event.returnValue=''});
+    renderList();
+    fillEditor(items[0]||null);
+});
+</script>

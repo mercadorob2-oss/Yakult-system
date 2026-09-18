@@ -1,0 +1,251 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Item.InvoiceHeaderDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize"
+        Width="720" Height="560"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Background" Value="#3A8EF6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#2272D9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecBtn" TargetType="Button">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#5B6A7D"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#C8D0DC"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FL" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#8A94A6"/>
+            <Setter Property="Margin" Value="0,0,0,3"/>
+        </Style>
+
+        <Style x:Key="FieldBox" TargetType="TextBox">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#374151"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="7,0"/>
+            <Setter Property="BorderBrush" Value="#C8D0DC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="FieldCombo" TargetType="ComboBox">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="FieldDate" TargetType="DatePicker">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+
+        <Style x:Key="SectionCaption" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#3A8EF6"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+    </Window.Resources>
+
+    <Border CornerRadius="10" Background="White" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="52"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="60"/>
+            </Grid.RowDefinitions>
+
+            <!-- ═══ Header ═══ -->
+            <Border Grid.Row="0" Background="#3A8EF6" CornerRadius="10,10,0,0"
+                    MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
+                <DockPanel Margin="18,0,10,0" VerticalAlignment="Center">
+                    <TextBlock DockPanel.Dock="Right" Text="✕" FontSize="14" FontWeight="Bold"
+                               Foreground="#CFE3FF" Cursor="Hand" VerticalAlignment="Center"
+                               Padding="8,0" MouseLeftButtonDown="OnCloseClick"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Edit Invoice Details" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="Document identity, the invoice subject, the recipient, and the coverage period."
+                                   FontSize="10" Foreground="#D6E8FF" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- ═══ Fields ═══ -->
+            <Border Grid.Row="1" Padding="20,16">
+                <StackPanel>
+                    <TextBlock Text="DOCUMENT" Style="{StaticResource SectionCaption}"/>
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="DOCUMENT # *" Style="{StaticResource FL}"/>
+                            <TextBox x:Name="TxtDocumentNumber" Style="{StaticResource FieldBox}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="REFERENCE # (PO)" Style="{StaticResource FL}"/>
+                            <TextBox x:Name="TxtReferenceNumber" Style="{StaticResource FieldBox}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="DOCUMENT DATE" Style="{StaticResource FL}"/>
+                            <DatePicker x:Name="DpDocumentDate" Style="{StaticResource FieldDate}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="SUBJECT" Style="{StaticResource SectionCaption}"/>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="COMPANY (subject)" Style="{StaticResource FL}"/>
+                            <ComboBox x:Name="CmbCompany" Style="{StaticResource FieldCombo}" IsEditable="True"
+                                      TextBoxBase.TextChanged="OnCompanyOrDistributorChanged"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="DISTRIBUTOR (subject)" Style="{StaticResource FL}"/>
+                            <ComboBox x:Name="CmbDistributor" Style="{StaticResource FieldCombo}" IsEditable="True"
+                                      TextBoxBase.TextChanged="OnCompanyOrDistributorChanged"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Company and Distributor are two alternative ways to name the same
+                         "subject" of the invoice — never both at once. Neither is really the
+                         sender; the actual sender/issuer is Yakult, these two just say which
+                         counterparty classification the invoice is filed under. -->
+                    <TextBlock x:Name="LblCompanyDistributorHint"
+                               Text="Choose only one — Company and Distributor cannot both be set on the same invoice."
+                               FontSize="10" Foreground="#8A94A6" Margin="0,4,0,16"/>
+
+                    <TextBlock Text="RECIPIENT + COVERAGE" Style="{StaticResource SectionCaption}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock Text="SITE COMPANY (recipient)" Style="{StaticResource FL}"/>
+                            <ComboBox x:Name="CmbSiteCompany" Style="{StaticResource FieldCombo}" IsEditable="True"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <TextBlock Text="SITE BRANCH (recipient)" Style="{StaticResource FL}"/>
+                            <ComboBox x:Name="CmbSiteBranch" Style="{StaticResource FieldCombo}" IsEditable="True"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="4">
+                            <TextBlock Text="SITE DEPARTMENT (recipient)" Style="{StaticResource FL}"/>
+                            <ComboBox x:Name="CmbSiteDepartment" Style="{StaticResource FieldCombo}" IsEditable="True"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="0">
+                            <TextBlock Text="COVERAGE START" Style="{StaticResource FL}"/>
+                            <DatePicker x:Name="DpStartDate" Style="{StaticResource FieldDate}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="2">
+                            <TextBlock Text="COVERAGE END" Style="{StaticResource FL}"/>
+                            <DatePicker x:Name="DpEndDate" Style="{StaticResource FieldDate}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock Text="RECEIPT SET" Style="{StaticResource SectionCaption}" Margin="0,16,0,8"/>
+                    <Border Background="#F5F7FA" CornerRadius="6" Padding="12,10">
+                        <DockPanel LastChildFill="True">
+                            <Button x:Name="BtnLinkReceiptSet" DockPanel.Dock="Right"
+                                    Content="Link Receipt Set" Style="{StaticResource SecBtn}"
+                                    Click="BtnLinkReceiptSet_Click"/>
+                            <Button x:Name="BtnRemoveReceiptSet" DockPanel.Dock="Right"
+                                    Content="Remove" Style="{StaticResource SecBtn}" Margin="0,0,8,0"
+                                    Click="BtnRemoveReceiptSet_Click" Visibility="Collapsed"/>
+                            <Button x:Name="BtnViewReceiptSet" DockPanel.Dock="Right"
+                                    Content="View" Style="{StaticResource SecBtn}" Margin="0,0,8,0"
+                                    Click="BtnViewReceiptSet_Click" Visibility="Collapsed"/>
+                            <TextBlock x:Name="LblReceiptSet" Text="No receipt set linked."
+                                       FontSize="11" Foreground="#5B6A7D" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- ═══ Footer ═══ -->
+            <Border Grid.Row="2" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10">
+                <DockPanel Margin="16,0" VerticalAlignment="Center" LastChildFill="False">
+                    <Button DockPanel.Dock="Right" Content="Save" Style="{StaticResource PrimaryBtn}"
+                            Click="BtnSave_Click"/>
+                    <Button DockPanel.Dock="Right" Content="Cancel" Style="{StaticResource SecBtn}" Margin="0,0,8,0"
+                            Click="BtnCancel_Click" IsCancel="True"/>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

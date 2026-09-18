@@ -1,0 +1,434 @@
+@model Inventory.RequestPortal.Models.ViewModels.LoginViewModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment WebHostEnv
+@{
+    Layout = null; // Standalone page to avoid Layout padding/margins
+    ViewData["Title"] = "Login";
+    bool isDevMode = WebHostEnv.IsDevelopment();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Yakult Requester Portal</title>
+
+    <!-- Bootstrap & Icons -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/root.css" asp-append-version="true" />
+
+    <style>
+        /* =========================================
+           LOGIN PAGE — split layout: form (left) / abstract
+           Yakult-inspired liquid artwork (right). This is one of the few
+           pages allowed a decorative background per the design system —
+           tables/forms/grids elsewhere stay plain white.
+           ========================================= */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: var(--surface);
+        }
+
+        .login-shell {
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        /* ── Left: photo background, full-bleed behind the diagonal white shape.
+           login-bg-building.png is a PRE-CROPPED version of the original
+           head-office-with-clouds photo (1716x789 → 1178x789), tightened
+           horizontally around the building itself (small sky padding on each
+           side) so the building — not empty sky — is the dominant subject at
+           a plain "cover" fill. Plain "cover" (no reduced-zoom hack) so there
+           are no letterboxed gaps/fallback-color bands around the edges.
+           Anchored "top" so the logo/roofline is never cropped; any overflow
+           is trimmed from the bottom, which was already cut off in the
+           source photo anyway. ── */
+        .login-art-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background:
+                linear-gradient(135deg, rgba(213,0,50,0.10), rgba(58,160,224,0.14)),
+                url('/images/login-bg-building.png') center top / cover no-repeat;
+        }
+
+        /* ── Right: form panel — larger side, anchored to the right edge.
+           Same diagonal line as before (left-at-top, right-at-bottom), just
+           with the form/image sides swapped. Content is right-aligned
+           (flex-end) rather than centered in the panel, with generous right
+           padding so it doesn't hug the viewport edge, and enough left
+           padding that it clears the diagonal notch at every scroll height. ── */
+        /* ── Seam accent — a thin red/blue bar tracing the same diagonal cut as
+           login-form-panel's clip-path, red on top half meeting blue on bottom half
+           at the vertical center. The panel's polygon (5% 0, ... 35% 100%) is relative
+           to the panel's own box, which is the right 64% of .login-shell — converted
+           here to shell-relative % so the bar lines up exactly on top of that edge:
+           top x  = 36% + 0.64*5%  = 39.2%
+           bottom x = 36% + 0.64*35% = 58.4% ── */
+        .login-seam {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            background: linear-gradient(180deg, var(--yakult-red) 0% 50%, #08327a 50% 100%);
+            clip-path: polygon(
+                calc(39.2% - 4px) 0%, calc(39.2% + 4px) 0%,
+                calc(58.4% + 4px) 100%, calc(58.4% - 4px) 100%
+            );
+            /* drop-shadow (not box-shadow) so it isn't itself clipped away by clip-path above */
+            filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.25));
+        }
+
+        @@media (max-width: 900px) {
+            .login-seam { display: none; }
+        }
+
+        .login-form-panel {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 64%;
+            min-width: 420px;
+            min-height: 100vh;
+            margin-left: auto;
+            padding: 3rem 7rem 3rem 4rem;
+            background: var(--surface);
+            box-shadow: -40px 0 60px -20px rgba(20, 20, 20, 0.12);
+            clip-path: polygon(5% 0, 100% 0, 100% 100%, 35% 100%);
+        }
+
+        /* Faint diagonal bottle watermark on the white form panel — contained here
+           (not escaping to .login-shell) because .login-form-panel already has an
+           explicit z-index, so it's already its own stacking context. */
+        .login-form-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: url('/images/yakult-bottles-repeating-pattern.png');
+            background-repeat: repeat;
+            background-size: 220px 210px;
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .login-form-inner {
+            width: 100%;
+            max-width: 340px;
+        }
+
+        .login-art-caption {
+            position: absolute;
+            z-index: 1;
+            left: 6%;
+            bottom: 10%;
+            text-align: left;
+            max-width: 320px;
+        }
+
+        /* ── Mobile (<=900px): the split layout collapses into a single full-
+           bleed building photo with the sign-in form floating on top as a
+           centered card. The card's border is a red-to-blue gradient (the
+           same colors as .login-seam on desktop) via the standard
+           background-clip: padding-box / border-box double-background trick,
+           since `border-image` doesn't support `border-radius`. ── */
+        @@media (max-width: 900px) {
+            .login-shell {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 1.5rem;
+            }
+            .login-art-bg {
+                display: block;
+                background-position: left top;
+                filter: blur(6px);
+                transform: scale(1.08);
+            }
+            .login-art-caption { display: none; }
+            .login-form-panel {
+                display: block;
+                position: relative;
+                z-index: 1;
+                width: 100%;
+                max-width: 380px;
+                min-width: 0;
+                height: auto;
+                min-height: 0;
+                margin: 0;
+                clip-path: none;
+                padding: 2.5rem 1.75rem;
+                border-radius: 20px;
+                border: 3px solid transparent;
+                background:
+                    linear-gradient(var(--surface), var(--surface)) padding-box,
+                    linear-gradient(135deg, var(--yakult-red) 0%, #08327a 100%) border-box;
+                box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.45);
+                overflow: hidden;
+            }
+
+            .login-brand,
+            .login-header {
+                text-align: center;
+            }
+
+            .login-brand img {
+                margin: 0 auto;
+            }
+        }
+
+        .login-brand {
+            margin-bottom: 3rem;
+        }
+
+        .login-brand img {
+            display: block;
+            height: 34px;
+            width: auto;
+        }
+
+        .login-header h1 {
+            color: var(--text-strong);
+            font-weight: 700;
+            font-size: 1.7rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .login-header p {
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 2.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-strong);
+            font-size: 0.85rem;
+        }
+
+        .form-control {
+            border: 1px solid var(--border-muted);
+            border-radius: var(--radius-sm);
+            padding: 0.65rem 1rem;
+            font-size: 1rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--yakult-blue);
+            box-shadow: 0 0 0 0.2rem var(--yakult-blue-shadow);
+        }
+
+        .input-group {
+            border: 1px solid var(--border-muted);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .input-group:focus-within {
+            border-color: var(--yakult-blue);
+            box-shadow: 0 0 0 0.2rem var(--yakult-blue-shadow);
+        }
+
+        .input-group .form-control {
+            border: none;
+            box-shadow: none;
+        }
+
+        .input-group .btn-toggle {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+        }
+
+        .input-group .btn-toggle:hover {
+            color: var(--yakult-red);
+        }
+
+        .btn-login {
+            background: var(--yakult-red);
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 0.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            width: 100%;
+            margin-top: 0.5rem;
+            transition: background 0.15s ease;
+        }
+
+        .btn-login:hover {
+            background: var(--yakult-red-hover);
+        }
+
+        .alert {
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+        }
+
+        /* Login toast — docked at top-center of the whole page (not inside the form
+           panel), auto-dismissed by the script below shortly after it appears. */
+        .login-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translate(-50%, 0);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            background: #e9f9ee;
+            color: #1e7a3d;
+            border: 1px solid #b7e6c4;
+            border-radius: var(--radius-sm);
+            padding: 0.65rem 1.1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            opacity: 1;
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+
+        .login-toast.login-toast--hide {
+            opacity: 0;
+            transform: translate(-50%, -8px);
+        }
+
+        .login-art-caption h2 {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #fff;
+            text-shadow: 0 2px 14px rgba(0,0,0,0.35);
+        }
+
+        .login-art-caption p {
+            font-size: 0.9rem;
+            color: #fff;
+            opacity: 0.95;
+            text-shadow: 0 1px 10px rgba(0,0,0,0.35);
+        }
+
+        @@media (max-width: 575.98px) {
+            .login-shell { padding: 1rem; }
+            .login-form-panel { padding: 1.75rem 1.25rem; border-radius: 16px; }
+            .login-header h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-shell">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="login-toast" id="loginToast" role="status">
+                <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            </div>
+        }
+        <div class="login-form-panel">
+            <div class="login-form-inner">
+                <div class="login-brand">
+                    <img src="~/images/yakult-name.png" alt="Yakult" />
+                </div>
+
+                <div class="login-header">
+                    <h1>Requester Portal</h1>
+                    <p>Welcome back! Please sign in.</p>
+                </div>
+
+                <form asp-action="Login" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ReturnUrl" />
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-4">
+                        <label asp-for="Username" class="form-label">Username</label>
+                        <input asp-for="Username" class="form-control" placeholder="Enter your username" autofocus />
+                        <span asp-validation-for="Username" class="text-danger small ms-2"></span>
+                    </div>
+
+                    <div class="mb-5">
+                        <label asp-for="Password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <input asp-for="Password" class="form-control" placeholder="Enter your password" id="passwordInput" />
+                            <button class="btn btn-toggle" type="button" id="togglePassword">
+                                <i class="bi bi-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small ms-2"></span>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-login">
+                            Sign In
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="login-art-bg"></div>
+        <div class="login-seam"></div>
+        <div class="login-art-caption">
+            <h2>Consumable Requests, Simplified</h2>
+            <p>Submit, track, and fulfill cartridge, ink, toner, and print head requests in one place.</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Toggle password visibility
+            const toggleBtn = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('passwordInput');
+            const toggleIcon = document.getElementById('toggleIcon');
+
+            if (toggleBtn && passwordInput && toggleIcon) {
+                toggleBtn.addEventListener('click', function () {
+                    const isPassword = passwordInput.type === 'password';
+                    passwordInput.type = isPassword ? 'text' : 'password';
+                    toggleIcon.classList.toggle('bi-eye', !isPassword);
+                    toggleIcon.classList.toggle('bi-eye-slash', isPassword);
+                });
+            }
+
+            // Enter key focus flow
+            const usernameInput = document.querySelector('input[name="Username"]');
+            if (usernameInput) {
+                usernameInput.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        passwordInput.focus();
+                    }
+                });
+            }
+
+            // Top-center login toast — auto-dismiss ~1s after it appears.
+            const loginToast = document.getElementById('loginToast');
+            if (loginToast) {
+                setTimeout(function () {
+                    loginToast.classList.add('login-toast--hide');
+                    loginToast.addEventListener('transitionend', function () {
+                        loginToast.remove();
+                    }, { once: true });
+                }, 1000);
+            }
+
+        });
+    </script>
+</body>
+</html>

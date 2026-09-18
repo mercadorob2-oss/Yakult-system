@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="Yakult_Inventory_System_DEVDataSet" targetNamespace="http://tempuri.org/Yakult_Inventory_System_DEVDataSet.xsd" xmlns:mstns="http://tempuri.org/Yakult_Inventory_System_DEVDataSet.xsd" xmlns="http://tempuri.org/Yakult_Inventory_System_DEVDataSet.xsd" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop" attributeFormDefault="qualified" elementFormDefault="qualified">
+  <xs:annotation>
+    <xs:appinfo source="urn:schemas-microsoft-com:xml-msdatasource">
+      <DataSource DefaultConnectionIndex="0" FunctionsComponentName="QueriesTableAdapter" Modifier="AutoLayout, AnsiClass, Class, Public" SchemaSerializationMode="IncludeSchema" xmlns="urn:schemas-microsoft-com:xml-msdatasource">
+        <Connections>
+          <Connection AppSettingsObjectName="Settings" AppSettingsPropertyName="Yakult_Inventory_System_DEVConnectionString" ConnectionStringObject="" IsAppSettingsProperty="true" Modifier="Assembly" Name="Yakult_Inventory_System_DEVConnectionString (Settings)" ParameterPrefix="@" PropertyReference="ApplicationSettings.Yakult.Inventory.App.Properties.Settings.GlobalReference.Default.Yakult_Inventory_System_DEVConnectionString" Provider="Microsoft.Data.SqlClient" />
+        </Connections>
+        <Tables>
+          <TableAdapter BaseClass="System.ComponentModel.Component" DataAccessorModifier="AutoLayout, AnsiClass, Class, Public" DataAccessorName="vw_DisposedSoldItemsTableAdapter" GeneratorDataComponentClassName="vw_DisposedSoldItemsTableAdapter" Name="vw_DisposedSoldItems" UserDataComponentName="vw_DisposedSoldItemsTableAdapter">
+            <MainSource>
+              <DbSource ConnectionRef="Yakult_Inventory_System_DEVConnectionString (Settings)" DbObjectName="Yakult_Inventory_System_DEV.dbo.vw_DisposedSoldItems" DbObjectType="View" FillMethodModifier="Public" FillMethodName="Fill" GenerateMethods="Both" GenerateShortCommands="false" GeneratorGetMethodName="GetData" GeneratorSourceName="Fill" GetMethodModifier="Public" GetMethodName="GetData" QueryType="Rowset" ScalarCallRetval="System.Object, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" UseOptimisticConcurrency="true" UserGetMethodName="GetData" UserSourceName="Fill">
+                <SelectCommand>
+                  <DbCommand CommandType="Text" ModifiedByUser="false">
+                    <CommandText>SELECT DecisionId, DecidedAt, DecisionTypeName, DecisionStatus, Quantity, RecipientName, SaleAmount, Remarks, ItemId, ItemName, ItemModelNumber, SerialNumber, CategoryId, CategoryName, ConditionName, DecidedByName, EmptyCartridgeId, CartridgeModelId, CartridgeModelNumber, CartridgeBrand, DisposalCompanyName, CartridgeReturnedAt, BatchId FROM dbo.vw_DisposedSoldItems</CommandText>
+                    <Parameters />
+                  </DbCommand>
+                </SelectCommand>
+              </DbSource>
+            </MainSource>
+            <Mappings>
+              <Mapping SourceColumn="DecisionId" DataSetColumn="DecisionId" />
+              <Mapping SourceColumn="DecidedAt" DataSetColumn="DecidedAt" />
+              <Mapping SourceColumn="DecisionTypeName" DataSetColumn="DecisionTypeName" />
+              <Mapping SourceColumn="DecisionStatus" DataSetColumn="DecisionStatus" />
+              <Mapping SourceColumn="Quantity" DataSetColumn="Quantity" />
+              <Mapping SourceColumn="RecipientName" DataSetColumn="RecipientName" />
+              <Mapping SourceColumn="SaleAmount" DataSetColumn="SaleAmount" />
+              <Mapping SourceColumn="Remarks" DataSetColumn="Remarks" />
+              <Mapping SourceColumn="ItemId" DataSetColumn="ItemId" />
+              <Mapping SourceColumn="ItemName" DataSetColumn="ItemName" />
+              <Mapping SourceColumn="ItemModelNumber" DataSetColumn="ItemModelNumber" />
+              <Mapping SourceColumn="SerialNumber" DataSetColumn="SerialNumber" />
+              <Mapping SourceColumn="CategoryId" DataSetColumn="CategoryId" />
+              <Mapping SourceColumn="CategoryName" DataSetColumn="CategoryName" />
+              <Mapping SourceColumn="ConditionName" DataSetColumn="ConditionName" />
+              <Mapping SourceColumn="DecidedByName" DataSetColumn="DecidedByName" />
+              <Mapping SourceColumn="EmptyCartridgeId" DataSetColumn="EmptyCartridgeId" />
+              <Mapping SourceColumn="CartridgeModelId" DataSetColumn="CartridgeModelId" />
+              <Mapping SourceColumn="CartridgeModelNumber" DataSetColumn="CartridgeModelNumber" />
+              <Mapping SourceColumn="CartridgeBrand" DataSetColumn="CartridgeBrand" />
+              <Mapping SourceColumn="DisposalCompanyName" DataSetColumn="DisposalCompanyName" />
+              <Mapping SourceColumn="CartridgeReturnedAt" DataSetColumn="CartridgeReturnedAt" />
+              <Mapping SourceColumn="BatchId" DataSetColumn="BatchId" />
+            </Mappings>
+            <Sources />
+          </TableAdapter>
+        </Tables>
+        <Sources />
+      </DataSource>
+    </xs:appinfo>
+  </xs:annotation>
+  <xs:element name="Yakult_Inventory_System_DEVDataSet" msdata:IsDataSet="true" msdata:UseCurrentLocale="true" msprop:EnableTableAdapterManager="True" msprop:Generator_UserDSName="Yakult_Inventory_System_DEVDataSet" msprop:Generator_DataSetName="Yakult_Inventory_System_DEVDataSet">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="vw_DisposedSoldItems" msprop:Generator_RowEvHandlerName="vw_DisposedSoldItemsRowChangeEventHandler" msprop:Generator_RowDeletedName="vw_DisposedSoldItemsRowDeleted" msprop:Generator_RowDeletingName="vw_DisposedSoldItemsRowDeleting" msprop:Generator_RowEvArgName="vw_DisposedSoldItemsRowChangeEvent" msprop:Generator_TablePropName="vw_DisposedSoldItems" msprop:Generator_RowChangedName="vw_DisposedSoldItemsRowChanged" msprop:Generator_RowChangingName="vw_DisposedSoldItemsRowChanging" msprop:Generator_TableClassName="vw_DisposedSoldItemsDataTable" msprop:Generator_RowClassName="vw_DisposedSoldItemsRow" msprop:Generator_TableVarName="tablevw_DisposedSoldItems" msprop:Generator_UserTableName="vw_DisposedSoldItems">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="DecisionId" msprop:Generator_ColumnPropNameInRow="DecisionId" msprop:Generator_ColumnPropNameInTable="DecisionIdColumn" msprop:Generator_ColumnVarNameInTable="columnDecisionId" msprop:Generator_UserColumnName="DecisionId" type="xs:int" />
+              <xs:element name="DecidedAt" msprop:Generator_ColumnPropNameInRow="DecidedAt" msprop:Generator_ColumnPropNameInTable="DecidedAtColumn" msprop:Generator_ColumnVarNameInTable="columnDecidedAt" msprop:Generator_UserColumnName="DecidedAt" type="xs:dateTime" />
+              <xs:element name="DecisionTypeName" msprop:Generator_ColumnPropNameInRow="DecisionTypeName" msprop:Generator_ColumnPropNameInTable="DecisionTypeNameColumn" msprop:Generator_ColumnVarNameInTable="columnDecisionTypeName" msprop:Generator_UserColumnName="DecisionTypeName">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="20" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="DecisionStatus" msprop:Generator_ColumnPropNameInRow="DecisionStatus" msprop:Generator_ColumnPropNameInTable="DecisionStatusColumn" msprop:Generator_ColumnVarNameInTable="columnDecisionStatus" msprop:Generator_UserColumnName="DecisionStatus">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="20" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="Quantity" msprop:Generator_ColumnPropNameInRow="Quantity" msprop:Generator_ColumnPropNameInTable="QuantityColumn" msprop:Generator_ColumnVarNameInTable="columnQuantity" msprop:Generator_UserColumnName="Quantity" type="xs:int" />
+              <xs:element name="RecipientName" msprop:Generator_ColumnPropNameInRow="RecipientName" msprop:Generator_ColumnPropNameInTable="RecipientNameColumn" msprop:Generator_ColumnVarNameInTable="columnRecipientName" msprop:Generator_UserColumnName="RecipientName" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="200" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="SaleAmount" msprop:Generator_ColumnPropNameInRow="SaleAmount" msprop:Generator_ColumnPropNameInTable="SaleAmountColumn" msprop:Generator_ColumnVarNameInTable="columnSaleAmount" msprop:Generator_UserColumnName="SaleAmount" type="xs:decimal" minOccurs="0" />
+              <xs:element name="Remarks" msprop:Generator_ColumnPropNameInRow="Remarks" msprop:Generator_ColumnPropNameInTable="RemarksColumn" msprop:Generator_ColumnVarNameInTable="columnRemarks" msprop:Generator_UserColumnName="Remarks" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="500" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="ItemId" msprop:Generator_ColumnPropNameInRow="ItemId" msprop:Generator_ColumnPropNameInTable="ItemIdColumn" msprop:Generator_ColumnVarNameInTable="columnItemId" msprop:Generator_UserColumnName="ItemId" type="xs:int" />
+              <xs:element name="ItemName" msprop:Generator_ColumnPropNameInRow="ItemName" msprop:Generator_ColumnPropNameInTable="ItemNameColumn" msprop:Generator_ColumnVarNameInTable="columnItemName" msprop:Generator_UserColumnName="ItemName">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="200" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="ItemModelNumber" msprop:Generator_ColumnPropNameInRow="ItemModelNumber" msprop:Generator_ColumnPropNameInTable="ItemModelNumberColumn" msprop:Generator_ColumnVarNameInTable="columnItemModelNumber" msprop:Generator_UserColumnName="ItemModelNumber" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="100" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="SerialNumber" msprop:Generator_ColumnPropNameInRow="SerialNumber" msprop:Generator_ColumnPropNameInTable="SerialNumberColumn" msprop:Generator_ColumnVarNameInTable="columnSerialNumber" msprop:Generator_UserColumnName="SerialNumber" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="255" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="CategoryId" msprop:Generator_ColumnPropNameInRow="CategoryId" msprop:Generator_ColumnPropNameInTable="CategoryIdColumn" msprop:Generator_ColumnVarNameInTable="columnCategoryId" msprop:Generator_UserColumnName="CategoryId" type="xs:int" minOccurs="0" />
+              <xs:element name="CategoryName" msprop:Generator_ColumnPropNameInRow="CategoryName" msprop:Generator_ColumnPropNameInTable="CategoryNameColumn" msprop:Generator_ColumnVarNameInTable="columnCategoryName" msprop:Generator_UserColumnName="CategoryName" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="50" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="ConditionName" msprop:Generator_ColumnPropNameInRow="ConditionName" msprop:Generator_ColumnPropNameInTable="ConditionNameColumn" msprop:Generator_ColumnVarNameInTable="columnConditionName" msprop:Generator_UserColumnName="ConditionName" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="20" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="DecidedByName" msprop:Generator_ColumnPropNameInRow="DecidedByName" msprop:Generator_ColumnPropNameInTable="DecidedByNameColumn" msprop:Generator_ColumnVarNameInTable="columnDecidedByName" msprop:Generator_UserColumnName="DecidedByName" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="100" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="EmptyCartridgeId" msprop:Generator_ColumnPropNameInRow="EmptyCartridgeId" msprop:Generator_ColumnPropNameInTable="EmptyCartridgeIdColumn" msprop:Generator_ColumnVarNameInTable="columnEmptyCartridgeId" msprop:Generator_UserColumnName="EmptyCartridgeId" type="xs:int" minOccurs="0" />
+              <xs:element name="CartridgeModelId" msprop:Generator_ColumnPropNameInRow="CartridgeModelId" msprop:Generator_ColumnPropNameInTable="CartridgeModelIdColumn" msprop:Generator_ColumnVarNameInTable="columnCartridgeModelId" msprop:Generator_UserColumnName="CartridgeModelId" type="xs:int" minOccurs="0" />
+              <xs:element name="CartridgeModelNumber" msprop:Generator_ColumnPropNameInRow="CartridgeModelNumber" msprop:Generator_ColumnPropNameInTable="CartridgeModelNumberColumn" msprop:Generator_ColumnVarNameInTable="columnCartridgeModelNumber" msprop:Generator_UserColumnName="CartridgeModelNumber" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="100" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="CartridgeBrand" msprop:Generator_ColumnPropNameInRow="CartridgeBrand" msprop:Generator_ColumnPropNameInTable="CartridgeBrandColumn" msprop:Generator_ColumnVarNameInTable="columnCartridgeBrand" msprop:Generator_UserColumnName="CartridgeBrand" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="100" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="DisposalCompanyName" msprop:Generator_ColumnPropNameInRow="DisposalCompanyName" msprop:Generator_ColumnPropNameInTable="DisposalCompanyNameColumn" msprop:Generator_ColumnVarNameInTable="columnDisposalCompanyName" msprop:Generator_UserColumnName="DisposalCompanyName" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:maxLength value="200" />
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="CartridgeReturnedAt" msprop:Generator_ColumnPropNameInRow="CartridgeReturnedAt" msprop:Generator_ColumnPropNameInTable="CartridgeReturnedAtColumn" msprop:Generator_ColumnVarNameInTable="columnCartridgeReturnedAt" msprop:Generator_UserColumnName="CartridgeReturnedAt" type="xs:dateTime" minOccurs="0" />
+              <xs:element name="BatchId" msprop:Generator_ColumnPropNameInRow="BatchId" msprop:Generator_ColumnPropNameInTable="BatchIdColumn" msprop:Generator_ColumnVarNameInTable="columnBatchId" msprop:Generator_UserColumnName="BatchId" type="xs:int" minOccurs="0" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

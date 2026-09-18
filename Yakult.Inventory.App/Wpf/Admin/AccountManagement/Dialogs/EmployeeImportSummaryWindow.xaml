@@ -1,0 +1,195 @@
+<Window x:Class="Yakult.Inventory.App.WPF.Admin.AccountManagement.Dialogs.EmployeeImportSummaryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Confirm Import — Full Summary"
+        Width="900" Height="720"
+        MinWidth="700" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Window.Resources>
+        <Style x:Key="FooterBtn" TargetType="Button">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="Padding"         Value="16,0"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.87"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ActionBadgeStyle" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                    <Setter Property="Foreground" Value="#D32F2F"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSelected}" Value="False">
+                    <Setter Property="Foreground" Value="#8A97A6"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="LinkBtn" TargetType="Button">
+            <Setter Property="Background"      Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground"      Value="#4E9AFC"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Padding"         Value="4,2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#2563EB"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#4E9AFC" Padding="20,14">
+            <StackPanel>
+                <TextBlock Text="Confirm Import — Full Summary" Foreground="White" FontSize="15" FontWeight="Bold"/>
+                <TextBlock x:Name="TxtSubtitle" Foreground="#EAF2FF" FontSize="11" Margin="0,3,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Full, untruncated lists in tabs -->
+        <TabControl Grid.Row="1" Margin="16,12,16,0" BorderThickness="1" BorderBrush="#DDE3EC">
+            <TabItem x:Name="TabAdd">
+                <DataGrid x:Name="GridAdd"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False" CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          RowHeight="28"
+                          FontSize="11"
+                          BorderThickness="0"
+                          AlternatingRowBackground="#FAFBFC">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name"     Binding="{Binding Name}"           Width="1.4*"/>
+                        <DataGridTextColumn Header="Position" Binding="{Binding Position}"       Width="1.1*"/>
+                        <DataGridTextColumn Header="Company"  Binding="{Binding CompanyName}"    Width="0.7*"/>
+                        <DataGridTextColumn Header="Branch"   Binding="{Binding BranchName}"     Width="1*"/>
+                        <DataGridTextColumn Header="Dept"     Binding="{Binding DepartmentName}" Width="1*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <TabItem x:Name="TabUpdate">
+                <DataGrid x:Name="GridUpdate"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False" CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          RowHeight="28"
+                          FontSize="11"
+                          BorderThickness="0"
+                          AlternatingRowBackground="#FAFBFC">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name"      Binding="{Binding Name}"           Width="1.2*"/>
+                        <DataGridTextColumn Header="Changes"   Binding="{Binding ChangeSummary}"  Width="1.2*"/>
+                        <DataGridTextColumn Header="Position"  Binding="{Binding Position}"       Width="1*"/>
+                        <DataGridTextColumn Header="Company"   Binding="{Binding CompanyName}"    Width="0.6*"/>
+                        <DataGridTextColumn Header="Branch"    Binding="{Binding BranchName}"     Width="0.9*"/>
+                        <DataGridTextColumn Header="Dept"      Binding="{Binding DepartmentName}" Width="0.9*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+            <TabItem x:Name="TabMissing">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="10,8">
+                        <Grid>
+                            <TextBlock x:Name="TxtMissingCount" FontSize="11" Foreground="#5A6A7A" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="Select All to Archive" Style="{StaticResource LinkBtn}" Click="BtnSelectAllMissing_Click"/>
+                                <TextBlock Text=" · " Foreground="#999" VerticalAlignment="Center" FontSize="11"/>
+                                <Button Content="Clear All" Style="{StaticResource LinkBtn}" Click="BtnClearAllMissing_Click"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <DataGrid x:Name="GridMissing"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False" CanUserDeleteRows="False"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              RowHeight="28"
+                              FontSize="11"
+                              BorderThickness="0"
+                              AlternatingRowBackground="#FAFBFC">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Archive?" Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="60"/>
+                            <DataGridTextColumn Header="Name"     Binding="{Binding Name}"           Width="1.3*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Position" Binding="{Binding Position}"       Width="1*"   IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Company"  Binding="{Binding CompanyName}"    Width="0.6*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Branch"   Binding="{Binding BranchName}"     Width="1*"   IsReadOnly="True"/>
+                            <DataGridTemplateColumn Header="Action" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ActionText}" Style="{StaticResource ActionBadgeStyle}"
+                                                   VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+        </TabControl>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="20,12">
+            <Grid>
+                <TextBlock x:Name="TxtFooterNote" FontSize="11" Foreground="#5A6A7A" VerticalAlignment="Center"
+                           TextWrapping="Wrap" MaxWidth="520" HorizontalAlignment="Left"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Back" Style="{StaticResource FooterBtn}"
+                            Background="White" Foreground="#5A6A7A" BorderBrush="#CDD5DE"
+                            Margin="0,0,8,0" Click="BtnBack_Click"/>
+                    <Button Content="Confirm &amp; Import" Style="{StaticResource FooterBtn}"
+                            Background="#4E9AFC" Foreground="White" BorderThickness="0"
+                            Click="BtnConfirm_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

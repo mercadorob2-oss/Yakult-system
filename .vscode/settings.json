@@ -1,0 +1,8 @@
+{
+    "chat.mcp.serverSampling": {
+        "Yakult-System-for-Merging/.vscode/mcp.json: io.github.github/github-mcp-server": {
+            "allowedModels": []
+        }
+    },
+    "dotnet.preferCSharpExtension": true
+}

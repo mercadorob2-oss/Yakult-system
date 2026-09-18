@@ -1,0 +1,84 @@
+@model MyLearningViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "My Learning";
+    var inProgress = Model.InProgress;
+    var completed = Model.Completed;
+}
+
+<header class="learning-hero my-learning-hero">
+    <div class="portal-container learning-hero__inner">
+        <div>
+            <span class="portal-eyebrow">Your learning</span>
+            <h1>My Learning</h1>
+            <p>Track your progress and completion across courses and video lessons.</p>
+        </div>
+        <aside class="learning-hero__summary" aria-label="Learning progress summary">
+            <span class="my-learning-hero__stat is-progress"><strong>@inProgress.Count</strong>In progress</span>
+            <span class="my-learning-hero__stat is-completed"><strong>@completed.Count</strong>Completed</span>
+        </aside>
+    </div>
+</header>
+
+<main class="learning-library">
+    <div class="portal-container">
+
+        @if (inProgress.Count == 0 && completed.Count == 0)
+        {
+            <div class="portal-empty portal-empty--large my-learning-empty"><span aria-hidden="true">○</span><h2>Nothing started yet</h2><p>Start a course or video lesson while signed in and your progress will appear here automatically.</p><div class="my-learning-empty__actions"><a asp-action="Learning">Browse learning</a><a asp-action="Search">Search the portal</a></div></div>
+        }
+        else
+        {
+            @if (inProgress.Count > 0)
+            {
+                <section class="learning-section" aria-labelledby="inProgressHeading">
+                    <div class="learning-section-heading">
+                        <div><span class="portal-eyebrow">Pick up where you left off</span><h2 id="inProgressHeading">In progress</h2></div>
+                    </div>
+                    <div class="learning-video-grid">
+                        @foreach (var item in inProgress)
+                        {
+                            var mediaStyle = string.IsNullOrWhiteSpace(item.ThumbnailUrl) ? null : $"background-image:url('{item.ThumbnailUrl}')";
+                            var minutes = item.LastPositionSec / 60;
+                            var seconds = item.LastPositionSec % 60;
+                            <a class="learning-video-card my-progress-card" asp-action="ContentDetails" asp-route-slug="@item.Slug">
+                                <span class="learning-card-media @(string.IsNullOrWhiteSpace(item.ThumbnailUrl) ? "is-placeholder" : null)" style="@mediaStyle"><span class="learning-play" aria-hidden="true">▶</span></span>
+                                <span class="learning-card-body">
+                                    <small>@item.CategoryName</small>
+                                    <strong>@item.Title</strong>
+                                    <span>@item.Summary</span>
+                                    <span class="my-progress-meter">
+                                        <span class="my-progress-meter__row"><span class="my-progress-meter__label">@item.ProgressPercent%</span><span class="my-progress-meter__bar"><span style="width:@item.ProgressPercent%"></span></span></span>
+                                        <span class="my-progress-meter__resume">Resume at @minutes:@(seconds.ToString("00"))</span>
+                                    </span>
+                                    <em>Continue <span aria-hidden="true">→</span></em>
+                                </span>
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (completed.Count > 0)
+            {
+                <section class="learning-section" aria-labelledby="completedHeading">
+                    <div class="learning-section-heading">
+                        <div><span class="portal-eyebrow">Achievements</span><h2 id="completedHeading">Completed</h2></div>
+                    </div>
+                    <div class="learning-resource-list">
+                        @foreach (var item in completed)
+                        {
+                            <a class="learning-resource-row my-completed-row" asp-action="ContentDetails" asp-route-slug="@item.Slug">
+                                <span class="my-completed-row__badge">✓ Completed</span>
+                                <strong>@item.Title</strong>
+                                <small class="my-completed-row__date">@(item.CompletedAtUtc?.ToLocalTime().ToString("MMM d, yyyy"))</small>
+                                <em>Review <span aria-hidden="true">→</span></em>
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
+        }
+
+    </div>
+</main>

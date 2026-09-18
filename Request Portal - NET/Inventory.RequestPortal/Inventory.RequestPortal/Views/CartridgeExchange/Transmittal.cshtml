@@ -1,0 +1,231 @@
+@model Inventory.RequestPortal.Models.ViewModels.CartridgeTransmittalViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Cartridge Transmittal";
+
+    // Mirrors TransmittalPrintService.Print() exactly: 3 copies (Gatepass, Transmittal, File),
+    // arranged as 2 physical pages — Page 1 has Gatepass (top) + Transmittal (bottom) separated
+    // by a cut line at the exact page vertical midpoint, Page 2 has File alone. Same
+    // Clone()-per-copy-type pattern desktop uses (CreateHalfView / ApplyCopyTypeFlags) so exactly
+    // one checkbox is ever checked per copy.
+    var gatepassCopy = Model.Clone();
+    gatepassCopy.IsGatepassCopy = true; gatepassCopy.IsTransmittalCopy = false; gatepassCopy.IsFileCopy = false;
+
+    var transmittalCopy = Model.Clone();
+    transmittalCopy.IsGatepassCopy = false; transmittalCopy.IsTransmittalCopy = true; transmittalCopy.IsFileCopy = false;
+
+    var fileCopy = Model.Clone();
+    fileCopy.IsGatepassCopy = false; fileCopy.IsTransmittalCopy = false; fileCopy.IsFileCopy = true;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Cartridge Transmittal</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <style>
+        body { font-family: Arial, 'Segoe UI', sans-serif; background: #f5f7fa; font-size: 12px; color: #000; }
+        .transmittal-toolbar { padding: 16px 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .tr-pagesize-group { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+        .tr-pagesize-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; margin: 0; }
+
+        /* Page containers are set to the SELECTED paper size's exact pixel dimensions via JS —
+           WPF's 96-DPI device-independent units map 1:1 to CSS px, so these are the same numbers
+           TransmittalPrintService.GetPageDimensions returns (816x1056 Letter, 816x1344 Legal,
+           793.7x1122.5 A4), not an approximation. */
+        .tr-page {
+            position: relative; margin: 0 auto 24px; background: #fff; border: 1px solid #ccc;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08); overflow: hidden;
+        }
+        .tr-page-label { text-align: center; font-size: 11px; font-weight: 700; color: #888; letter-spacing: .5px; margin-bottom: 8px; text-transform: uppercase; }
+
+        /* Fills the page and holds the two absolutely-positioned copies + cut line — normally an
+           inert pass-through wrapper. Exists so @@media print can transform ONLY this layer (see
+           below) while .tr-page itself keeps the physical paper's exact box size/edges, matching
+           how TransmittalPrintService.ToPageContent shifts the whole composed pageVisual within a
+           FixedPage of unchanged size via FixedPage.SetTop(pageVisual, -verticalOffset). A CSS
+           transform on this element also makes it the containing block for its absolutely
+           positioned children (per spec), so trGatepassCopy/trCutLine/etc. keep positioning
+           against this box exactly as before — only the whole rendered layer shifts. */
+        .tr-page-inner { position: relative; width: 100%; height: 100%; }
+
+        /* Each copy is absolutely positioned within its page, exactly like
+           TransmittalPrintService.CreateHalfView pins each half via a fixed Margin — top copy
+           PageMargin (48px) from the page top, bottom copy PageMargin below the cut line, cut
+           line at the exact page vertical midpoint. Widths/offsets are set inline by JS per the
+           selected page size, same PageMargin=48 constant on all sides. This wrapper is
+           deliberately a DIFFERENT class from the partial's own root (.tr-form) — nesting two
+           elements both set to position:absolute here was a real bug in an earlier version. */
+        .tr-copy { position: absolute; }
+        .tr-cut-line { position: absolute; border-top: 1px dashed #999; }
+        .tr-cut-line::after { content: "✂ cut here"; position: absolute; right: 0; top: -9px; background: #fff; padding: 0 6px; font-size: 10px; color: #999; }
+
+        /* Everything below matches Wpf/CartridgeManagement/Views/CartridgeTransmittalPrintView.xaml
+           margin-for-margin — the root FontSize="11" and root StackPanel Margin="20,16" first,
+           then each row's own exact WPF Margin value. No shared/generic row spacing — every class
+           carries its own top/bottom margin exactly as the XAML declares it, since two rows never
+           share the same value. */
+        .tr-form { box-sizing: border-box; width: 100%; height: 100%; padding: 16px 20px; font-size: 11px; }
+
+        .tr-company { text-align: center; margin-bottom: 6px; }
+        .tr-company > div + div { margin-top: 2px; }
+        .tr-copytype { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .tr-label { font-weight: normal; white-space: nowrap; }
+        .tr-blank { border-bottom: 1px solid #000; flex: 1 1 auto; min-width: 60px; padding: 0 2px; }
+
+        .tr-todate { display: flex; align-items: flex-end; gap: 4px; margin-bottom: 6px; }
+        .tr-from { font-weight: bold; margin-bottom: 10px; }
+        .tr-items-header { display: flex; font-weight: bold; margin-bottom: 4px; }
+        .tr-items-header .qty-col { width: 80px; text-align: center; }
+        .tr-items-row { display: flex; margin-bottom: 2px; }
+        .tr-items-row .qty-col {
+            width: 80px; text-align: center; border-bottom: 1px solid #000; align-self: flex-start; margin: 2px 0;
+        }
+        .tr-others-sub { margin-top: 3px; }
+        .tr-others-field { display: flex; align-items: flex-end; gap: 4px; margin-top: 100px; margin-bottom: 10px; }
+        .tr-remarks-field { display: flex; align-items: flex-end; gap: 4px; margin-bottom: 26px; }
+
+        .tr-sig-grid { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 0 20px; }
+        .tr-sig-grid .sig-label { white-space: nowrap; align-self: end; }
+        .tr-sig-grid .sig-blank { border-bottom: 1px solid #000; align-self: end; min-height: 16px; padding: 0 2px; }
+        .tr-sig-grid .sig-label.row2, .tr-sig-grid .sig-blank.row2 { margin-top: 16px; }
+        input[type=checkbox] { margin: 0 3px 0 0; vertical-align: middle; }
+
+        @@media print {
+            .transmittal-toolbar { display: none; }
+            body { background: #fff; }
+            .tr-page-label { display: none; }
+            .tr-page {
+                box-shadow: none; border: none; margin: 0 auto;
+                page-break-after: always;
+            }
+            .tr-page:last-child { page-break-after: avoid; }
+            .tr-cut-line::after { content: none; }
+
+            /* TransmittalPrintService.PhysicalPrintVerticalCompensation (commit d3e98b42):
+               empirically calibrated to the office's HP Color LaserJet Pro M478f-9f PCL-6 driver,
+               which places content 0.5in (48 units at 96 DPI) lower than true physical page center
+               even though PrintTicket/PageImageableArea all report a correct symmetric margin —
+               a driver-level quirk no queryable API exposes. Desktop applies this ONLY inside
+               Print()'s physical-print path, never in its Print Preview dialog, which already
+               renders correctly. Same split here: the on-screen page above is the preview
+               (untouched), this transform fires only inside @@media print, i.e. only when
+               window.print() actually spools to a printer/PDF, matching the desktop behavior
+               exactly. If the office ever changes this printer/driver, re-measure and adjust. */
+            .tr-page-inner { transform: translateY(-48px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="transmittal-toolbar">
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-danger" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
+        <a class="btn btn-outline-secondary" asp-controller="CartridgeExchange" asp-action="Index">Done</a>
+    </div>
+    <div class="tr-pagesize-group">
+        <strong>Page size:</strong>
+        <label><input type="radio" name="trPageSize" value="Letter" /> Letter</label>
+        <label><input type="radio" name="trPageSize" value="Legal" checked /> Legal</label>
+        <label><input type="radio" name="trPageSize" value="A4" /> A4</label>
+    </div>
+</div>
+
+@* ── Page 1: Gatepass copy (top) + Transmittal copy (bottom), cut line between ── *@
+<div>
+    <div class="tr-page-label">Page 1 — Gatepass + Transmittal</div>
+    <div class="tr-page" id="trPage1">
+        <div class="tr-page-inner">
+            <div class="tr-copy" id="trGatepassCopy">@await Html.PartialAsync("_TransmittalCopy", gatepassCopy)</div>
+            <div class="tr-cut-line" id="trCutLine"></div>
+            <div class="tr-copy" id="trTransmittalCopy">@await Html.PartialAsync("_TransmittalCopy", transmittalCopy)</div>
+        </div>
+    </div>
+</div>
+
+@* ── Page 2: File copy alone ── *@
+<div>
+    <div class="tr-page-label">Page 2 — File</div>
+    <div class="tr-page" id="trPage2">
+        <div class="tr-page-inner">
+            <div class="tr-copy" id="trFileCopy">@await Html.PartialAsync("_TransmittalCopy", fileCopy)</div>
+            <div class="tr-cut-line" id="trCutLine2"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Exact match to TransmittalPrintService.GetPageDimensions — WPF's 96-DPI units are the
+    // same numbers as CSS px, so these are not approximations. cssSize feeds the @@page rule so
+    // the actual printed sheet matches too, not just the on-screen preview.
+    var PAGE_SIZES = {
+        Letter: { w: 816.0,  h: 1056.0,  cssSize: '8.5in 11in' },
+        Legal:  { w: 816.0,  h: 1344.0,  cssSize: '8.5in 14in' },
+        A4:     { w: 793.7,  h: 1122.5,  cssSize: '210mm 297mm' }
+    };
+    var PAGE_MARGIN = 48; // TransmittalPrintService.PageMargin — 0.5in at 96 DPI
+
+    function applyPageSize(sizeKey) {
+        var size = PAGE_SIZES[sizeKey] || PAGE_SIZES.Legal;
+        var w = size.w, h = size.h;
+        var contentWidth = w - (2 * PAGE_MARGIN);
+        var midpointY = h / 2.0;
+
+        ['trPage1', 'trPage2'].forEach(function (id) {
+            var el = document.getElementById(id);
+            el.style.width = w + 'px';
+            el.style.height = h + 'px';
+        });
+
+        // Page 1: Gatepass pinned PageMargin from the page top; cut line at the exact page
+        // midpoint; Transmittal pinned PageMargin below the cut line — same geometry as
+        // TransmittalPrintService.CreateHalfView/CreateCutLine, independent of either copy's
+        // actual content height.
+        positionCopy('trGatepassCopy', PAGE_MARGIN, contentWidth);
+        positionCutLine('trCutLine', midpointY, contentWidth);
+        positionCopy('trTransmittalCopy', midpointY + PAGE_MARGIN, contentWidth);
+
+        // Page 2: File pinned PageMargin from the page top (bottom half left blank, matching
+        // desktop's BuildPageVisual(vm, CopyType.File, null, ...) call with no bottom copy) — but
+        // BuildPageVisual adds the cut line unconditionally, BEFORE its `if (bottom.HasValue)`
+        // check, so the dashed guide still renders at the page midpoint here too even with
+        // nothing printed below it.
+        positionCopy('trFileCopy', PAGE_MARGIN, contentWidth);
+        positionCutLine('trCutLine2', midpointY, contentWidth);
+
+        // Drive the actual printed sheet size — without this, the browser prints whatever the
+        // OS/printer default paper size is regardless of what's shown on screen.
+        var styleTag = document.getElementById('trPageSizeStyle');
+        if (!styleTag) {
+            styleTag = document.createElement('style');
+            styleTag.id = 'trPageSizeStyle';
+            document.head.appendChild(styleTag);
+        }
+        styleTag.textContent = '@@page { size: ' + size.cssSize + '; margin: 0; }';
+    }
+
+    function positionCopy(id, top, contentWidth) {
+        var el = document.getElementById(id);
+        el.style.top = top + 'px';
+        el.style.left = PAGE_MARGIN + 'px';
+        el.style.width = contentWidth + 'px';
+    }
+
+    function positionCutLine(id, top, contentWidth) {
+        var el = document.getElementById(id);
+        el.style.left = PAGE_MARGIN + 'px';
+        el.style.width = contentWidth + 'px';
+        el.style.top = top + 'px';
+    }
+
+    document.querySelectorAll('input[name="trPageSize"]').forEach(function (radio) {
+        radio.addEventListener('change', function () { applyPageSize(radio.value); });
+    });
+
+    applyPageSize(document.querySelector('input[name="trPageSize"]:checked').value);
+</script>
+
+</body>
+</html>

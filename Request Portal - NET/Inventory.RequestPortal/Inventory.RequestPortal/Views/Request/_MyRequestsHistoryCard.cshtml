@@ -1,0 +1,127 @@
+@model Inventory.RequestPortal.Models.ViewModels.MyRequestsPageViewModel
+@using System.Text.Json
+@{
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    bool hasFilter = !string.IsNullOrWhiteSpace((string)ViewBag.SearchText) || !string.IsNullOrWhiteSpace((string)ViewBag.StatusFilter);
+}
+
+@* Rendered both by MyRequests (full page) and MyRequestsHistoryPartial (AJAX) — must not
+   reference anything that only the full page provides (nav tabs, ViewBag.IsITStaff, etc). *@
+<div class="card shadow-sm" id="requestHistoryCard">
+    <div class="card-header d-flex align-items-center py-3 bg-white border-bottom flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            <span class="fw-bold fs-5" style="color:#1e293b;">Request History</span>
+            <span class="badge rounded-pill" style="background:#e2e8f0; color:#64748b; font-size:.8rem;">@Model.TotalCount</span>
+        </div>
+        <form method="get" asp-action="MyRequests" id="requestHistoryFilterForm" class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
+            <input type="text" name="search" value="@ViewBag.SearchText" class="form-control form-control-sm" style="max-width:240px;" placeholder="Search set code, item, employee...">
+            <select name="status" class="form-select form-select-sm flex-shrink-0" style="width:auto;">
+                <option value="">All statuses</option>
+                @foreach (var s in (List<string>)ViewBag.StatusOptions)
+                {
+                    <option value="@s" selected="@(s == (string)ViewBag.StatusFilter)">@s</option>
+                }
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">Filter</button>
+            @if (hasFilter)
+            {
+                <a asp-action="MyRequests" class="btn btn-sm flex-shrink-0 js-clear-filter" style="background:#e2e8f0; color:#475569; border:none;">Clear</a>
+            }
+        </form>
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            @if (Model.History.Count > 0)
+            {
+                <a asp-action="ExportMyRequestsCsv" asp-route-search="@ViewBag.SearchText" asp-route-status="@ViewBag.StatusFilter"
+                   class="btn btn-sm" style="background:#e2e8f0; color:#475569; border:none;">
+                    <i class="bi bi-download me-1"></i> Export CSV
+                </a>
+            }
+            <a asp-action="MyRequests" asp-route-search="@ViewBag.SearchText" asp-route-status="@ViewBag.StatusFilter"
+               id="requestHistoryRefresh" class="btn btn-sm" style="background:#e2e8f0; color:#475569; border:none;">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+            </a>
+        </div>
+    </div>
+
+    @if (Model.History.Count == 0 && hasFilter)
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-search display-1 text-muted mb-3 d-block"></i>
+            <h5 class="text-muted mb-3">No requests match your filter</h5>
+            <a asp-action="MyRequests" class="btn btn-sm js-clear-filter" style="background:#e2e8f0; color:#475569; border:none;">Clear filter</a>
+        </div>
+    }
+    else if (Model.History.Count == 0)
+    {
+        <div class="card-body text-center py-5">
+            <i class="bi bi-inbox display-1 text-muted mb-3 d-block"></i>
+            <h5 class="text-muted mb-3">No requests found</h5>
+            <p class="text-muted mb-4">Your submitted requests will appear here.</p>
+            <a asp-action="Index" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Submit New Request
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="historyTable" style="font-size:.92rem;">
+                <thead style="background:#f1f5f9;">
+                    <tr id="requestHistoryHead">
+                        <th class="px-3 py-3 d-none d-md-table-cell" style="color:#64748b; font-weight:600; width:110px;">Set Code</th>
+                        <th class="px-3 py-3" style="color:#64748b; font-weight:600; width:110px;">Date</th>
+                        <th class="px-3 py-3" style="color:#64748b; font-weight:600;">Cartridge Model(s)</th>
+                        <th class="px-3 py-3 text-center" style="color:#64748b; font-weight:600; width:60px;">Qty</th>
+                        <th class="px-3 py-3 text-center d-none d-md-table-cell" style="color:#64748b; font-weight:600; width:100px;">Empties</th>
+                        <th class="px-3 py-3 text-center d-none d-md-table-cell" style="color:#64748b; font-weight:600; width:100px;">Fulfillment</th>
+                        <th class="px-3 py-3 d-none d-md-table-cell" style="color:#64748b; font-weight:600; width:180px;">Branch</th>
+                        <th id="requestHistoryStatus" class="px-3 py-3 text-center" style="color:#64748b; font-weight:600; width:150px;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.History)
+                    {
+                        var detail = new
+                        {
+                            setCode      = row.SetCode,
+                            date         = row.DateRequested.HasValue ? row.DateRequested.Value.ToString("MMMM dd, yyyy  h:mm tt") : "—",
+                            status       = row.Status,
+                            statusCss    = row.StatusCssClass,
+                            employee     = row.EmployeeName,
+                            branch       = row.DestinationBranch,
+                            department   = row.Department,
+                            company      = row.Company,
+                            fulfillment  = row.FulfillmentMethod,
+                            remarks      = row.Remarks,
+                            items        = row.Items.Select(i => new { i.CartridgeModel, i.Qty, i.GoodQty, i.DamagedQty })
+                        };
+                        <tr class="history-row" style="cursor:pointer;"
+                            data-detail="@JsonSerializer.Serialize(detail, jsonOptions)"
+                            data-req-ids="@string.Join(',', row.ReqIds)">
+                            <td class="px-3 py-3 fw-semibold align-middle d-none d-md-table-cell">@row.SetCode</td>
+                            <td class="px-3 py-3 align-middle">@row.DateDisplay</td>
+                            <td class="px-3 py-3 align-middle">@row.CartridgeDisplay</td>
+                            <td class="px-3 py-3 text-center fw-bold align-middle">@row.TotalQty</td>
+                            <td class="px-3 py-3 text-center align-middle d-none d-md-table-cell" style="color:#64748b; font-size:.88rem;">
+                                @(string.IsNullOrEmpty(row.ReturnInfo) ? "—" : row.ReturnInfo)
+                            </td>
+                            <td class="px-3 py-3 text-center align-middle d-none d-md-table-cell" style="font-size:.88rem;">@row.FulfillmentMethod</td>
+                            <td class="px-3 py-3 align-middle d-none d-md-table-cell">@row.DestinationBranch</td>
+                            <td class="px-3 py-3 text-center align-middle">
+                                <span class="@row.StatusCssClass fw-semibold" style="font-size:.88rem;">@row.Status</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @* ── Pagination ── *@
+        <div class="d-flex align-items-center justify-content-between px-3 py-2 border-top" id="paginationBar">
+            <span class="text-muted small" id="pageInfo"></span>
+            <nav>
+                <ul class="pagination mb-0 d-flex flex-wrap" id="pageControls"></ul>
+            </nav>
+        </div>
+    }
+</div>

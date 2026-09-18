@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yakult Inventory System - User Manual</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <div class="logo-header">
+                    <h2>📦 YIMS</h2>
+                    <button id="sidebar-toggle" class="toggle-btn" title="Toggle Sidebar">☰</button>
+                </div>
+                <p class="logo-text">User Manual</p>
+            </div>
+
+            <!-- Search Box -->
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search manual...">
+            </div>
+
+            <!-- PDF Export Utility -->
+            <div style="padding: 0 1.5rem; margin-bottom: 1rem;">
+                <button onclick="window.print()" class="btn btn-secondary"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>🖨️</span> <span class="text">Print / Save as PDF</span>
+                </button>
+            </div>
+
+            <!-- Link to YakultScanner Mobile Manual -->
+            <div style="padding: 0 1.5rem; margin-bottom: 1rem;">
+                <a href="yakultscanner.html" class="btn btn-secondary"
+                    style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>📱</span> <span class="text">YakultScanner Mobile Manual</span>
+                </a>
+            </div>
+
+            <ul class="nav-menu">
+                <li><a href="#getting-started" class="nav-link active"><span class="icon">🚀</span> <span
+                            class="text">Getting Started</span></a></li>
+                <li><a href="#login" class="nav-link"><span class="icon">🔐</span> <span class="text">Login &
+                            Register</span></a></li>
+                <li><a href="#dashboard" class="nav-link"><span class="icon">📊</span> <span
+                            class="text">Dashboard</span></a></li>
+                <li><a href="#master-data" class="nav-link"><span class="icon">🏢</span> <span class="text">Master
+                            Data</span></a></li>
+                <li><a href="#items" class="nav-link"><span class="icon">📦</span> <span class="text">Item
+                            Management</span></a></li>
+                <li><a href="#inventory" class="nav-link"><span class="icon">📊</span> <span
+                            class="text">Inventory</span></a></li>
+                <li><a href="#requests" class="nav-link"><span class="icon">📝</span> <span
+                            class="text">Requests</span></a></li>
+                <li><a href="#sets" class="nav-link"><span class="icon">📋</span> <span class="text">Sets &
+                            Invoices</span></a></li>
+                <li><a href="#view-receipts" class="nav-link"><span class="icon">🧾</span> <span class="text">View
+                            Receipts</span></a></li>
+                <li><a href="#renewals" class="nav-link"><span class="icon">🔄</span> <span
+                            class="text">Renewals</span></a></li>
+                <li><a href="#warranty" class="nav-link"><span class="icon">🛡️</span> <span
+                            class="text">Warranty</span></a></li>
+                <li><a href="#archive" class="nav-link"><span class="icon">🗄️</span> <span
+                            class="text">Archive</span></a></li>
+                <li><a href="#mobile-updates" class="nav-link"><span class="icon">📱</span> <span class="text">Mobile
+                            Updates</span></a></li>
+                <li><a href="#audit-trail" class="nav-link"><span class="icon">👣</span> <span class="text">Audit
+                            Trail</span></a></li>
+                <li><a href="#reports" class="nav-link"><span class="icon">📈</span> <span
+                            class="text">Reports</span></a></li>
+                <li><a href="#notifications" class="nav-link"><span class="icon">🔔</span> <span
+                            class="text">Notifications</span></a></li>
+                <li><a href="#troubleshooting" class="nav-link"><span class="icon">🔧</span> <span
+                            class="text">Troubleshooting</span></a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="header">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <h1>Yakult Inventory System</h1>
+                        <p class="subtitle">Official User Manual & Documentation</p>
+                    </div>
+                    <button id="global-toggle" class="btn btn-secondary">Expand All</button>
+                </div>
+
+                <!-- Category Filter Buttons -->
+                <div class="filter-bar" style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="filter-btn active" data-filter="all">🏠 All</button>
+                    <button class="filter-btn" data-filter="general">🔍 Overview</button>
+                    <button class="filter-btn" data-filter="master">📦 Master Data</button>
+                    <button class="filter-btn" data-filter="inventory">📊 Inventory Ops</button>
+                    <button class="filter-btn" data-filter="admin">⚙️ Admin & Reports</button>
+                </div>
+            </div>
+
+            <!-- Getting Started Section -->
+            <section id="getting-started" class="section" data-category="general">
+                <div class="section-header">
+                    <h2>🚀 Getting Started</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Welcome to YIMS</h3>
+                        <p>The Yakult Inventory Management System (YIMS) is a comprehensive solution for managing IT
+                            assets,
+                            equipment, and inventory across your organization.</p>
+
+                        <h4>What You Can Do:</h4>
+                        <ul>
+                            <li>Track hardware, software licenses, and service contracts</li>
+                            <li>Manage inventory across multiple companies, departments, and branches</li>
+                            <li>Process equipment requests and approvals</li>
+                            <li>Monitor software/license renewals</li>
+                            <li>Generate invoices and financial reports</li>
+                            <li>Archive and restore items with full audit trails</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>System Requirements</h3>
+                        <ul>
+                            <li><strong>Operating System:</strong> Windows 10 or later</li>
+                            <li><strong>Database:</strong> SQL Server 2016 or later</li>
+                            <li><strong>.NET Framework:</strong> 4.8</li>
+                            <li><strong>Screen Resolution:</strong> 1366x768 minimum (1920x1080 recommended)</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>Quick Start Guide</h3>
+                        <ol>
+                            <li>Launch the application</li>
+                            <li>Register a new account or login with existing credentials</li>
+                            <li>Explore the dashboard to see system overview</li>
+                            <li>Set up master data (Companies, Departments, Branches)</li>
+                            <li>Add items to the system</li>
+                            <li>Start managing your inventory!</li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Login Section -->
+            <section id="login" class="section" data-category="general">
+                <div class="section-header">
+                    <h2>🔐 Login & Registration</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Creating Your Account</h3>
+                        <img src="IMAGES/REGISTER_PAGE.png" alt="Registration Screen">
+                        <ol>
+                            <li>Click <strong>"Register"</strong> on the login screen</li>
+                            <li>Enter your details:
+                                <ul>
+                                    <li><strong>Full Name:</strong> Your complete name</li>
+                                    <li><strong>Email Address:</strong> Valid email (used for login)</li>
+                                    <li><strong>Password:</strong> Strong password (min. 8 characters)</li>
+                                </ul>
+                            </li>
+                            <li>Click <strong>"Register"</strong> to create your account</li>
+                            <li>You'll be automatically logged in</li>
+                        </ol>
+
+                        <div class="tip">
+                            <strong>💡 Tip:</strong> Use a strong password with uppercase, lowercase, numbers, and
+                            special
+                            characters.
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Logging In</h3>
+                        <img src="IMAGES/LOGIN_PAGE.png" alt="Login Screen">
+                        <ol>
+                            <li>Enter your <strong>Email Address</strong></li>
+                            <li>Enter your <strong>Password</strong></li>
+                            <li>Click <strong>"Login"</strong></li>
+                        </ol>
+
+                        <div class="warning">
+                            <strong>⚠️ Note:</strong> After 3 failed login attempts, please contact your system
+                            administrator.
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Change Password (User)</h3>
+                        <img src="IMAGES/User_Change_password.png" alt="Change password screen for users">
+
+                        <ol>
+                            <li>Click your profile menu and select <strong>"Change Password"</strong>.</li>
+                            <li>Enter your <strong>Current Password</strong> for verification.</li>
+                            <li>Type your <strong>New Password</strong> and confirm it.</li>
+                            <li>Click <strong>"Save"</strong>. You will be prompted to log in again with your new
+                                password.</li>
+                        </ol>
+
+                        <div class="tip">
+                            <strong>💡 Tip:</strong> Follow the password guidelines shown on screen to ensure a strong
+                            password.
+                        </div>
+                    </div>
+
+                    <div class="card" style="border-left-color: #27ae60;">
+                        <h3>Change Password (Developer)</h3>
+                        <img src="IMAGES/Dev_Change_password.png" alt="Change password screen for developers">
+
+                        <ol>
+                            <li>Open the user dropdown and choose <strong>"Change Password"</strong>.</li>
+                            <li>Enter the <strong>Current Password</strong> for the developer account.</li>
+                            <li>Provide the <strong>New Password</strong> and re-enter it to confirm.</li>
+                            <li>Select <strong>"Save"</strong> to apply the update and reauthenticate.</li>
+                        </ol>
+
+                        <div class="tip">
+                            <strong>🔒 Security:</strong> Use unique, non-shared credentials for developer accounts and
+                            rotate them regularly.
+                        </div>
+                    </div>
+
+                    <div class="card" style="border-left-color: #f39c12;">
+                        <h3>🛠️ Developer Mode</h3>
+                        <p>Users with developer privileges have access to advanced features:</p>
+                        <ul>
+                            <li>Force delete items with dependencies</li>
+                            <li>Access to system logs</li>
+                            <li>Database maintenance tools</li>
+                            <li>Advanced reporting options</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section" data-category="general">
+                <div class="section-header">
+                    <h2>📊 Dashboard</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Dashboard Overview</h3>
+                        <p>The dashboard provides a real-time snapshot of your inventory system:</p>
+
+                        <h4>Quick Statistics</h4>
+                        <ul>
+                            <li><strong>Total Items:</strong> All items in the system</li>
+                            <li><strong>Active Inventory:</strong> Currently available items</li>
+                            <li><strong>Pending Requests:</strong> Requests awaiting approval</li>
+                            <li><strong>Low Stock Alerts:</strong> Items below minimum threshold</li>
+                        </ul>
+                        <img src="IMAGES/DASHBOARD_PAGE.png" alt="Dashboard Overview">
+                    </div>
+
+                    <div class="card">
+                        <h3>Charts & Visualizations</h3>
+
+                        <h4>Category Distribution (Pie Chart)</h4>
+                        <p>Shows the percentage breakdown of items by category.</p>
+
+                        <h4>Stock Levels (Bar Chart)</h4>
+                        <p>Displays stock quantities for each category.</p>
+
+                        <h4>Condition Breakdown (Donut Chart)</h4>
+                        <p>Visual representation of item conditions:</p>
+                        <ul>
+                            <li><span class="badge green">Perfect</span> - Fully functional</li>
+                            <li><span class="badge red">Damaged</span> - Minor issues</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>Quick Actions</h3>
+                        <p>Fast access to common tasks:</p>
+                        <ul>
+                            <li><strong>Add Item:</strong> Create new item</li>
+                            <li><strong>Add Inventory:</strong> Record new stock</li>
+                            <li><strong>New Request:</strong> Submit equipment request</li>
+                            <li><strong>View Reports:</strong> Access reports</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Master Data Section -->
+            <section id="master-data" class="section" data-category="master">
+                <div class="section-header">
+                    <h2>🏢 Master Data Management</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Company Management</h3>
+
+                        <h4>Adding a Company</h4>
+                        <ol>
+                            <li>Navigate to <strong>Master Data → Company</strong></li>
+                            <li>Click <strong>"Add Company"</strong></li>
+                            <li>Fill in company details:
+                                <ul>
+                                    <li>Company Name (required)</li>
+                                    <li>Address</li>
+                                    <li>Contact Person</li>
+                                    <li>Phone Number</li>
+                                </ul>
+                            </li>
+                            <li>Click <strong>"Save"</strong></li>
+                        </ol>
+                        <img src="IMAGES/ADD_COMPANY_PAGE.png" alt="Add Company Screen">
+
+                        <h4>Viewing Companies</h4>
+                        <p>Go to <strong>Master Data → View Companies</strong> to see all companies in a grid view.</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Department Management</h3>
+
+                        <h4>Adding a Department</h4>
+                        <ol>
+                            <li>Navigate to <strong>Master Data → Department</strong></li>
+                            <li>Enter department name</li>
+                            <li><strong>Optional:</strong> Select a company to associate with</li>
+                            <li>Click <strong>"Save"</strong></li>
+                        </ol>
+                        <img src="IMAGES/ADD_DEPARTMENT_PAGE.png" alt="Add Department Screen">
+
+                        <div class="tip">
+                            <strong>💡 Tip:</strong> Departments can exist independently or be linked to a company.
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Branch Management</h3>
+
+                        <h4>Adding a Branch</h4>
+                        <ol>
+                            <li>Navigate to <strong>Master Data → Branch</strong></li>
+                            <li>Enter branch details:
+                                <ul>
+                                    <li>Branch Name</li>
+                                    <li>Address</li>
+                                    <li>Contact Information</li>
+                                </ul>
+                            </li>
+                            <li><strong>Optional:</strong> Link to a company</li>
+                            <li>Click <strong>"Save"</strong></li>
+                        </ol>
+                        <img src="IMAGES/ADD_BRANCH_PAGE.png" alt="Add Branch Screen">
+                    </div>
+
+                    <div class="card">
+                        <h3>Employee Management</h3>
+
+                        <h4>Adding an Employee</h4>
+                        <ol>
+                            <li>Navigate to <strong>Master Data → Employee</strong></li>
+                            <li>Fill in employee information:
+                                <ul>
+                                    <li>First Name & Last Name</li>
+                                    <li>Department (dropdown)</li>
+                                    <li>Branch (dropdown)</li>
+                                    <li>Contact Details</li>
+                                </ul>
+                            </li>
+                            <li>Click <strong>"Save"</strong></li>
+                        </ol>
+                        <img src="IMAGES/ADD_EMPLOYEE_PAGE.png" alt="Add Employee Screen">
+                    </div>
+
+                    <div class="card">
+                        <h3>Vendor Management</h3>
+
+                        <h4>Adding a Vendor</h4>
+                        <ol>
+                            <li>Navigate to <strong>Master Data → Vendor</strong></li>
+                            <li>Enter vendor details:
+                                <ul>
+                                    <li>Vendor Name</li>
+                                    <li>Address</li>
+                                    <li>TIN (Tax Identification Number)</li>
+                                </ul>
+                            </li>
+                            <li>Set <strong>Active</strong> status</li>
+                            <li>Click <strong>"Save"</strong></li>
+                        </ol>
+                        <img src="IMAGES/ADD_VENDOR_PAGE.png" alt="Add Vendor Screen">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Items Section -->
+            <section id="items" class="section" data-category="master">
+                <div class="section-header">
+                    <h2>📦 Item Management</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Understanding Item Types</h3>
+                        <p>The system supports three types of items:</p>
+
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <h4>🖥️ Hardware</h4>
+                                <p>Physical equipment like computers, monitors, keyboards, printers, routers, etc.</p>
+                            </div>
+                            <div class="feature-card">
+                                <h4>💿 Software/License</h4>
+                                <p>Software licenses, subscriptions, and digital products (MS Office, Adobe, etc.)</p>
+                            </div>
+                            <div class="feature-card">
+                                <h4>🔧 Services</h4>
+                                <p>Service contracts, maintenance agreements, and support subscriptions</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Adding a New Item</h3>
+                        <ol>
+                            <li>Navigate to <strong>Inventory → Item</strong></li>
+                            <li>Click <strong>"Add Item"</strong></li>
+                            <li>Fill in item details:
+                                <ul>
+                                    <li><strong>Item Name:</strong> Descriptive name</li>
+                                    <li><strong>Description:</strong> Detailed information</li>
+                                    <li><strong>Category:</strong> Select from dropdown (or add new)</li>
+                                    <li><strong>Item Type:</strong> Hardware/Software/Service</li>
+                                    <li><strong>Model Number:</strong> Manufacturer model</li>
+                                    <li><strong>Serial Number:</strong> For serialized items</li>
+                                    <li><strong>Condition:</strong> Perfect/Damaged/Broken/etc.</li>
+                                    <li><strong>Vendor:</strong> Supplier information</li>
+                                    <li><strong>Amount:</strong> Purchase price</li>
+                                </ul>
+                            </li>
+                            <li>For <strong>Software/License</strong> items, also enter:
+                                <ul>
+                                    <li>License Number</li>
+                                    <li>Start Date & End Date</li>
+                                    <li>Duration (years)</li>
+                                </ul>
+                            </li>
+                            <li>For <strong>Hardware</strong> items, enter:
+                                <ul>
+                                    <li>Warranty Years</li>
+                                    <li>Warranty Start Date</li>
+                                    <li>Date Purchased</li>
+                                </ul>
+                            </li>
+                            <li>Click <strong>"Save"</strong></li>
+                        </ol>
+                        <img src="IMAGES/ADD_ITEM_PAGE.png" alt="Add Item Screen">
+                    </div>
+
+                    <div class="card">
+                        <h3>Item Conditions</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Condition</th>
+                                    <th>Description</th>
+                                    <th>Color Code</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge green">Perfect</span></td>
+                                    <td>Fully functional, no issues</td>
+                                    <td>Green</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge red">Damaged</span></td>
+                                    <td>Major issues, unusable</td>
+                                    <td>Red</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <h3>Viewing Items</h3>
+                        <p>Navigate to <strong>Inventory → View Items</strong> to see all items.</p>
+
+                        <h4>Features:</h4>
+                        <ul>
+                            <li><strong>Category Summary:</strong> Overview of stock by category</li>
+                            <li><strong>Search & Filter:</strong> Find items by name, category, or condition</li>
+                            <li><strong>Actions:</strong> Edit, Delete, View Details</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inventory Section -->
+            <section id="inventory" class="section" data-category="inventory">
+                <div class="section-header">
+                    <h2>📊 Inventory Management</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Understanding Entry Types</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Entry Type</th>
+                                    <th>When to Use</th>
+                                    <th>Effect</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Positive</strong></td>
+                                    <td>Receiving new stock, returns</td>
+                                    <td>Increases inventory count</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Negative</strong></td>
+                                    <td>Dispatching items, losses</td>
+                                    <td>Decreases inventory count</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Fixed Assets</strong></td>
+                                    <td>Software/License items (auto-selected)</td>
+                                    <td>Tracks as fixed asset</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <h3>Adding Inventory</h3>
+                        <ol>
+                            <li>Navigate to <strong>Inventory → Add Inventory</strong></li>
+                            <li>Select <strong>Item</strong> from dropdown</li>
+                            <li>Choose <strong>Entry Type</strong></li>
+                            <li>Enter <strong>Quantity</strong> and <strong>Description</strong></li>
+                            <li>System assigns to a Set automatically</li>
+                            <li>Click <strong>"Save"</strong></li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Requests Section -->
+            <section id="requests" class="section" data-category="inventory">
+                <div class="section-header">
+                    <h2>📝 Request Management</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Creating a Request</h3>
+                        <ol>
+                            <li>Navigate to <strong>Requests → Add Request</strong></li>
+                            <li>Select <strong>Item</strong> and <strong>Quantity</strong></li>
+                            <li>Add <strong>Justification</strong></li>
+                            <li>Click <strong>"Submit Request"</strong></li>
+                        </ol>
+                        <img src="IMAGES/ADD_REQUEST_PAGE.png" alt="Add Request Screen">
+                    </div>
+
+                    <div class="card">
+                        <h3>Batch Requests</h3>
+                        <p>Use <strong>Batch Add Request</strong> to submit multiple items in a single request
+                            transaction.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sets Section -->
+            <section id="sets" class="section" data-category="inventory">
+                <div class="section-header">
+                    <h2>📋 Sets & Invoices Management</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>What is a Set?</h3>
+                        <p>A "Set" is the central container in YIMS. It groups related items together, often
+                            representing a
+                            Purchase Order, Invoice, or a specific deployment batch.</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>Set Detail Actions</h3>
+                        <p>When viewing a Set, you have access to a powerful toolbar of actions:</p>
+                        <img src="IMAGES/SET_DETAILS.png" alt="Set Details Screen">
+
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <h4>📄 PDF & QR</h4>
+                                <p><strong>Generate QR:</strong> Creates a unique QR code for physical tagging.<br>
+                                    <strong>PDF:</strong> Exports the set details to a printable PDF document.
+                                </p>
+                            </div>
+                            <div class="feature-card">
+                                <h4>📝 Receipts</h4>
+                                <p>Click <strong>Receipts</strong> to attach or view scanned invoices, warranties, and
+                                    delivery receipts associated with this set.</p>
+                            </div>
+                            <div class="feature-card">
+                                <h4>🔄 Upgrade Lifecycle</h4>
+                                <p><strong>Upgrade Lifecycle:</strong> Used when replacing old items with new ones
+                                    (e.g.,
+                                    upgrading a user's laptop). It links the old item to the new one for history usage.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Ownership & Hardware Info</h3>
+                        <h4>Transfer Ownership</h4>
+                        <p>To assign the entire set to a user:</p>
+                        <ol>
+                            <li>Select <strong>Employee</strong> from the dropdown.</li>
+                            <li>Click <strong>"Save Transfer"</strong>.</li>
+                            <li>The Location/Branch/Dept will update automatically based on the employee.</li>
+                        </ol>
+
+                        <h4>Hardware Assignment</h4>
+                        <p>For IT equipment sets, recording network details is crucial:</p>
+                        <ul>
+                            <li><strong>Computer Name:</strong> The hostname of the device.</li>
+                            <li><strong>IP Address:</strong> Static or assigned IP.</li>
+                            <li>Click <strong>"Save Hardware Info"</strong> to update.</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>Managing Items in a Set</h3>
+                        <p>The main table shows all items/requests in this set.</p>
+                        <ul>
+                            <li><span class="badge green">+ Add Request</span> Link new items to this set.</li>
+                            <li><span class="badge red">❌ Remove</span> Unlink selected items from the set.</li>
+                            <li><span class="badge purple">📊 Report</span> Generate a specific inventory report for
+                                just
+                                this set.</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>💰 Financial Calculations</h3>
+                        <p>The Financial Panel (bottom of screen) automatically calculates costs.</p>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Subtotal</strong></td>
+                                    <td>Sum of all item costs in the set.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>VAT</strong></td>
+                                    <td>Value Added Tax (default 12%). Editable percentage.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>WHT</strong></td>
+                                    <td>Withholding Tax deduction.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Discount</strong></td>
+                                    <td>Any vendor discounts applied.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Amount Due</strong></td>
+                                    <td>Final calculated amount: <em>(Subtotal + VAT) - WHT - Discount</em>.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="tip">
+                            <strong>💡 Tip:</strong> Always click <strong>Calculate</strong> (if available) or press
+                            Enter
+                            in a financial field to update the Total Amount Due.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View Receipts Section (NEW) -->
+            <section id="view-receipts" class="section" data-category="inventory">
+                <div class="section-header">
+                    <h2>🧾 View Receipts</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Receipts Dashboard</h3>
+                        <p>The Receipts Management page provides a centralized view of all sets and their documentation
+                            status.
+                        </p>
+                        <h4>Summary Metrics:</h4>
+                        <ul>
+                            <li><strong>Total Sets:</strong> Total number of item sets in the system.</li>
+                            <li><strong>Complete:</strong> Sets with valid documentation (SI/DR attached).</li>
+                            <li><strong>Pending:</strong> Sets missing key documentation.</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>Understanding Receipt Status</h3>
+                        <p>The system automatically categorizes sets based on attached files:</p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Condition</th>
+                                    <th>Color Code</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge green">Complete</span></td>
+                                    <td>Has <strong>Sales Invoice (SI)</strong> OR <strong>Delivery Receipt
+                                            (DR)</strong>
+                                        attached.</td>
+                                    <td>Green</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge" style="background: goldenrod;">Pending</span></td>
+                                    <td>Missing required documentation.</td>
+                                    <td>Yellow/Orange</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <h3>Key Actions</h3>
+                        <ul>
+                            <li><strong>Open Viewer:</strong> Opens the detailed receipt viewer to see attached images.
+                            </li>
+                            <li><strong>Go To Manage Set:</strong> Navigates to the Set Details page for editing.</li>
+                            <li><strong>Add Receipt:</strong> Quickly attach a new file to a set.</li>
+                            <li><strong>Refresh:</strong> Update the list to see latest changes.</li>
+                        </ul>
+                        <img src="IMAGES/ADD_RECEIPT_PAGE.png" alt="Add Receipt Screen">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Renewals Section -->
+            <section id="renewals" class="section" data-category="inventory">
+                <div class="section-header">
+                    <h2>🔄 Renewal Management</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Renewal Workflow</h3>
+                        <ol>
+                            <li><strong>Monitor:</strong> Check Items approaching expiry</li>
+                            <li><strong>On Hold:</strong> Mark as 'On Hold' if decision is pending</li>
+                            <li><strong>Renew:</strong> Create Renewal record to extend dates</li>
+                            <li><strong>Archive:</strong> Auto-archive items on hold for > 1 year</li>
+                        </ol>
+                        <img src="IMAGES/renewal_details.png" alt="Renewal Management Screen">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Warranty Section (NEW) -->
+            <section id="warranty" class="section" data-category="inventory">
+                <div class="section-header">
+                    <h2>🛡️ Warranty Management</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Warranty Overview</h3>
+                        <p>The Warranty module tracks warranty expiration for Hardware and subscription validity for
+                            Software/Services.</p>
+
+                        <h4>Key Metrics:</h4>
+                        <ul>
+                            <li><strong>Active:</strong> Items with valid warranty (>90 days remaining)</li>
+                            <li><strong>Expiring:</strong> Warning state (≤90 days remaining)</li>
+                            <li><strong>Critical:</b> Urgent action needed (≤30 days remaining)</li>
+                            <li><strong>Expired:</strong> Warranty has lapsed</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h3>Using the Warranty Dashboard</h3>
+                        <p>Navigate to <strong>Warranty</strong> from the main menu.</p>
+
+                        <h4>Features:</h4>
+                        <ul>
+                            <li><strong>Filters:</strong> Filter by Item Type (Hardware/Software) or show only Expired
+                                items.</li>
+                            <li><strong>Search:</strong> Find by Item Name, Serial Number, or Model.</li>
+                            <li><strong>Status Indicators:</b>
+                                    <ul>
+                                        <li><span class="badge green">Active</span> - Valid warranty</li>
+                                        <li><span class="badge" style="background: goldenrod;">Warning</span> - Expires
+                                            in ≤
+                                            90
+                                            days</li>
+                                        <li><span class="badge orange">Critical</span> - Expires in ≤ 30 days</li>
+                                        <li><span class="badge red">Expired</span> - Warranty expired</li>
+                                    </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Archive Section -->
+            <section id="archive" class="section" data-category="admin">
+                <div class="section-header">
+                    <h2>🗄️ Archive Management</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Archiving & Restoration</h3>
+                        <p>Items are never permanently deleted by default. They are archived to preserve audit trails.
+                        </p>
+                        <ul>
+                            <li><strong>Archive:</strong> Soft-delete items that are no longer in use.</li>
+                            <li><strong>Restore:</strong> Bring archived items back to active status with full history.
+                            </li>
+                        </ul>
+                        <img src="IMAGES/VIEW_ARCHIVE.png" alt="Archive Management Screen">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mobile Updates Section (NEW) -->
+            <section id="mobile-updates" class="section" data-category="admin">
+                <div class="section-header">
+                    <h2>📱 Mobile Updates</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Tracking Mobile Scans</h3>
+                        <p>This module tracks updates received from the Yakult Mobile Scanners. When items are scanned
+                            in the
+                            field, their status changes are logged here.</p>
+
+                        <h4>Update Types:</h4>
+                        <ul>
+                            <li><strong>Status Change:</strong> Item condition changed (e.g., Good → Damaged).</li>
+                            <li><strong>Location Update:</strong> Item moved to a different branch/department.</li>
+                        </ul>
+                        <img src="IMAGES/VIEW_UPDATES.png" alt="Mobile Updates Screen">
+                    </div>
+
+                    <div class="card">
+                        <h3>Processing Updates</h3>
+                        <p>Updates appear as <strong>Unprocessed</strong> by default. Admins must review them:</p>
+                        <ol>
+                            <li>Review the <strong>Old Status</strong> vs <strong>New Status</strong>.</li>
+                            <li>Verify the details.</li>
+                            <li>Click <strong>"Mark as Processed"</strong> to confirm you have seen it.</li>
+                            <li>The update moves from the "Unprocessed" count to "Processed".</li>
+                        </ol>
+                        <div class="tip">
+                            <strong>💡 Note:</strong> Processed updates are kept for history but hidden from the main
+                            "Unprocessed" view.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Audit Trail Section (NEW) -->
+            <section id="audit-trail" class="section" data-category="admin">
+                <div class="section-header">
+                    <h2>👣 Audit Trail</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Item Movement Logs</h3>
+                        <p>The Audit Trail records every movement of items in and out of the inventory.</p>
+
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <h4>✅ IN Movements</h4>
+                                <p>New inventory, returns, or internal transfers entering a location.</p>
+                            </div>
+                            <div class="feature-card">
+                                <h4>🔻 OUT Movements</h4>
+                                <p>Dispatched items, consumed stock, or transfers leaving a location.</p>
+                            </div>
+                        </div>
+                        <img src="IMAGES/VIEW_AUDIT_TRAIL.png" alt="Audit Trail Screen">
+                    </div>
+
+                    <div class="card">
+                        <h3>Filtering History</h3>
+                        <p>Use the advanced filters to trace item history:</p>
+                        <ul>
+                            <li><strong>Date Range:</strong> See movements within specific dates.</li>
+                            <li><strong>Serial Number:</strong> Trace a specific item's journey.</li>
+                            <li><strong>Source:</strong> Filter by <em>Inventory</em>, <em>Request</em>, or
+                                <em>MobileUpdate</em>.
+                            </li>
+                            <li><strong>User:</strong> See who performed the action.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Section -->
+            <section id="reports" class="section" data-category="admin">
+                <div class="section-header">
+                    <h2>📈 Reports</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Available Reports</h3>
+                        <ul>
+                            <li><strong>Invoice Reports:</strong> Detailed financial breakdown of sets</li>
+                            <li><strong>Inventory Reports:</b> Stock levels and valuation</li>
+                            <li><strong>Audit Logs:</strong> User activity and item movement history</li>
+                        </ul>
+                        <img src="IMAGES/INVOICE_REPORT.png" alt="Invoice Report Screen">
+                        <p>Reports can be exported to <strong>PDF</strong> or <strong>Excel</strong>.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Notifications Section (NEW) -->
+            <section id="notifications" class="section" data-category="admin">
+                <div class="section-header">
+                    <h2>🔔 Notifications</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>System Alerts</h3>
+                        <p>The system automatically notifies you of critical events via the Notification Panel (bell
+                            icon).
+                        </p>
+
+                        <h4>Alert Types:</h4>
+                        <ul>
+                            <li><strong>License Expiry:</strong> Alert when software licenses are expiring soon.</li>
+                            <li><strong>Warranty Expiry:</strong> Alert when hardware warranties are ending.</li>
+                            <li><strong>Pending Approvals:</strong> Notification for admin when new requests are
+                                submitted.
+                            </li>
+                        </ul>
+                        <img src="IMAGES/NOTIFICATION_CENTER.png" alt="Notification Center Screen">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Troubleshooting Section -->
+            <section id="troubleshooting" class="section" data-category="general">
+                <div class="section-header">
+                    <h2>🔧 Troubleshooting</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+
+                    <div class="card">
+                        <h3>Common Issues</h3>
+                        <ul>
+                            <li><strong>Login Failed:</strong> Check internet connection and credentials.</li>
+                            <li><strong>Cannot Delete Item:</strong> Item has dependencies (inventory/requests). Archive
+                                it
+                                instead.</li>
+                            <li><strong>Database Error:</strong> Contact IT support if database connection persists.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="footer">
+                <p>&copy; 2025 Yakult Inc. Philippines - Inventory Management System</p>
+                <p>Developed by Shawn & Russel | Version 1.0</p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

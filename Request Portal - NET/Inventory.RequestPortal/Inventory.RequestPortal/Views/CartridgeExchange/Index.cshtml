@@ -1,0 +1,611 @@
+@model Inventory.RequestPortal.Models.ViewModels.CartridgeExchangeWorkspaceViewModel
+@{
+    ViewData["Title"] = "Cartridge Exchange";
+    ViewData["HideFooter"] = true;
+}
+
+@await Html.PartialAsync("_CartridgeManagementNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Cartridge Exchange</h1>
+        <p class="subtitle mb-0">Pending cartridge requests awaiting first-pass fulfillment</p>
+    </div>
+</div>
+
+<div class="content-padded cx-page">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <style>
+        /* Both columns are bounded to the exact remaining viewport height (computed in JS —
+           see bottom of page — rather than a guessed CSS calc()) so the pagination bar / action
+           buttons are always visible without scrolling the whole page; only the content inside
+           each column scrolls. max-height is set inline by JS; these are just the flex plumbing. */
+        /* Outer margins tightened to ~15px to match the desktop app's content margin
+           (overrides .content-padded's 1.5rem L/R + 0.75rem top for this page only). */
+        .content-padded.cx-page { padding-left: 15px; padding-right: 15px; padding-top: 8px; }
+
+        /* Two-column split matches the desktop app: ~66% request list / ~34% detail panel,
+           with a small inter-panel gap. */
+        /* Body is split into two plain regions (no card chrome on the right) so both
+           sides use the full available space; a thin rule separates them. */
+        .cx-workspace { display: flex; gap: 0; align-items: flex-start; }
+        .cx-list-col { flex: 1 1 66%; min-width: 0; display: flex; flex-direction: column; padding-right: 14px; }
+        .cx-panel-col { flex: 1 1 34%; min-width: 300px; position: sticky; top: 8px; display: flex; flex-direction: column;
+                        border-left: 1px solid #e1e4ea; padding-left: 14px; }
+        .cx-panel-head { flex-shrink: 0; padding: 4px 0 8px; border-bottom: 1px solid #e1e4ea; margin-bottom: 10px;
+                         border-left: 4px solid #d50032; padding-left: 8px; }
+        .cx-panel-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+        .cx-scroll-area { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+        @@media (max-width: 991.98px) {
+            .cx-workspace { flex-direction: column; }
+            .cx-list-col, .cx-panel-col { position: static !important; width: 100%; max-height: 70vh !important;
+                                          border-left: 0; padding-left: 0; padding-right: 0; }
+        }
+        .cx-toolbar { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-shrink: 0; }
+        /* Compact toolbar controls — smaller height/typography, closer to the desktop app. */
+        .cx-page .cx-toolbar .form-control-sm,
+        .cx-page .cx-toolbar .form-select-sm { font-size: .8rem; }
+        .cx-page .cx-toolbar .btn-sm { font-size: .8rem; padding: .25rem .55rem; }
+        .cx-page .cx-toolbar #cxSearchBox { flex: 1 1 auto; max-width: 380px; }
+        .cx-page .cx-filter-menu { min-width: 300px; }
+        .cx-page .cx-filter-menu label { font-size: .75rem; }
+        .cx-page .cx-filter-menu .form-select-sm,
+        .cx-page .cx-filter-menu .form-control-sm { font-size: .8rem; }
+        .cx-page .cx-filter-btn .cx-filter-count { display: none; margin-left: 4px; background: #d50032; color: #fff;
+                                                  border-radius: 8px; padding: 0 5px; font-size: .68rem; font-weight: 700; }
+        .cx-page .cx-filter-btn.has-active .cx-filter-count { display: inline-block; }
+
+        /* Compact request cards: full left-panel width, tight internal padding,
+           ~10px vertical spacing between cards (matches the desktop list). */
+        .cx-group-card { margin-bottom: 10px; }
+        .cx-group-card .card-body { padding: 8px 10px; }
+        .cx-group-card h6 { font-size: .82rem; }
+        .cx-group-card small { font-size: .72rem; }
+        .cx-group-card .table { font-size: .75rem; }
+        .cx-group-card .table > :not(caption) > * > * { padding: .25rem .4rem; }
+        .cx-group-card .d-flex.mb-2 { margin-bottom: .35rem !important; }
+
+        /* Trim wasted whitespace in the right panel. */
+        .cx-empty-panel { padding: 32px 16px; }
+        .cx-panel-scroll .cx-panel-field { font-size: .8rem; margin-bottom: 4px; }
+
+        /* Right panel must never need a horizontal scrollbar: let label/value rows wrap,
+           shrink the fixed label gutter, and stack the Step 3B two-column split when the
+           panel is narrow (that split is what was clipping the "Unfulfilled" badge). */
+        .cx-panel-scroll { overflow-x: hidden; }
+        .cx-panel-scroll .cx-panel-field { flex-wrap: wrap; gap: 4px 8px; }
+        .cx-panel-scroll .cx-panel-field .lbl { min-width: 120px; }
+        .cx-panel-scroll .cx-panel-field .val { word-break: break-word; overflow-wrap: anywhere; }
+        .cx-panel-scroll .row > [class*="col-"] { flex: 0 0 100%; max-width: 100%; }
+        .cx-panel-scroll .row.g-2 > .col-auto { flex: 0 0 auto; max-width: none; }
+        .cx-panel-scroll .cx-status-badge { white-space: nowrap; }
+        .cx-panel-scroll textarea,
+        .cx-panel-scroll .form-control { max-width: 100%; }
+
+        /* Thin scrollbars for the panel + list scroll areas and the remarks textarea. */
+        .cx-page .cx-panel-scroll,
+        .cx-page .cx-scroll-area,
+        .cx-page .cx-panel-scroll textarea { scrollbar-width: thin; scrollbar-color: #c2c2c2 transparent; }
+        .cx-page .cx-panel-scroll::-webkit-scrollbar,
+        .cx-page .cx-scroll-area::-webkit-scrollbar,
+        .cx-page .cx-panel-scroll textarea::-webkit-scrollbar { width: 7px; height: 7px; }
+        .cx-page .cx-panel-scroll::-webkit-scrollbar-thumb,
+        .cx-page .cx-scroll-area::-webkit-scrollbar-thumb,
+        .cx-page .cx-panel-scroll textarea::-webkit-scrollbar-thumb { background: #c2c2c2; border-radius: 4px; }
+        .cx-page .cx-panel-scroll::-webkit-scrollbar-track,
+        .cx-page .cx-scroll-area::-webkit-scrollbar-track,
+        .cx-page .cx-panel-scroll textarea::-webkit-scrollbar-track { background: transparent; }
+        .cx-group-card { cursor: pointer; transition: box-shadow .1s, border-color .1s; }
+        .cx-group-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .cx-group-card.selected { border-color: #d50032; box-shadow: 0 0 0 2px rgba(213,0,50,0.15); }
+        .cx-panel-field { display: flex; gap: 8px; margin-bottom: 6px; font-size: .85rem; }
+        .cx-panel-field .lbl { font-weight: 600; min-width: 140px; color: #555; }
+        .cx-panel-field .val { color: #222; }
+        .cx-empty-panel { text-align: center; color: #888; padding: 60px 20px; }
+        .cx-section-card { border: 1px solid #dde3ec; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+        .cx-section-title { font-size: .8rem; font-weight: 700; margin-bottom: 8px; }
+        .cx-status-badge { display: inline-block; border-radius: 10px; padding: 2px 10px; color: #fff; font-weight: 700; font-size: .75rem; }
+        .cx-multimodel-row { background: #f5f8ff; border: 1px solid #dde3ec; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+    </style>
+
+    <div class="cx-workspace">
+        <div class="cx-list-col">
+            <div class="cx-toolbar">
+                <input type="text" id="cxSearchBox" class="form-control form-control-sm" placeholder="Search by name, company, branch, or model...">
+
+                <div class="dropdown">
+                    <button type="button" id="cxFilterToggle" class="btn btn-sm btn-outline-secondary dropdown-toggle cx-filter-btn"
+                            data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                        <i class="bi bi-funnel"></i> Filters<span class="cx-filter-count" id="cxFilterCount">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end p-3 cx-filter-menu">
+                        <label class="fw-semibold text-muted mb-1 d-block">Timeline</label>
+                        <select id="cxTimeline" class="form-select form-select-sm mb-2">
+                            <option>All</option>
+                            <option>Last 7 days</option>
+                            <option>Last 30 days</option>
+                            <option>Last 90 days</option>
+                            <option>This month</option>
+                            <option>This year</option>
+                        </select>
+
+                        <label class="fw-semibold text-muted mb-1 d-block">Date range</label>
+                        <div class="d-flex align-items-center gap-1 mb-2">
+                            <input type="date" id="cxDateFrom" class="form-control form-control-sm" title="From">
+                            <span class="text-muted small">to</span>
+                            <input type="date" id="cxDateTo" class="form-control form-control-sm" title="To">
+                        </div>
+
+                        <label class="fw-semibold text-muted mb-1 d-block">Type</label>
+                        <select id="cxTypeFilter" class="form-select form-select-sm mb-3">
+                            <option>All</option>
+                            <option>Single Model</option>
+                            <option>Multi-Model</option>
+                        </select>
+
+                        <button type="button" id="cxClearFilters" class="btn btn-sm btn-outline-secondary w-100">
+                            <i class="bi bi-x-circle"></i> Clear filters
+                        </button>
+                    </div>
+                </div>
+
+                <a class="btn btn-sm btn-outline-secondary ms-auto" asp-action="Index" asp-route-id="@Model.SelectedReqId">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </a>
+            </div>
+
+            <div class="cx-scroll-area">
+            @if (Model.Groups.Count == 0)
+            {
+                <div class="card"><div class="card-body text-center text-muted py-5">No pending cartridge requests right now.</div></div>
+            }
+
+            <div id="cxCardList">
+            @foreach (var group in Model.Groups)
+            {
+                bool isSelected = group.Rows.Any(r => r.ReqId == Model.SelectedReqId);
+                var firstReqId = group.Rows.FirstOrDefault()?.ReqId;
+                <div class="card cx-group-card @(isSelected ? "selected" : "")"
+                     data-cx-reqid="@firstReqId"
+                     data-cx-search="@($"{group.EmployeeName} {group.CompanyName} {group.BranchName} {group.DepartmentName} {(group.IsMultiModel ? "multi-model" : "single model")} {string.Join(' ', group.Rows.Select(r => r.DisplayModel + " " + r.ReqId))}".ToLowerInvariant())"
+                     data-cx-multimodel="@(group.IsMultiModel ? "1" : "0")"
+                     data-cx-date="@group.DateCreated.ToString("yyyy-MM-dd")">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-0">
+                                    @(group.EmployeeName ?? "—")
+                                    @if (group.IsMultiModel) { <span class="badge bg-info text-dark ms-1">Multi-model</span> }
+                                </h6>
+                                <small class="text-muted">
+                                    @(group.CompanyName ?? "")
+                                    @if (!string.IsNullOrWhiteSpace(group.BranchName)) { <text> · @group.BranchName</text> }
+                                    @if (!string.IsNullOrWhiteSpace(group.DepartmentName)) { <text> · @group.DepartmentName</text> }
+                                </small>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Req #</th>
+                                        <th>Model</th>
+                                        <th class="text-end">Qty</th>
+                                        <th>Good</th>
+                                        <th>Damaged</th>
+                                        <th>Status</th>
+                                        <th>Created</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in group.Rows)
+                                    {
+                                        <tr>
+                                            <td>@row.ReqId</td>
+                                            <td>@row.DisplayModel</td>
+                                            <td class="text-end">@row.Quantity</td>
+                                            <td>@row.GoodEmptyQty</td>
+                                            <td>@row.DamagedEmptyQty</td>
+                                            <td>@row.Status</td>
+                                            <td>@row.DateCreated.ToString("MM/dd/yyyy")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            </div>
+            </div>
+
+            @if (Model.Groups.Count > 0)
+            {
+                <div class="d-flex justify-content-center align-items-center gap-2 mt-2 mb-1 flex-shrink-0" id="cxPagination">
+                    <button type="button" id="cxPageFirst" class="btn btn-sm btn-outline-secondary" title="First page">
+                        <i class="bi bi-chevron-bar-left"></i>
+                    </button>
+                    <button type="button" id="cxPagePrev" class="btn btn-sm btn-outline-secondary" title="Previous page">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <span class="small text-muted mx-2" id="cxPageIndicator">Page 1 of 1</span>
+                    <button type="button" id="cxPageNext" class="btn btn-sm btn-outline-secondary" title="Next page">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                    <button type="button" id="cxPageLast" class="btn btn-sm btn-outline-secondary" title="Last page">
+                        <i class="bi bi-chevron-bar-right"></i>
+                    </button>
+                </div>
+            }
+        </div>
+
+        <div class="cx-panel-col">
+            <div class="cx-panel-head">
+                <strong><i class="bi bi-box-seam text-danger"></i> Cartridge Exchange</strong>
+            </div>
+            <div class="cx-panel-scroll" id="cxPanelBody">
+                @await Html.PartialAsync("_FulfillPanel", Model)
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Mirrors desktop's CartridgeManagementViewModel search/date-range/model-type filtering
+    // AND pagination (ApplyPagedView/UpdatePageInfo, PageSize=5) — all client-side over the
+    // already-rendered list, no extra round trip, since every row's filterable fields are
+    // already in the page. Pagination exists specifically so the left list never grows taller
+    // than the sticky right panel — without it, a long list pushes the panel out of reach.
+    (function () {
+        var PAGE_SIZE = 5;
+        var currentPage = 1;
+
+        var searchBox    = document.getElementById('cxSearchBox');
+        var timeline     = document.getElementById('cxTimeline');
+        var dateFrom     = document.getElementById('cxDateFrom');
+        var dateTo       = document.getElementById('cxDateTo');
+        var typeFilter   = document.getElementById('cxTypeFilter');
+        var clearBtn     = document.getElementById('cxClearFilters');
+        var filterBtn    = document.getElementById('cxFilterToggle');
+        var filterCount  = document.getElementById('cxFilterCount');
+        var pageIndicator = document.getElementById('cxPageIndicator');
+        var pageFirstBtn = document.getElementById('cxPageFirst');
+        var pagePrevBtn  = document.getElementById('cxPagePrev');
+        var pageNextBtn  = document.getElementById('cxPageNext');
+        var pageLastBtn  = document.getElementById('cxPageLast');
+        var cards = document.querySelectorAll('.cx-group-card');
+        if (cards.length === 0 && !searchBox) return;
+
+        function applyQuickRange() {
+            var today = new Date();
+            var from = null, to = null;
+            function iso(d) { return d.toISOString().slice(0, 10); }
+
+            switch (timeline.value) {
+                case 'Last 7 days':
+                    from = new Date(today); from.setDate(from.getDate() - 7); to = today; break;
+                case 'Last 30 days':
+                    from = new Date(today); from.setDate(from.getDate() - 30); to = today; break;
+                case 'Last 90 days':
+                    from = new Date(today); from.setDate(from.getDate() - 90); to = today; break;
+                case 'This month':
+                    from = new Date(today.getFullYear(), today.getMonth(), 1); to = today; break;
+                case 'This year':
+                    from = new Date(today.getFullYear(), 0, 1); to = today; break;
+                default:
+                    from = null; to = null; break;
+            }
+
+            dateFrom.value = from ? iso(from) : '';
+            dateTo.value = to ? iso(to) : '';
+            currentPage = 1;
+            applyFilters();
+        }
+
+        function matchesFilters(card) {
+            var term = (searchBox.value || '').trim().toLowerCase();
+            var words = term.split(/\s+/).filter(Boolean);
+            var type = typeFilter.value;
+            var from = dateFrom.value || null;
+            var to = dateTo.value || null;
+
+            var haystack = card.getAttribute('data-cx-search') || '';
+            var isMulti = card.getAttribute('data-cx-multimodel') === '1';
+            var cardDate = card.getAttribute('data-cx-date') || '';
+
+            var textMatch = words.length === 0 || words.every(function (w) { return haystack.indexOf(w) >= 0; });
+            var typeMatch = type === 'All' || (type === 'Single Model' && !isMulti) || (type === 'Multi-Model' && isMulti);
+            var dateMatch = (!from || cardDate >= from) && (!to || cardDate <= to);
+
+            return textMatch && typeMatch && dateMatch;
+        }
+
+        // Show a small count badge on the "Filters" button so it's obvious filters are
+        // active even though the controls are now tucked inside the dropdown.
+        function updateFilterIndicator() {
+            if (!filterBtn) return;
+            var active = 0;
+            if (timeline && timeline.value !== 'All') active++;
+            if (dateFrom && dateFrom.value) active++;
+            if (dateTo && dateTo.value) active++;
+            if (typeFilter && typeFilter.value !== 'All') active++;
+            filterBtn.classList.toggle('has-active', active > 0);
+            if (filterCount) filterCount.textContent = active;
+        }
+
+        function applyFilters() {
+            var matched = Array.prototype.filter.call(cards, matchesFilters);
+            var total = matched.length;
+            var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            var pageStart = (currentPage - 1) * PAGE_SIZE;
+            var pageEnd = pageStart + PAGE_SIZE;
+
+            cards.forEach(function (card) { card.style.display = 'none'; });
+            matched.forEach(function (card, idx) {
+                card.style.display = (idx >= pageStart && idx < pageEnd) ? '' : 'none';
+            });
+
+            if (pageIndicator) {
+                pageIndicator.textContent = total === 0
+                    ? 'No pending requests'
+                    : ('Page ' + currentPage + ' of ' + totalPages + '  (' + total + (total === 1 ? ' group)' : ' groups)'));
+            }
+            updateFilterIndicator();
+            var canGoFirst = currentPage > 1;
+            var canGoNext = currentPage < totalPages;
+            if (pageFirstBtn) pageFirstBtn.disabled = !canGoFirst;
+            if (pagePrevBtn) pagePrevBtn.disabled = !canGoFirst;
+            if (pageNextBtn) pageNextBtn.disabled = !canGoNext;
+            if (pageLastBtn) pageLastBtn.disabled = !canGoNext;
+        }
+
+        function onFilterChanged() {
+            currentPage = 1;
+            applyFilters();
+        }
+
+        if (searchBox) searchBox.addEventListener('input', onFilterChanged);
+        if (dateFrom) dateFrom.addEventListener('change', onFilterChanged);
+        if (dateTo) dateTo.addEventListener('change', onFilterChanged);
+        if (typeFilter) typeFilter.addEventListener('change', onFilterChanged);
+        if (timeline) timeline.addEventListener('change', applyQuickRange);
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+                searchBox.value = '';
+                timeline.value = 'All';
+                dateFrom.value = '';
+                dateTo.value = '';
+                typeFilter.value = 'All';
+                currentPage = 1;
+                applyFilters();
+            });
+        }
+        if (pageFirstBtn) pageFirstBtn.addEventListener('click', function () { currentPage = 1; applyFilters(); });
+        if (pagePrevBtn) pagePrevBtn.addEventListener('click', function () { currentPage--; applyFilters(); });
+        if (pageNextBtn) pageNextBtn.addEventListener('click', function () { currentPage++; applyFilters(); });
+        if (pageLastBtn) pageLastBtn.addEventListener('click', function () { currentPage = Number.MAX_SAFE_INTEGER; applyFilters(); });
+
+        applyFilters();
+    })();
+
+    // Sizes both columns to fill exactly the remaining viewport height below the header, down
+    // to the bottom edge of the window — computed from actual layout, not a guessed CSS calc()
+    // value, so there's no leftover gap regardless of header height, browser chrome, zoom level,
+    // etc. Skipped below the 992px breakpoint, where the CSS media query takes over (stacked
+    // columns need their own natural scroll, not a viewport-height cap).
+    (function () {
+        var listCol = document.querySelector('.cx-list-col');
+        var panelCol = document.querySelector('.cx-panel-col');
+        if (!listCol || !panelCol) return;
+
+        function resize() {
+            if (window.innerWidth < 992) {
+                listCol.style.maxHeight = '';
+                panelCol.style.maxHeight = '';
+                return;
+            }
+            var bottomMargin = 16;
+            [listCol, panelCol].forEach(function (col) {
+                var top = col.getBoundingClientRect().top;
+                var available = window.innerHeight - top - bottomMargin;
+                col.style.maxHeight = Math.max(200, available) + 'px';
+            });
+        }
+
+        window.cxRecalcColumnHeights = resize;
+        window.addEventListener('resize', resize);
+        resize();
+    })();
+
+    // Mirrors desktop's OnForceDelete confirmation text (CartridgeManagementViewModel.cs) —
+    // browser confirm() only supports plain text/OK-Cancel, so this is the closest equivalent
+    // of the WPF MessageBox.Show(..., MessageBoxButton.OKCancel, MessageBoxImage.Stop) dialog.
+    function confirmForceDelete(reqId) {
+        var message =
+            "FINAL WARNING — FORCE DELETE\n\n" +
+            "This will PERMANENTLY DELETE cartridge request #" + reqId + ".\n\n" +
+            "This will also:\n" +
+            "• Restore issued cartridge stock (if any)\n" +
+            "• Remove auto-registered returned empty cartridges (if any)\n" +
+            "• Delete child request-model rows (if any)\n\n" +
+            "THIS CANNOT BE UNDONE!\n\n" +
+            "Only proceed if this was a DATA ENTRY ERROR.";
+        return window.confirm(message);
+    }
+
+    // Live Step 3A/3B recalculation — mirrors ExchangePanelViewModel.RefreshDerived /
+    // MultiModelRowViewModel's computed properties (IssuedFullQty, UnfulfilledQty,
+    // FulfillmentStatus/Color, AutoRemarks via CartridgeExchangeRemarks.GenerateRemarks) exactly,
+    // recomputed client-side on every keystroke with no round trip (values already known at
+    // render time — the server re-validates everything again on submit regardless).
+    // Exposed as a named function (not an IIFE) so the AJAX row-select handler below can re-run
+    // it after swapping in fresh panel HTML — the old listeners die with the replaced elements,
+    // so this needs to attach brand new ones each time.
+    window.cxInitPanel = function () {
+        function generateRemarks(issuedQty, returnedQty, model) {
+            var unfulfilled = returnedQty - issuedQty;
+            if (issuedQty === 0) {
+                return "No cartridges were refilled due to insufficient stock for model " + model + ". All " + returnedQty + " returned cartridges are pending fulfillment.";
+            }
+            if (issuedQty < returnedQty) {
+                return "Only " + issuedQty + " out of " + returnedQty + " returned cartridges were refilled due to insufficient stock for model " + model + ". The remaining " + unfulfilled + " cartridges are pending fulfillment.";
+            }
+            return "All " + issuedQty + " cartridges for model " + model + " were successfully refilled.";
+        }
+
+        function statusFor(issued, requested) {
+            if (issued === 0) return { text: 'Unfulfilled', color: '#E74C3C' };
+            if (issued < requested) return { text: 'Partially Fulfilled', color: '#E67E22' };
+            return { text: 'Fulfilled', color: '#27AE60' };
+        }
+
+        function pendingColor(pending) {
+            if (pending < 0) return '#E74C3C';
+            if (pending > 0) return '#E67E22';
+            return '#27AE60';
+        }
+
+        // Cross-clamp BN/RF within a row: max(BN) = min(requested - RF, availBN); same for RF.
+        function clampPair(bnInput, rfInput) {
+            var requested = parseInt(bnInput.getAttribute('data-requested'), 10) || 0;
+            var availBn = parseInt(bnInput.getAttribute('data-avail-bn'), 10) || 0;
+            var availRf = parseInt(bnInput.getAttribute('data-avail-rf'), 10) || 0;
+
+            var bn = parseInt(bnInput.value, 10); if (isNaN(bn) || bn < 0) bn = 0;
+            var rf = parseInt(rfInput.value, 10); if (isNaN(rf) || rf < 0) rf = 0;
+
+            var maxBn = Math.max(0, Math.min(requested - rf, availBn));
+            var maxRf = Math.max(0, Math.min(requested - bn, availRf));
+
+            if (bn > maxBn) { bn = maxBn; bnInput.value = bn; }
+            if (rf > maxRf) { rf = maxRf; rfInput.value = rf; }
+
+            bnInput.setAttribute('max', maxBn);
+            rfInput.setAttribute('max', maxRf);
+
+            return { bn: bn, rf: rf, requested: requested };
+        }
+
+        function refreshSingle() {
+            var bnInput = document.querySelector('.cartridge-bn-input[data-row="single"]');
+            var rfInput = document.querySelector('.cartridge-rf-input[data-row="single"]');
+            if (!bnInput || !rfInput) return;
+
+            var result = clampPair(bnInput, rfInput);
+            var issued = result.bn + result.rf;
+            var pending = result.requested - issued;
+            var status = statusFor(issued, result.requested);
+            var model = bnInput.getAttribute('data-model') || '';
+
+            var issuedEl = document.getElementById('cxIssuedFullQty');
+            var pendingEl = document.getElementById('cxPendingQty');
+            var badgeEl = document.getElementById('cxStatusBadge');
+            var remarksEl = document.getElementById('cxAutoRemarks');
+
+            if (issuedEl) issuedEl.textContent = issued;
+            if (pendingEl) { pendingEl.textContent = pending; pendingEl.style.color = pendingColor(pending); }
+            if (badgeEl) { badgeEl.textContent = status.text; badgeEl.style.background = status.color; }
+            if (remarksEl) remarksEl.value = generateRemarks(issued, result.requested, model);
+        }
+
+        function refreshMultiRow(rowKey) {
+            var bnInput = document.querySelector('.cartridge-bn-input[data-row="' + rowKey + '"]');
+            var rfInput = document.querySelector('.cartridge-rf-input[data-row="' + rowKey + '"]');
+            if (!bnInput || !rfInput) return;
+
+            var result = clampPair(bnInput, rfInput);
+            var issued = result.bn + result.rf;
+            var pending = result.requested - issued;
+            var status = statusFor(issued, result.requested);
+
+            document.querySelectorAll('.cx-row-issued[data-row-target="' + rowKey + '"]').forEach(function (el) { el.textContent = issued; });
+            document.querySelectorAll('.cx-row-pending[data-row-target="' + rowKey + '"]').forEach(function (el) { el.textContent = pending; el.style.color = pendingColor(pending); });
+            document.querySelectorAll('.cx-row-status[data-row-target="' + rowKey + '"]').forEach(function (el) { el.textContent = status.text; el.style.background = status.color; });
+        }
+
+        document.querySelectorAll('.cartridge-bn-input, .cartridge-rf-input').forEach(function (input) {
+            var rowKey = input.getAttribute('data-row');
+            if (!rowKey) return;
+            var handler = rowKey === 'single' ? refreshSingle : function () { refreshMultiRow(rowKey); };
+            input.addEventListener('input', handler);
+        });
+
+        refreshSingle();
+        document.querySelectorAll('.cx-row-status').forEach(function (el) {
+            refreshMultiRow(el.getAttribute('data-row-target'));
+        });
+    };
+
+    window.cxInitPanel();
+
+    // AJAX row selection — replaces the old full-page navigation (location.href) with a fetch
+    // of just the panel fragment (CartridgeExchangeController.Panel), so clicking a request
+    // keeps the list's scroll position, filters, and current page intact. The URL is still
+    // updated via pushState so the page stays linkable/refreshable/back-button-friendly.
+    (function () {
+        var panelBody = document.getElementById('cxPanelBody');
+        if (!panelBody) return;
+
+        function setSelectedCard(reqId) {
+            document.querySelectorAll('.cx-group-card').forEach(function (card) {
+                card.classList.toggle('selected', card.getAttribute('data-cx-reqid') === String(reqId));
+            });
+        }
+
+        function loadPanel(reqId, pushState) {
+            fetch('@Url.Action("Panel", "CartridgeExchange")/' + reqId, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (resp) { return resp.ok ? resp.text() : Promise.reject(resp.status); })
+                .then(function (html) {
+                    panelBody.innerHTML = html;
+                    setSelectedCard(reqId);
+                    if (pushState) {
+                        history.pushState({ cxReqId: reqId }, '', '@Url.Action("Index", "CartridgeExchange")/' + reqId);
+                    }
+                    window.cxInitPanel();
+                    if (typeof window.cxRecalcColumnHeights === 'function') window.cxRecalcColumnHeights();
+                })
+                .catch(function () {
+                    // Fall back to a normal navigation if the AJAX call fails for any reason
+                    // (session expired, network error, etc.) so the feature never silently breaks.
+                    location.href = '@Url.Action("Index", "CartridgeExchange")/' + reqId;
+                });
+        }
+
+        document.querySelectorAll('.cx-group-card').forEach(function (card) {
+            card.addEventListener('click', function () {
+                var reqId = card.getAttribute('data-cx-reqid');
+                if (reqId) loadPanel(reqId, true);
+            });
+        });
+
+        window.addEventListener('popstate', function (e) {
+            var reqId = e.state && e.state.cxReqId;
+            if (reqId) {
+                loadPanel(reqId, false);
+            } else {
+                location.reload();
+            }
+        });
+    })();
+</script>

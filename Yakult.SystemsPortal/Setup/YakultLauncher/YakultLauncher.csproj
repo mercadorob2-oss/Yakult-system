@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>YakultLauncher</RootNamespace>
+    <AssemblyName>YakultLauncher</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <DebugType>embedded</DebugType>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon />
+    <AssemblyTitle>Yakult Launcher</AssemblyTitle>
+    <Version>1.1.0</Version>
+  </PropertyGroup>
+
+</Project>

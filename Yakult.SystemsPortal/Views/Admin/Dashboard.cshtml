@@ -1,0 +1,489 @@
+@using Yakult.SystemsPortal.Services
+
+@model AdminDashboardViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Services Overview";
+    var nowUtc = DateTime.UtcNow;
+    var totalCount = Model.Cards.Count;
+    var connectedCount = Model.Cards.Count(c => string.Equals(c.Status, "Connected", StringComparison.OrdinalIgnoreCase));
+    var healthConfiguredCount = Model.Cards.Count(c => !string.IsNullOrWhiteSpace(c.HealthCheckUrl));
+    var healthMissingCount = totalCount - healthConfiguredCount;
+    var healthCoverage = totalCount == 0 ? 0 : healthConfiguredCount * 100 / totalCount;
+    var activeMaintenance = Model.Cards
+        .Where(c => c.MaintenanceStartUtc.HasValue && c.MaintenanceEndUtc.HasValue && nowUtc >= c.MaintenanceStartUtc.Value && nowUtc <= c.MaintenanceEndUtc.Value)
+        .ToList();
+    var attentionCards = Model.Cards
+        .Where(c =>
+            !c.IsVisible ||
+            string.Equals(c.Status, "Maintenance", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(c.Status, "NotConnected", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(c.Status, "Disabled", StringComparison.OrdinalIgnoreCase) ||
+            string.IsNullOrWhiteSpace(c.HealthCheckUrl))
+        .ToList();
+    var attentionCount = attentionCards.Count;
+    var isNoticeActive = Model.Notice.IsActive(nowUtc);
+    var canManageAccounts = User.HasClaim("IsDeveloper", "true");
+    var canManageLearning = User.IsInRole("ContentEditor") || User.HasClaim("IsDeveloper", "true");
+    var demoMode = Context.RequestServices.GetRequiredService<IDemoModeService>();
+    var canUseDemoMode = demoMode.CanUse(Context);
+    var isDemoModeEnabled = demoMode.IsEnabled(Context);
+    var dashboardReturnUrl = Context.Request.PathBase + Context.Request.Path + Context.Request.QueryString;
+}
+
+@functions {
+    string StatusClass(string status)
+    {
+        return status switch
+        {
+            "Connected" => "is-operational",
+            "Maintenance" => "is-maintenance",
+            "Disabled" => "is-disabled",
+            _ => "is-offline"
+        };
+    }
+
+    string StatusLabel(string status)
+    {
+        return status switch
+        {
+            "Connected" => "Connected",
+            "Maintenance" => "Maintenance",
+            "Disabled" => "Disabled",
+            _ => "Not connected"
+        };
+    }
+}
+
+@Html.AntiForgeryToken()
+
+@if (canUseDemoMode)
+{
+    <section class="admin-list-panel admin-ops-panel" aria-label="Demo data controls">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Demo Data</h2>
+                <p>Preview the portal with sample employee resources and content.</p>
+            </div>
+            <form asp-controller="Public" asp-action="SetDemoMode" method="post" class="portal-demo-toggle-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@dashboardReturnUrl" />
+                <input type="hidden" name="enabled" value="@(isDemoModeEnabled ? "false" : "true")" />
+                <button type="submit" class="admin-button admin-button--primary" aria-pressed="@isDemoModeEnabled">
+                    @(isDemoModeEnabled ? "Exit demo view" : "View demo data")
+                </button>
+            </form>
+        </div>
+    </section>
+}
+
+@if (ViewData["IsAdminPrototype"] as bool? == true)
+{
+    <div class="request-demo-banner">
+        <span><strong>Admin preview:</strong> No database is connected. Dashboard values will remain empty until a connection is configured.</span>
+    </div>
+}
+
+<section class="admin-ops-summary admin-ops-summary--balanced" aria-label="Portal operations summary">
+    <div class="admin-ops-summary__intro">
+        <span class="eyebrow">Operations overview</span>
+        <h2>Service availability at a glance</h2>
+        <p>Monitor public portal readiness, active notices, health coverage, and recent administration activity.</p>
+    </div>
+    <div class="admin-ops-summary__metrics">
+        <a class="admin-ops-metric admin-ops-metric--action" asp-controller="Admin" asp-action="Cards" asp-route-filter="all" aria-label="View all @totalCount services">
+            <span class="admin-ops-metric__value">@totalCount</span>
+            <span class="admin-ops-metric__label">Services</span>
+            <span class="admin-ops-metric__hint">View registry</span>
+        </a>
+        <a class="admin-ops-metric admin-ops-metric--action" asp-controller="Admin" asp-action="Cards" asp-route-filter="connected" aria-label="View @connectedCount connected services">
+            <span class="admin-ops-metric__value">@connectedCount</span>
+            <span class="admin-ops-metric__label">Connected</span>
+            <span class="admin-ops-metric__hint">View services</span>
+        </a>
+        <a class="admin-ops-metric admin-ops-metric--action @(attentionCount > 0 ? "is-attention" : "is-clear")" asp-controller="Admin" asp-action="Health" asp-route-filter="needs-action" aria-label="Review @attentionCount services that need attention">
+            <span class="admin-ops-metric__value">@attentionCount</span>
+            <span class="admin-ops-metric__label">Need attention</span>
+            <span class="admin-ops-metric__hint">Review now</span>
+        </a>
+        <a class="admin-ops-metric admin-ops-metric--action" asp-controller="Admin" asp-action="Health" asp-route-filter="missing" aria-label="Review health coverage; @healthMissingCount services need a health URL">
+            <span class="admin-ops-metric__value">@healthCoverage%</span>
+            <span class="admin-ops-metric__label">Health coverage</span>
+            <span class="admin-ops-metric__hint">@healthMissingCount missing URL@(healthMissingCount == 1 ? string.Empty : "s")</span>
+        </a>
+    </div>
+</section>
+
+<section class="admin-dashboard-board" aria-label="Admin dashboard workspace">
+    <div class="admin-list-panel admin-ops-panel admin-ops-panel--priority">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Needs Attention</h2>
+                <p>Hidden, unavailable, maintenance, or health-check-incomplete services.</p>
+            </div>
+            <a class="admin-button admin-button--ghost" asp-controller="Admin" asp-action="Health">Open health</a>
+        </div>
+        <div class="admin-panel-body admin-ops-list" data-page-list="attention" data-page-size="6">
+            @if (attentionCards.Count == 0)
+            {
+                <div class="admin-empty-state">All visible services are connected and have health checks configured.</div>
+            }
+            else
+            {
+                foreach (var card in attentionCards)
+                {
+                    var healthLabel = string.IsNullOrWhiteSpace(card.HealthCheckUrl) ? "No health URL" : "Health URL configured";
+                    <article class="admin-ops-row" data-dashboard-card="@card.CardKey" data-page-item>
+                        <div class="admin-ops-row__status">
+                            <span class="admin-status-pill @StatusClass(card.Status)">@StatusLabel(card.Status)</span>
+                        </div>
+                        <div class="admin-ops-row__main">
+                            <strong>@card.Name</strong>
+                            <span>@(card.IsVisible ? "Visible" : "Hidden") &middot; @healthLabel</span>
+                        </div>
+                        <div class="admin-ops-row__meta">
+                            <span>@card.CardKey</span>
+                            <span>@(string.IsNullOrWhiteSpace(card.Badge) ? "System" : card.Badge)</span>
+                        </div>
+                    </article>
+                }
+            }
+        </div>
+        <div class="admin-panel-pager" data-page-controls="attention">
+            <button type="button" data-page-prev>Previous</button>
+            <span data-page-status>Page 1 of 1</span>
+            <button type="button" data-page-next>Next</button>
+        </div>
+    </div>
+
+    <div class="admin-list-panel admin-ops-panel">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Health Checks</h2>
+                <p>@healthConfiguredCount configured, @healthMissingCount missing URL.</p>
+            </div>
+            <button type="button" class="admin-button admin-button--primary" id="dashboardHealthBtn">Run checks</button>
+        </div>
+        <div class="admin-panel-body">
+            <div class="admin-health-meter" aria-label="Health check URL coverage">
+                <div class="admin-health-meter__bar" style="--meter-value: @healthCoverage%">
+                    <span></span>
+                </div>
+                <span>@healthCoverage% coverage</span>
+            </div>
+            <div class="admin-dashboard-health admin-dashboard-health--compact" id="dashboardHealthResults" data-page-list="health-results" data-page-size="6">
+                <span data-page-item>Health checks have not been run in this session.</span>
+            </div>
+        </div>
+        <div class="admin-panel-pager" data-page-controls="health-results">
+            <button type="button" data-page-prev>Previous</button>
+            <span data-page-status>Page 1 of 1</span>
+            <button type="button" data-page-next>Next</button>
+        </div>
+    </div>
+
+    <div class="admin-list-panel admin-ops-panel">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Current Notice</h2>
+                <p>Homepage announcement state.</p>
+            </div>
+            <a class="admin-button admin-button--ghost" asp-controller="Admin" asp-action="Settings">Edit</a>
+        </div>
+        <div class="admin-panel-body admin-notice-pages" data-page-list="notice" data-page-size="1">
+            <div class="admin-dashboard-notice admin-dashboard-notice--compact portal-notice--@((Model.Notice.Level ?? "Info").ToLowerInvariant())" data-page-item>
+                @if (isNoticeActive)
+                {
+                    <span class="admin-status-pill is-operational">Active</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.Notice.Title) ? "Portal notice" : Model.Notice.Title)</strong>
+                    <p>@(string.IsNullOrWhiteSpace(Model.Notice.Message) ? "No message text set." : Model.Notice.Message)</p>
+                }
+                else
+                {
+                    <span class="admin-status-pill is-offline">Inactive</span>
+                    <strong>No active homepage notice</strong>
+                    <p>Use Portal Notice to publish a maintenance, release, or operational message.</p>
+                }
+            </div>
+        </div>
+        <div class="admin-panel-pager" data-page-controls="notice">
+            <button type="button" data-page-prev>Previous</button>
+            <span data-page-status>Page 1 of 1</span>
+            <button type="button" data-page-next>Next</button>
+        </div>
+    </div>
+
+    <div class="admin-list-panel admin-ops-panel">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Quick Actions</h2>
+                <p>Common administration tasks.</p>
+            </div>
+        </div>
+        <div class="admin-panel-body admin-quick-actions" data-page-list="quick-actions" data-page-size="4">
+            <a class="admin-quick-action" asp-controller="Admin" asp-action="Cards" data-page-item>
+                <span class="admin-quick-action__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </span>
+                <span><strong>Services &amp; Portals</strong><small>Edit visibility, launch behavior, status, and order.</small></span>
+            </a>
+            @if (canManageAccounts)
+            {
+                <a class="admin-quick-action" asp-controller="Admin" asp-action="AccountRequests" data-page-item>
+                    <span class="admin-quick-action__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>
+                    </span>
+                    <span><strong>Account Requests</strong><small>Approve employee registrations and access.</small></span>
+                </a>
+            }
+            @if (canManageLearning)
+            {
+                <a class="admin-quick-action" asp-controller="ContentAdmin" asp-action="Index" data-page-item>
+                    <span class="admin-quick-action__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="m10 8 5 4-5 4V8Z"/></svg>
+                    </span>
+                    <span><strong>Learning Content</strong><small>Create articles, guides, and video links.</small></span>
+                </a>
+            }
+            <a class="admin-quick-action" asp-controller="Admin" asp-action="Settings" data-page-item>
+                <span class="admin-quick-action__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>
+                </span>
+                <span><strong>Portal Notice</strong><small>Publish homepage maintenance or release messages.</small></span>
+            </a>
+            <a class="admin-quick-action" asp-controller="Admin" asp-action="Audit" data-page-item>
+                <span class="admin-quick-action__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-4 3 3 5-7"/></svg>
+                </span>
+                <span><strong>Activity Log</strong><small>Inspect recent service and portal activity.</small></span>
+            </a>
+        </div>
+        <div class="admin-panel-pager" data-page-controls="quick-actions">
+            <button type="button" data-page-prev>Previous</button>
+            <span data-page-status>Page 1 of 1</span>
+            <button type="button" data-page-next>Next</button>
+        </div>
+    </div>
+
+    <div class="admin-list-panel admin-ops-panel">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Recent Activity</h2>
+                <p>Latest service and portal administration events.</p>
+            </div>
+            <a class="admin-button admin-button--ghost" asp-controller="Admin" asp-action="Audit">View all</a>
+        </div>
+        <div class="admin-panel-body admin-audit-list admin-audit-list--compact" data-page-list="recent-activity" data-page-size="4">
+            @if (Model.RecentEvents.Count == 0)
+            {
+                <div class="admin-empty-state">No recent portal events found.</div>
+            }
+            else
+            {
+                foreach (var item in Model.RecentEvents)
+                {
+                    <article class="admin-audit-row admin-audit-row--compact" data-page-item>
+                        <div class="admin-audit-row__main">
+                            <span class="admin-audit-row__title">
+                                <span class="admin-status-pill audit-action-@item.Action.ToLowerInvariant()">@item.Action</span>
+                                @item.EntityType
+                            </span>
+                            <span class="admin-audit-row__desc">@(string.IsNullOrWhiteSpace(item.Notes) ? "No notes recorded." : item.Notes)</span>
+                        </div>
+                        <div class="admin-audit-row__meta">
+                            <span>@(string.IsNullOrWhiteSpace(item.UserName) ? "System" : item.UserName)</span>
+                            <span>@item.Timestamp.ToString("yyyy-MM-dd HH:mm")</span>
+                        </div>
+                    </article>
+                }
+            }
+        </div>
+        <div class="admin-panel-pager" data-page-controls="recent-activity">
+            <button type="button" data-page-prev>Previous</button>
+            <span data-page-status>Page 1 of 1</span>
+            <button type="button" data-page-next>Next</button>
+        </div>
+    </div>
+
+    <div class="admin-list-panel admin-ops-panel">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Active Maintenance</h2>
+                <p>Services currently inside a configured maintenance window.</p>
+            </div>
+        </div>
+        <div class="admin-panel-body admin-audit-list admin-audit-list--compact" data-page-list="maintenance" data-page-size="4">
+            @if (activeMaintenance.Count == 0)
+            {
+                <div class="admin-empty-state">No active maintenance windows.</div>
+            }
+            else
+            {
+                foreach (var card in activeMaintenance)
+                {
+                    <article class="admin-audit-row admin-audit-row--compact" data-page-item>
+                        <div class="admin-audit-row__main">
+                            <span class="admin-audit-row__title">
+                                @card.Name
+                                <span class="admin-status-pill is-maintenance">Maintenance</span>
+                            </span>
+                            <span class="admin-audit-row__desc">@(string.IsNullOrWhiteSpace(card.MaintenanceNote) ? "No maintenance note set." : card.MaintenanceNote)</span>
+                        </div>
+                        <div class="admin-audit-row__meta">
+                            <span>@card.MaintenanceStartUtc?.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                            <span>@card.MaintenanceEndUtc?.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                        </div>
+                    </article>
+                }
+            }
+        </div>
+        <div class="admin-panel-pager" data-page-controls="maintenance">
+            <button type="button" data-page-prev>Previous</button>
+            <span data-page-status>Page 1 of 1</span>
+            <button type="button" data-page-next>Next</button>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('dashboardHealthBtn');
+            const results = document.getElementById('dashboardHealthResults');
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            const isPreview = @((ViewData["IsAdminPrototype"] as bool? == true).ToString().ToLowerInvariant());
+            const pagedLists = new Map();
+
+            document.querySelectorAll('[data-page-list]').forEach(function (list) {
+                setupPagedList(list.dataset.pageList);
+            });
+
+            if (!btn || !results) return;
+
+            btn.addEventListener('click', async function () {
+                btn.disabled = true;
+                btn.classList.add('is-loading');
+                results.innerHTML = '<span data-page-item><span class="inline-loader"></span><span>Running health checks...</span></span>';
+                refreshPagedList('health-results', true);
+                if (isPreview) {
+                    window.setTimeout(function() {
+                        results.innerHTML = '<span data-page-item>No health check URLs are available until a connection is configured.</span>';
+                        refreshPagedList('health-results', true);
+                        btn.disabled = false;
+                        btn.classList.remove('is-loading');
+                        window.yakultToast?.('No connected services are available to test.', 'warning');
+                    }, 650);
+                    return;
+                }
+                try {
+                    const response = await fetch('@Url.Action("CheckHealth", "Admin")', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'RequestVerificationToken': token }
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.success) throw new Error('Health check failed.');
+                    if (!result.results.length) {
+                        results.innerHTML = '<span data-page-item>No health check URLs are configured.</span>';
+                        refreshPagedList('health-results', true);
+                        window.yakultToast?.('No health check URLs are configured.', 'warning');
+                        return;
+                    }
+                    results.innerHTML = result.results.map(item => {
+                        const isHealthy = item.status === 'Healthy';
+                        const cls = isHealthy ? 'is-operational' : 'is-disabled';
+                        const reason = healthReason(item);
+                        return `<article class="admin-health-result" data-page-item>
+                            <div class="admin-health-result__top">
+                                <span class="admin-status-pill ${cls}">${escapeHtml(item.cardKey)}: ${escapeHtml(item.status)}</span>
+                            </div>
+                            <p>${escapeHtml(reason)}</p>
+                        </article>`;
+                    }).join('');
+                    refreshPagedList('health-results', true);
+                    window.yakultToast?.('Health checks completed.', 'success');
+                } catch (error) {
+                    results.innerHTML = `<span data-page-item>${escapeHtml(error.message || 'Unable to run health checks.')}</span>`;
+                    refreshPagedList('health-results', true);
+                    window.yakultToast?.(error.message || 'Unable to run health checks.', 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.classList.remove('is-loading');
+                }
+            });
+
+            function setupPagedList(key) {
+                if (!key || pagedLists.has(key)) return;
+                const list = document.querySelector(`[data-page-list="${key}"]`);
+                const controls = document.querySelector(`[data-page-controls="${key}"]`);
+                if (!list || !controls) return;
+
+                const state = {
+                    key,
+                    list,
+                    controls,
+                    page: 0,
+                    pageSize: Math.max(parseInt(list.dataset.pageSize || '4', 10) || 4, 1)
+                };
+
+                controls.querySelector('[data-page-prev]')?.addEventListener('click', function () {
+                    state.page = Math.max(state.page - 1, 0);
+                    updatePagedList(state);
+                });
+                controls.querySelector('[data-page-next]')?.addEventListener('click', function () {
+                    state.page += 1;
+                    updatePagedList(state);
+                });
+
+                pagedLists.set(key, state);
+                updatePagedList(state);
+            }
+
+            function refreshPagedList(key, reset) {
+                const state = pagedLists.get(key);
+                if (!state) return;
+                if (reset) state.page = 0;
+                updatePagedList(state);
+            }
+
+            function updatePagedList(state) {
+                const items = Array.from(state.list.querySelectorAll('[data-page-item]'));
+                const totalPages = Math.ceil(items.length / state.pageSize);
+                const pageCount = Math.max(totalPages, 1);
+                state.page = Math.min(Math.max(state.page, 0), pageCount - 1);
+                const start = state.page * state.pageSize;
+                const end = start + state.pageSize;
+
+                items.forEach(function (item, index) {
+                    item.hidden = index < start || index >= end;
+                });
+
+                const prev = state.controls.querySelector('[data-page-prev]');
+                const next = state.controls.querySelector('[data-page-next]');
+                const status = state.controls.querySelector('[data-page-status]');
+                state.controls.hidden = totalPages <= 1;
+                if (status) status.textContent = totalPages === 0 ? 'No pages' : `Page ${state.page + 1} of ${totalPages}`;
+                if (prev) prev.disabled = state.page <= 0 || totalPages <= 1;
+                if (next) next.disabled = state.page >= totalPages - 1 || totalPages <= 1;
+            }
+
+            function healthReason(item) {
+                const status = String(item.status || '');
+                const detail = String(item.detail || '').trim();
+                if (status === 'Healthy') return detail ? `Responded successfully: ${detail}.` : 'Responded successfully.';
+                if (status === 'Unhealthy') return detail ? `The site responded, but returned ${detail}.` : 'The site responded with an unsuccessful status.';
+                if (status === 'Unreachable') return detail ? `Could not connect: ${detail}.` : 'The portal server could not connect to this URL.';
+                return detail || 'No additional detail was returned.';
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+        });
+    </script>
+}

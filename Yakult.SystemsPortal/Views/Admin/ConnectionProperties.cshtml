@@ -1,0 +1,206 @@
+@model AdminConnectionEditorViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Database Connection";
+    var properties = Model.Properties;
+    var profile = properties.ProfileStatus;
+}
+
+@Html.AntiForgeryToken()
+
+<section class="connection-editor-page">
+    <div class="connection-editor-hero">
+        <div>
+            <span class="connection-editor-hero__eyebrow">Protected developer configuration</span>
+            <h2>Database connection</h2>
+            <p>Test a new SQL Server connection before applying it. The active connection is encrypted at rest and the current profile is retained for rollback.</p>
+        </div>
+        <div class="connection-editor-hero__actions">
+            @if (profile.HasRollbackProfile)
+            {
+                <button type="button" class="admin-button admin-button--ghost" id="rollbackConnectionBtn">Test &amp; rollback</button>
+            }
+            <button type="button" class="admin-button admin-button--ghost" id="lockConnectionPageBtn">Lock page</button>
+        </div>
+    </div>
+
+    <ol class="connection-editor-steps" aria-label="Connection update process">
+        <li><strong>1</strong><span>Enter a candidate connection.</span></li>
+        <li><strong>2</strong><span>Test it before it can be applied.</span></li>
+        <li><strong>3</strong><span>Apply only the tested profile.</span></li>
+    </ol>
+
+    <div class="connection-editor-status-row">
+        <div class="connection-editor-status @(properties.IsConfigured ? "is-ready" : "is-warning")">
+            <span class="connection-editor-status__dot"></span>
+            <div><strong>@(properties.IsConfigured ? "Connection configured" : "Connection not configured")</strong><small>@profile.Source</small></div>
+        </div>
+        <div class="connection-editor-meta">
+            @if (profile.UpdatedAtUtc.HasValue)
+            {
+                <span>Last profile change: @profile.UpdatedAtUtc.Value.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span>
+            }
+            else
+            {
+                <span>Using the server's bootstrap configuration</span>
+            }
+            @if (profile.HasRollbackProfile)
+            {
+                <span class="connection-editor-backup">Rollback backup available</span>
+            }
+        </div>
+    </div>
+
+    <div class="connection-editor-layout">
+        <section class="connection-panel connection-panel--active">
+            <div class="connection-panel__heading">
+                <div><span class="connection-panel__eyebrow">Active profile</span><h3>Current database</h3></div>
+                <span class="connection-panel__badge">Read-only</span>
+            </div>
+            @if (!properties.IsConfigured)
+            {
+                <div class="connection-editor-notice connection-editor-notice--warning">No active connection is available. Enter and test a candidate profile on the right.</div>
+            }
+            else
+            {
+                <div class="connection-details-grid">
+                    <div><span>Server</span><strong>@properties.ServerAddress</strong></div>
+                    <div><span>Database</span><strong>@properties.DatabaseName</strong></div>
+                    <div><span>Encryption</span><strong class="@(properties.Encrypt ? "is-good" : "is-warning")">@(properties.Encrypt ? "Enabled" : "Disabled")</strong></div>
+                    <div><span>Certificate</span><strong>@(properties.TrustServerCertificate ? "Trust server certificate" : "Validated")</strong></div>
+                    <div><span>Timeout</span><strong>@properties.ConnectTimeoutSeconds seconds</strong></div>
+                    <div><span>MARS</span><strong>@(properties.MultipleActiveResultSets ? "Enabled" : "Disabled")</strong></div>
+                    <div class="connection-details-grid__wide"><span>Application</span><strong>@(string.IsNullOrWhiteSpace(properties.ApplicationName) ? "Not specified" : properties.ApplicationName)</strong></div>
+                </div>
+            }
+            <div class="connection-security-note"><span aria-hidden="true">🔒</span><span>The active connection string and password are never rendered in this page.</span></div>
+        </section>
+
+        <section class="connection-panel connection-panel--editor">
+            <div class="connection-panel__heading">
+                <div><span class="connection-panel__eyebrow">Change profile</span><h3>Candidate connection</h3></div>
+                <span class="connection-panel__badge connection-panel__badge--secure">Test first</span>
+            </div>
+            <label class="connection-input-label" for="candidateConnectionString">SQL Server connection string</label>
+            <div class="connection-secret-input">
+                <input id="candidateConnectionString" type="password" autocomplete="off" spellcheck="false" placeholder="Server=...;Database=...;User ID=...;Password=...;Encrypt=True;" />
+                <button type="button" id="toggleConnectionString" aria-label="Show connection string">Show</button>
+            </div>
+            <p class="connection-input-help">The candidate is used only for the test until you click Apply. It is saved encrypted only after a successful test.</p>
+            <div class="connection-editor-notice connection-editor-notice--danger"><strong>Important:</strong> Applying changes the database used by new portal requests. A tested backup remains available for rollback.</div>
+            <div class="connection-editor-result" id="connectionEditorResult" role="status" hidden></div>
+            <div class="connection-editor-actions">
+                <button type="button" class="admin-button admin-button--ghost" id="testCandidateBtn">Test candidate</button>
+                <button type="button" class="admin-button admin-button--primary" id="applyConnectionBtn" disabled>Apply tested connection</button>
+            </div>
+        </section>
+    </div>
+</section>
+
+<style>
+    .connection-editor-page { max-width: 1180px; margin: 0 auto; padding: 8px 0 34px; }
+    .connection-editor-hero { display:flex; align-items:flex-start; justify-content:space-between; gap:22px; padding:24px 26px; border:1px solid #dce3ea; border-radius:14px 14px 0 0; background:linear-gradient(135deg,#fff7f7,#fff); }
+    .connection-editor-hero__eyebrow,.connection-panel__eyebrow { display:block; color:#b20f18; font-size:.67rem; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
+    .connection-editor-hero h2 { margin:5px 0 0; color:#172033; font-size:1.35rem; }
+    .connection-editor-hero p { max-width:720px; margin:7px 0 0; color:#5f6d7e; font-size:.9rem; line-height:1.5; }
+    .connection-editor-hero__actions,.connection-editor-actions { display:flex; flex-wrap:wrap; gap:9px; }
+    .connection-editor-status-row { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:14px 20px; border:1px solid #dce3ea; border-top:0; background:#fff; }
+    .connection-editor-status { display:flex; align-items:center; gap:10px; }
+    .connection-editor-status__dot { width:10px; height:10px; border-radius:50%; background:#d71920; box-shadow:0 0 0 4px #fff1f1; }
+    .connection-editor-status.is-ready .connection-editor-status__dot { background:#1d8b4b; box-shadow:0 0 0 4px #e7f7ec; }
+    .connection-editor-status strong,.connection-editor-status small { display:block; }
+    .connection-editor-status strong { color:#172033; font-size:.84rem; }
+    .connection-editor-status small { margin-top:2px; color:#687789; font-size:.75rem; }
+    .connection-editor-meta { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px 14px; color:#687789; font-size:.76rem; text-align:right; }
+    .connection-editor-backup { color:#18723a; font-weight:800; }
+    .connection-editor-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; padding:16px 0; }
+    .connection-panel { border:1px solid #dce3ea; border-radius:12px; background:#fff; box-shadow:0 5px 16px rgba(20,38,60,.045); }
+    .connection-panel__heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 20px; border-bottom:1px solid #e6ecf2; }
+    .connection-panel h3 { margin:4px 0 0; color:#172033; font-size:1rem; }
+    .connection-panel__badge { padding:4px 8px; border:1px solid #dce3ea; border-radius:999px; color:#687789; font-size:.66rem; font-weight:800; white-space:nowrap; }
+    .connection-panel__badge--secure { border-color:#b9e3c4; background:#f1fbf4; color:#18723a; }
+    .connection-details-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; padding:20px; }
+    .connection-details-grid > div { min-width:0; padding:12px; border:1px solid #e6ecf2; border-radius:9px; background:#fbfcfd; }
+    .connection-details-grid__wide { grid-column:span 2; }
+    .connection-details-grid span { display:block; color:#687789; font-size:.67rem; font-weight:900; letter-spacing:.06em; text-transform:uppercase; }
+    .connection-details-grid strong { display:block; overflow:hidden; margin-top:6px; color:#172033; font-size:.86rem; text-overflow:ellipsis; white-space:nowrap; }
+    .connection-details-grid .is-good { color:#18723a; }.connection-details-grid .is-warning { color:#9a5b0b; }
+    .connection-security-note { display:flex; gap:8px; margin:0 20px 20px; padding:11px 12px; border-radius:8px; background:#f4f7f9; color:#687789; font-size:.76rem; line-height:1.4; }
+    .connection-panel--editor { padding-bottom:20px; }.connection-panel--editor .connection-panel__heading { margin-bottom:18px; }
+    .connection-input-label { display:block; margin:0 20px 7px; color:#5f6d7e; font-size:.7rem; font-weight:900; letter-spacing:.07em; text-transform:uppercase; }
+    .connection-secret-input { display:flex; margin:0 20px; border:1px solid #cbd5df; border-radius:8px; overflow:hidden; background:#fff; }
+    .connection-secret-input:focus-within { border-color:#d71920; box-shadow:0 0 0 3px rgba(215,25,32,.13); }
+    .connection-secret-input input { min-width:0; flex:1; padding:12px; border:0; outline:0; color:#172033; font:inherit; }
+    .connection-secret-input button { width:62px; border:0; border-left:1px solid #e6ecf2; background:#f4f7f9; color:#5f6d7e; font-weight:800; cursor:pointer; }
+    .connection-input-help { margin:8px 20px 16px; color:#687789; font-size:.76rem; line-height:1.4; }
+    .connection-editor-notice { margin:0 20px 16px; padding:12px 13px; border:1px solid; border-radius:8px; font-size:.77rem; line-height:1.45; }.connection-editor-notice--warning { border-color:#f1d19b; background:#fff8ed; color:#9a5b0b; }.connection-editor-notice--danger { border-color:#f1c4c7; background:#fff1f1; color:#a90f16; }
+    .connection-editor-result { margin:0 20px 16px; padding:11px 13px; border:1px solid; border-radius:8px; font-size:.78rem; font-weight:700; line-height:1.4; }.connection-editor-result.is-success { border-color:#b9e3c4; background:#f1fbf4; color:#18723a; }.connection-editor-result.is-error { border-color:#f1c4c7; background:#fff1f1; color:#a90f16; }
+    .connection-editor-actions { justify-content:flex-end; padding:0 20px; }
+    @@media (max-width:900px) { .connection-editor-layout { grid-template-columns:1fr; } }
+    @@media (max-width:640px) { .connection-editor-page { padding-inline:0; }.connection-editor-hero,.connection-editor-status-row { flex-direction:column; align-items:stretch; }.connection-editor-meta { justify-content:flex-start; text-align:left; }.connection-editor-hero__actions,.connection-editor-actions { justify-content:stretch; }.connection-editor-actions .admin-button { flex:1; }.connection-details-grid { grid-template-columns:1fr; }.connection-details-grid__wide { grid-column:auto; } }
+</style>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const candidate = document.getElementById('candidateConnectionString');
+    const toggle = document.getElementById('toggleConnectionString');
+    const testButton = document.getElementById('testCandidateBtn');
+    const applyButton = document.getElementById('applyConnectionBtn');
+    const rollbackButton = document.getElementById('rollbackConnectionBtn');
+    const lockButton = document.getElementById('lockConnectionPageBtn');
+    const result = document.getElementById('connectionEditorResult');
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+    let candidateTested = false;
+
+    function showResult(success, message) {
+        result.hidden = false;
+        result.className = 'connection-editor-result ' + (success ? 'is-success' : 'is-error');
+        result.textContent = message;
+    }
+    function resetTest() { candidateTested = false; applyButton.disabled = true; }
+    candidate.addEventListener('input', resetTest);
+    toggle.addEventListener('click', function () { const visible = candidate.type === 'text'; candidate.type = visible ? 'password' : 'text'; toggle.textContent = visible ? 'Show' : 'Hide'; });
+
+    async function post(url, body) {
+        const response = await fetch(url, { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json', 'RequestVerificationToken':token }, body: body ? JSON.stringify(body) : undefined });
+        const data = await response.json();
+        if (!response.ok || data.success === false) throw new Error(data.message || 'Operation failed.');
+        return data;
+    }
+
+    testButton.addEventListener('click', async function () {
+        const value = candidate.value.trim();
+        if (!value) { showResult(false, 'Enter a candidate connection string first.'); return; }
+        testButton.disabled = true; testButton.textContent = 'Testing...'; resetTest();
+        try {
+            const data = await post('@Url.Action("TestConnection", "Admin")', { connectionString:value });
+            candidateTested = true; applyButton.disabled = false;
+            showResult(true, `Candidate connection succeeded in ${data.elapsedMilliseconds}ms. SQL Server ${data.serverVersion || 'version unavailable'}. You may now apply it.`);
+        } catch (error) { showResult(false, error.message); }
+        finally { testButton.disabled = false; testButton.textContent = 'Test candidate'; }
+    });
+
+    applyButton.addEventListener('click', async function () {
+        if (!candidateTested) return;
+        if (!window.confirm('Apply this tested connection profile? New portal database requests will use it immediately.')) return;
+        applyButton.disabled = true; applyButton.textContent = 'Applying...';
+        try { const data = await post('@Url.Action("ApplyConnection", "Admin")', { connectionString:candidate.value.trim() }); showResult(true, data.message); window.setTimeout(() => window.location.reload(), 900); }
+        catch (error) { showResult(false, error.message); applyButton.disabled = false; applyButton.textContent = 'Apply tested connection'; }
+    });
+
+    rollbackButton?.addEventListener('click', async function () {
+        if (!window.confirm('Test and restore the previous connection profile?')) return;
+        rollbackButton.disabled = true; rollbackButton.textContent = 'Rolling back...';
+        try { const data = await post('@Url.Action("RollbackConnection", "Admin")'); showResult(true, data.message); window.setTimeout(() => window.location.reload(), 900); }
+        catch (error) { showResult(false, error.message); rollbackButton.disabled = false; rollbackButton.textContent = 'Test & rollback'; }
+    });
+
+    lockButton.addEventListener('click', async function () {
+        lockButton.disabled = true;
+        try { await fetch('@Url.Action("LockConnectionPage", "Admin")', { method:'POST', credentials:'same-origin', headers:{ 'RequestVerificationToken':token } }); }
+        finally { window.location.href = '@Url.Action("UnlockConnectionPage", "Admin")'; }
+    });
+});
+</script>
+}

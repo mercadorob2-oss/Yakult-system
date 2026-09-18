@@ -1,0 +1,293 @@
+@using System.Text.Json
+@using Yakult.SystemsPortal.Models
+@{
+    var moduleCommands = SubsystemCatalog.Groups
+        .SelectMany(group => group.Subsystems.Select(sub => new
+        {
+            title = sub.Name,
+            badge = group.Name,
+            description = sub.Description,
+            href = Url.Action("Modules", "Home") + "#" + group.Slug
+        }))
+        .ToList();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Yakult Systems Portal</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <script>
+        (function() {
+            var theme = localStorage.getItem('yakultTheme') || 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
+</head>
+<body>
+    <div class="hero-decoration hero-decoration-1"></div>
+    <div class="hero-decoration hero-decoration-2"></div>
+
+    <!-- Mobile sidebar backdrop -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <div class="app-shell">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon"></div>
+                <span class="brand-text">Yakult<span class="brand-accent">Portal</span></span>
+            </div>
+            <nav class="sidebar-nav">
+                @{
+                    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+                }
+                <a asp-controller="Home" asp-action="Index" class="nav-item @(currentAction == "Index" ? "active" : "")">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>Home</span>
+                </a>
+                <a asp-controller="Home" asp-action="Modules" class="nav-item @(currentAction == "Modules" ? "active" : "")">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Modules</span>
+                </a>
+                <a asp-controller="Public" asp-action="Index" class="nav-item">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+                    <span>Public site</span>
+                </a>
+
+                @if (User.HasClaim("IsDeveloper", "true"))
+                {
+                    <a asp-controller="Admin" asp-action="Cards" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" ? "active" : "")">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        <span>Admin</span>
+                    </a>
+                }
+            </nav>
+        </aside>
+
+        <div class="main-wrapper">
+            <header class="top-header">
+                <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div class="header-greeting">
+                    <h2>Welcome back</h2>
+                    <p>Your internal systems are a click away</p>
+                </div>
+                <div class="header-actions">
+                    <button type="button" class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    </button>
+                    <div class="user-profile">
+                        <div class="user-avatar">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <span class="user-name">@User.Identity?.Name</span>
+                    </div>
+                    <form asp-action="Logout" asp-controller="Home" method="post" class="logout-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="logout-button">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                </div>
+            </header>
+
+            <main class="main-content">
+                @RenderBody()
+            </main>
+
+            <footer class="app-footer">
+                <p> Yakult Systems Portal. Internal use only.</p>
+                <p class="footer-version">v1.0.0</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Command Palette -->
+    <div class="cmd-palette-overlay" id="cmdPalette">
+        <div class="cmd-palette">
+            <div class="cmd-palette-input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="cmd-palette-input" id="cmdInput" placeholder="Search systems and modules..." autocomplete="off">
+            </div>
+            <div class="cmd-palette-list" id="cmdList"></div>
+        </div>
+    </div>
+    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+        window.yakultToast = function(message, type) {
+            var region = document.getElementById('toastRegion');
+            if (!region || !message) return;
+            var toast = document.createElement('div');
+            toast.className = 'portal-toast portal-toast--' + (type || 'info');
+            toast.innerHTML = '<span class="portal-toast__dot"></span><span>' + String(message)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;') + '</span>';
+            region.appendChild(toast);
+            window.setTimeout(function() {
+                toast.classList.add('is-leaving');
+                window.setTimeout(function() { toast.remove(); }, 220);
+            }, 3600);
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            window.portalModuleCommands = @Html.Raw(JsonSerializer.Serialize(moduleCommands));
+            // Theme toggle
+            var toggle = document.getElementById('themeToggle');
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    var html = document.documentElement;
+                    var current = html.getAttribute('data-theme') || 'dark';
+                    var next = current === 'dark' ? 'light' : 'dark';
+                    html.setAttribute('data-theme', next);
+                    localStorage.setItem('yakultTheme', next);
+                });
+            }
+
+            // Mobile menu
+            var menuBtn = document.getElementById('mobileMenuBtn');
+            var sidebar = document.getElementById('sidebar');
+            var backdrop = document.getElementById('sidebarBackdrop');
+            if (menuBtn && sidebar && backdrop) {
+                menuBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('open');
+                    backdrop.classList.toggle('open');
+                });
+                backdrop.addEventListener('click', function() {
+                    sidebar.classList.remove('open');
+                    backdrop.classList.remove('open');
+                });
+            }
+
+            // Command palette
+            var cmdPalette = document.getElementById('cmdPalette');
+            var cmdInput = document.getElementById('cmdInput');
+            var cmdList = document.getElementById('cmdList');
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+
+            function collectSystemCommands() {
+                return Array.from(document.querySelectorAll('.system-card')).map(function(card) {
+                    var action = card.querySelector('.system-button:not([disabled])');
+                    return {
+                        title: card.querySelector('.card-title')?.textContent || '',
+                        badge: card.querySelector('.system-badge')?.textContent || 'System',
+                        description: card.querySelector('.card-desc')?.textContent || '',
+                        href: action?.getAttribute('href') || '',
+                        kind: 'System'
+                    };
+                }).filter(function(item) {
+                    return item.title && item.href && item.href !== '#';
+                });
+            }
+
+            function collectCommands(query) {
+                var term = (query || '').toLowerCase().trim();
+                var moduleCommands = (window.portalModuleCommands || []).map(function(item) {
+                    return {
+                        title: item.title,
+                        badge: item.badge,
+                        description: item.description,
+                        href: item.href,
+                        kind: 'Module'
+                    };
+                });
+                var items = collectSystemCommands().concat(moduleCommands);
+
+                if (!term) return items.slice(0, 16);
+                return items.filter(function(item) {
+                    return [item.title, item.badge, item.description, item.kind]
+                        .join(' ')
+                        .toLowerCase()
+                        .includes(term);
+                }).slice(0, 16);
+            }
+
+            function renderCmdList(query) {
+                if (!cmdList) return;
+                var items = collectCommands(query);
+                if (items.length === 0) {
+                    cmdList.innerHTML = '<div class="cmd-palette-empty">No systems or modules found</div>';
+                    return;
+                }
+
+                cmdList.innerHTML = items.map(function(item, i) {
+                    var target = item.href.startsWith('http') ? ' target="_blank" rel="noreferrer"' : '';
+                    return `
+                        <a class="cmd-palette-item ${i === 0 ? 'active' : ''}" href="${escapeHtml(item.href)}"${target}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            <span class="cmd-name">${escapeHtml(item.title)}</span>
+                            <span class="cmd-key">${escapeHtml(item.kind)} · ${escapeHtml(item.badge)}</span>
+                        </a>`;
+                }).join('');
+            }
+
+            function openCmdPalette() {
+                if (!cmdPalette) return;
+                cmdPalette.classList.add('open');
+                if (cmdInput) {
+                    cmdInput.value = '';
+                    cmdInput.focus();
+                }
+                renderCmdList('');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeCmdPalette() {
+                if (!cmdPalette) return;
+                cmdPalette.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            if (cmdInput) {
+                cmdInput.addEventListener('input', function() {
+                    renderCmdList(this.value);
+                });
+
+                cmdInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') closeCmdPalette();
+                    if (e.key === 'Enter') {
+                        var active = cmdList.querySelector('.cmd-palette-item.active');
+                        if (active) active.click();
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    if (cmdPalette && cmdPalette.classList.contains('open')) {
+                        closeCmdPalette();
+                    } else {
+                        openCmdPalette();
+                    }
+                }
+                if (e.key === 'Escape' && cmdPalette && cmdPalette.classList.contains('open')) {
+                    closeCmdPalette();
+                }
+            });
+
+            if (cmdPalette) {
+                cmdPalette.addEventListener('click', function(e) {
+                    if (e.target === cmdPalette) closeCmdPalette();
+                });
+            }
+        });
+    </script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

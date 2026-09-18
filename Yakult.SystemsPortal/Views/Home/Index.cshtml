@@ -1,0 +1,472 @@
+@model PortalHomeViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    var canViewIntegrationNotes = User.HasClaim("IsDeveloper", "true");
+    var connectedCount = Model.Systems.Count(system => GetStatus(system) == "Connected");
+    var maintenanceCount = Model.Systems.Count(system => GetStatus(system) == "Maintenance");
+    var unavailableCount = Model.Systems.Count - connectedCount - maintenanceCount;
+}
+
+@functions {
+    string GetIconSvg(string iconName)
+    {
+        return iconName switch
+        {
+            "package" => "<path d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z'/><polyline points='8.5 14.5,12 12,15.5 14.5'/><line x1='12' y1='12' x2='12' y2='21'/><path d='M20.5 7.5L12 12 3.5 7.5'/><path d='M7.5 4.5L12 2 16.5 4.5'/>",
+            "users" => "<path d='M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'/><circle cx='9' cy='7' r='4'/><path d='M23 21v-2a4 4 0 0 0-3-3.87'/><path d='M16 3.13a4 4 0 0 1 0 7.75'/>",
+            "bar-chart" => "<line x1='12' y1='20' x2='12' y2='10'/><line x1='18' y1='20' x2='18' y2='4'/><line x1='6' y1='20' x2='6' y2='16'/>",
+            "clipboard" => "<path d='M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2'/><rect x='8' y='2' width='8' height='4' rx='1' ry='1'/>",
+            "smartphone" => "<rect x='5' y='2' width='14' height='20' rx='2' ry='2'/><line x1='12' y1='18' x2='12.01' y2='18'/>",
+            "tool" => "<path d='M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'/>",
+            "database" => "<ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M21 12c0 1.66-4 3-9 3s-9-1.34-9-3'/><path d='M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5'/>",
+            "book" => "<path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/>",
+            "grid" => "<rect x='3' y='3' width='7' height='7'/><rect x='14' y='3' width='7' height='7'/><rect x='14' y='14' width='7' height='7'/><rect x='3' y='14' width='7' height='7'/>",
+            "layers" => "<polygon points='12 2 2 7 12 12 22 7 12 2'/><polyline points='2 17 12 22 22 17'/><polyline points='2 12 12 17 22 12'/>",
+            _ => "<circle cx='12' cy='12' r='10'/><line x1='12' y1='8' x2='12' y2='12'/><line x1='12' y1='16' x2='12.01' y2='16'/>"
+        };
+    }
+
+    string FormatDate()
+    {
+        var now = DateTime.Now;
+        return $"{now:dddd} · {now:MMMM} {now:dd} · {now:yyyy}";
+    }
+
+    bool IsReservedPlaceholder(string? url)
+    {
+        return string.IsNullOrWhiteSpace(url) || url == "#";
+    }
+
+    string GetStatus(PortalSystemLink system)
+    {
+        if (!string.IsNullOrWhiteSpace(system.Status))
+            return system.Status;
+
+        return system.IsOperational ? "Connected" : "NotConnected";
+    }
+
+    string GetStatusLabel(string status)
+    {
+        return status switch
+        {
+            "Connected" => "Connected and operational",
+            "Maintenance" => "In maintenance",
+            "Disabled" => "Unavailable",
+            _ => "Not yet connected"
+        };
+    }
+
+    string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Connected" => "is-operational",
+            "Maintenance" => "is-maintenance",
+            "Disabled" => "is-disabled",
+            _ => "is-offline"
+        };
+    }
+
+    bool IsActionEnabled(string status)
+    {
+        return status == "Connected";
+    }
+
+    string CreateCardId(string name, int index)
+    {
+        var builder = new System.Text.StringBuilder();
+        foreach (var c in name.ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                builder.Append(c);
+            }
+            else if (builder.Length == 0 || builder[^1] != '-')
+            {
+                builder.Append('-');
+            }
+        }
+
+        var slug = builder.ToString().Trim('-');
+        return $"card-{index}-{(string.IsNullOrWhiteSpace(slug) ? "system" : slug)}";
+    }
+}
+
+<!-- Hero -->
+<section class="hero">
+    <div class="hero-text">
+        <span class="eyebrow" id="heroDate">@FormatDate()</span>
+        <h1 class="hero-title">Welcome back, <span class="accent">@User.Identity?.Name</span></h1>
+        <p class="hero-sub">@Model.Systems.Count internal systems available. Central access for all Yakult operations.</p>
+        <div class="hero-actions">
+            <a class="btn btn--primary" asp-controller="Home" asp-action="Modules">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                View Modules
+            </a>
+            @if (canViewIntegrationNotes)
+            {
+                <button class="btn btn--ghost" id="notesTrigger">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    Integration Notes
+                </button>
+            }
+        </div>
+    </div>
+    <div class="hero-panel" aria-label="Portal operating status">
+        <div class="hero-panel__top">
+            <span class="hero-panel__label">Portal status</span>
+            <span class="admin-status-pill @(unavailableCount == 0 ? "is-operational" : "is-maintenance")">
+                @(unavailableCount == 0 ? "Ready" : $"{unavailableCount} needs review")
+            </span>
+        </div>
+        <div class="hero-panel__meter" style="--meter-value: @(Model.Systems.Count == 0 ? 0 : (connectedCount * 100 / Model.Systems.Count))%">
+            <span></span>
+        </div>
+        <div class="hero-panel__stats">
+            <span><strong>@connectedCount</strong> Connected</span>
+            <span><strong>@maintenanceCount</strong> Maintenance</span>
+            <span><strong>@unavailableCount</strong> Unavailable</span>
+        </div>
+    </div>
+</section>
+
+<section class="portal-summary-strip" aria-label="Portal system summary">
+    <div class="portal-summary-item">
+        <span class="portal-summary-value">@connectedCount</span>
+        <span class="portal-summary-label">Connected</span>
+    </div>
+    <div class="portal-summary-item">
+        <span class="portal-summary-value">@maintenanceCount</span>
+        <span class="portal-summary-label">Maintenance</span>
+    </div>
+    <div class="portal-summary-item">
+        <span class="portal-summary-value">@unavailableCount</span>
+        <span class="portal-summary-label">Unavailable</span>
+    </div>
+    <div class="portal-summary-item">
+        <span class="portal-summary-value">@Model.MiniCards.Count</span>
+        <span class="portal-summary-label">Quick access</span>
+    </div>
+</section>
+
+@if (Model.Notice.IsActive(DateTime.UtcNow))
+{
+    var noticeClass = $"portal-notice portal-notice--{Model.Notice.Level.ToLowerInvariant()}";
+    <section class="@noticeClass">
+        <div>
+            <strong>@(string.IsNullOrWhiteSpace(Model.Notice.Title) ? "Portal notice" : Model.Notice.Title)</strong>
+            @if (!string.IsNullOrWhiteSpace(Model.Notice.Message))
+            {
+                <p>@Model.Notice.Message</p>
+            }
+        </div>
+    </section>
+}
+
+<!-- Systems Grid -->
+<section class="systems-section">
+    <div class="section-header">
+        <h2>Available Systems</h2>
+        <div class="section-line"></div>
+    </div>
+
+    <div class="systems-grid" id="systemsGrid">
+        @{ var cardIndex = 0; }
+        @foreach (var system in Model.Systems)
+        {
+            var themeClass = string.IsNullOrWhiteSpace(system.Theme) ? string.Empty : $"theme-{system.Theme.ToLowerInvariant()}";
+            var iconSvg = GetIconSvg(system.Icon);
+            var delay = cardIndex;
+            var cardId = string.IsNullOrWhiteSpace(system.CardKey) ? CreateCardId(system.Name, cardIndex) : system.CardKey;
+            var status = GetStatus(system);
+            var statusClass = GetStatusClass(status);
+            var statusLabel = GetStatusLabel(status);
+            var actionEnabled = IsActionEnabled(status);
+            cardIndex++;
+
+            <article class="system-card @themeClass" style="--card-delay: @delay" data-card-id="@cardId" data-status="@status.ToLowerInvariant()" data-card-text="@($"{system.Name} {system.Badge} {system.Description} {status}".ToLowerInvariant())">
+                <div class="card-visual">
+                    <div class="card-icon">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            @Html.Raw(iconSvg)
+                        </svg>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-meta">
+                        <span class="system-badge">@system.Badge</span>
+                    </div>
+                    <h3 class="card-title">@system.Name</h3>
+                    <p class="card-desc">@system.Description</p>
+                    <div class="card-status">
+                        <span class="status-dot @statusClass"></span>
+                        <span class="status-text @statusClass">@statusLabel</span>
+                    </div>
+                    @if (status == "Maintenance")
+                    {
+                        <p class="card-preview-note">@(string.IsNullOrWhiteSpace(system.MaintenanceNote) ? "Temporarily unavailable for maintenance." : system.MaintenanceNote)</p>
+                    }
+                </div>
+                <div class="card-footer">
+                    @if (!actionEnabled && !IsReservedPlaceholder(system.Url))
+                    {
+                        <button class="system-button is-preview-disabled" disabled aria-disabled="true">
+                            <span>@statusLabel</span>
+                        </button>
+                    }
+                    else if (system.IsRdpDownload && system.IsInstallerDownload)
+                    {
+                        // Two buttons: RDP (primary) and Installer (secondary)
+                        <a class="system-button system-button--primary" href="@Url.Action("DownloadRdp", "Home")">
+                            <span>Launch via RDP</span>
+                            <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                        <a class="system-button system-button--secondary installer-download-btn" href="@Url.Action("DownloadInstaller", "Home", new { cardKey = system.CardKey })">
+                            <span>Download Installer</span>
+                            <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </a>
+                    }
+                    else if (system.IsRdpDownload)
+                    {
+                        // RDP only
+                        <a class="system-button" href="@Url.Action("DownloadRdp", "Home")">
+                            <span>Launch Application</span>
+                            <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                    }
+                    else if (system.IsInstallerDownload)
+                    {
+                        // Installer only
+                        <a class="system-button installer-download-btn" href="@Url.Action("DownloadInstaller", "Home", new { cardKey = system.CardKey })">
+                            <span>Download Installer</span>
+                            <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </a>
+                    }
+                    else
+                    {
+                        // Regular URL — render disabled placeholder when no real URL is configured
+                        if (IsReservedPlaceholder(system.Url))
+                        {
+                            <button class="system-button" disabled aria-disabled="true" title="[Reserved] URL not yet configured in appsettings.json">
+                                <span>[Reserved]</span>
+                            </button>
+                        }
+                        else
+                        {
+                            <a class="system-button" href="@system.Url" target="_blank" rel="noreferrer">
+                                <span>Open System</span>
+                                <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                            </a>
+                        }
+                    }
+                </div>
+            </article>
+        }
+    </div>
+</section>
+
+<!-- Mini Cards -->
+@if (Model.MiniCards.Count > 0)
+{
+    <div class="mini-cards-section">
+        <div class="section-header">
+            <h2>Quick Access</h2>
+            <div class="section-line"></div>
+        </div>
+        <div class="mini-cards-row">
+            @foreach (var mini in Model.MiniCards)
+            {
+                var miniThemeClass = string.IsNullOrWhiteSpace(mini.Theme) ? string.Empty : $"theme-{mini.Theme.ToLowerInvariant()}";
+                var miniIconSvg = GetIconSvg(mini.Icon);
+
+                <article class="mini-card @miniThemeClass">
+                    <div class="mini-card-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            @Html.Raw(miniIconSvg)
+                        </svg>
+                    </div>
+                    <div class="mini-card-body">
+                        <h4 class="mini-card-title">@mini.Name</h4>
+                        <p class="mini-card-desc">@mini.Description</p>
+                    </div>
+                    <div class="mini-card-action">
+                        @if (mini.IsDownload)
+                        {
+                            if (IsReservedPlaceholder(mini.Url))
+                            {
+                                <button class="mini-card-btn" disabled aria-disabled="true" title="[Reserved] Download URL not yet configured in appsettings.json">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    <span>[Reserved]</span>
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="mini-card-btn installer-download-btn" data-href="@mini.Url">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    <span>Download</span>
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            <a class="mini-card-btn" href="@mini.Url" target="_blank" rel="noreferrer">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                <span>Open</span>
+                            </a>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    </div>
+}
+
+<!-- Installer Download Confirmation Modal -->
+<div class="modal-overlay" id="installerModal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3>Installation Instructions</h3>
+            <button class="modal-close" id="installerClose" aria-label="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Before installing, please note the following:</p>
+            <ul>
+                <li>Save the installer file to your local Downloads or Desktop folder.</li>
+                <li>Double-click the downloaded <code>.exe</code> file to run the setup.</li>
+                <li>Follow the on-screen prompts to complete the installation.</li>
+                <li>Once installed, you can launch the application from your Desktop or Start Menu shortcut.</li>
+                <li>Make sure you have an active network connection to the Yakult server to use the application.</li>
+            </ul>
+        </div>
+        <div class="modal-footer">
+            <button class="system-button system-button--secondary" id="installerCancel">Cancel</button>
+            <a class="system-button" id="installerConfirm" href="#">Confirm Download</a>
+        </div>
+    </div>
+</div>
+
+@if (canViewIntegrationNotes)
+{
+    <!-- Integration Notes Modal -->
+    <div class="modal-overlay" id="notesModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Integration Notes</h3>
+                <button class="modal-close" id="notesClose" aria-label="Close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <ul>
+                    <li>The RDP file launches a small wrapper (<code>C:\YakultLauncher.exe</code>) on the server which starts the desktop, waits 5 seconds, then opens the Yakult Inventory App automatically.</li>
+                    <li><code>YakultLauncher.exe</code> must be deployed to <code>C:\</code> on <code>192.168.100.186</code> (build it from <code>Yakult.SystemsPortal/Setup/YakultLauncher/</code> on the dev box).</li>
+                    <li>The Yakult Inventory App must be installed at <code>C:\Program Files\Yakult\Yakult.Inventory.App.exe</code> on the server.</li>
+                    <li>Remote Desktop must be enabled on <code>192.168.100.186</code> (Settings &rarr; System &rarr; Remote Desktop &rarr; ON).</li>
+                    <li>You will be prompted for Windows credentials on connect (unless <code>Rdp.Username</code> is pre-filled in <code>appsettings.json</code>).</li>
+                    <li>Replace placeholder URLs in <code>appsettings.json</code> when final internal addresses are ready.</li>
+                    <li>Publish this project to IIS on port <code>50300</code>.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // RDP downloaded state
+            const rdpDownloaded = localStorage.getItem('yakultRdpDownloaded');
+            const rdpButton = document.querySelector('.system-button[href*="DownloadRdp"]');
+            if (rdpButton) {
+                if (rdpDownloaded === 'true') {
+                    rdpButton.querySelector('span').textContent = 'Open RDP';
+                    rdpButton.classList.add('rdp-installed');
+                }
+                rdpButton.addEventListener('click', function() {
+                    localStorage.setItem('yakultRdpDownloaded', 'true');
+                    window.yakultToast?.('RDP file download started.', 'success');
+                });
+            }
+
+            // Card entrance animation
+            const cards = document.querySelectorAll('.system-card');
+            cards.forEach((card, i) => {
+                card.style.animationDelay = (i * 0.08) + 's';
+                card.classList.add('card-enter');
+            });
+
+            // Installer download modal logic
+            const installerModal = document.getElementById('installerModal');
+            const installerCloseBtn = document.getElementById('installerClose');
+            const installerCancelBtn = document.getElementById('installerCancel');
+            const installerConfirmBtn = document.getElementById('installerConfirm');
+            let installerDownloadUrl = '';
+
+            function openInstallerModal() {
+                installerModal.classList.add('modal-open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeInstallerModal() {
+                installerModal.classList.remove('modal-open');
+                document.body.style.overflow = '';
+            }
+
+            document.querySelectorAll('.installer-download-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    if (this.classList.contains('is-preview-disabled')) {
+                        e.preventDefault();
+                        return;
+                    }
+                    e.preventDefault();
+                    installerDownloadUrl = this.getAttribute('href') || this.getAttribute('data-href');
+                    openInstallerModal();
+                });
+            });
+
+            if (installerCloseBtn) installerCloseBtn.addEventListener('click', closeInstallerModal);
+            if (installerCancelBtn) installerCancelBtn.addEventListener('click', closeInstallerModal);
+            if (installerConfirmBtn) {
+                installerConfirmBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeInstallerModal();
+                    if (installerDownloadUrl) {
+                        window.yakultToast?.('Installer download started.', 'success');
+                        window.location.href = installerDownloadUrl;
+                    }
+                });
+            }
+            if (installerModal) {
+                installerModal.addEventListener('click', function(e) {
+                    if (e.target === installerModal) closeInstallerModal();
+                });
+            }
+
+            // Modal logic
+            const modal = document.getElementById('notesModal');
+            const trigger = document.getElementById('notesTrigger');
+            const closeBtn = document.getElementById('notesClose');
+
+            function openModal() {
+                modal.classList.add('modal-open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal() {
+                modal.classList.remove('modal-open');
+                document.body.style.overflow = '';
+            }
+
+            if (trigger && modal) trigger.addEventListener('click', openModal);
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) closeModal();
+                });
+            }
+
+        });
+    </script>
+}

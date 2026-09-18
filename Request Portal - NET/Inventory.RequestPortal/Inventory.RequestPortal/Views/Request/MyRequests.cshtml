@@ -1,0 +1,415 @@
+@model Inventory.RequestPortal.Models.ViewModels.MyRequestsPageViewModel
+@{
+    ViewData["Title"] = "My Submitted Requests";
+}
+
+@await Html.PartialAsync("_MasterNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Request Portal</h1>
+        <p class="subtitle mb-0">Submit and track your cartridge requests</p>
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+        <button type="button"
+                class="btn btn-link text-white p-0 lh-1"
+                style="font-size:1.25rem; text-decoration:none; opacity:0.8;"
+                title="Start Guided Tour"
+                onclick="YakultTour.startTourForPage()">
+            <i class="bi bi-question-circle"></i>
+        </button>
+        @await Html.PartialAsync("_NotificationBell")
+    </div>
+</div>
+
+<div class="content-padded">
+    <div class="nav-tabs-container mb-4">
+        @if (ViewBag.IsITStaff == true)
+        {
+            <ul class="nav nav-tabs">
+                <li class="nav-item"><a class="nav-link" asp-action="Index">New Request</a></li>
+                <li class="nav-item"><a class="nav-link active" asp-action="MyRequests">My Submitted Requests</a></li>
+                <li class="nav-item"><a class="nav-link" asp-action="AssistedRequest">IT Assisted Request</a></li>
+                @if (ViewBag.IsDeveloper == true)
+                {
+                    <li class="nav-item"><a class="nav-link" asp-controller="Authorization" asp-action="DevQueue">Authorization Queue</a></li>
+                }
+            </ul>
+        }
+        else if (ViewBag.IsApprover == true)
+        {
+            <ul class="nav nav-tabs mb-0">
+                <li class="nav-item"><a class="nav-link" asp-action="Index">New Request</a></li>
+                <li class="nav-item"><a class="nav-link active" asp-action="MyRequests">My Submitted Requests</a></li>
+            </ul>
+        }
+        else
+        {
+            <ul class="nav nav-tabs">
+                <li class="nav-item"><a class="nav-link" asp-action="Index">New Request</a></li>
+                <li class="nav-item"><a class="nav-link active" asp-action="MyRequests">My Submitted Requests</a></li>
+                <li class="nav-item"><a class="nav-link" asp-controller="Authorization" asp-action="EmployeeStatus">Authorization</a></li>
+            </ul>
+        }
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @* ── Request History table (AJAX-refreshed on search/filter/clear/refresh) ── *@
+    <div id="requestHistoryContainer">
+        @await Html.PartialAsync("_MyRequestsHistoryCard", Model)
+    </div>
+</div>
+
+@* ── Request Detail Modal ── *@
+<div class="modal fade" id="requestDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#d50032; color:#fff;">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-receipt me-2"></i>
+                    Request Details — <span id="mdlSetCode"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3">
+
+                @* Status + Date row *@
+                <div class="row g-3 mb-3" id="mdlStatusSection">
+                    <div class="col-sm-6">
+                        <div class="text-muted small mb-1">Status</div>
+                        <span id="mdlStatus" class="fw-semibold fs-6"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small mb-1">Date Requested</div>
+                        <div id="mdlDate" class="fw-semibold"></div>
+                    </div>
+                </div>
+
+                <hr class="my-2">
+
+                @* Requester / Location *@
+                <div class="row g-3 mb-3" id="mdlInfoSection">
+                    <div class="col-sm-6">
+                        <div class="text-muted small mb-1">Employee</div>
+                        <div id="mdlEmployee" class="fw-semibold"></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small mb-1">Branch</div>
+                        <div id="mdlBranch" class="fw-semibold"></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small mb-1">Department</div>
+                        <div id="mdlDepartment" class="fw-semibold"></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small mb-1">Company</div>
+                        <div id="mdlCompany" class="fw-semibold"></div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted small mb-1">Fulfillment</div>
+                        <div id="mdlFulfillment" class="fw-semibold"></div>
+                    </div>
+                </div>
+
+                <hr class="my-2">
+
+                @* Cartridge items table *@
+                <div class="mb-3" id="mdlCartridgeSection">
+                    <div class="text-muted small mb-2 fw-semibold text-uppercase" style="letter-spacing:.05em;">Cartridge Models</div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm mb-0" style="font-size:.88rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Model</th>
+                                    <th class="text-center" style="width:70px;">Qty</th>
+                                    <th class="text-center">Returned Cartridges (Good)</th>
+                                    <th class="text-center">Returned Cartridges (Damaged)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mdlItemsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                @* Remarks *@
+                <div id="mdlRemarksBlock" class="d-none">
+                    <hr class="my-2">
+                    <div class="text-muted small mb-1 fw-semibold text-uppercase" style="letter-spacing:.05em;">Remarks</div>
+                    <div id="mdlRemarks" style="font-size:.9rem; color:#374151;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<style>
+    .status-pending { color: #e08a00; }
+    .history-row:hover { background:#f8fafc; }
+    .history-row.active-row { background:#fff0f3 !important; }
+    .history-row.row-highlight {
+        background-color: #fff8e1 !important;
+        outline: 2px solid #f59e0b;
+        outline-offset: -2px;
+    }
+
+    /* ── Pagination ── */
+    #pageControls { gap: 3px; }
+    #pageControls .page-link {
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        border-radius: 6px !important;
+        min-width: 34px;
+        text-align: center;
+        font-size: .83rem;
+        padding: 5px 10px;
+        line-height: 1.4;
+        background: #fff;
+        transition: background .15s, color .15s, border-color .15s;
+    }
+    #pageControls .page-link:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #1e293b;
+    }
+    #pageControls .page-item.active .page-link {
+        background: #d50032;
+        border-color: #d50032;
+        color: #fff;
+        font-weight: 600;
+    }
+    #pageControls .page-item.disabled .page-link {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #b0bec5;
+    }
+    #pageInfo { font-size: .82rem; color: #64748b; }
+</style>
+<script src="~/js/tours/user-my-requests.js" asp-append-version="true"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const PAGE_SIZE = 10;
+    const container = document.getElementById('requestHistoryContainer');
+    const modalEl   = document.getElementById('requestDetailModal');
+    const modal     = modalEl ? new bootstrap.Modal(modalEl) : null;
+
+    // Re-run after every AJAX swap of #requestHistoryContainer's innerHTML — wires up
+    // pagination and the double-click detail modal against whatever rows are currently
+    // in the DOM. isInitialLoad gates the notification ?setCode= highlight/scroll so it
+    // only fires once, on the real page load, not after a filter/search AJAX round trip.
+    function initHistoryUI(isInitialLoad) {
+        let currentPage = 1;
+        const rows          = Array.from(container.querySelectorAll('#historyTable tbody .history-row'));
+        const total         = rows.length;
+        const pageInfo      = document.getElementById('pageInfo');
+        const pageControls  = document.getElementById('pageControls');
+        const paginationBar = document.getElementById('paginationBar');
+
+        function totalPages() { return Math.ceil(total / PAGE_SIZE); }
+
+        function renderPage(page) {
+            currentPage = page;
+            const start = (page - 1) * PAGE_SIZE;
+            const end   = start + PAGE_SIZE;
+            rows.forEach((r, i) => r.style.display = (i >= start && i < end) ? '' : 'none');
+
+            const showing = Math.min(end, total);
+            pageInfo.textContent = `Showing ${start + 1}–${showing} of ${total}`;
+
+            pageControls.innerHTML = '';
+            const tp = totalPages();
+
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${page === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#">&lsaquo;</a>`;
+            prevLi.querySelector('a').addEventListener('click', e => { e.preventDefault(); if (page > 1) renderPage(page - 1); });
+            pageControls.appendChild(prevLi);
+
+            let startP = Math.max(1, page - 2);
+            let endP   = Math.min(tp, startP + 4);
+            if (endP - startP < 4) startP = Math.max(1, endP - 4);
+
+            for (let p = startP; p <= endP; p++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${p === page ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#">${p}</a>`;
+                const pg = p;
+                li.querySelector('a').addEventListener('click', e => { e.preventDefault(); renderPage(pg); });
+                pageControls.appendChild(li);
+            }
+
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${page === tp ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#">&rsaquo;</a>`;
+            nextLi.querySelector('a').addEventListener('click', e => { e.preventDefault(); if (page < tp) renderPage(page + 1); });
+            pageControls.appendChild(nextLi);
+
+            if (paginationBar) paginationBar.style.display = tp <= 1 ? 'none' : '';
+        }
+
+        if (isInitialLoad) {
+            // Jump to and highlight a specific row when navigating from a notification.
+            // Navigate passes ?setCode=ABC which matches data-detail.setCode on each row.
+            const hlSetCode = new URLSearchParams(window.location.search).get('setCode') || null;
+            if (hlSetCode) {
+                const hlRow = rows.find(r => {
+                    try { return JSON.parse(r.dataset.detail || '{}').setCode === hlSetCode; }
+                    catch { return false; }
+                });
+                if (hlRow) {
+                    const hlIdx  = rows.indexOf(hlRow);
+                    const hlPage = Math.floor(hlIdx / PAGE_SIZE) + 1;
+                    renderPage(hlPage);
+                    hlRow.classList.add('row-highlight');
+                    setTimeout(() => hlRow.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+                } else if (total > 0) {
+                    renderPage(1);
+                }
+            } else if (total > 0) {
+                renderPage(1);
+            }
+        } else if (total > 0) {
+            renderPage(1);
+        }
+
+        // ── Double-click → detail modal ──────────────────────────────────────────
+        rows.forEach(row => {
+            row.addEventListener('dblclick', () => {
+                if (!modal) return;
+                const d = JSON.parse(row.dataset.detail);
+
+                document.getElementById('mdlSetCode').textContent     = d.setCode      || '—';
+                document.getElementById('mdlDate').textContent        = d.date         || '—';
+                document.getElementById('mdlEmployee').textContent    = d.employee     || '—';
+                document.getElementById('mdlBranch').textContent      = d.branch       || '—';
+                document.getElementById('mdlDepartment').textContent  = d.department   || '—';
+                document.getElementById('mdlCompany').textContent     = d.company      || '—';
+                document.getElementById('mdlFulfillment').textContent = d.fulfillment  || '—';
+
+                const statusEl    = document.getElementById('mdlStatus');
+                statusEl.textContent = d.status || '—';
+                statusEl.className   = 'fw-semibold fs-6 ' + (d.statusCss || '');
+
+                const tbody = document.getElementById('mdlItemsBody');
+                tbody.innerHTML = '';
+                (d.items || []).forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><strong>${item.cartridgeModel || '—'}</strong></td>
+                        <td class="text-center">${item.qty}</td>
+                        <td class="text-center">${item.goodQty}</td>
+                        <td class="text-center">${item.damagedQty}</td>`;
+                    tbody.appendChild(tr);
+                });
+
+                const remarksBlock = document.getElementById('mdlRemarksBlock');
+                if (d.remarks) {
+                    document.getElementById('mdlRemarks').textContent = d.remarks;
+                    remarksBlock.classList.remove('d-none');
+                } else {
+                    remarksBlock.classList.add('d-none');
+                }
+
+                rows.forEach(r => r.classList.remove('active-row'));
+                row.classList.add('active-row');
+                modal.show();
+            });
+        });
+    }
+
+    if (modalEl) {
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            container.querySelectorAll('.history-row').forEach(r => r.classList.remove('active-row'));
+        });
+    }
+
+    // ── AJAX search / status filter / clear / refresh ─────────────────────────
+    // Swaps only #requestHistoryContainer's innerHTML instead of navigating, so alerts,
+    // nav tabs, and scroll position aren't disturbed by every filter change.
+    function readFormValues() {
+        const form = container.querySelector('#requestHistoryFilterForm');
+        return {
+            search: form ? form.querySelector('[name=search]').value.trim() : '',
+            status: form ? form.querySelector('[name=status]').value : ''
+        };
+    }
+
+    async function loadHistory(params, pushHistory) {
+        const qs = new URLSearchParams();
+        if (params.search) qs.set('search', params.search);
+        if (params.status) qs.set('status', params.status);
+        const query = qs.toString();
+
+        let html;
+        try {
+            const resp = await fetch('/Request/MyRequestsHistoryPartial' + (query ? '?' + query : ''),
+                { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!resp.ok) throw new Error('Request failed: ' + resp.status);
+            html = await resp.text();
+        } catch (err) {
+            // Fall back to a normal navigation if the AJAX call itself fails (offline,
+            // 500, etc.) rather than leaving the user stuck with a stale/broken table.
+            window.location.href = '/Request/MyRequests' + (query ? '?' + query : '');
+            return;
+        }
+
+        container.innerHTML = html;
+        initHistoryUI(false);
+
+        if (pushHistory) {
+            const newUrl = window.location.pathname + (query ? '?' + query : '');
+            history.pushState({ search: params.search, status: params.status }, '', newUrl);
+        }
+    }
+
+    container.addEventListener('submit', function (e) {
+        if (!e.target.closest('#requestHistoryFilterForm')) return;
+        e.preventDefault();
+        loadHistory(readFormValues(), true);
+    });
+
+    container.addEventListener('change', function (e) {
+        if (e.target.matches('#requestHistoryFilterForm select[name=status]')) {
+            loadHistory(readFormValues(), true);
+        }
+    });
+
+    container.addEventListener('click', function (e) {
+        if (e.target.closest('.js-clear-filter')) {
+            e.preventDefault();
+            loadHistory({ search: '', status: '' }, true);
+        } else if (e.target.closest('#requestHistoryRefresh')) {
+            e.preventDefault();
+            loadHistory(readFormValues(), true);
+        }
+        // Export CSV is intentionally left as a plain link — it triggers a file
+        // download, not a navigation, so it doesn't need (and shouldn't have) AJAX handling.
+    });
+
+    // Back/forward browser navigation between filter states.
+    window.addEventListener('popstate', function () {
+        const p = new URLSearchParams(window.location.search);
+        loadHistory({ search: p.get('search') || '', status: p.get('status') || '' }, false);
+    });
+
+    initHistoryUI(true);
+});
+</script>
+}

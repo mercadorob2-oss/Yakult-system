@@ -1,0 +1,382 @@
+@model List<Inventory.RequestPortal.Models.ViewModels.CartridgeExchangeGroupViewModel>
+@{
+    ViewData["Title"] = ViewBag.PageTitle;
+
+    // Mirrors Wpf/CartridgeManagement/Views/UnfulfilledExchangesView.xaml +
+    // UnfulfilledExchangesViewModel.cs: stat cards (always Status='Pending', independent of the
+    // active status filter), search/filter/sort applied at the SESSION (group) level — a group
+    // matches if ANY of its rows match — client-side pagination over groups, and a Status dropdown
+    // that round-trips to the server. Layout mirrors the Request Portal's Unfulfilled Requests page:
+    // compact stat cards in the header band, one sticky-header table whose rows expand to their
+    // line items, and the whole page locked to the viewport so only the table scrolls.
+    bool showStatusFilter = ViewBag.ShowStatusFilter ?? false;
+    string statusFilter = ViewBag.StatusFilter ?? "Pending";
+}
+
+@await Html.PartialAsync("_CartridgeManagementNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>@ViewBag.PageTitle</h1>
+        <p class="subtitle mb-0">Cartridge exchange backlog (already given a first-pass attempt on desktop)</p>
+    </div>
+
+    @* Compact summary cards, right-aligned in the header band (View Items pattern). *@
+    <div class="ue-header-stats ms-auto">
+        <div class="ue-stat" style="--ue-accent:#4E9AFC;"><div class="v">@ViewBag.PendingRecords</div><div class="l">Pending Records</div></div>
+        <div class="ue-stat" style="--ue-accent:#C0392B;"><div class="v" style="color:#C0392B;">@ViewBag.UnfulfilledCartridges</div><div class="l">Unfulfilled Cartridges</div></div>
+    </div>
+</div>
+
+<div class="content-padded">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <style>
+        /* Tighten vertical rhythm on this page. */
+        .portal-header { margin-bottom: 0 !important; }
+        .content-padded { padding-top: 10px !important; }
+
+        /* Lock this page to the viewport: no outer page scrollbar — only the sets
+           table scrolls, and expanding a row grows the table's scroll area, never
+           the page. (Scoped to this view's inline <style>.) */
+        html, body { overflow: hidden; }
+        .page-wrapper { height: 100vh; min-height: 0; }
+        .page-wrapper > main[role="main"] { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        main[role="main"] > .portal-header { flex: 0 0 auto; }
+        main[role="main"] > .content-padded { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .content-padded > .ue-toolbar-card,
+        .content-padded > .ue-pagination,
+        .content-padded > .alert { flex: 0 0 auto; }
+
+        /* Header-band summary cards — compact accent-bar cards like ViewItemsPage's StatCardShell. */
+        .ue-header-stats { display: flex; align-items: center; gap: 8px; }
+        .ue-stat { display: flex; flex-direction: column; justify-content: center;
+                   height: 40px; min-width: 112px; padding: 0 12px;
+                   background: #fff; border: 1px solid #dde3ec; border-radius: 7px;
+                   border-left: 3px solid var(--ue-accent, #4E9AFC); }
+        .ue-stat .v { font-size: 14px; font-weight: 700; color: #1a2333; line-height: 1.15; }
+        .ue-stat .l { font-size: 7px; font-weight: 600; color: #6b7a8d; letter-spacing: .04em; text-transform: uppercase; }
+        @@media (max-width: 991.98px) { .ue-header-stats { display: none; } }
+
+        /* Single action bar — Fulfill Selected + search + filters (left), Refresh (right). */
+        .ue-toolbar-card { display: flex; align-items: center; gap: 12px;
+                           background: #fff; border: 1px solid #dde3ec; border-radius: 10px;
+                           padding: 8px 12px; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(20,35,51,.06); }
+        .ue-toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; }
+        .ue-toolbar-card .ue-refresh { margin-left: auto; flex: 0 0 auto; white-space: nowrap; }
+        .ue-search { display: flex; align-items: center; gap: 6px;
+                     height: 31px; width: 300px; max-width: 100%; padding: 0 10px;
+                     border: 1px solid #c2ccda; border-radius: 5px; background: #fff; }
+        .ue-search i { color: #7a8a9a; font-size: .82rem; }
+        .ue-search input { flex: 1; border: 0; outline: 0; background: transparent; font-size: .8rem; }
+        .ue-flabel { font-size: .72rem; font-weight: 600; color: #6b7a8d; margin: 0; }
+        .ue-toolbar-card select.form-select-sm { width: auto; min-width: 120px; }
+
+        /* Sets list — one table; each set is a summary row that expands to its line items.
+           The list body scrolls inside the card; the header row stays pinned. */
+        .ue-sets-card { background: #fff; border: 1px solid #dde3ec; border-radius: 10px; overflow: hidden;
+                        flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+        .ue-sets-card .table-responsive { flex: 1 1 auto; min-height: 120px; overflow-y: auto; }
+        .ue-sets-table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; font-size: .82rem; }
+        .ue-sets-table > thead th { position: sticky; top: 0; z-index: 5;
+                                    background: #f4f6fa; color: #6b7a8d; font-size: .7rem; font-weight: 700;
+                                    text-transform: uppercase; letter-spacing: .03em; padding: 8px 12px;
+                                    border-bottom: 1px solid #dde3ec; white-space: nowrap; }
+        .ue-set-row { cursor: pointer; }
+        .ue-set-row > td { padding: 9px 12px; border-bottom: 1px solid #eef1f5; }
+        .ue-set-row:hover { background: #EDF3FB; }
+        .ue-set-row.expanded { background: #eef4fc; }
+        .ue-set-row.expanded > td { font-weight: 600; border-bottom-color: transparent; }
+        .ue-chevron { display: inline-block; transition: transform .15s ease; color: #7a8a9a; font-size: .8rem; }
+        .ue-set-row.expanded .ue-chevron { transform: rotate(90deg); }
+        .ue-set-detail > td { padding: 0; background: #fafbfc; border-bottom: 1px solid #dde3ec; }
+        .ue-set-detail .ue-group-table { margin: 0; font-size: .8rem; }
+        .ue-set-detail .ue-group-table thead th { background: transparent; border-bottom: 1px solid #e5e9ef;
+                                                  color: #8896a7; font-size: .68rem; text-transform: uppercase; }
+
+        .ue-group-table tbody tr { cursor: pointer; }
+        .ue-group-table tbody tr:hover { background: #EDF3FB; }
+        .ue-group-table tbody tr.selected { background: #B8CEED !important; }
+
+        .ue-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+        .ue-pagination .btn { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
+    </style>
+
+    <div class="ue-toolbar-card">
+        <div class="ue-toolbar-left">
+            <button type="button" id="ueBtnFulfill" class="btn btn-danger btn-sm" disabled>
+                <i class="bi bi-box-seam"></i> Fulfill Selected
+            </button>
+
+            <div class="ue-search">
+                <i class="bi bi-search"></i>
+                <input type="text" id="ueSearchBox"
+                       placeholder="Search by requester, branch, department, model, req #...">
+            </div>
+
+            <label class="ue-flabel" for="ueFilterBy">Filter</label>
+            <select id="ueFilterBy" class="form-select form-select-sm">
+                <option>All Fields</option>
+                <option>Requester</option>
+                <option>Branch</option>
+                <option>Department</option>
+                <option>Model</option>
+                <option value="Req #">Req #</option>
+            </select>
+
+            <label class="ue-flabel" for="ueSortBy">Sort</label>
+            <select id="ueSortBy" class="form-select form-select-sm">
+                <option value="asc">Set # (A→Z)</option>
+                <option value="desc">Set # (Z→A)</option>
+            </select>
+
+            @if (showStatusFilter)
+            {
+                <label class="ue-flabel" for="ueStatusFilter">Status</label>
+                <select id="ueStatusFilter" class="form-select form-select-sm"
+                        onchange="location.href='@Url.Action("Unfulfilled")?status=' + this.value">
+                    <option value="Pending" selected="@(statusFilter == "Pending")">Pending</option>
+                    <option value="Fulfilled" selected="@(statusFilter == "Fulfilled")">Fulfilled</option>
+                    <option value="All" selected="@(statusFilter == "All")">All</option>
+                </select>
+            }
+        </div>
+
+        <button type="button" id="ueBtnRefresh" class="btn btn-outline-primary btn-sm ue-refresh" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+
+    <div class="ue-sets-card" id="ueGroupContainer">
+        <div class="table-responsive">
+            <table class="ue-sets-table">
+                <thead>
+                    <tr>
+                        <th style="width:30px;"></th>
+                        <th>Set #</th>
+                        <th>Requester</th>
+                        <th>Branch</th>
+                        <th>Department</th>
+                        <th class="text-end">Pending</th>
+                        <th class="text-end">Lines</th>
+                    </tr>
+                </thead>
+                <tbody id="ueSetsBody">
+                    @if (Model.Count == 0)
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">Nothing here right now.</td></tr>
+                    }
+
+                    @foreach (var group in Model)
+                    {
+                        var reqIds = string.Join(" ", group.Rows.Select(r => r.ReqId));
+                        var models = string.Join(" ", group.Rows.Select(r => r.CartridgeModel));
+                        var searchBlob = $"{group.RequesterName} {group.BranchName} {group.DepartmentName} {models} {reqIds}".ToLowerInvariant();
+                        var pendingLines = group.Rows.Count(r => r.Status == "Pending");
+
+                        <tr class="ue-set-row"
+                            data-setid="@(group.SetId ?? int.MaxValue)"
+                            data-requester="@(group.RequesterName ?? "")"
+                            data-branch="@(group.BranchName ?? "")"
+                            data-department="@(group.DepartmentName ?? "")"
+                            data-model="@models"
+                            data-reqid="@reqIds"
+                            data-search="@searchBlob">
+                            <td><i class="bi bi-chevron-right ue-chevron"></i></td>
+                            <td>@group.GroupLabel</td>
+                            <td>@(string.IsNullOrWhiteSpace(group.RequesterName) ? "—" : group.RequesterName)</td>
+                            <td>@(string.IsNullOrWhiteSpace(group.BranchName) ? "—" : group.BranchName)</td>
+                            <td>@(string.IsNullOrWhiteSpace(group.DepartmentName) ? "—" : group.DepartmentName)</td>
+                            <td class="text-end"><span class="badge bg-secondary">@pendingLines pending</span></td>
+                            <td class="text-end">@group.Rows.Count</td>
+                        </tr>
+                        <tr class="ue-set-detail" style="display:none;">
+                            <td colspan="7">
+                                <table class="table table-sm align-middle ue-group-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Req #</th>
+                                            <th>Model</th>
+                                            <th class="text-end">Returned</th>
+                                            <th class="text-end">Issued</th>
+                                            <th class="text-end">Pending</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var row in group.Rows)
+                                        {
+                                            bool isPending = row.Status == "Pending" && row.UnfulfilledQty > 0;
+                                            <tr data-unfulfilledid="@row.UnfulfilledId"
+                                                data-ispending="@(isPending ? "1" : "0")">
+                                                <td>@row.ReqId</td>
+                                                <td>@row.CartridgeModel</td>
+                                                <td class="text-end">@row.ReturnedEmptyQty</td>
+                                                <td class="text-end">@row.IssuedFullQty</td>
+                                                <td class="text-end">@row.UnfulfilledQty</td>
+                                                <td>
+                                                    <span class="badge @(row.FulfillmentStatusDisplay == "Fulfilled" ? "bg-success" : row.FulfillmentStatusDisplay == "Partially Fulfilled" ? "bg-warning text-dark" : "bg-danger")">@row.FulfillmentStatusDisplay</span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center text-muted py-3" id="ueNoResults" style="display:none;">
+            <i class="bi bi-search fs-3 text-secondary opacity-50 d-block mb-1"></i>
+            No matching sets found.
+        </div>
+    </div>
+
+    <div class="ue-pagination">
+        <button type="button" id="uePrevBtn" class="btn btn-outline-secondary" aria-label="Previous page">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <span id="uePageInfo" class="small text-muted"></span>
+        <button type="button" id="ueNextBtn" class="btn btn-outline-secondary" aria-label="Next page">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var PAGE_SIZE = 15;
+        var tbody = document.getElementById('ueSetsBody');
+        var searchBox = document.getElementById('ueSearchBox');
+        var filterBy = document.getElementById('ueFilterBy');
+        var sortBy = document.getElementById('ueSortBy');
+        var prevBtn = document.getElementById('uePrevBtn');
+        var nextBtn = document.getElementById('ueNextBtn');
+        var pageInfo = document.getElementById('uePageInfo');
+        var noResults = document.getElementById('ueNoResults');
+        var btnFulfill = document.getElementById('ueBtnFulfill');
+
+        var setRows = Array.prototype.slice.call(tbody.querySelectorAll('tr.ue-set-row'));
+        setRows.forEach(function (r) { r._detail = r.nextElementSibling; });
+
+        var currentPage = 1;
+        var selectedLine = null;
+
+        function groupFieldValue(row, key) {
+            switch (key) {
+                case 'Requester': return row.getAttribute('data-requester') || '';
+                case 'Branch': return row.getAttribute('data-branch') || '';
+                case 'Department': return row.getAttribute('data-department') || '';
+                case 'Model': return row.getAttribute('data-model') || '';
+                case 'Req #': return row.getAttribute('data-reqid') || '';
+                default: return row.getAttribute('data-search') || '';
+            }
+        }
+
+        function matchesSearch(row) {
+            var q = (searchBox.value || '').trim().toLowerCase();
+            if (!q) return true;
+            return groupFieldValue(row, filterBy.value).toLowerCase().indexOf(q) >= 0;
+        }
+
+        function getFiltered() {
+            var filtered = setRows.filter(matchesSearch);
+            var dir = sortBy.value === 'desc' ? -1 : 1;
+            filtered.sort(function (a, b) {
+                var va = parseInt(a.getAttribute('data-setid'), 10);
+                var vb = parseInt(b.getAttribute('data-setid'), 10);
+                if (va < vb) return -1 * dir;
+                if (va > vb) return 1 * dir;
+                return 0;
+            });
+            return filtered;
+        }
+
+        function render() {
+            if (setRows.length === 0) return;
+            var filtered = getFiltered();
+            var totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            var pageStart = (currentPage - 1) * PAGE_SIZE;
+            var pageEnd = pageStart + PAGE_SIZE;
+
+            setRows.forEach(function (r) { r.style.display = 'none'; r._detail.style.display = 'none'; });
+
+            filtered.forEach(function (r, idx) {
+                tbody.appendChild(r);
+                tbody.appendChild(r._detail);
+                if (idx >= pageStart && idx < pageEnd) {
+                    r.style.display = '';
+                    r._detail.style.display = r.classList.contains('expanded') ? '' : 'none';
+                }
+            });
+
+            noResults.style.display = filtered.length === 0 ? '' : 'none';
+
+            prevBtn.disabled = currentPage <= 1;
+            nextBtn.disabled = currentPage >= totalPages;
+            pageInfo.textContent = filtered.length === 0
+                ? 'No results'
+                : 'Page ' + currentPage + ' of ' + totalPages + '  (' + filtered.length + ' set' + (filtered.length === 1 ? '' : 's') + ')';
+        }
+
+        function deselect() {
+            if (selectedLine) selectedLine.classList.remove('selected');
+            selectedLine = null;
+            btnFulfill.disabled = true;
+        }
+
+        function selectLine(row) {
+            if (selectedLine) selectedLine.classList.remove('selected');
+            selectedLine = row;
+            row.classList.add('selected');
+            btnFulfill.disabled = row.getAttribute('data-ispending') !== '1';
+        }
+
+        function toggleSet(row) {
+            var expanded = row.classList.toggle('expanded');
+            row._detail.style.display = expanded ? '' : 'none';
+        }
+
+        tbody.addEventListener('click', function (e) {
+            var line = e.target.closest('.ue-set-detail .ue-group-table tbody tr');
+            if (line) { selectLine(line); return; }
+            var setRow = e.target.closest('tr.ue-set-row');
+            if (setRow) toggleSet(setRow);
+        });
+
+        btnFulfill.addEventListener('click', function () {
+            if (!selectedLine) return;
+            var id = selectedLine.getAttribute('data-unfulfilledid');
+            window.location.href = '@Url.Action("Fulfill")/' + id;
+        });
+
+        searchBox.addEventListener('input', function () { currentPage = 1; deselect(); render(); });
+        filterBy.addEventListener('change', function () { currentPage = 1; deselect(); render(); });
+        sortBy.addEventListener('change', function () { currentPage = 1; deselect(); render(); });
+        prevBtn.addEventListener('click', function () { currentPage--; deselect(); render(); });
+        nextBtn.addEventListener('click', function () { currentPage++; deselect(); render(); });
+
+        render();
+    })();
+</script>

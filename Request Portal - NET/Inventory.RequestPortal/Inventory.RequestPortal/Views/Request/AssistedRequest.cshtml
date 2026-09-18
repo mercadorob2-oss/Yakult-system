@@ -1,0 +1,1528 @@
+@model Inventory.RequestPortal.Models.ViewModels.NewRequestPageViewModel
+@{
+    ViewData["Title"] = "IT Assisted Request";
+}
+
+@await Html.PartialAsync("_MasterNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Request Portal</h1>
+        <p class="subtitle mb-0">Submit and track your cartridge requests</p>
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+        <button type="button"
+                class="btn btn-link text-white p-0 lh-1"
+                style="font-size:1.25rem; text-decoration:none; opacity:0.8;"
+                title="Start Guided Tour"
+                onclick="YakultTour.startTourForPage()">
+            <i class="bi bi-question-circle"></i>
+        </button>
+        @await Html.PartialAsync("_NotificationBell")
+    </div>
+</div>
+
+<div class="content-padded">
+    <div class="nav-tabs-container mb-4">
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a class="nav-link" asp-action="Index">New Request</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-action="MyRequests">My Submitted Requests</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" asp-action="AssistedRequest">IT Assisted Request</a>
+            </li>
+            @if (ViewBag.IsDeveloper == true)
+            {
+                <li class="nav-item">
+                    <a class="nav-link" asp-controller="Authorization" asp-action="DevQueue">Authorization Queue</a>
+                </li>
+            }
+        </ul>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-start gap-2" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1"></i>
+            <div><strong>Error:</strong> @TempData["ErrorMessage"]</div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card request-card request-card-wide">
+        <div class="card-body">
+
+            <div id="itAssistedBanner" class="d-flex align-items-start gap-2 mb-4" style="background:#f4f4f5; border:1px solid #e0e0e2; border-radius:8px; padding:.85rem 1rem;">
+                <i class="bi bi-person-fill-gear fs-5 flex-shrink-0 mt-1"></i>
+                <div>
+                    <strong>IT Assisted Request</strong> — Submit a cartridge request on behalf of any employee.
+                    Toggle on <strong>Manual Authorization</strong> below if the approver does not have access to the portal.
+                    Otherwise leave it off to submit as <em>Pending Approval</em> for the approver to handle through the portal.
+                </div>
+            </div>
+
+            <form id="assistedRequestForm" asp-action="CreateAssisted" method="post">
+                @Html.AntiForgeryToken()
+
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Count > 0))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-start gap-2 mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0 mt-1"></i>
+                        <div>
+                            <strong>Please fix the following before submitting:</strong>
+                            <div asp-validation-summary="All" class="mb-0 mt-1"></div>
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @* ── Employee picker ────────────────────────────────────────────── *@
+                <h5 class="destination-header mb-2">Submitting on Behalf Of</h5>
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-0" style="background:#f0f7ff; border:1px solid #aed6f1; border-radius:8px; padding:.35rem .75rem;">
+                        <input type="checkbox" class="form-check-input mt-0" id="isDeptLevelToggle" asp-for="Request.IsDeptLevel" style="cursor:pointer; margin-left:0; float:none;" />
+                        <label class="form-check-label small fw-semibold mb-0" for="isDeptLevelToggle" style="color:#2272d9; cursor:pointer;">
+                            Dept. Level (no employee)
+                        </label>
+                    </div>
+                </div>
+
+                <div id="employeeTargetSection">
+                <div id="empFilterRow" class="row mb-2">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-semibold text-muted" style="font-size:.85rem;">Filter by:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <div class="row g-2">
+                            <div class="col-12 col-sm">
+                                <small class="text-muted fw-semibold d-block mb-1">Company</small>
+                                <div class="position-relative">
+                                    <input type="text" id="empFilterCompany" class="form-control form-control-sm pe-4"
+                                           placeholder="All Companies" autocomplete="off" />
+                                    <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
+                                    <input type="hidden" id="empFilterCompanyHidden" />
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm">
+                                <small class="text-muted fw-semibold d-block mb-1">Branch</small>
+                                <div class="position-relative">
+                                    <input type="text" id="empFilterBranch" class="form-control form-control-sm pe-4"
+                                           placeholder="All Branches" autocomplete="off" />
+                                    <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
+                                    <input type="hidden" id="empFilterBranchHidden" />
+                                </div>
+                            </div>
+                            <div class="col-12 col-sm">
+                                <small class="text-muted fw-semibold d-block mb-1">Department</small>
+                                <div class="position-relative">
+                                    <input type="text" id="empFilterDept" class="form-control form-control-sm pe-4"
+                                           placeholder="All Departments" autocomplete="off" />
+                                    <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
+                                    <input type="hidden" id="empFilterDeptHidden" />
+                                </div>
+                            </div>
+                            <div class="col-auto d-flex flex-column">
+                                <small class="d-block mb-1" style="visibility:hidden;">x</small>
+                                <button type="button" id="empFilterClearBtn"
+                                        class="btn btn-outline-secondary flex-fill"
+                                        title="Clear filters"
+                                        style="width:38px; padding:0; line-height:1;">×</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">
+                        Employee <span class="text-danger">*</span>:
+                    </label>
+                    <div class="col-sm-12 col-md-9">
+                        <div class="position-relative" id="empPickerWrapper">
+                            <input type="text" id="empSearchInput" class="form-control pe-4"
+                                   placeholder="— Search by name, employee number, or department —"
+                                   autocomplete="off" required />
+                            <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d;">&#9660;</span>
+                            <input type="hidden" name="SelectedEmployeeId" id="empHidden" />
+                        </div>
+                        <small class="form-text text-muted">Select the employee this request is for.</small>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Date Requested:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="date" class="form-control" asp-for="Request.DateRequested" />
+                        <small class="form-text text-muted">Defaults to today. Change this if the request was actually made on a different date.</small>
+                    </div>
+                </div>
+
+                @* Read-only fields populated when employee is selected *@
+                <div id="empInfoBlock" style="display:none;">
+                    <div class="row mb-2">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">Position:</label>
+                        <div class="col-sm-12 col-md-9">
+                            <input type="text" class="form-control bg-light" id="dispEmpPosition" readonly />
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">Company:</label>
+                        <div class="col-sm-12 col-md-9">
+                            <input type="text" class="form-control bg-light" id="dispEmpCompany" readonly />
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">Branch:</label>
+                        <div class="col-sm-12 col-md-9">
+                            <input type="text" class="form-control bg-light" id="dispEmpBranch" readonly />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">Department:</label>
+                        <div class="col-sm-12 col-md-9">
+                            <input type="text" class="form-control bg-light" id="dispEmpDept" readonly />
+                        </div>
+                    </div>
+                </div>
+                </div>
+                @* end #employeeTargetSection *@
+
+                @* ── Dept Level Target — shown instead of the employee picker when the
+                     "Dept. Level (no employee)" toggle above is checked. Company/Branch/
+                     Department are all optional here ("fill in only what you have"); the
+                     request is created with EmpId = NULL and these three stored directly. ── *@
+                <div id="deptLevelTargetSection" style="display:none;">
+                    <div class="alert alert-info small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Fill in only what you have — Company, Branch, and Department are all optional.
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">Company:</label>
+                        <div class="col-sm-12 col-md-9 position-relative">
+                            <input type="text" id="deptLevelCompany" class="form-control" placeholder="-- Not specified --" autocomplete="off" />
+                            <input type="hidden" asp-for="Request.DestinationCompanyId" id="deptLevelCompanyHidden" />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">Branch:</label>
+                        <div class="col-sm-12 col-md-9 position-relative">
+                            <input type="text" id="deptLevelBranch" class="form-control" placeholder="-- Not specified --" autocomplete="off" />
+                            <input type="hidden" asp-for="Request.DestinationBranchId" id="deptLevelBranchHidden" />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">Department:</label>
+                        <div class="col-sm-12 col-md-9 position-relative">
+                            <input type="text" id="deptLevelDepartment" class="form-control" placeholder="-- Not specified --" autocomplete="off" />
+                            <input type="hidden" asp-for="Request.DestinationDepartmentId" id="deptLevelDepartmentHidden" />
+                        </div>
+                    </div>
+                </div>
+
+                @* ── ITEM SELECTION — staging area for one item at a time; not bound to RequestItems ── *@
+                <h5 class="destination-header mt-3 mb-3">Item Selection</h5>
+
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Category</label>
+                    <div class="col-sm-12 col-md-9">
+                        <select class="form-select" id="stagingCategory">
+                            <option value="Cartridge">Cartridge</option>
+                            <option value="Ink">Ink</option>
+                            <option value="Printerhead">Printerhead</option>
+                            <option value="Toner">Toner</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Model</label>
+                    <div class="col-sm-12 col-md-9">
+                        <select class="form-select" id="stagingModel">
+                            <option value="">-- Reference Only --</option>
+                            @foreach (var m in Model.CartridgeModels)
+                            {
+                                <option value="@m.ModelKey"
+                                        data-model="@m.ModelNumber"
+                                        data-available="@m.AvailableQuantity"
+                                        data-category="Cartridge">
+                                    @m.DisplayName
+                                </option>
+                            }
+                            @foreach (var categoryModels in Model.ConsumableModelsByCategory)
+                            {
+                                @foreach (var m in categoryModels.Value)
+                                {
+                                    <option value="@m.ModelKey"
+                                            data-model="@m.ModelNumber"
+                                            data-available="@m.AvailableQuantity"
+                                            data-category="@categoryModels.Key">
+                                        @m.DisplayName
+                                    </option>
+                                }
+                            }
+                        </select>
+                        <div class="qty-helper-container" id="stagingAvailHelper"></div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Qty Requested</label>
+                    <div class="col-sm-12 col-md-9">
+                        <input type="number" class="form-control" id="stagingQty" value="1" min="1" style="max-width:150px;" />
+                    </div>
+                </div>
+                <div class="row mb-3" id="stagingReturnedRow">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Returned Empty Cartridges</label>
+                    <div class="col-sm-12 col-md-9 d-flex gap-3">
+                        <div>
+                            <small class="fw-bold d-block mb-1">Good</small>
+                            <input type="number" class="form-control" id="stagingGood" value="0" min="0" style="max-width:100px;" />
+                        </div>
+                        <div>
+                            <small class="fw-bold d-block mb-1">Damaged</small>
+                            <input type="number" class="form-control" id="stagingDamaged" value="0" min="0" style="max-width:100px;" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-12 col-md-9 offset-md-3">
+                        <div id="stagingError" class="text-danger small mb-2" style="display:none;"></div>
+                        <button type="button" class="btn btn-success" id="addToRequestBtn">
+                            <i class="bi bi-plus-lg"></i> Add to Request
+                        </button>
+                    </div>
+                </div>
+
+                @* ── REQUESTED ITEMS — the committed list that actually posts as RequestItems[i].* ── *@
+                <h5 class="destination-header mt-4 mb-3 d-flex align-items-center gap-2">
+                    Requested Items
+                    <span class="badge rounded-pill bg-danger" id="requestedItemsCount">0</span>
+                    <span class="text-danger">*</span>
+                </h5>
+
+                <div class="row mb-3">
+                    <div class="col-sm-12">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle cartridge-table mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Model</th>
+                                        <th>Qty</th>
+                                        <th>Good</th>
+                                        <th>Damaged</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cartridgeRowsBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="noItemsMessage" class="text-muted small py-2">No items added yet.</div>
+                        <div id="itemsRequiredError" class="text-danger small" style="display:none;">Please add at least one item to your request.</div>
+                        <input type="hidden" asp-for="Request.TypedModelNumber" />
+                        <input type="hidden" asp-for="Request.Quantity" />
+                    </div>
+                </div>
+
+                <input type="hidden" asp-for="Request.CartridgeCondition" value="With Cartridge" />
+
+                @* ── Distribution Method ────────────────────────────────────────── *@
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Distribution Method:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" asp-for="Request.DistributionMethod"
+                                   value="PICKUP" id="methodPickup" checked />
+                            <label class="form-check-label" for="methodPickup">PICKUP</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" asp-for="Request.DistributionMethod"
+                                   value="DELIVERY" id="methodDelivery" />
+                            <label class="form-check-label" for="methodDelivery">DELIVERY</label>
+                        </div>
+                        <span asp-validation-for="Request.DistributionMethod" class="text-danger"></span>
+                    </div>
+                </div>
+
+                @* ── Received By (PICKUP only) ──────────────────────────────────── *@
+                <div id="receivedByRow">
+                    <div id="rbFilterRow" class="row mb-2">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-semibold text-muted" style="font-size:.85rem;">Filter by:</label>
+                        <div class="col-sm-12 col-md-9">
+                            <div class="row g-2">
+                                <div class="col-12 col-sm">
+                                    <small class="text-muted fw-semibold d-block mb-1">Company</small>
+                                    <div class="position-relative">
+                                        <input type="text" id="rbFilterCompany" class="form-control form-control-sm pe-4"
+                                               placeholder="All Companies" autocomplete="off" />
+                                        <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
+                                        <input type="hidden" id="rbFilterCompanyHidden" />
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm">
+                                    <small class="text-muted fw-semibold d-block mb-1">Branch</small>
+                                    <div class="position-relative">
+                                        <input type="text" id="rbFilterBranch" class="form-control form-control-sm pe-4"
+                                               placeholder="All Branches" autocomplete="off" />
+                                        <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
+                                        <input type="hidden" id="rbFilterBranchHidden" />
+                                    </div>
+                                </div>
+                                <div class="col-12 col-sm">
+                                    <small class="text-muted fw-semibold d-block mb-1">Department</small>
+                                    <div class="position-relative">
+                                        <input type="text" id="rbFilterDept" class="form-control form-control-sm pe-4"
+                                               placeholder="All Departments" autocomplete="off" />
+                                        <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
+                                        <input type="hidden" id="rbFilterDeptHidden" />
+                                    </div>
+                                </div>
+                                <div class="col-auto d-flex flex-column">
+                                    <small class="d-block mb-1" style="visibility:hidden;">x</small>
+                                    <button type="button" id="rbFilterClearBtn"
+                                            class="btn btn-outline-secondary"
+                                            title="Clear filters"
+                                            style="width:38px; height:31px; padding:0; line-height:1;">×</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">
+                            To Be Received By: <span class="text-danger">*</span>
+                        </label>
+                        <div class="col-sm-12 col-md-9">
+                            <div class="position-relative" id="receivedByWrapper">
+                                <input type="text" id="receivedByInput" class="form-control pe-4"
+                                       placeholder="— Search employee —" autocomplete="off" />
+                                <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d;">&#9660;</span>
+                                <input type="hidden" asp-for="Request.ReceivedById" id="receivedByHidden" />
+                            </div>
+                            <span asp-validation-for="Request.ReceivedById" class="text-danger"></span>
+                            <small class="form-text text-muted">The person who will collect the cartridges at the IT office.</small>
+                        </div>
+                    </div>
+                </div>
+
+                @* ── Distribution preview ───────────────────────────────────────── *@
+                <div class="row mb-3">
+                    <div class="col-sm-12 col-md-9 offset-md-3">
+                        <div id="distributionPreview" style="background:#f9f9fb; border:1px dashed #ccc; border-radius:8px; padding:10px 16px; font-size:.92rem; color:#333;">
+                            <span class="fw-bold text-muted" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.4px;">
+                                <i class="bi bi-truck"></i> Distribution
+                            </span>
+                            <div class="mt-1">Mode of Distribution: <strong id="previewDistMethod">PICKUP</strong></div>
+                            <div id="previewReceivedByRow" class="mt-1">
+                                To Be Received By: <strong id="previewReceivedByName" style="color:#d50032;">(select a person above)</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* ── Additional Remarks ─────────────────────────────────────────── *@
+                <div class="row mb-4">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">Additional Remarks:</label>
+                    <div class="col-sm-12 col-md-9">
+                        <textarea class="form-control" asp-for="Request.AdditionalRemarks"
+                                  rows="3" placeholder="Optional additional notes"></textarea>
+                        <span asp-validation-for="Request.AdditionalRemarks" class="text-danger"></span>
+                    </div>
+                </div>
+
+                @* ── Manual Authorization ────────────────────────────────────────────── *@
+                <hr class="my-4"/>
+                <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+                    <h5 class="destination-header mb-0">Manual Authorization</h5>
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="manualAuthToggle" name="ITUseManualAuth" value="true"
+                               style="width:2.5em; height:1.3em; cursor:pointer;" />
+                        <label class="form-check-label fw-semibold ms-2" for="manualAuthToggle" id="manualAuthToggleLabel"
+                               style="color:#6c757d; font-size:.85rem;">Off</label>
+                    </div>
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox"
+                               id="quickAutoApprovedCheck" name="ITQuickAutoApproved" value="true"
+                               style="cursor:pointer;" />
+                        <label class="form-check-label fw-semibold ms-1" for="quickAutoApprovedCheck"
+                               style="color:#6c757d; font-size:.85rem; cursor:pointer;"
+                               title="Check when the approver has no portal access and the request should be treated as auto-approved. No approver or decision needed.">
+                            Auto-Approved
+                        </label>
+                    </div>
+                </div>
+                <p class="text-muted small mb-3">
+                    Toggle ON if the approver of the target employee does not have access to the portal.
+                    Toggle OFF if the approver has portal access.
+                    Tick <strong>Auto-Approved</strong> to record the request as approved right away, with no approver or decision.
+                </p>
+
+                <div id="manualAuthSection" style="display:none;">
+
+                    @* DEBUG: approver load result *@
+                    <div id="approverDebug" class="alert alert-warning py-1 px-2 mb-2" style="display:none; font-size:.8rem; font-family:monospace;"></div>
+
+                    <div class="mb-3" style="background:#f4f4f5; border:1px solid #e0e0e2; border-radius:8px; padding:.85rem 1rem;">
+                        <strong>Manual Authorization</strong> — Select the approver and choose Approved or Rejected.
+                        Add remarks if needed.
+                    </div>
+
+                    @* Authorized By *@
+                    <div class="row mb-1">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">
+                            Authorized By <span class="text-danger">*</span>:
+                        </label>
+                        <div class="col-sm-12 col-md-9">
+                            <div class="position-relative" id="approverWrapper">
+                                <input type="text" id="approverSearchInput" class="form-control pe-4"
+                                       placeholder="— Select employee to load approvers —"
+                                       autocomplete="off" disabled />
+                                <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d;">&#9660;</span>
+                            </div>
+                            <input type="hidden" name="ITAuthorizedByEmpId" id="approverHidden" />
+                            <small class="form-text text-muted">Select an employee first to load available approvers.</small>
+                        </div>
+                    </div>
+
+                    @* Authorization Decision *@
+                    <div id="decisionRow" class="row mb-3 mt-3">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">
+                            Decision <span class="text-danger">*</span>:
+                        </label>
+                        <div class="col-sm-12 col-md-9 d-flex align-items-center gap-4 pt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="ITDecision"
+                                       id="decisionApproved" value="Approved" checked />
+                                <label class="form-check-label fw-semibold text-success" for="decisionApproved">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Approved
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="ITDecision"
+                                       id="decisionRejected" value="Rejected" />
+                                <label class="form-check-label fw-semibold text-danger" for="decisionRejected">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Rejected
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Auth Remarks *@
+                    <div class="row mb-4">
+                        <label class="col-sm-12 col-md-3 col-form-label fw-bold">
+                            Auth Remarks:
+                            <span id="authRemarksRequired" class="text-danger small d-block fw-normal" style="display:none !important;">
+                                Required when Rejected
+                            </span>
+                            <span id="authRemarksOptional" class="text-muted small d-block fw-normal">Optional</span>
+                        </label>
+                        <div class="col-sm-12 col-md-9">
+                            <textarea class="form-control" name="ITRemarks" id="itRemarksInput"
+                                      rows="3" maxlength="500"
+                                      placeholder="Enter authorization remarks (required if Rejected)"></textarea>
+                        </div>
+                    </div>
+
+                </div>@* /#manualAuthSection *@
+
+                @* ── Submit ─────────────────────────────────────────────────────── *@
+                <div class="row">
+                    <div class="col-12 col-md-9 offset-md-3">
+                        <div class="d-grid d-sm-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-submit">Submit Assisted Request</button>
+                            <button type="reset" class="btn btn-secondary btn-clear">Clear</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script src="~/js/tours/it-assisted-request.js" asp-append-version="true"></script>
+
+    <style>
+        /* Custom dropdown for stagingCategory/stagingModel — the panel is always anchored
+           directly below the control via CSS (top:100%), instead of relying on the native
+           <select> popup, which can flip open upward for long lists like Toner. */
+        .combo-native-select { display: none; }
+        .combo-wrap { position: relative; }
+        .combo-toggle { width: 100%; text-align: left; cursor: pointer; background-color: #fff; }
+        .combo-panel {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1055;
+            max-height: 280px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #ced4da;
+            border-radius: 0 0 .375rem .375rem;
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+        }
+        .combo-option { padding: .375rem .75rem; cursor: pointer; }
+        .combo-option:hover, .combo-option.active { background: #0d6efd; color: #fff; }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // ── Employee data ────────────────────────────────────────────────────────
+        const allEmployees = [
+            @foreach (var emp in Model.Employees)
+            {
+                @:{ id: @emp.EmpId, comId: @emp.ComId, branchId: @emp.BranchId, deptId: @emp.DeptId, name: '@Html.Raw(emp.Name.Replace("\\", "\\\\").Replace("'", "\\'"))', display: '@Html.Raw(emp.DisplayName.Replace("\\", "\\\\").Replace("'", "\\'"))', position: '@Html.Raw(emp.Position.Replace("\\", "\\\\").Replace("'", "\\'"))', company: '@Html.Raw(emp.CompanyName.Replace("\\", "\\\\").Replace("'", "\\'"))', branch: '@Html.Raw(emp.BranchName.Replace("\\", "\\\\").Replace("'", "\\'"))', dept: '@Html.Raw(emp.DepartmentName.Replace("\\", "\\\\").Replace("'", "\\'"))' },
+            }
+        ];
+
+        const allCompanies = [
+            @foreach (var c in Model.Companies)
+            {
+                @:{ id: @c.ComId, name: '@Html.Raw(c.Name.Replace("\\", "\\\\").Replace("'", "\\'"))' },
+            }
+        ];
+
+        const allBranches = [
+            @foreach (var b in Model.Branches)
+            {
+                @:{ id: @b.BranchId, name: '@Html.Raw(b.Name.Replace("\\", "\\\\").Replace("'", "\\'"))', comId: @b.ComId },
+            }
+        ];
+
+        const allDepts = [
+            @foreach (var d in Model.Departments)
+            {
+                @:{ id: @d.DeptId, name: '@Html.Raw(d.Name.Replace("\\", "\\\\").Replace("'", "\\'"))', comId: @d.ComId },
+            }
+        ];
+
+        // ── Filter picker factory ─────────────────────────────────────────────────
+        function createFilterPicker(inputEl, hiddenEl, getItems, onPick) {
+            const dropdown = document.createElement('ul');
+            dropdown.className = 'list-unstyled mb-0 border rounded bg-white shadow-sm';
+            dropdown.style.cssText = 'position:fixed; z-index:9999; max-height:200px; overflow-y:auto; display:none; padding:0; margin:0;';
+            document.body.appendChild(dropdown);
+
+            function position() {
+                const rect = inputEl.getBoundingClientRect();
+                dropdown.style.top   = rect.bottom + 'px';
+                dropdown.style.left  = rect.left   + 'px';
+                dropdown.style.width = rect.width  + 'px';
+            }
+
+            function pick(item) {
+                inputEl.value  = item ? item.name : '';
+                hiddenEl.value = item ? item.id   : '';
+                dropdown.style.display = 'none';
+                onPick(item);
+            }
+
+            function render(items) {
+                dropdown.innerHTML = '';
+                if (hiddenEl.value || inputEl.value.trim()) {
+                    const clearLi = document.createElement('li');
+                    clearLi.textContent = '— Clear filter —';
+                    clearLi.style.cssText = 'padding:7px 12px; cursor:pointer; font-size:0.85rem; color:#6c757d; font-style:italic; border-bottom:1px solid #eee;';
+                    clearLi.addEventListener('mousedown', function(e) { e.preventDefault(); pick(null); });
+                    clearLi.addEventListener('mouseenter', function() { clearLi.style.background = '#f8f9fa'; });
+                    clearLi.addEventListener('mouseleave', function() { clearLi.style.background = ''; });
+                    dropdown.appendChild(clearLi);
+                }
+                items.slice(0, 60).forEach(function(item) {
+                    const li = document.createElement('li');
+                    li.textContent = item.name;
+                    li.style.cssText = 'padding:8px 12px; cursor:pointer; font-size:0.88rem;';
+                    li.addEventListener('mousedown', function(e) { e.preventDefault(); pick(item); });
+                    li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
+                    li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                    dropdown.appendChild(li);
+                });
+                if (dropdown.children.length > 0) { position(); dropdown.style.display = 'block'; }
+                else { dropdown.style.display = 'none'; }
+            }
+
+            inputEl.addEventListener('input', function() {
+                hiddenEl.value = '';
+                const q = this.value.trim().toLowerCase();
+                const matches = q ? getItems().filter(i => i.name.toLowerCase().includes(q)) : getItems();
+                render(matches);
+            });
+
+            inputEl.addEventListener('focus', function() {
+                const q = this.value.trim().toLowerCase();
+                const matches = q ? getItems().filter(i => i.name.toLowerCase().includes(q)) : getItems();
+                render(matches);
+            });
+
+            inputEl.addEventListener('blur', function() {
+                setTimeout(function() { dropdown.style.display = 'none'; }, 150);
+                if (!hiddenEl.value) {
+                    const q = inputEl.value.trim().toLowerCase();
+                    if (!q) { onPick(null); return; }
+                    const exact = getItems().find(i => i.name.toLowerCase() === q);
+                    if (exact) { hiddenEl.value = exact.id; onPick(exact); }
+                    else { inputEl.value = ''; onPick(null); }
+                }
+            });
+
+            inputEl.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') dropdown.style.display = 'none';
+            });
+
+            window.addEventListener('scroll', position, true);
+            window.addEventListener('resize', position);
+
+            return {
+                clear: function() { pick(null); },
+                getValue: function() { return parseInt(hiddenEl.value) || 0; },
+                // Programmatically select an item (or null to clear). Runs onPick like a real pick.
+                pickItem: function(item) { pick(item || null); }
+            };
+        }
+
+        // ── Employee filter pickers ───────────────────────────────────────────────
+        let empCurrentBranches = [];
+        let empCurrentDepts    = [];
+
+        const empCompanyPicker = createFilterPicker(
+            document.getElementById('empFilterCompany'),
+            document.getElementById('empFilterCompanyHidden'),
+            () => allCompanies,
+            function(item) {
+                empCurrentBranches = item ? allBranches.filter(b => b.comId === item.id) : [];
+                empCurrentDepts    = item ? allDepts.filter(d => d.comId === item.id)    : [];
+                empBranchPicker.clear();
+                empDeptPicker.clear();
+                clearEmpInfo();
+                empSearchInput.value = '';
+            }
+        );
+
+        const empBranchPicker = createFilterPicker(
+            document.getElementById('empFilterBranch'),
+            document.getElementById('empFilterBranchHidden'),
+            () => empCurrentBranches,
+            function() { clearEmpInfo(); empSearchInput.value = ''; }
+        );
+
+        const empDeptPicker = createFilterPicker(
+            document.getElementById('empFilterDept'),
+            document.getElementById('empFilterDeptHidden'),
+            () => empCurrentDepts,
+            function() { clearEmpInfo(); empSearchInput.value = ''; }
+        );
+
+        function getEmpFilteredPool() {
+            const comId    = empCompanyPicker.getValue();
+            const branchId = empBranchPicker.getValue();
+            const deptId   = empDeptPicker.getValue();
+            return allEmployees.filter(function(e) {
+                if (comId    && e.comId    !== comId)    return false;
+                if (branchId && e.branchId !== branchId) return false;
+                if (deptId   && e.deptId   !== deptId)   return false;
+                return true;
+            });
+        }
+
+        document.getElementById('empFilterClearBtn').addEventListener('click', function() {
+            empCompanyPicker.clear();
+        });
+
+        // ── Employee picker ───────────────────────────────────────────────────────
+        const empSearchInput  = document.getElementById('empSearchInput');
+        const empHidden       = document.getElementById('empHidden');
+        const empInfoBlock    = document.getElementById('empInfoBlock');
+        const dispEmpPosition = document.getElementById('dispEmpPosition');
+        const dispEmpCompany  = document.getElementById('dispEmpCompany');
+        const dispEmpBranch   = document.getElementById('dispEmpBranch');
+        const dispEmpDept     = document.getElementById('dispEmpDept');
+
+        const empDropdown = document.createElement('ul');
+        empDropdown.className = 'list-unstyled mb-0 border rounded bg-white shadow-sm';
+        empDropdown.style.cssText = 'position:fixed; z-index:9999; max-height:220px; overflow-y:auto; display:none; padding:0; margin:0;';
+        document.body.appendChild(empDropdown);
+
+        function positionEmpDropdown() {
+            const rect = empSearchInput.getBoundingClientRect();
+            empDropdown.style.top   = rect.bottom + 'px';
+            empDropdown.style.left  = rect.left   + 'px';
+            empDropdown.style.width = rect.width  + 'px';
+        }
+
+        function renderEmpDropdown(items) {
+            empDropdown.innerHTML = '';
+            if (items.length === 0) { empDropdown.style.display = 'none'; return; }
+            items.slice(0, 80).forEach(function(emp) {
+                const li = document.createElement('li');
+                li.textContent = emp.display;
+                li.style.cssText = 'padding:8px 12px; cursor:pointer; font-size:0.88rem;';
+                li.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    empSearchInput.value  = emp.display;
+                    empHidden.value       = emp.id;
+                    empDropdown.style.display = 'none';
+                    showEmpInfo(emp);
+                });
+                li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
+                li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                empDropdown.appendChild(li);
+            });
+            positionEmpDropdown();
+            empDropdown.style.display = 'block';
+        }
+
+        // ── Manual Authorization toggle ───────────────────────────────────────────
+        const manualAuthToggle       = document.getElementById('manualAuthToggle');
+        const manualAuthSection      = document.getElementById('manualAuthSection');
+        const toggleLabel            = document.getElementById('manualAuthToggleLabel');
+        const quickAutoApprovedCheck = document.getElementById('quickAutoApprovedCheck');
+
+        function updateManualAuthSection() {
+            const quick = quickAutoApprovedCheck.checked;
+            // Auto-Approved short-circuits the manual auth form (mirrors desktop ShowManualAuth).
+            const on = manualAuthToggle.checked && !quick;
+            manualAuthSection.style.display = on ? '' : 'none';
+            toggleLabel.textContent = manualAuthToggle.checked ? 'On' : 'Off';
+            toggleLabel.style.color = manualAuthToggle.checked ? '#198754' : '#6c757d';
+            manualAuthToggle.disabled = quick;
+            manualAuthToggle.closest('.form-switch').style.opacity = quick ? '0.5' : '';
+        }
+
+        manualAuthToggle.addEventListener('change', updateManualAuthSection);
+        quickAutoApprovedCheck.addEventListener('change', updateManualAuthSection);
+        updateManualAuthSection();
+
+        // ── Approver picker ───────────────────────────────────────────────────────
+        const approverSearchInput = document.getElementById('approverSearchInput');
+        const approverHidden      = document.getElementById('approverHidden');
+        let currentApprovers      = [];
+
+        const approverDropdown = document.createElement('ul');
+        approverDropdown.className = 'list-unstyled mb-0 border rounded bg-white shadow-sm';
+        approverDropdown.style.cssText = 'position:fixed; z-index:9999; max-height:220px; overflow-y:auto; display:none; padding:0; margin:0;';
+        document.body.appendChild(approverDropdown);
+
+        function positionApproverDropdown() {
+            const rect = approverSearchInput.getBoundingClientRect();
+            approverDropdown.style.top   = rect.bottom + 'px';
+            approverDropdown.style.left  = rect.left   + 'px';
+            approverDropdown.style.width = rect.width  + 'px';
+        }
+
+        function renderApproverDropdown(items) {
+            approverDropdown.innerHTML = '';
+            if (items.length === 0) { approverDropdown.style.display = 'none'; return; }
+            items.forEach(function(a) {
+                const li = document.createElement('li');
+                const badge = a.approvalRole ? ' [' + a.approvalRole + ']' : '';
+                li.textContent = a.displayName + badge;
+                li.title       = a.position || '';
+                li.style.cssText = 'padding:8px 12px; cursor:pointer; font-size:0.88rem;';
+                li.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    approverSearchInput.value      = a.displayName + badge;
+                    approverHidden.value           = a.empId;
+                    approverDropdown.style.display = 'none';
+                });
+                li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
+                li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                approverDropdown.appendChild(li);
+            });
+            positionApproverDropdown();
+            approverDropdown.style.display = 'block';
+        }
+
+        approverSearchInput.addEventListener('input', function() {
+            approverHidden.value = '';
+            const q = this.value.trim().toLowerCase();
+            const matches = q ? currentApprovers.filter(a => a.displayName.toLowerCase().includes(q)) : currentApprovers;
+            renderApproverDropdown(matches);
+        });
+        approverSearchInput.addEventListener('focus', function() {
+            const q = this.value.trim().toLowerCase();
+            const matches = q ? currentApprovers.filter(a => a.displayName.toLowerCase().includes(q)) : currentApprovers;
+            renderApproverDropdown(matches);
+        });
+        approverSearchInput.addEventListener('blur', function() {
+            setTimeout(function() { approverDropdown.style.display = 'none'; }, 150);
+            if (!approverHidden.value) {
+                const q = approverSearchInput.value.trim().toLowerCase();
+                const exact = currentApprovers.find(a => a.displayName.toLowerCase() === q);
+                if (exact) approverHidden.value = exact.empId;
+            }
+        });
+
+        window.addEventListener('scroll', positionApproverDropdown, true);
+        window.addEventListener('resize', positionApproverDropdown);
+
+        async function loadApproversForEmployee(empId) {
+            approverSearchInput.value       = '';
+            approverHidden.value            = '';
+            currentApprovers                = [];
+            approverSearchInput.placeholder = 'Loading approvers…';
+            approverSearchInput.disabled    = true;
+            try {
+                const url = '/Request/GetApproversForEmployee?employeeId=' + empId;
+                console.log('[Approver] Fetching:', url);
+                const res  = await fetch(url);
+                const data = await res.json();
+                console.log('[Approver] Raw response:', data);
+
+                const debugEl = document.getElementById('approverDebug');
+
+                if (data.error) {
+                    approverSearchInput.disabled    = false;
+                    approverSearchInput.placeholder = '— Error loading approvers —';
+                    if (debugEl) { debugEl.textContent = data.error; debugEl.style.display = 'block'; }
+                    return;
+                }
+
+                const list = data.approvers || data;
+                currentApprovers = list.map(a => ({
+                    empId:        a.empId,
+                    displayName:  a.displayName,
+                    position:     a.position,
+                    approvalRole: a.approvalRole,
+                }));
+                approverSearchInput.disabled    = false;
+                approverSearchInput.placeholder = currentApprovers.length > 0
+                    ? '— Search approvers —'
+                    : '— No approvers found for this company/branch/department —';
+
+                if (debugEl) {
+                    const scope = data.debug_scope || {};
+                    const msg = `DEBUG: scope=ComId:${scope.comId} BranchId:${scope.branchId} DeptId:${scope.deptId} → ${data.debug_count} approver(s)` +
+                        (currentApprovers.length > 0 ? ' — ' + currentApprovers.map(a => a.displayName + ' (' + a.approvalRole + ')').join(', ') : '');
+                    debugEl.textContent = msg;
+                    debugEl.style.display = 'block';
+                }
+            } catch(e) {
+                console.error('[Approver] Fetch/parse error:', e);
+                approverSearchInput.disabled    = false;
+                approverSearchInput.placeholder = '— Error loading approvers —';
+                const debugEl = document.getElementById('approverDebug');
+                if (debugEl) { debugEl.textContent = 'DEBUG: Fetch/parse error — ' + e; debugEl.style.display = 'block'; }
+            }
+        }
+
+        // ── Dept-Level (no employee) toggle ────────────────────────────────────────
+        const isDeptLevelToggle    = document.getElementById('isDeptLevelToggle');
+        const employeeTargetSection  = document.getElementById('employeeTargetSection');
+        const deptLevelTargetSection = document.getElementById('deptLevelTargetSection');
+
+        async function loadApproversForScope(comId, branchId, deptId) {
+            approverSearchInput.value       = '';
+            approverHidden.value            = '';
+            currentApprovers                = [];
+            if (!comId || !branchId || !deptId) {
+                approverSearchInput.disabled    = true;
+                approverSearchInput.placeholder = '— Select Company, Branch, and Department above to load approvers —';
+                return;
+            }
+            approverSearchInput.placeholder = 'Loading approvers…';
+            approverSearchInput.disabled    = true;
+            try {
+                const url = `/Request/GetApproversForScope?comId=${comId}&branchId=${branchId}&deptId=${deptId}`;
+                const res  = await fetch(url);
+                const data = await res.json();
+
+                if (data.error) {
+                    approverSearchInput.disabled    = false;
+                    approverSearchInput.placeholder = '— Error loading approvers —';
+                    return;
+                }
+
+                currentApprovers = (data.approvers || []).map(a => ({
+                    empId:        a.empId,
+                    displayName:  a.displayName,
+                    position:     a.position,
+                    approvalRole: a.approvalRole,
+                }));
+                approverSearchInput.disabled    = false;
+                approverSearchInput.placeholder = currentApprovers.length > 0
+                    ? '— Search approvers —'
+                    : '— No approvers found for this company/branch/department —';
+            } catch(e) {
+                approverSearchInput.disabled    = false;
+                approverSearchInput.placeholder = '— Error loading approvers —';
+            }
+        }
+
+        const deptLevelCompanyPicker = createFilterPicker(
+            document.getElementById('deptLevelCompany'),
+            document.getElementById('deptLevelCompanyHidden'),
+            () => allCompanies,
+            reloadDeptLevelApprovers
+        );
+        const deptLevelBranchPicker = createFilterPicker(
+            document.getElementById('deptLevelBranch'),
+            document.getElementById('deptLevelBranchHidden'),
+            () => allBranches,
+            reloadDeptLevelApprovers
+        );
+        const deptLevelDepartmentPicker = createFilterPicker(
+            document.getElementById('deptLevelDepartment'),
+            document.getElementById('deptLevelDepartmentHidden'),
+            () => allDepts,
+            reloadDeptLevelApprovers
+        );
+
+        function reloadDeptLevelApprovers() {
+            loadApproversForScope(
+                deptLevelCompanyPicker.getValue(),
+                deptLevelBranchPicker.getValue(),
+                deptLevelDepartmentPicker.getValue()
+            );
+        }
+
+        function applyDeptLevelMode(isDeptLevel) {
+            employeeTargetSection.style.display  = isDeptLevel ? 'none' : '';
+            deptLevelTargetSection.style.display = isDeptLevel ? '' : 'none';
+            if (isDeptLevel) {
+                empHidden.value = '';
+                clearEmpInfo();
+                reloadDeptLevelApprovers();
+            } else {
+                deptLevelCompanyPicker.clear();
+                deptLevelBranchPicker.clear();
+                deptLevelDepartmentPicker.clear();
+            }
+        }
+
+        isDeptLevelToggle.addEventListener('change', function() {
+            applyDeptLevelMode(this.checked);
+        });
+        applyDeptLevelMode(isDeptLevelToggle.checked);
+
+        // ── Decision radios (show/hide remarks required label) ────────────────────
+        const decisionApproved = document.getElementById('decisionApproved');
+        const decisionRejected = document.getElementById('decisionRejected');
+        const authRemarksReq   = document.getElementById('authRemarksRequired');
+        const authRemarksOpt   = document.getElementById('authRemarksOptional');
+        const itRemarksInput   = document.getElementById('itRemarksInput');
+
+        function updateRemarksUI() {
+            const isRejected = decisionRejected.checked;
+            authRemarksReq.style.setProperty('display', isRejected ? 'block' : 'none', 'important');
+            authRemarksOpt.style.setProperty('display', isRejected ? 'none'  : 'block', 'important');
+            itRemarksInput.required = isRejected;
+        }
+
+        decisionApproved.addEventListener('change', updateRemarksUI);
+        decisionRejected.addEventListener('change', updateRemarksUI);
+        updateRemarksUI();
+
+        function showEmpInfo(emp) {
+            dispEmpPosition.value = emp.position || '—';
+            dispEmpCompany.value  = emp.company  || '—';
+            dispEmpBranch.value   = emp.branch   || '—';
+            dispEmpDept.value     = emp.dept     || '—';
+            empInfoBlock.style.display = '';
+            loadApproversForEmployee(emp.id);
+        }
+
+        function clearEmpInfo() {
+            empHidden.value                 = '';
+            empInfoBlock.style.display      = 'none';
+            approverSearchInput.value       = '';
+            approverSearchInput.disabled    = true;
+            approverSearchInput.placeholder = '— Select employee to load approvers —';
+            approverHidden.value            = '';
+            currentApprovers                = [];
+        }
+
+        empSearchInput.addEventListener('input', function() {
+            clearEmpInfo();
+            const q = this.value.trim().toLowerCase();
+            const pool = getEmpFilteredPool();
+            const matches = q ? pool.filter(e => e.display.toLowerCase().includes(q)) : pool;
+            renderEmpDropdown(matches);
+        });
+
+        empSearchInput.addEventListener('focus', function() {
+            const q = this.value.trim().toLowerCase();
+            const pool = getEmpFilteredPool();
+            const matches = q ? pool.filter(e => e.display.toLowerCase().includes(q)) : pool;
+            renderEmpDropdown(matches);
+        });
+
+        empSearchInput.addEventListener('blur', function() {
+            setTimeout(function() { empDropdown.style.display = 'none'; }, 150);
+            if (!empHidden.value) {
+                const q = empSearchInput.value.trim().toLowerCase();
+                const exact = getEmpFilteredPool().find(e => e.display.toLowerCase() === q);
+                if (exact) { empHidden.value = exact.id; showEmpInfo(exact); }
+            }
+        });
+
+        empSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') empDropdown.style.display = 'none';
+        });
+
+        window.addEventListener('scroll', positionEmpDropdown, true);
+        window.addEventListener('resize', positionEmpDropdown);
+
+        // ── Received By filter pickers ────────────────────────────────────────────
+        let rbCurrentBranches = [];
+        let rbCurrentDepts    = [];
+        // True while we're populating the 3 filter pickers FROM a directly-picked person —
+        // suppresses the normal "changing a filter clears the chosen person" behaviour.
+        let rbAutofilling = false;
+
+        const rbCompanyPicker = createFilterPicker(
+            document.getElementById('rbFilterCompany'),
+            document.getElementById('rbFilterCompanyHidden'),
+            () => allCompanies,
+            function(item) {
+                rbCurrentBranches = item ? allBranches.filter(b => b.comId === item.id) : [];
+                rbCurrentDepts    = item ? allDepts.filter(d => d.comId === item.id)    : [];
+                rbBranchPicker.clear();
+                rbDeptPicker.clear();
+                if (!rbAutofilling) { receivedByInput.value = ''; receivedByHidden.value = ''; syncRbPreview(); }
+            }
+        );
+
+        const rbBranchPicker = createFilterPicker(
+            document.getElementById('rbFilterBranch'),
+            document.getElementById('rbFilterBranchHidden'),
+            () => rbCurrentBranches,
+            function() { if (!rbAutofilling) { receivedByInput.value = ''; receivedByHidden.value = ''; syncRbPreview(); } }
+        );
+
+        const rbDeptPicker = createFilterPicker(
+            document.getElementById('rbFilterDept'),
+            document.getElementById('rbFilterDeptHidden'),
+            () => rbCurrentDepts,
+            function() { if (!rbAutofilling) { receivedByInput.value = ''; receivedByHidden.value = ''; syncRbPreview(); } }
+        );
+
+        // Fill Company / Branch / Department from a directly-selected person so the
+        // filter row reflects who was picked (instead of staying on "All …").
+        function rbAutofillFilters(emp) {
+            if (!emp) return;
+            rbAutofilling = true;
+            try {
+                rbCompanyPicker.pickItem(allCompanies.find(c => c.id === emp.comId));
+                rbBranchPicker.pickItem(allBranches.find(b => b.id === emp.branchId));
+                rbDeptPicker.pickItem(allDepts.find(d => d.id === emp.deptId));
+            } finally {
+                rbAutofilling = false;
+            }
+        }
+
+        function getRbFilteredPool() {
+            const comId    = rbCompanyPicker.getValue();
+            const branchId = rbBranchPicker.getValue();
+            const deptId   = rbDeptPicker.getValue();
+            return allEmployees.filter(function(e) {
+                if (comId    && e.comId    !== comId)    return false;
+                if (branchId && e.branchId !== branchId) return false;
+                if (deptId   && e.deptId   !== deptId)   return false;
+                return true;
+            });
+        }
+
+        document.getElementById('rbFilterClearBtn').addEventListener('click', function() {
+            rbCompanyPicker.clear();
+        });
+
+        // ── Received By picker ────────────────────────────────────────────────────
+        const receivedByRow    = document.getElementById('receivedByRow');
+        const receivedByInput  = document.getElementById('receivedByInput');
+        const receivedByHidden = document.getElementById('receivedByHidden');
+        const methodPickup     = document.getElementById('methodPickup');
+        const methodDelivery   = document.getElementById('methodDelivery');
+
+        const rbDropdown = document.createElement('ul');
+        rbDropdown.className = 'list-unstyled mb-0 border rounded bg-white shadow-sm';
+        rbDropdown.style.cssText = 'position:fixed; z-index:9999; max-height:200px; overflow-y:auto; display:none; padding:0; margin:0;';
+        document.body.appendChild(rbDropdown);
+
+        function positionRbDropdown() {
+            const rect = receivedByInput.getBoundingClientRect();
+            rbDropdown.style.top   = rect.bottom + 'px';
+            rbDropdown.style.left  = rect.left   + 'px';
+            rbDropdown.style.width = rect.width  + 'px';
+        }
+
+        function renderRbDropdown(items) {
+            rbDropdown.innerHTML = '';
+            if (items.length === 0) { rbDropdown.style.display = 'none'; return; }
+            items.slice(0, 80).forEach(function(emp) {
+                const li = document.createElement('li');
+                li.textContent = emp.display;
+                li.style.cssText = 'padding:8px 12px; cursor:pointer; font-size:0.88rem;';
+                li.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    receivedByInput.value  = emp.display;
+                    receivedByHidden.value = emp.id;
+                    rbDropdown.style.display = 'none';
+                    rbAutofillFilters(emp);
+                    syncRbPreview();
+                });
+                li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
+                li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                rbDropdown.appendChild(li);
+            });
+            positionRbDropdown();
+            rbDropdown.style.display = 'block';
+        }
+
+        receivedByInput.addEventListener('input', function() {
+            receivedByHidden.value = '';
+            const q = this.value.trim().toLowerCase();
+            const pool = getRbFilteredPool();
+            const matches = q ? pool.filter(e => e.display.toLowerCase().includes(q)) : pool;
+            renderRbDropdown(matches);
+        });
+
+        receivedByInput.addEventListener('focus', function() {
+            const q = this.value.trim().toLowerCase();
+            const pool = getRbFilteredPool();
+            const matches = q ? pool.filter(e => e.display.toLowerCase().includes(q)) : pool;
+            renderRbDropdown(matches);
+        });
+
+        receivedByInput.addEventListener('blur', function() {
+            setTimeout(function() { rbDropdown.style.display = 'none'; }, 150);
+            const q = receivedByInput.value.trim().toLowerCase();
+            const exact = getRbFilteredPool().find(e => e.display.toLowerCase() === q);
+            if (exact) {
+                receivedByHidden.value = exact.id;
+                rbAutofillFilters(exact);
+            }
+            setTimeout(syncRbPreview, 160);
+        });
+
+        receivedByInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') rbDropdown.style.display = 'none';
+        });
+
+        window.addEventListener('scroll', positionRbDropdown, true);
+        window.addEventListener('resize', positionRbDropdown);
+
+        // ── Distribution method visibility ────────────────────────────────────────
+        function updateReceivedByVisibility() {
+            const isPickup = methodPickup && methodPickup.checked;
+            receivedByRow.style.display = isPickup ? '' : 'none';
+            receivedByInput.required    = isPickup;
+            if (!isPickup) {
+                receivedByInput.value  = '';
+                receivedByHidden.value = '';
+                rbDropdown.style.display = 'none';
+                rbCompanyPicker.clear();
+            }
+        }
+
+        methodPickup.addEventListener('change',   updateReceivedByVisibility);
+        methodDelivery.addEventListener('change', updateReceivedByVisibility);
+        updateReceivedByVisibility();
+
+        // ── Distribution preview ──────────────────────────────────────────────────
+        const previewDistMethod     = document.getElementById('previewDistMethod');
+        const previewReceivedByRow  = document.getElementById('previewReceivedByRow');
+        const previewReceivedByName = document.getElementById('previewReceivedByName');
+
+        function updateDistributionPreview() {
+            const isPickup = methodPickup && methodPickup.checked;
+            previewDistMethod.textContent = isPickup ? 'PICKUP' : 'DELIVERY';
+            previewReceivedByRow.style.display = isPickup ? '' : 'none';
+        }
+
+        function syncRbPreview() {
+            const name = receivedByInput.value.trim();
+            previewReceivedByName.textContent = name || '(select a person above)';
+            previewReceivedByName.style.color = name ? '#222' : '#d50032';
+        }
+
+        receivedByInput.addEventListener('input', syncRbPreview);
+        methodPickup.addEventListener('change',   updateDistributionPreview);
+        methodDelivery.addEventListener('change', updateDistributionPreview);
+        updateDistributionPreview();
+
+        // ── Item Selection (staging) → Requested Items (committed list) ────────────
+        const cartridgeRowsBody   = document.getElementById('cartridgeRowsBody');
+        const noItemsMessage      = document.getElementById('noItemsMessage');
+        const itemsRequiredError  = document.getElementById('itemsRequiredError');
+        const requestedItemsCountBadge = document.getElementById('requestedItemsCount');
+
+        const stagingCategory    = document.getElementById('stagingCategory');
+        const stagingModel       = document.getElementById('stagingModel');
+        const stagingQty         = document.getElementById('stagingQty');
+        const stagingGood        = document.getElementById('stagingGood');
+        const stagingDamaged     = document.getElementById('stagingDamaged');
+        const stagingReturnedRow = document.getElementById('stagingReturnedRow');
+        const stagingError       = document.getElementById('stagingError');
+        const stagingAvailHelper = document.getElementById('stagingAvailHelper');
+        const addToRequestBtn    = document.getElementById('addToRequestBtn');
+
+        // enhanceSelectAsCombo is defined further below (function declarations are hoisted).
+        const stagingCategoryCombo = enhanceSelectAsCombo(stagingCategory);
+        const stagingModelCombo    = enhanceSelectAsCombo(stagingModel);
+
+        function updateItemsCountAndVisibility() {
+            const rows = cartridgeRowsBody ? cartridgeRowsBody.querySelectorAll('tr.cartridge-row') : [];
+            if (requestedItemsCountBadge) requestedItemsCountBadge.textContent = rows.length;
+            if (noItemsMessage) noItemsMessage.style.display = rows.length === 0 ? '' : 'none';
+        }
+
+        function reindexRequestItemRows() {
+            if (!cartridgeRowsBody) return;
+            const rows = cartridgeRowsBody.querySelectorAll('tr.cartridge-row');
+            rows.forEach((row, index) => {
+                row.querySelectorAll('input[name]').forEach(el => {
+                    el.name = el.name.replace(/\[\d+\]/, `[${index}]`);
+                });
+            });
+            updateItemsCountAndVisibility();
+        }
+
+        function committedQtyForModel(modelNumber) {
+            let total = 0;
+            if (!cartridgeRowsBody || !modelNumber) return total;
+            cartridgeRowsBody.querySelectorAll('tr.cartridge-row').forEach(row => {
+                if (row.getAttribute('data-model-number') === modelNumber) {
+                    total += parseInt(row.querySelector('input[name$=".Quantity"]')?.value || '0');
+                }
+            });
+            return total;
+        }
+
+        function updateStagingAvailability() {
+            if (!stagingAvailHelper || !stagingModel || !stagingQty) return;
+            stagingAvailHelper.innerHTML = '';
+            const selected = stagingModel.options[stagingModel.selectedIndex];
+            if (!selected || !selected.value) { stagingQty.removeAttribute('max'); return; }
+
+            const modelNumber = selected.getAttribute('data-model') || '';
+            const totalAvailable = parseInt(selected.getAttribute('data-available') || '0');
+            const remaining = Math.max(0, totalAvailable - committedQtyForModel(modelNumber));
+
+            if (remaining > 0) {
+                stagingQty.max = remaining;
+                if ((parseInt(stagingQty.value) || 1) > remaining) stagingQty.value = remaining;
+                const helper = document.createElement('small');
+                helper.className = 'form-text text-success';
+                helper.textContent = 'Max: ' + remaining;
+                stagingAvailHelper.appendChild(helper);
+            } else {
+                stagingQty.removeAttribute('max');
+            }
+        }
+
+        function filterStagingModelsByCategory() {
+            if (!stagingCategory || !stagingModel) return;
+            const category = stagingCategory.value || 'Cartridge';
+
+            Array.from(stagingModel.options).forEach(opt => {
+                if (!opt.value) return;
+                opt.hidden = opt.getAttribute('data-category') !== category;
+            });
+            const selected = stagingModel.options[stagingModel.selectedIndex];
+            if (selected && selected.hidden) stagingModel.value = '';
+            if (stagingModelCombo) stagingModelCombo.refresh();
+            if (stagingCategoryCombo) stagingCategoryCombo.refresh();
+
+            const isCartridge = category === 'Cartridge';
+            if (stagingReturnedRow) stagingReturnedRow.style.display = isCartridge ? '' : 'none';
+            if (!isCartridge) {
+                if (stagingGood) stagingGood.value = '0';
+                if (stagingDamaged) stagingDamaged.value = '0';
+            }
+            updateStagingAvailability();
+        }
+
+        function showStagingError(msg) {
+            if (!stagingError) return;
+            stagingError.textContent = msg;
+            stagingError.style.display = msg ? '' : 'none';
+        }
+
+        function buildRequestItemRow(category, modelKey, modelNumber, qty, good, damaged) {
+            const row = document.createElement('tr');
+            row.className = 'cartridge-row';
+            row.setAttribute('data-model-number', modelNumber);
+            // Good/Damaged empty-cartridge tracking only applies to the Cartridge category —
+            // show a dash for other categories rather than a misleading "0".
+            const isCartridge = category === 'Cartridge';
+            const goodDisplay = isCartridge ? good : '—';
+            const damagedDisplay = isCartridge ? damaged : '—';
+            row.innerHTML = `
+                <td>${category}<input type="hidden" name="RequestItems[0].Category" value="${category}" /></td>
+                <td>${modelNumber || '—'}
+                    <input type="hidden" name="RequestItems[0].CartridgeModel" value="${modelNumber}" />
+                    <input type="hidden" name="RequestItems[0].ModelKey" value="${modelKey}" />
+                </td>
+                <td>${qty}<input type="hidden" name="RequestItems[0].Quantity" value="${qty}" /></td>
+                <td>${goodDisplay}<input type="hidden" name="RequestItems[0].GoodEmptyQty" value="${good}" /></td>
+                <td>${damagedDisplay}<input type="hidden" name="RequestItems[0].DamagedEmptyQty" value="${damaged}" /></td>
+                <td><button type="button" class="btn btn-outline-danger btn-sm remove-row">Remove</button></td>`;
+            row.querySelector('.remove-row').addEventListener('click', function() {
+                row.remove();
+                reindexRequestItemRows();
+                updateStagingAvailability();
+            });
+            return row;
+        }
+
+        function addItemToRequest(category, modelKey, modelNumber, qty, good, damaged) {
+            if (!cartridgeRowsBody) return;
+            cartridgeRowsBody.appendChild(buildRequestItemRow(category, modelKey, modelNumber, qty, good, damaged));
+            reindexRequestItemRows();
+        }
+
+        if (stagingCategory) stagingCategory.addEventListener('change', filterStagingModelsByCategory);
+        if (stagingModel) stagingModel.addEventListener('change', updateStagingAvailability);
+        filterStagingModelsByCategory();
+
+        // Custom dropdown for stagingCategory/stagingModel — a native <select>'s option list
+        // opens upward whenever the browser decides there isn't enough room below, which can
+        // cover most of the page for a long list like Toner (30+ models). Replacing the popup
+        // with our own panel anchored via CSS (top:100%) removes that browser heuristic
+        // entirely: it always renders directly below the control and scrolls internally
+        // instead of ever flipping upward or overflowing the viewport.
+        function enhanceSelectAsCombo(selectEl) {
+            if (!selectEl) return null;
+
+            const wrap = document.createElement('div');
+            wrap.className = 'combo-wrap';
+            selectEl.parentNode.insertBefore(wrap, selectEl);
+            wrap.appendChild(selectEl);
+            selectEl.classList.add('combo-native-select');
+
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'form-select combo-toggle';
+            wrap.appendChild(toggle);
+
+            const panel = document.createElement('div');
+            panel.className = 'combo-panel';
+            panel.setAttribute('role', 'listbox');
+            wrap.appendChild(panel);
+
+            function syncLabel() {
+                const opt = selectEl.options[selectEl.selectedIndex];
+                toggle.textContent = opt ? opt.text : '';
+            }
+
+            function closePanel() {
+                panel.style.display = 'none';
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            function buildPanel() {
+                panel.innerHTML = '';
+                Array.from(selectEl.options).forEach(opt => {
+                    if (opt.hidden) return;
+                    const row = document.createElement('div');
+                    row.className = 'combo-option' + (opt.value === selectEl.value ? ' active' : '');
+                    row.textContent = opt.text;
+                    row.setAttribute('role', 'option');
+                    row.addEventListener('click', () => {
+                        selectEl.value = opt.value;
+                        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        syncLabel();
+                        closePanel();
+                    });
+                    panel.appendChild(row);
+                });
+            }
+
+            function openPanel() {
+                buildPanel();
+                panel.style.display = 'block';
+                toggle.setAttribute('aria-expanded', 'true');
+            }
+
+            toggle.addEventListener('click', () => {
+                if (panel.style.display === 'block') closePanel(); else openPanel();
+            });
+            toggle.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closePanel();
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPanel(); }
+            });
+            document.addEventListener('click', (e) => {
+                if (!wrap.contains(e.target)) closePanel();
+            });
+
+            syncLabel();
+            return { refresh: syncLabel };
+        }
+
+        // Re-hydrate items carried over from a failed server-side submission
+        (@Html.Raw(Json.Serialize((Model.RequestItems ?? new List<Inventory.RequestPortal.Models.ViewModels.CartridgeRequestItemViewModel>())
+            .Where(x => x != null && !string.IsNullOrWhiteSpace(x.CartridgeModel))
+            .Select(x => new { category = x.Category, modelKey = x.ModelKey, cartridgeModel = x.CartridgeModel, quantity = x.Quantity, good = x.GoodEmptyQty, damaged = x.DamagedEmptyQty })))).forEach(item => {
+            addItemToRequest(item.category, item.modelKey, item.cartridgeModel, item.quantity, item.good, item.damaged);
+        });
+
+        if (addToRequestBtn) {
+            addToRequestBtn.addEventListener('click', function() {
+                showStagingError('');
+                const category = stagingCategory.value || 'Cartridge';
+                const selected = stagingModel.options[stagingModel.selectedIndex];
+                const modelKey = selected ? selected.value : '';
+                const modelNumber = selected ? (selected.getAttribute('data-model') || '') : '';
+                const qty = parseInt(stagingQty.value) || 0;
+                const isCartridge = category === 'Cartridge';
+                const good = isCartridge ? (parseInt(stagingGood.value) || 0) : 0;
+                const damaged = isCartridge ? (parseInt(stagingDamaged.value) || 0) : 0;
+
+                if (!modelKey) { showStagingError('Please select a model from the list.'); return; }
+                if (qty <= 0) { showStagingError('Quantity must be at least 1.'); return; }
+                if (isCartridge && (good > 0 || damaged > 0) && good + damaged !== qty) {
+                    showStagingError(`Good (${good}) + Damaged (${damaged}) must equal the requested quantity (${qty}) when returning empties.`);
+                    return;
+                }
+
+                addItemToRequest(category, modelKey, modelNumber, qty, good, damaged);
+                if (itemsRequiredError) itemsRequiredError.style.display = 'none';
+
+                stagingCategory.value = 'Cartridge';
+                filterStagingModelsByCategory();
+                stagingModel.value = '';
+                if (stagingModelCombo) stagingModelCombo.refresh();
+                stagingQty.value = 1;
+                stagingGood.value = 0;
+                stagingDamaged.value = 0;
+                updateStagingAvailability();
+            });
+        }
+
+        updateItemsCountAndVisibility();
+
+        const assistedRequestFormEl = document.getElementById('assistedRequestForm');
+        if (assistedRequestFormEl) {
+            assistedRequestFormEl.addEventListener('submit', function(e) {
+                const rows = cartridgeRowsBody ? cartridgeRowsBody.querySelectorAll('tr.cartridge-row') : [];
+                if (rows.length === 0) {
+                    e.preventDefault();
+                    if (itemsRequiredError) itemsRequiredError.style.display = '';
+                }
+            });
+        }
+
+        // Clear button resets the employee picker, all filters, and manual auth section
+        document.querySelector('.btn-clear').addEventListener('click', function() {
+            empSearchInput.value  = '';
+            empHidden.value       = '';
+            clearEmpInfo();
+            empCompanyPicker.clear();
+            // Reset manual auth section
+            manualAuthToggle.checked       = false;
+            quickAutoApprovedCheck.checked = false;
+            updateManualAuthSection();
+            decisionApproved.checked = true;
+            itRemarksInput.value     = '';
+            updateRemarksUI();
+        });
+    });
+    </script>
+}

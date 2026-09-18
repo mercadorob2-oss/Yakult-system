@@ -1,0 +1,511 @@
+<Window x:Class="Yakult.Inventory.App.Wpf.RepairPortal.Shell.Views.RepairPortalShellWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:gallery="clr-namespace:Yakult.Inventory.App.Wpf.RepairPortal.Gallery.Views"
+        xmlns:table="clr-namespace:Yakult.Inventory.App.Wpf.RepairPortal.Table.Views"
+        xmlns:kanban="clr-namespace:Yakult.Inventory.App.Wpf.RepairPortal.Kanban.Views"
+        xmlns:timeinout="clr-namespace:Yakult.Inventory.App.Wpf.RepairPortal.TimeInOut.Views"
+        xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+        xmlns:shapes="clr-namespace:Yakult.Inventory.App.Wpf.RepairPortal.Shared.Shapes"
+        xmlns:notif="clr-namespace:Yakult.Inventory.App.Wpf.RepairPortal.Notifications"
+        Title="Repair Technician Portal" Height="820" Width="1360"
+        MinHeight="600" MinWidth="1000"
+        WindowStartupLocation="CenterScreen" WindowState="Maximized" ResizeMode="CanResize" SizeToContent="Manual"
+        Background="#F0F2F6">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <conv:BoolToCardBrushConverter x:Key="BoolToCardBrush"/>
+
+            <!-- Left nav panel item style — add more Buttons using this style to SidebarPanel
+                 below as new Repair Portal pages are added. -->
+            <Style x:Key="SidebarNavButton" TargetType="Button">
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="Padding" Value="16,11"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="#1E293B"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="FontSize" Value="13.5"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}">
+                                <DockPanel LastChildFill="True">
+                                    <!-- Red accent bar on hover — the one spot of the portal's hero
+                                         color inside the sidebar, echoing the header's identity. -->
+                                    <Rectangle x:Name="AccentBar" DockPanel.Dock="Left" Width="3" Fill="Transparent"/>
+                                    <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                </DockPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#F1F5F9"/>
+                                    <Setter TargetName="AccentBar" Property="Fill" Value="{StaticResource RepairRedBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Dropdown-style ToggleButton for "Advanced Filters" — same pattern as
+                 Wpf\Items\Views\ItemsPageView.xaml's AdvancedFiltersToggleBtn, copied here rather
+                 than shared since it's a local Window.Resources style there too. -->
+            <Style x:Key="AdvancedFiltersToggleBtn" TargetType="ToggleButton">
+                <Setter Property="BorderBrush" Value="#C2CCDA"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="Padding" Value="8,0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{TemplateBinding Content}"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="1" Text="&#xE70D;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="9" Margin="6,0,0,0" VerticalAlignment="Center"
+                                               Foreground="#6B7A8D"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="BorderBrush" Value="{StaticResource RepairAccentBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid x:Name="WorkspaceGrid" IsEnabled="{Binding IsWorkspaceUnlocked}">
+            <Grid.Style>
+                <Style TargetType="Grid">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding ShowTimeInGate}" Value="True">
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <BlurEffect Radius="12"/>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Style>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- ── Top bar ─────────────────────────────────────────────────── -->
+            <!-- Three zones: identity (Auto, left) / user+session info (*, absorbs slack, center)
+                 / actions (Auto, right) — mirrors the Filters/ViewSwitcher grouping pattern used
+                 in Grid.Row="2" below, so the header and toolbar read consistently. -->
+            <!-- Header + a thin red/blue identity stripe stacked in a DockPanel so the stripe
+                 rides along the bottom edge without needing its own Grid row (Row 0 is Auto-height
+                 and sizes to this DockPanel's total content instead). -->
+            <DockPanel Grid.Row="0" LastChildFill="False">
+            <Border DockPanel.Dock="Top" Background="White" Padding="20,14">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Zone 1 — Application identity. Signature mark: two slanted "flag" bars
+                         (reusing ManualInputShape) bracket the title top and bottom, red above /
+                         blue below, echoing the accent colors used for status badges elsewhere in
+                         the portal. Red bar leans right, blue bar leans left, so the pair reads as
+                         a matched set rather than two random rectangles. -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="HamburgerButton" Content="&#9776;" FontSize="18"
+                                Background="Transparent" Foreground="#1E293B" BorderThickness="0" Cursor="Hand"
+                                Padding="6,2" Margin="0,0,14,0" VerticalAlignment="Center"
+                                Click="HamburgerButton_Click"/>
+                        <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                            <!-- Red bar hugs the title's right edge (StackPanel sizes to the widest
+                                 child, the title text, so Right alignment lands flush with it) and
+                                 leans back toward the start of the text with its diagonal point.
+                                 The blue bar mirrors it below, undershooting to the left — the pair
+                                 reads as one matched flag rather than two stray rectangles. -->
+                            <!-- Blue now sits above the title, red below — both still tapering
+                                 inward toward the text: blue (aligned left) points in at its own
+                                 right, red (aligned right) points in at its own left. -->
+                            <shapes:ManualInputShape Height="9" Width="150" HorizontalAlignment="Left"
+                                                      Margin="0,0,0,3"
+                                                      SlantCorner="BottomRight" SlantWidth="26"
+                                                      Fill="{StaticResource RepairAccentBrush}"/>
+                            <TextBlock Text="Repair Technician Portal" Foreground="{StaticResource RepairRedBrush}" FontSize="24"
+                                       FontWeight="Bold" FontFamily="Consolas"/>
+                            <shapes:ManualInputShape Height="9" Width="190" HorizontalAlignment="Right"
+                                                      Margin="0,3,0,0"
+                                                      SlantCorner="TopLeft" SlantWidth="30"
+                                                      Fill="{StaticResource RepairRedBrush}"/>
+                            <TextBlock Text="{Binding CurrentDateDisplay}" Foreground="#64748B" FontSize="12" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Zone 2 — User / session information. Centered in the flexible middle column
+                         so it absorbs the slack between identity and actions instead of the two
+                         crowding together; the timer badge keeps its existing dark chip look but
+                         reads as a status indicator (name leads, timer/last-timeout follow) rather
+                         than competing with the action buttons on the right. -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                                HorizontalAlignment="Center" Margin="24,0">
+                        <TextBlock Text="{Binding CurrentTechnicianName}" Foreground="#1E293B" VerticalAlignment="Center" Margin="0,0,12,0" FontWeight="SemiBold"/>
+                        <Border Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="10,6" Margin="0,0,10,0">
+                            <TextBlock Text="{Binding ElapsedDisplay}" Foreground="#16A34A" FontFamily="Consolas" FontWeight="Bold"/>
+                        </Border>
+                        <Border Background="#F1F5F9" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="10,6">
+                            <TextBlock Foreground="#64748B" FontSize="11" VerticalAlignment="Center">
+                                <Run Text="Last Time Out: "/>
+                                <Run Text="{Binding LastTimeOut, Mode=OneWay, StringFormat='{}{0:MMM d, yyyy h:mm tt}', TargetNullValue='Never'}"/>
+                            </TextBlock>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Zone 3 — Actions. + New Repair Ticket keeps the primary style (strongest
+                         visual weight); Time Out stays secondary. "Back to Portal" moved into the
+                         hamburger menu (SidebarPanel, pinned at the bottom); the notification bell
+                         now occupies the space it vacated, right of + New Repair Ticket. -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="Time Out" Style="{StaticResource RepairSecondaryBtn}" Command="{Binding TimeOutCommand}"
+                                Visibility="{Binding IsTimedIn, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                        <Button Content="+ New Repair Ticket" Style="{StaticResource RepairPrimaryBtn}" Command="{Binding NewTicketCommand}" Margin="10,0,0,0"/>
+                        <notif:RepairNotificationBell x:Name="NotificationBell" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+            <!-- Identity stripe — the header's signature carried across the full width: red for
+                 the primary/hero half, blue for the secondary/informational half. -->
+            <Grid DockPanel.Dock="Top" Height="3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Rectangle Grid.Column="0" Fill="{StaticResource RepairRedBrush}"/>
+                <Rectangle Grid.Column="1" Fill="{StaticResource RepairAccentBrush}"/>
+            </Grid>
+            </DockPanel>
+
+            <!-- ── Search / filters + summary cards ────────────────────────── -->
+            <Border Grid.Row="1" Background="White" Padding="16,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Column 0 — Search + Advanced Filters + Clear, left-anchored. Column 1 is a
+                         flexible spacer so the cards sit at the right of this row instead of
+                         crowding the filter controls. Table-only selection actions (N selected/
+                         Open/Delete) live on the row below (Grid.Row="2"), beside the view
+                         switcher — always visible regardless of active view. -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Bottom">
+                        <StackPanel VerticalAlignment="Bottom" Margin="0,0,10,0">
+                            <TextBlock Text="Search" Style="{StaticResource FilterLabel}" Margin="2,0,0,2"/>
+                            <TextBox Width="220" Style="{StaticResource SearchBox}"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Tag="Search ticket, item, serial, problem..."/>
+                        </StackPanel>
+
+                        <!-- Company/Branch/Department/Priority/Quick Filter collapse into this single
+                             dropdown — same "Advanced Filters" pattern as Wpf\Items\Views\ItemsPageView.xaml,
+                             so the bar itself only ever needs room for two buttons regardless of how
+                             many filter fields exist. -->
+                        <ToggleButton x:Name="AdvancedFiltersToggle" Style="{StaticResource AdvancedFiltersToggleBtn}"
+                                      Width="140" Height="30" Margin="0,0,8,0" VerticalAlignment="Bottom" Content="Advanced Filters"/>
+                        <Popup PlacementTarget="{Binding ElementName=AdvancedFiltersToggle}"
+                               IsOpen="{Binding IsChecked, ElementName=AdvancedFiltersToggle, Mode=TwoWay}"
+                               StaysOpen="False" Placement="Bottom" AllowsTransparency="True">
+                            <Border Background="White" BorderBrush="#DDE3EC" BorderThickness="1"
+                                    CornerRadius="8" Padding="18" Width="260">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="#1A2333"/>
+                                </Border.Effect>
+                                <StackPanel>
+                                    <TextBlock Text="Advanced Filters" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                                    <StackPanel Margin="0,0,0,12">
+                                        <TextBlock Text="Company" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                        <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                                  ItemsSource="{Binding CompanyOptions}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedCompany}"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,12">
+                                        <TextBlock Text="Branch" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                        <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                                  ItemsSource="{Binding BranchOptions}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedBranch}"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,12">
+                                        <TextBlock Text="Department" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                        <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                                  ItemsSource="{Binding DepartmentOptions}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedDepartment}"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,12">
+                                        <TextBlock Text="Priority" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                        <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                                  ItemsSource="{Binding PriorityOptions}" SelectedItem="{Binding SelectedPriority}"/>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,12">
+                                        <TextBlock Text="Category" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                        <Border BorderBrush="#DDE3EC" BorderThickness="1" CornerRadius="4" MaxHeight="140">
+                                            <Grid>
+                                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                                    <ItemsControl ItemsSource="{Binding CategoryOptions}" Margin="6,4">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <CheckBox Content="{Binding Name}" IsChecked="{Binding IsSelected, Mode=TwoWay}" Margin="0,3" FontSize="12"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                                <TextBlock Text="No categories yet" FontSize="10.5" FontStyle="Italic" Foreground="#94A3B8" Margin="6,6"
+                                                           Visibility="{Binding CategoryOptions.Count, Converter={StaticResource ZeroToVisibilityConverter}}"/>
+                                            </Grid>
+                                        </Border>
+                                    </StackPanel>
+                                    <StackPanel Margin="0,0,0,12">
+                                        <TextBlock Text="Quick Filter" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                        <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                                  ItemsSource="{Binding QuickFilterOptions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding QuickFilterChip}"/>
+                                    </StackPanel>
+                                    <CheckBox Content="Hide Completed" IsChecked="{Binding HideCompleted}"
+                                              ToolTip="Hides Completed tickets, including Unrepairable tickets whose disposition has been resolved"/>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+
+                        <Button Content="Clear" Style="{StaticResource RepairSecondaryBtn}" VerticalAlignment="Bottom" Command="{Binding ClearFiltersCommand}"/>
+                    </StackPanel>
+
+                    <!-- Cards are shrunk from the shared StatCard style's defaults (Padding 16,10 /
+                         MinWidth 120 / value FontSize 20) so all 7 — including "All Tickets" — fit
+                         this row without wrapping. Overridden per-instance rather than editing
+                         StatCard/StatCardClickable/StatCardValue themselves, since those are shared
+                         by several other pages (Warranty, Assets, Vendors, etc.) that still want the
+                         original larger sizing. -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <Border Style="{StaticResource StatCardClickable}" Padding="10,7" MinWidth="0" Margin="0,0,6,0"
+                            Background="{Binding IsAllCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetQuickFilterCommand}" CommandParameter=""/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="All Tickets" Style="{StaticResource FilterLabel}"/>
+                            <TextBlock Text="{Binding Summary.Total}" Style="{StaticResource StatCardValue}" FontSize="16"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Padding="10,7" MinWidth="0" Margin="0,0,6,0"
+                            Background="{Binding IsWaitingCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetQuickFilterCommand}" CommandParameter="Waiting"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="Waiting" Style="{StaticResource FilterLabel}"/>
+                            <TextBlock Text="{Binding Summary.Waiting}" Style="{StaticResource StatCardValue}" FontSize="16"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Padding="10,7" MinWidth="0" Margin="0,0,6,0"
+                            Background="{Binding IsDiagnosingCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetQuickFilterCommand}" CommandParameter="Diagnosing"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="Diagnosing" Style="{StaticResource FilterLabel}"/>
+                            <TextBlock Text="{Binding Summary.Diagnosing}" Style="{StaticResource StatCardValue}" FontSize="16"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Padding="10,7" MinWidth="0" Margin="0,0,6,0"
+                            Background="{Binding IsRepairingCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetQuickFilterCommand}" CommandParameter="Repairing"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="Repairing" Style="{StaticResource FilterLabel}"/>
+                            <TextBlock Text="{Binding Summary.Repairing}" Style="{StaticResource StatCardValue}" FontSize="16"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Padding="10,7" MinWidth="0" Margin="0,0,6,0"
+                            Background="{Binding IsAwaitingPartsCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetQuickFilterCommand}" CommandParameter="NeedsParts"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="Awaiting Parts" Style="{StaticResource FilterLabel}"/>
+                            <TextBlock Text="{Binding Summary.AwaitingParts}" Style="{StaticResource StatCardValue}" FontSize="16"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Padding="10,7" MinWidth="0" Margin="0,0,6,0"
+                            Background="{Binding IsCompletedCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetQuickFilterCommand}" CommandParameter="Completed"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="Completed" Style="{StaticResource FilterLabel}"/>
+                            <TextBlock Text="{Binding Summary.Completed}" Style="{StaticResource StatCardValue}" FontSize="16"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Padding="10,7" MinWidth="0"
+                            Background="{Binding IsUnrepairableCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding SetQuickFilterCommand}" CommandParameter="Unrepairable"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="Unrepairable" Style="{StaticResource FilterLabel}"/>
+                            <TextBlock Text="{Binding Summary.Unrepairable}" Style="{StaticResource StatCardValue}" FontSize="16"/>
+                        </StackPanel>
+                    </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ── View switcher bar ────────────────────────────────────────── -->
+            <!-- Search/Advanced Filters/Clear now live on the summary-cards row above
+                 (Grid.Row="1"), left of the cards. This row is the Gallery/Table/Kanban switcher
+                 (left) plus the Table-only selection actions (right) — two separate groups instead
+                 of one, so the switcher stays left-anchored regardless of whether the selection
+                 actions are visible. -->
+            <Border Grid.Row="2" Style="{StaticResource FilterBar}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <ToggleButton Content="Gallery" Style="{StaticResource ViewSwitchButtonStyle}" IsChecked="{Binding IsGalleryMode, Mode=OneWay}"
+                                      Command="{Binding SetViewModeCommand}" CommandParameter="Gallery"/>
+                        <ToggleButton Content="Table" Style="{StaticResource ViewSwitchButtonStyle}" IsChecked="{Binding IsTableMode, Mode=OneWay}"
+                                      Command="{Binding SetViewModeCommand}" CommandParameter="Table"/>
+                        <ToggleButton Content="Kanban" Style="{StaticResource ViewSwitchButtonStyle}" IsChecked="{Binding IsKanbanMode, Mode=OneWay}"
+                                      Command="{Binding SetViewModeCommand}" CommandParameter="Kanban"/>
+                    </StackPanel>
+
+                    <!-- Table View's checked-row actions — contextual, right-aligned in the
+                         flexible remaining column. Only ever visible while Table View is active
+                         and something is checked (RepairPortalShellViewModel.ShowTableSelectionActions),
+                         so it never reserves space in Gallery/Kanban mode. -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Visibility="{Binding ShowTableSelectionActions, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock Text="{Binding TableSelectionCountText}" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="#334155" Margin="0,0,12,0" Cursor="Hand" TextDecorations="Underline"
+                                   ToolTip="Click to review and unselect tickets">
+                            <TextBlock.InputBindings>
+                                <MouseBinding MouseAction="LeftClick" Command="{Binding ReviewTableSelectionCommand}"/>
+                            </TextBlock.InputBindings>
+                        </TextBlock>
+                        <Button Content="Open" Style="{StaticResource RepairPrimaryBtn}" FontSize="11" Padding="10,5" Margin="0,0,6,0"
+                                Command="{Binding TableOpenCommand}"
+                                ToolTip="Opens the selected ticket — only works with exactly one row checked"/>
+                        <Button Content="Delete" Style="{StaticResource RepairSecondaryBtn}" FontSize="11" Padding="10,5" Foreground="#DC2626"
+                                Command="{Binding TableDeleteCommand}"
+                                ToolTip="Permanently delete the selected ticket(s) — for accidental intake mistakes"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ── Workspace content ───────────────────────────────────────── -->
+            <Grid Grid.Row="3">
+                <gallery:RepairTicketGalleryView Visibility="{Binding IsGalleryMode, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                <table:RepairTicketTableView Visibility="{Binding IsTableMode, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                <kanban:RepairTicketKanbanView Visibility="{Binding IsKanbanMode, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            </Grid>
+
+            <!-- ── Click-outside-to-close overlay — transparent, sits above the workspace
+                 content but below SidebarPanel, only active while the panel is open. ──────── -->
+            <Border x:Name="SidebarClickOutside" Grid.Row="1" Grid.RowSpan="3"
+                    Background="Transparent" Visibility="Collapsed"
+                    MouseDown="SidebarClickOutside_MouseDown"/>
+
+            <!-- ── Left navigation panel — floats OVER the workspace (like MainForm.cs's
+                 hamburger nav) instead of resizing it. Collapsed by default, toggled by the
+                 hamburger button. Add more SidebarNavButton-styled Buttons here as new pages
+                 are added. ─────────────────────────────────────────────────────────────── -->
+            <Border x:Name="SidebarPanel" Grid.Row="1" Grid.RowSpan="3"
+                    HorizontalAlignment="Left" Width="220" Background="White" Visibility="Collapsed"
+                    BorderBrush="#E2E8F0" BorderThickness="0,0,1,0">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.15" Color="Black"/>
+                </Border.Effect>
+                <DockPanel LastChildFill="True">
+                    <!-- "Back to Portal" — pinned to the bottom of the menu and given the portal's
+                         hero red so it stands out from the ghost-style nav buttons above: this is
+                         the way out of the portal, not just another page. Always available (no
+                         IsTimedIn gate) so a technician can leave even from the time-in screen. -->
+                    <StackPanel DockPanel.Dock="Bottom">
+                        <Border Height="1" Background="#E2E8F0"/>
+                        <Button x:Name="BackToPortalButton" Content="&#8592;  Back to Portal"
+                                Click="BackToPortalButton_Click" Cursor="Hand" Margin="12"
+                                Background="{StaticResource RepairRedBrush}" Foreground="White"
+                                FontSize="13.5" FontWeight="SemiBold" BorderThickness="0" Padding="14,10">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="8">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                          Margin="{TemplateBinding Padding}"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource RepairRedHoverBrush}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </StackPanel>
+
+                    <StackPanel DockPanel.Dock="Top">
+                        <!-- Identity stripe — same red/blue split as the header, so the sidebar reads
+                             as part of the same portal instead of a separate panel. -->
+                        <Grid Height="3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Rectangle Grid.Column="0" Fill="{StaticResource RepairRedBrush}"/>
+                            <Rectangle Grid.Column="1" Fill="{StaticResource RepairAccentBrush}"/>
+                        </Grid>
+                        <Border Padding="16,16,16,10" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                            <TextBlock Text="MENU" Foreground="#64748B" FontSize="10.5" FontWeight="Bold"/>
+                        </Border>
+                        <Button Content="Reports" Style="{StaticResource SidebarNavButton}" Click="ReportsMenuItem_Click"/>
+                        <Button Content="Attendance History" Style="{StaticResource SidebarNavButton}" Click="HistoryMenuItem_Click"
+                                ToolTip="Your Time In/Out session history"/>
+                        <!-- Dev-only, portal-wide maintenance action — fixes stale/black-background
+                             attachment thumbnails everywhere they're read (Gallery/Table/Kanban cards,
+                             and the Report attachment picker), not just one screen, so it lives at this
+                             portal-wide level rather than nested inside a specific view. -->
+                        <Button Content="Regenerate Thumbnails" Style="{StaticResource SidebarNavButton}" Click="RegenerateThumbnailsMenuItem_Click"
+                                Visibility="{Binding IsDeveloperUser, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- ── Time-In gate overlay (paints on top; blocks the workspace) ──── -->
+        <timeinout:TimeInGateOverlay Visibility="{Binding ShowTimeInGate, Converter={StaticResource BoolToVisibilityConverter}}"/>
+    </Grid>
+</Window>

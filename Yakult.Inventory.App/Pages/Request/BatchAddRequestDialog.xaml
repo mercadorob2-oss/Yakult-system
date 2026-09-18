@@ -1,0 +1,649 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Request.BatchAddRequestDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="Batch Add Requests"
+        Width="1100" Height="620"
+        MinWidth="900" MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="True"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        ResizeMode="CanResizeWithGrip"
+        PreviewMouseDown="Window_PreviewMouseDown">
+
+    <Window.Resources>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+        </Style>
+
+        <!-- Filter-row editable ComboBox — custom template fixes default-theme white-bleed on the
+             bottom border and ensures the inner TextBox has proper left margin. -->
+        <Style x:Key="FilterComboStyle" TargetType="ComboBox">
+            <Setter Property="Height"                    Value="28"/>
+            <Setter Property="FontSize"                  Value="11.5"/>
+            <Setter Property="Background"                Value="White"/>
+            <Setter Property="BorderBrush"               Value="#C8D2DC"/>
+            <Setter Property="BorderThickness"           Value="1"/>
+            <Setter Property="IsEditable"                Value="True"/>
+            <Setter Property="IsTextSearchEnabled"       Value="False"/>
+            <Setter Property="IsSynchronizedWithCurrentItem" Value="False"/>
+            <Setter Property="SnapsToDevicePixels"       Value="True"/>
+            <Setter Property="MaxDropDownHeight"         Value="260"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Border x:Name="MainBd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="22"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Editable text area -->
+                                <TextBox x:Name="PART_EditableTextBox"
+                                         Grid.Column="0"
+                                         Margin="5,0,0,0"
+                                         Padding="0"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         FontSize="{TemplateBinding FontSize}"
+                                         FontFamily="{TemplateBinding FontFamily}"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         VerticalAlignment="Center"
+                                         Focusable="True"
+                                         IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}"/>
+                                <!-- Clear (reset to the placeholder item) — hidden while nothing but the
+                                     placeholder is selected; SelectedIndex 0 is always the placeholder,
+                                     see LoadOrgUnits. -->
+                                <Button x:Name="BtnClear"
+                                        Grid.Column="1"
+                                        Width="16" Height="16"
+                                        Margin="0,0,2,0"
+                                        Padding="0"
+                                        VerticalAlignment="Center"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Focusable="False"
+                                        Cursor="Hand"
+                                        ToolTip="Clear"
+                                        Click="BtnClearOrg_Click">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <TextBlock Text="✕" FontSize="9" FontWeight="Bold"
+                                                       Foreground="#8A9AAA"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                                <!-- Dropdown toggle -->
+                                <ToggleButton Grid.Column="2"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay,
+                                                          RelativeSource={RelativeSource TemplatedParent}}"
+                                              Background="Transparent"
+                                              BorderThickness="0"
+                                              Focusable="False"
+                                              ClickMode="Press"
+                                              Cursor="Hand">
+                                    <Path Data="M 0 0 L 4.5 5 L 9 0"
+                                          Stroke="#8A9AAA" StrokeThickness="1.5"
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </ToggleButton>
+                                <!-- Dropdown popup -->
+                                <Popup x:Name="PART_Popup"
+                                       Grid.ColumnSpan="3"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       AllowsTransparency="True"
+                                       Focusable="False"
+                                       StaysOpen="False"
+                                       Placement="Bottom"
+                                       PopupAnimation="Fade">
+                                    <Border MinWidth="{Binding ActualWidth,
+                                                       RelativeSource={RelativeSource TemplatedParent}}"
+                                            MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                            Background="White"
+                                            BorderBrush="#C8D2DC"
+                                            BorderThickness="1"
+                                            CornerRadius="0,0,3,3"
+                                            SnapsToDevicePixels="True">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="6" ShadowDepth="2" Opacity="0.13"/>
+                                        </Border.Effect>
+                                        <ScrollViewer Focusable="False" VerticalScrollBarVisibility="Auto">
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="MainBd" Property="BorderBrush" Value="#8BAACC"/>
+                            </Trigger>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="MainBd" Property="BorderBrush" Value="#3498DB"/>
+                                <Setter TargetName="MainBd" Property="CornerRadius" Value="3,3,0,0"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="MainBd" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                            <Trigger Property="SelectedIndex" Value="0">
+                                <Setter TargetName="BtnClear" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="SelectedIndex" Value="-1">
+                                <Setter TargetName="BtnClear" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Primary button (Save) -->
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Height"          Value="36"/>
+            <Setter Property="Padding"         Value="22,0"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background"      Value="#3498DB"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.72"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.42"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary button (Cancel) -->
+        <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
+            <Setter Property="Background" Value="#E8ECF0"/>
+            <Setter Property="Foreground" Value="#3A4A5A"/>
+        </Style>
+
+        <!-- Outline button (+ Add Row) -->
+        <Style x:Key="OutlineBtn" TargetType="Button">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="Padding"         Value="14,0"/>
+            <Setter Property="FontSize"        Value="11.5"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush"     Value="#3498DB"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="Foreground"      Value="#3498DB"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#EEF4FF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Danger outline button (Remove Row) -->
+        <Style x:Key="DangerBtn" TargetType="Button" BasedOn="{StaticResource OutlineBtn}">
+            <Setter Property="BorderBrush" Value="#C0392B"/>
+            <Setter Property="Foreground"  Value="#C0392B"/>
+        </Style>
+
+        <!-- DataGrid column header -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background"              Value="#3498DB"/>
+            <Setter Property="Foreground"              Value="White"/>
+            <Setter Property="FontWeight"              Value="Bold"/>
+            <Setter Property="FontSize"                Value="11"/>
+            <Setter Property="Padding"                 Value="8,0"/>
+            <Setter Property="Height"                  Value="36"/>
+            <Setter Property="BorderBrush"             Value="#5AAFE5"/>
+            <Setter Property="BorderThickness"         Value="0,0,1,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridColumnHeader">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- DataGrid row -->
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background"    Value="#E3F2FD"/>
+            <Setter Property="BorderBrush"   Value="White"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Style.Triggers>
+                <Trigger Property="AlternationIndex" Value="1">
+                    <Setter Property="Background" Value="#E8F5E9"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#2980B9"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- DataGrid cell -->
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderBrush"           Value="White"/>
+            <Setter Property="BorderThickness"       Value="0,0,2,0"/>
+            <Setter Property="FocusVisualStyle"      Value="{x:Null}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="6,2">
+                            <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsEditing" Value="True">
+                    <Setter Property="BorderBrush" Value="#3498DB"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Status options -->
+        <x:Array x:Key="StatusOptions" Type="{x:Type sys:String}">
+            <sys:String>Under Review</sys:String>
+            <sys:String>Submitted</sys:String>
+            <sys:String>On Hold</sys:String>
+        </x:Array>
+
+    </Window.Resources>
+
+    <Border CornerRadius="10" Background="White" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="48"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="56"/>
+            </Grid.RowDefinitions>
+
+            <!-- ═══ HEADER ═══ -->
+            <Border Grid.Row="0" Background="#3498DB" CornerRadius="10,10,0,0"
+                    MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
+                <DockPanel Margin="16,0,10,0" VerticalAlignment="Center">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                                VerticalAlignment="Center" Cursor="Arrow">
+                        <TextBlock Text="─" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF"
+                                   Cursor="Hand" VerticalAlignment="Center" Padding="8,0"
+                                   MouseLeftButtonDown="OnMinimizeClick"/>
+                        <TextBlock x:Name="BtnMaximizeGlyph" Text="□" FontSize="13" FontWeight="Bold"
+                                   Foreground="#BDD9FF" Cursor="Hand" VerticalAlignment="Center"
+                                   Padding="8,0" MouseLeftButtonDown="OnMaximizeClick"/>
+                        <TextBlock Text="✕" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF"
+                                   Cursor="Hand" VerticalAlignment="Center" Padding="8,0"
+                                   MouseLeftButtonDown="OnCloseClick"/>
+                    </StackPanel>
+                    <TextBlock Text="Batch Add Requests" FontSize="13" FontWeight="Bold"
+                               Foreground="White" VerticalAlignment="Center"/>
+                </DockPanel>
+            </Border>
+
+            <!-- ═══ BODY ═══ -->
+            <Grid Grid.Row="1" Margin="12,8,12,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Info banner -->
+                <Border Grid.Row="0" Background="#EEF4FF" BorderBrush="#BDD0F8"
+                        BorderThickness="1" CornerRadius="5" Padding="10,6" Margin="0,0,0,6">
+                    <TextBlock x:Name="TxtInfoBanner" FontSize="11" Foreground="#2A5BC8"
+                               TextWrapping="Wrap"
+                               Text="Batch add requests. Select an employee for this batch, then fill each row and click Save."/>
+                </Border>
+
+                <!-- Org filter row — doubles as Org Unit selector in No-Employee mode -->
+                <WrapPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,4" VerticalAlignment="Center">
+                    <TextBlock x:Name="LblOrgRowPrefix" Text="Filter:" VerticalAlignment="Center"
+                               FontSize="11.5" FontWeight="SemiBold" Foreground="#3A4A5A"
+                               MinWidth="54" Margin="0,0,10,0"/>
+                    <TextBlock Text="Company:" VerticalAlignment="Center" FontSize="11.5"
+                               Foreground="#4A5A6A" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="CmbCompany" Width="185" Margin="0,0,12,0"
+                              Style="{StaticResource FilterComboStyle}"
+                              GotFocus="CmbOrg_GotFocus"
+                              PreviewKeyDown="CmbOrg_PreviewKeyDown"
+                              SelectionChanged="CmbOrg_SelectionChanged"
+                              DropDownClosed="CmbOrg_DropDownClosed"/>
+                    <TextBlock Text="Dept:" VerticalAlignment="Center" FontSize="11.5"
+                               Foreground="#4A5A6A" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="CmbDepartment" Width="165" Margin="0,0,12,0"
+                              Style="{StaticResource FilterComboStyle}"
+                              GotFocus="CmbOrg_GotFocus"
+                              PreviewKeyDown="CmbOrg_PreviewKeyDown"
+                              SelectionChanged="CmbOrg_SelectionChanged"
+                              DropDownClosed="CmbOrg_DropDownClosed"/>
+                    <TextBlock Text="Branch:" VerticalAlignment="Center" FontSize="11.5"
+                               Foreground="#4A5A6A" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="CmbBranch" Width="150" Margin="0,0,16,0"
+                              Style="{StaticResource FilterComboStyle}"
+                              GotFocus="CmbOrg_GotFocus"
+                              PreviewKeyDown="CmbOrg_PreviewKeyDown"
+                              SelectionChanged="CmbOrg_SelectionChanged"
+                              DropDownClosed="CmbOrg_DropDownClosed"/>
+                    <CheckBox x:Name="ChkNoEmployee" Content="No Employee (Dept. Level)"
+                              VerticalAlignment="Center" FontSize="11.5" Foreground="#4A5A6A"
+                              Checked="ChkNoEmployee_Changed" Unchecked="ChkNoEmployee_Changed"/>
+                </WrapPanel>
+
+                <!-- Employee search row — collapsed in No-Employee mode -->
+                <WrapPanel Grid.Row="2" x:Name="PnlEmployee" Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock x:Name="LblEmployee" Text="Employee:" VerticalAlignment="Center"
+                               FontSize="11.5" Foreground="#4A5A6A" Margin="0,0,8,0"/>
+                    <Grid x:Name="GridEmployee" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <TextBox x:Name="TxtEmployee" Width="380" Height="30"
+                                 FontSize="11.5" Padding="8,0,26,0"
+                                 VerticalContentAlignment="Center"
+                                 Background="White" BorderBrush="#C8D2DC" BorderThickness="1"
+                                 TextChanged="TxtEmployee_TextChanged"
+                                 GotFocus="TxtEmployee_GotFocus"
+                                 PreviewMouseLeftButtonDown="TxtEmployee_PreviewMouseLeftButtonDown"
+                                 PreviewKeyDown="TxtEmployee_PreviewKeyDown"/>
+                        <Button x:Name="BtnClearEmployee" Content="✕"
+                                Width="18" Height="18"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Margin="0,0,6,0"
+                                FontSize="9" FontWeight="Bold"
+                                Foreground="#8A9AAA" Background="Transparent"
+                                BorderThickness="0" Cursor="Hand"
+                                Visibility="Collapsed"
+                                ToolTip="Clear employee"
+                                Click="BtnClearEmployee_Click"/>
+                        <Popup x:Name="PopupEmployee"
+                               PlacementTarget="{Binding ElementName=TxtEmployee}"
+                               Placement="Bottom"
+                               StaysOpen="False"
+                               AllowsTransparency="True">
+                            <Border Background="White" BorderBrush="#C8D2DC" BorderThickness="1"
+                                    CornerRadius="0,0,4,4">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.14"/>
+                                </Border.Effect>
+                                <ListBox x:Name="LstEmployeeSearch"
+                                         BorderThickness="0" FontSize="11.5"
+                                         MaxHeight="200" Background="Transparent"
+                                         MouseLeftButtonUp="LstEmployeeSearch_MouseLeftButtonUp"/>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <Button x:Name="BtnAddEmployee" Content="+ Employee" Style="{StaticResource OutlineBtn}"
+                            Click="BtnAddEmployee_Click"/>
+                </WrapPanel>
+
+                <!-- DataGrid -->
+                <DataGrid Grid.Row="3" x:Name="DgvRequests"
+                          Margin="0,4,0,0"
+                          Background="White"
+                          BorderBrush="#DDE3EC" BorderThickness="1"
+                          GridLinesVisibility="None"
+                          AlternationCount="2"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          HeadersVisibility="Column"
+                          CanUserSortColumns="False"
+                          CanUserReorderColumns="False"
+                          CanUserResizeRows="False"
+                          CanUserResizeColumns="True"
+                          AutoGenerateColumns="False"
+                          RowHeight="40"
+                          ColumnHeaderHeight="36"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          SelectionChanged="DgvRequests_SelectionChanged"
+                          CellEditEnding="DgvRequests_CellEditEnding"
+                          PreviewMouseLeftButtonDown="DgvRequests_PreviewMouseLeftButtonDown">
+
+                    <DataGrid.Columns>
+
+                        <!-- SELECT checkbox -->
+                        <DataGridTemplateColumn Width="36" CanUserResize="False">
+                            <DataGridTemplateColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <CheckBox x:Name="ChkSelectAll"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Click="ChkSelectAll_Click"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.HeaderTemplate>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Checked="RowCheck_Changed" Unchecked="RowCheck_Changed"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- CATEGORY -->
+                        <DataGridTemplateColumn Header="Category *" Width="145" x:Name="ColCategory">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding Categories}"
+                                              SelectedItem="{Binding SelectedCategory, Mode=OneWay}"
+                                              DisplayMemberPath="Name"
+                                              FontSize="11.5" IsEditable="False"
+                                              IsHitTestVisible="False"
+                                              BorderThickness="0" Background="Transparent"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding Categories}"
+                                              SelectedItem="{Binding SelectedCategory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="Name"
+                                              FontSize="11.5" IsEditable="False"
+                                              IsTextSearchEnabled="True"
+                                              BorderThickness="0" Background="Transparent"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- ITEM -->
+                        <DataGridTemplateColumn Header="Item *" Width="*" MinWidth="180" x:Name="ColItem">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding SelectedItemDisplay}"
+                                               Foreground="{Binding SelectedItemForeground}"
+                                               Margin="4,0" VerticalAlignment="Center" FontSize="11.5"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{Binding FilteredItems}"
+                                              SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              DisplayMemberPath="DisplayName"
+                                              FontSize="11.5"
+                                              IsEditable="True"
+                                              IsTextSearchEnabled="True"
+                                              TextSearch.TextPath="DisplayName"
+                                              BorderThickness="0" Background="Transparent"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- SERIAL NUMBER -->
+                        <DataGridTextColumn Header="Serial Number" Width="120"
+                                            Binding="{Binding SerialNumber, UpdateSourceTrigger=LostFocus}"
+                                            FontSize="11.5"/>
+
+                        <!-- MODEL NUMBER -->
+                        <DataGridTextColumn Header="Model Number" Width="120"
+                                            Binding="{Binding ModelNumber, UpdateSourceTrigger=LostFocus}"
+                                            FontSize="11.5"/>
+
+                        <!-- QTY -->
+                        <DataGridTextColumn Header="Qty *" Width="52"
+                                            Binding="{Binding Quantity, UpdateSourceTrigger=LostFocus}"
+                                            FontSize="11.5"/>
+
+                        <!-- UNIT PRICE -->
+                        <DataGridTextColumn Header="Unit Price" Width="88"
+                                            Binding="{Binding UnitPrice, StringFormat=N2}"
+                                            FontSize="11.5" IsReadOnly="True"/>
+
+                        <!-- DATE REQUESTED -->
+                        <DataGridTemplateColumn Header="Date Requested" Width="112">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding DateRequested, StringFormat=yyyy-MM-dd}"
+                                               Margin="4,0" VerticalAlignment="Center" FontSize="11.5"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <DatePicker SelectedDate="{Binding DateRequested, Mode=TwoWay}"
+                                                FontSize="11.5" BorderThickness="0"
+                                                Background="Transparent" VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- FIXED ASSET -->
+                        <DataGridTextColumn Header="Fixed Asset" Width="82"
+                                            Binding="{Binding FixedAsset}"
+                                            FontSize="11.5" IsReadOnly="True"/>
+
+                        <!-- STATUS -->
+                        <DataGridTemplateColumn Header="Status" Width="115">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Status}"
+                                               Margin="4,0" VerticalAlignment="Center" FontSize="11.5"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                            <DataGridTemplateColumn.CellEditingTemplate>
+                                <DataTemplate>
+                                    <ComboBox ItemsSource="{StaticResource StatusOptions}"
+                                              SelectedItem="{Binding Status, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              FontSize="11.5" BorderThickness="0" Background="Transparent"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellEditingTemplate>
+                        </DataGridTemplateColumn>
+
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Details panel: Description + Remarks -->
+                <Border Grid.Row="4" Background="#F8F9FC" BorderBrush="#DDE3EC"
+                        BorderThickness="1" CornerRadius="4"
+                        Margin="0,6,0,0" Padding="10,6">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Description:" VerticalAlignment="Center"
+                                   FontSize="11" FontWeight="Bold" Foreground="#5A6A7A" Margin="0,0,8,0"/>
+                        <TextBox x:Name="TxtDescription" Grid.Column="1"
+                                 FontSize="11.5" IsReadOnly="True"
+                                 Background="#F0F0F0" BorderBrush="#C8D2DC" BorderThickness="1"
+                                 Padding="6,4" MinHeight="36" MaxHeight="60"
+                                 TextWrapping="Wrap" AcceptsReturn="False"
+                                 VerticalScrollBarVisibility="Auto" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="3" Text="Remarks:" VerticalAlignment="Center"
+                                   FontSize="11" FontWeight="Bold" Foreground="#5A6A7A" Margin="0,0,8,0"/>
+                        <TextBox x:Name="TxtRemarks" Grid.Column="4"
+                                 FontSize="11.5" Background="White"
+                                 BorderBrush="#C8D2DC" BorderThickness="1"
+                                 Padding="6,4" MinHeight="36" MaxHeight="60"
+                                 TextWrapping="Wrap" AcceptsReturn="False"
+                                 VerticalScrollBarVisibility="Auto" VerticalAlignment="Center"
+                                 TextChanged="TxtRemarks_TextChanged"/>
+                    </Grid>
+                </Border>
+
+            </Grid>
+
+            <!-- ═══ FOOTER ═══ -->
+            <Border Grid.Row="2" Background="White" BorderBrush="#DDE3EC"
+                    BorderThickness="0,1,0,0" CornerRadius="0,0,10,10">
+                <DockPanel Margin="16,0" VerticalAlignment="Center" LastChildFill="False">
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                        <Button x:Name="BtnAddRow" Content="+ Add Row" Style="{StaticResource OutlineBtn}"
+                                Margin="0,0,8,0" Click="BtnAddRow_Click"/>
+                        <Button x:Name="BtnRemoveRow" Content="Remove Row" Style="{StaticResource DangerBtn}"
+                                IsEnabled="False" Click="BtnRemoveRow_Click"/>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="BtnCancel" Content="Cancel" Style="{StaticResource SecBtn}"
+                                Margin="0,0,8,0" Click="BtnCancel_Click" IsCancel="True"/>
+                        <Button x:Name="BtnSave" Content="Save" Style="{StaticResource PrimaryBtn}"
+                                Click="BtnSave_Click"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>

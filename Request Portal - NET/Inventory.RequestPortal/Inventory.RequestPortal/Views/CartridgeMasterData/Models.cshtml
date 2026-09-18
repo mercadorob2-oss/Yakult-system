@@ -1,0 +1,171 @@
+@model List<Inventory.RequestPortal.Models.CartridgeModelDto>
+@{
+    ViewData["Title"] = "Cartridge Models";
+    string search = ViewBag.SearchText ?? "";
+}
+
+@await Html.PartialAsync("_CartridgeManagementNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Cartridge Models</h1>
+        <p class="subtitle mb-0">Cartridge master-data records (dbo.CartridgeModel)</p>
+    </div>
+</div>
+
+<div class="content-padded">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex align-items-stretch gap-2 flex-wrap mb-3">
+        <form method="get" asp-action="Models" class="d-flex app-search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="search" value="@search" class="form-control form-control-sm" placeholder="Search by model number...">
+        </form>
+        <div class="ms-auto d-flex gap-2">
+            <button type="button" class="btn btn-brand-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addModelModal">
+                <i class="bi bi-plus-lg"></i> Add Model
+            </button>
+            <a asp-action="Models" class="btn btn-brand-secondary btn-sm"><i class="bi bi-arrow-clockwise"></i> Refresh</a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm align-middle app-table mb-0">
+            <thead>
+                <tr>
+                    <th>Model Number</th>
+                    <th>Vendor</th>
+                    <th class="text-center">Requestable</th>
+                    <th class="text-center">Refillable</th>
+                    <th class="text-end">Available Stock</th>
+                    <th>Created</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-4">No cartridge models found.</td></tr>
+                }
+                @foreach (var m in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@m.ModelNumber</td>
+                        <td>@(string.IsNullOrWhiteSpace(m.VendorName) ? "—" : m.VendorName)</td>
+                        <td class="text-center">
+                            @if (m.IsRequestable) { <span class="status-badge status-badge-success">Yes</span> } else { <span class="status-badge status-badge-neutral">No</span> }
+                        </td>
+                        <td class="text-center">
+                            @if (m.IsRefillable) { <span class="status-badge status-badge-success">Yes</span> } else { <span class="status-badge status-badge-neutral">No</span> }
+                        </td>
+                        <td class="text-end">@m.AvailableStock</td>
+                        <td>
+                            <span class="small text-muted">@m.CreatedAt.ToString("yyyy-MM-dd")</span><br />
+                            <span class="small text-muted">@(m.CreatedByName ?? "—")</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a asp-action="EditModel" asp-route-id="@m.CartridgeModelId" class="btn btn-brand-secondary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-brand-secondary" title="Archive"
+                                        data-bs-toggle="modal" data-bs-target="#archiveModelModal"
+                                        data-model-id="@m.CartridgeModelId" data-model-number="@m.ModelNumber">
+                                    <i class="bi bi-archive"></i>
+                                </button>
+                                <a asp-action="DeleteModel" asp-route-id="@m.CartridgeModelId" class="btn btn-brand-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* Add Model modal *@
+<div class="modal fade" id="addModelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-action="CreateModel" class="modal-content">
+            @Html.AntiForgeryToken()
+            <div class="modal-header">
+                <h5 class="modal-title">Add Cartridge Model</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Model Number *</label>
+                    <input type="text" name="modelNumber" class="form-control" required>
+                </div>
+                <div class="form-check mb-2">
+                    <input type="checkbox" name="isRequestable" value="true" class="form-check-input" id="chkRequestable" checked>
+                    <label class="form-check-label" for="chkRequestable">Is Requestable</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="isRefillable" value="true" class="form-check-input" id="chkRefillable" checked>
+                    <label class="form-check-label" for="chkRefillable">Is Refillable</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-brand-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-brand-primary">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Archive Model modal *@
+<div class="modal fade" id="archiveModelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" asp-action="ArchiveModel" class="modal-content" id="archiveModelForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="archiveModelId" value="">
+            <div class="modal-header">
+                <h5 class="modal-title">Archive Cartridge Model — <span id="archiveModelNumber"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">The model will be moved to the archive and will no longer appear in active lists.</p>
+                <div class="mb-3">
+                    <label class="form-label">Reason for archiving</label>
+                    <input type="text" name="reason" class="form-control">
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="deactivate" value="true" class="form-check-input" id="chkDeactivate" checked>
+                    <label class="form-check-label" for="chkDeactivate">Also mark as inactive (hide from dropdowns and requests)</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-brand-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-brand-info">Archive</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('archiveModelModal').addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        document.getElementById('archiveModelId').value = button.getAttribute('data-model-id');
+        document.getElementById('archiveModelNumber').textContent = button.getAttribute('data-model-number');
+    });
+</script>

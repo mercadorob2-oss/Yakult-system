@@ -1,0 +1,508 @@
+@page
+@namespace Yakult.ITCM.Server.Pages
+@model ConfigModel
+@{
+    ViewData["Title"] = "Configuration";
+    bool saved = TempData["StatusSuccess"] is bool s && s;
+    string? msg = TempData["StatusMessage"] as string;
+}
+
+<header class="topbar">
+  <div class="topbar-left">
+    <button class="btn-icon topbar-menu" onclick="toggleSidebar()" aria-label="Toggle sidebar">☰</button>
+    <div>
+      <div class="page-eyebrow">SYSTEM SETTINGS</div>
+      <div class="page-title">ITCM Configuration</div>
+      <div class="page-subtitle">Database connection and scheduler controls</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-context" aria-label="Signed-in user">
+      <span class="topbar-context-label">SIGNED IN AS</span>
+      <strong>@(User.Identity?.Name ?? "Viewer")</strong>
+      @if (Model.IsAdministrator)
+      {
+        <span class="pill ok">Admin</span>
+      }
+      else
+      {
+        <span class="pill muted">Viewer</span>
+      }
+    </div>
+    <button class="btn-icon" id="themeToggleMobile" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">🌙</button>
+  </div>
+</header>
+
+<main class="config-page">
+  <div class="page-intro">
+    <div>
+      <div class="page-intro-kicker"><span class="settings-dot">⚙</span> ADMINISTRATOR SETTINGS</div>
+      <h1>Configure the ITCM runtime</h1>
+      <p>Review the active database target and control how often reminders and escalations are processed.</p>
+    </div>
+    <div class="page-intro-meta config-target-meta">
+      <span class="meta-label">CURRENT TARGET</span>
+      <strong>@(Model.CurrentServer ?? "Not available")</strong>
+      <span>@(Model.CurrentDatabase ?? "Database unavailable") · @Model.CurrentAuthType authentication</span>
+    </div>
+  </div>
+
+  @if (msg != null)
+  {
+    <div class="alert @(saved ? "success" : "error")" role="alert">
+      <span class="alert-icon" aria-hidden="true">@(saved ? "✓" : "!")</span>
+      <div class="alert-body">
+        <div class="alert-title">@(saved ? "Configuration saved" : "Configuration not saved")</div>
+        <div class="alert-msg">@msg</div>
+      </div>
+    </div>
+  }
+
+  @if (Model.IsAdministrator)
+  {
+    <div class="config-notice">
+      <span class="config-notice-icon" aria-hidden="true">🔐</span>
+      <div><strong>Administrator-only configuration</strong><span>Changes are tested before saving and recorded in the ITCM audit log. Passwords are never rendered back into this page.</span></div>
+    </div>
+  }
+  else
+  {
+    <div class="config-notice" role="alert" style="border-color:var(--warn, #f59e0b)">
+      <span class="config-notice-icon" aria-hidden="true">🔒</span>
+      <div><strong>Admin only — view-only access</strong><span>You are signed in as a viewer, so this page is read-only. Sign in as an administrator to test connections or save changes.</span></div>
+    </div>
+  }
+
+  <form method="post" id="configForm">
+    @Html.AntiForgeryToken()
+    <div class="config-layout">
+      <section class="card config-card config-card-featured">
+        <div class="card-header config-card-header">
+          <div class="config-card-title-wrap">
+            <div class="config-icon blue" aria-hidden="true">▣</div>
+            <div>
+              <div class="card-title">Database connection</div>
+              <div class="card-helper">The server uses this connection for scheduler reads, ticket updates, and notification processing.</div>
+            </div>
+          </div>
+          <span class="pill idle">Required</span>
+        </div>
+
+        <div class="config-form-grid">
+          <div class="field">
+            <label class="field-label" for="Server">SQL Server</label>
+            <input type="text" asp-for="Server" id="Server" placeholder="e.g. 192.168.1.100,1433" autocomplete="off" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only")" />
+            <span class="field-hint">Hostname or IP address with an optional port.</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="Database">Database name</label>
+            <input type="text" asp-for="Database" id="Database" placeholder="e.g. YIMS" autocomplete="off" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only")" />
+            <span class="field-hint">The database containing the ITCM schema.</span>
+          </div>
+        </div>
+
+        <div class="auth-selection">
+          <div>
+            <div class="field-label">Authentication method</div>
+            <div class="field-hint">Windows Authentication is preferred for server-managed credentials.</div>
+          </div>
+          <select asp-for="AuthType" id="AuthType" onchange="toggleAuth()" aria-label="Database authentication method" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only")">
+            <option value="Windows">Windows Authentication</option>
+            <option value="SQL">SQL Server Authentication</option>
+          </select>
+        </div>
+
+        <div id="sqlCredentials" class="sql-credentials" style="display:none">
+          <div class="field">
+            <label class="field-label" for="Username">SQL username</label>
+            <input type="text" asp-for="Username" id="Username" placeholder="SQL login username" autocomplete="username" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only")" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="Password">SQL password</label>
+            <input type="password" asp-for="Password" id="Password" placeholder="Leave blank to retain the saved password" autocomplete="current-password" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only")" />
+            <span class="field-hint">The saved password is never displayed.</span>
+          </div>
+        </div>
+
+        <div class="config-actions">
+          <button type="button" class="primary" onclick="testConnection(event)" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only — sign in as an administrator")">⚡ Test connection</button>
+          <span id="testResult" class="test-result" aria-live="polite">@(Model.IsAdministrator ? "" : "Admin only.")</span>
+        </div>
+      </section>
+
+      <section class="card config-card">
+        <div class="card-header config-card-header">
+          <div class="config-card-title-wrap">
+            <div class="config-icon purple" aria-hidden="true">◷</div>
+            <div>
+              <div class="card-title">Scheduler behavior</div>
+              <div class="card-helper">Control the cadence and workload of automated reminder and escalation processing.</div>
+            </div>
+          </div>
+          <span class="pill idle">Runtime</span>
+        </div>
+
+        <div class="field config-field-spaced">
+          <label class="field-label" for="SchedulerEnabled">Scheduler status</label>
+          <select asp-for="SchedulerEnabled" id="SchedulerEnabled" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only")">
+            <option value="true">Enabled — run automatically</option>
+            <option value="false">Disabled — do not run automatically</option>
+          </select>
+        </div>
+
+        <div class="config-form-grid">
+          <div class="field">
+            <label class="field-label" for="IntervalMinutes">Run interval</label>
+            <div class="input-with-suffix"><input type="number" asp-for="IntervalMinutes" id="IntervalMinutes" min="1" max="1440" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only")" /><span>minutes</span></div>
+            <span class="field-hint">Allowed range: 1–1440 minutes.</span>
+          </div>
+          <div class="field">
+            <label class="field-label" for="MaxTicketsPerRun">Maximum tickets per run</label>
+            <div class="input-with-suffix"><input type="number" asp-for="MaxTicketsPerRun" id="MaxTicketsPerRun" min="1" max="500" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only")" /><span>tickets</span></div>
+            <span class="field-hint">Allowed range: 1–500 tickets.</span>
+          </div>
+        </div>
+
+        <div class="config-actions config-actions-submit">
+          <button type="submit" asp-page-handler="Save" class="success lg" disabled="@(!Model.IsAdministrator)" title="@(Model.IsAdministrator ? "" : "Admin only — sign in as an administrator")">✓ Save configuration</button>
+          <span class="action-note">The connection is tested before settings are saved.</span>
+        </div>
+      </section>
+    </div>
+  </form>
+
+  @if (Model.IsAdministrator)
+  {
+    <div class="page-intro" style="margin-top:28px">
+      <div>
+        <div class="page-intro-kicker"><span class="settings-dot">✉</span> EMAIL NOTIFICATIONS</div>
+        <h1>Email workspace</h1>
+        <p>SMTP sender and notification rules shared by the scheduler and all connected desktops. Saves write new rows to the shared tables, so every device picks them up on its next read.</p>
+      </div>
+      <div class="page-intro-meta config-target-meta">
+        <span class="meta-label">SHARED SOURCE</span>
+        <strong>CallEmailSettings · CallNotificationRules</strong>
+        <span>Newest row wins · Passwords never shown</span>
+      </div>
+    </div>
+
+    <div class="config-layout">
+      <section class="card config-card config-card-featured">
+        <div class="card-header config-card-header">
+          <div class="config-card-title-wrap">
+            <div class="config-icon blue" aria-hidden="true">✉</div>
+            <div>
+              <div class="card-title">SMTP sender</div>
+              <div class="card-helper">Used for reminders, escalations, and assignments. Leave the password blank to keep the saved one.</div>
+            </div>
+          </div>
+          <span class="pill idle">Required</span>
+        </div>
+
+        <div class="config-form-grid">
+          <div class="field">
+            <label class="field-label" for="EmailSmtpServer">SMTP Server</label>
+            <input type="text" id="EmailSmtpServer" placeholder="e.g. 192.168.80.41" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="EmailSmtpPort">Port</label>
+            <input type="number" id="EmailSmtpPort" min="1" max="65535" placeholder="25" />
+          </div>
+        </div>
+
+        <div class="auth-selection">
+          <div>
+            <div class="field-label">Security</div>
+            <div class="field-hint">Enable SSL/TLS when the mail server requires it.</div>
+          </div>
+          <label class="check-toggle"><input type="checkbox" id="EmailUseSsl" /> Use SSL</label>
+        </div>
+
+        <div class="config-form-grid">
+          <div class="field">
+            <label class="field-label" for="EmailUsername">Username</label>
+            <input type="text" id="EmailUsername" placeholder="SMTP login" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="EmailPassword">Password</label>
+            <input type="password" id="EmailPassword" placeholder="Leave blank to retain the saved password" autocomplete="current-password" />
+            <span class="field-hint" id="EmailPasswordHint">No saved password yet.</span>
+          </div>
+        </div>
+
+        <div class="config-form-grid">
+          <div class="field">
+            <label class="field-label" for="EmailFromName">From Name</label>
+            <input type="text" id="EmailFromName" placeholder="e.g. IT DEPARTMENT" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="EmailFromEmail">From Email</label>
+            <input type="text" id="EmailFromEmail" placeholder="sender address" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="config-actions">
+          <button type="button" class="primary" onclick="saveEmailSmtp(event)">Save SMTP</button>
+          <span id="emailSmtpResult" class="test-result" aria-live="polite"></span>
+        </div>
+
+        <div class="config-form-grid" style="margin-top:12px">
+          <div class="field">
+            <label class="field-label" for="EmailTestRecipient">Test recipient</label>
+            <input type="text" id="EmailTestRecipient" placeholder="address to receive the test mail" autocomplete="off" />
+          </div>
+          <div class="field" style="align-self:end">
+            <button type="button" class="success" onclick="testEmailSmtp(event)">Run SMTP Test</button>
+            <span id="emailTestResult" class="test-result" aria-live="polite"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card config-card">
+        <div class="card-header config-card-header">
+          <div class="config-card-title-wrap">
+            <div class="config-icon purple" aria-hidden="true">🔔</div>
+            <div>
+              <div class="card-title">Notification rules</div>
+              <div class="card-helper">Which events send mail, where group copies go, and how soon reminders are eligible.</div>
+            </div>
+          </div>
+          <span class="pill idle">Runtime</span>
+        </div>
+
+        <div class="field config-field-spaced">
+          <label class="check-toggle"><input type="checkbox" id="NotifyNew" /> Notify on new ticket</label>
+          <label class="check-toggle"><input type="checkbox" id="NotifyStatus" /> Notify on status change</label>
+          <label class="check-toggle"><input type="checkbox" id="NotifyEscalation" /> Notify on escalation</label>
+          <label class="check-toggle"><input type="checkbox" id="NotifyReminder" /> Notify on reminder</label>
+        </div>
+
+        <div class="field config-field-spaced">
+          <label class="field-label" for="GroupEmail">Group Email</label>
+          <input type="text" id="GroupEmail" placeholder="group address" autocomplete="off" />
+        </div>
+
+        <div class="field config-field-spaced">
+          <label class="field-label" for="EscalationEmail">Escalation Email</label>
+          <input type="text" id="EscalationEmail" placeholder="escalation address" autocomplete="off" />
+        </div>
+
+        <div class="field config-field-spaced">
+          <label class="field-label" for="ReminderDays">Reminder Days</label>
+          <div class="input-with-suffix"><input type="number" id="ReminderDays" min="1" max="60" /><span>days</span></div>
+          <span class="field-hint">Allowed range: 1–60 days of inactivity.</span>
+        </div>
+
+        <div class="config-actions config-actions-submit">
+          <button type="button" class="primary lg" onclick="saveEmailRules(event)">Save Rules</button>
+          <span id="emailRulesResult" class="test-result" aria-live="polite"></span>
+        </div>
+        <span class="action-note">Rules apply to the scheduler and every connected desktop.</span>
+      </section>
+    </div>
+  }
+  else
+  {
+    <div class="config-notice" role="note" style="margin-top:28px">
+      <span class="config-notice-icon" aria-hidden="true">🔒</span>
+      <div><strong>Admin only — email workspace hidden</strong><span>SMTP sender and notification rules are visible to administrators only. Sign in as an administrator to manage them.</span></div>
+    </div>
+  }
+
+  <div class="http-warning">
+    <span aria-hidden="true">⚠</span>
+    <div><strong>Temporary HTTP deployment</strong><span>This internal server is currently using HTTP. Keep it restricted to the company network and enable HTTPS before external or production exposure.</span></div>
+  </div>
+</main>
+
+<script>
+  function toggleAuth() {
+    var auth = document.getElementById('AuthType')?.value;
+    var credentials = document.getElementById('sqlCredentials');
+    if (credentials) credentials.style.display = auth === 'SQL' ? 'grid' : 'none';
+  }
+  toggleAuth();
+
+  async function testConnection(event) {
+    var btn = event.currentTarget;
+    var result = document.getElementById('testResult');
+    @if (!Model.IsAdministrator)
+    {
+      <text>result.textContent = 'Admin only — sign in as an administrator to test connections.';
+      result.className = 'test-result error';
+      return;
+      </text>
+    }
+    btn.disabled = true;
+    btn.textContent = '⏳ Testing…';
+    result.textContent = '';
+    result.className = 'test-result';
+
+    var server = document.getElementById('Server').value;
+    var database = document.getElementById('Database').value;
+    var authType = document.getElementById('AuthType').value;
+    var username = document.getElementById('Username')?.value ?? '';
+    var password = document.getElementById('Password')?.value ?? '';
+    var csrf = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+    var controller = new AbortController();
+    var timeout = setTimeout(() => controller.abort(), 20000);
+
+    try {
+      var response = await fetch('/api/itcm/config/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+        credentials: 'same-origin',
+        body: JSON.stringify({ server, database, authType, username, password }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      var data = await response.json();
+      result.textContent = data.message || (data.success ? 'Connected successfully.' : 'Connection failed.');
+      result.className = `test-result ${data.success ? 'success' : 'error'}`;
+    } catch (error) {
+      clearTimeout(timeout);
+      result.textContent = error.name === 'AbortError' ? 'Timed out after 20 seconds.' : 'Connection test could not be completed.';
+      result.className = 'test-result error';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⚡ Test connection';
+    }
+  }
+
+  @if (Model.IsAdministrator)
+  {
+    <text>
+    function emailCsrf() {
+      return document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+    }
+
+    function setEmailStatus(id, message, ok) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = message || '';
+      el.className = `test-result ${ok ? 'success' : 'error'}`;
+    }
+
+    async function loadEmailWorkspace() {
+      try {
+        var [settingsRes, rulesRes] = await Promise.all([
+          fetch('/api/itcm/email/settings', { credentials: 'same-origin' }),
+          fetch('/api/itcm/email/rules', { credentials: 'same-origin' })
+        ]);
+        if (settingsRes.ok) {
+          var s = await settingsRes.json();
+          document.getElementById('EmailSmtpServer').value = s.smtpServer ?? '';
+          document.getElementById('EmailSmtpPort').value = s.smtpPort ?? 25;
+          document.getElementById('EmailUseSsl').checked = !!s.useSsl;
+          document.getElementById('EmailUsername').value = s.smtpUsername ?? '';
+          document.getElementById('EmailFromName').value = s.fromName ?? '';
+          document.getElementById('EmailFromEmail').value = s.fromEmail ?? '';
+          document.getElementById('EmailPasswordHint').textContent = s.hasSavedPassword
+            ? 'A password is saved. Leave blank to keep it.'
+            : 'No saved password yet.';
+        }
+        if (rulesRes.ok) {
+          var r = await rulesRes.json();
+          document.getElementById('NotifyNew').checked = !!r.notifyOnNewTicket;
+          document.getElementById('NotifyStatus').checked = !!r.notifyOnStatusChange;
+          document.getElementById('NotifyEscalation').checked = !!r.notifyOnEscalation;
+          document.getElementById('NotifyReminder').checked = !!r.notifyOnReminder;
+          document.getElementById('GroupEmail').value = r.groupEmail ?? '';
+          document.getElementById('EscalationEmail').value = r.escalationEmail ?? '';
+          document.getElementById('ReminderDays').value = r.reminderDays ?? 1;
+        }
+      } catch {
+        setEmailStatus('emailSmtpResult', 'Could not load saved email settings.', false);
+      }
+    }
+
+    function readEmailSmtpBody() {
+      return {
+        smtpServer: document.getElementById('EmailSmtpServer').value,
+        smtpPort: parseInt(document.getElementById('EmailSmtpPort').value, 10) || 0,
+        useSsl: document.getElementById('EmailUseSsl').checked,
+        smtpUsername: document.getElementById('EmailUsername').value,
+        password: document.getElementById('EmailPassword').value,
+        fromName: document.getElementById('EmailFromName').value,
+        fromEmail: document.getElementById('EmailFromEmail').value
+      };
+    }
+
+    async function saveEmailSmtp(event) {
+      var btn = event.currentTarget;
+      btn.disabled = true;
+      setEmailStatus('emailSmtpResult', 'Saving…', true);
+      try {
+        var response = await fetch('/api/itcm/email/settings/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': emailCsrf() },
+          credentials: 'same-origin',
+          body: JSON.stringify(readEmailSmtpBody())
+        });
+        var data = await response.json();
+        setEmailStatus('emailSmtpResult', data.message || (data.success ? 'Saved.' : 'Save failed.'), !!data.success);
+        if (data.success) {
+          document.getElementById('EmailPassword').value = '';
+          loadEmailWorkspace();
+        }
+      } catch {
+        setEmailStatus('emailSmtpResult', 'Save could not be completed.', false);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function testEmailSmtp(event) {
+      var btn = event.currentTarget;
+      btn.disabled = true;
+      setEmailStatus('emailTestResult', 'Sending test…', true);
+      try {
+        var body = readEmailSmtpBody();
+        body.testRecipient = document.getElementById('EmailTestRecipient').value;
+        var response = await fetch('/api/itcm/email/test-smtp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': emailCsrf() },
+          credentials: 'same-origin',
+          body: JSON.stringify(body)
+        });
+        var data = await response.json();
+        setEmailStatus('emailTestResult', data.message || (data.success ? 'Sent.' : 'Test failed.'), !!data.success);
+      } catch {
+        setEmailStatus('emailTestResult', 'Test could not be completed.', false);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function saveEmailRules(event) {
+      var btn = event.currentTarget;
+      btn.disabled = true;
+      setEmailStatus('emailRulesResult', 'Saving…', true);
+      try {
+        var response = await fetch('/api/itcm/email/rules/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': emailCsrf() },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            notifyOnNewTicket: document.getElementById('NotifyNew').checked,
+            notifyOnStatusChange: document.getElementById('NotifyStatus').checked,
+            notifyOnEscalation: document.getElementById('NotifyEscalation').checked,
+            notifyOnReminder: document.getElementById('NotifyReminder').checked,
+            groupEmail: document.getElementById('GroupEmail').value,
+            escalationEmail: document.getElementById('EscalationEmail').value,
+            reminderDays: parseInt(document.getElementById('ReminderDays').value, 10) || 0
+          })
+        });
+        var data = await response.json();
+        setEmailStatus('emailRulesResult', data.message || (data.success ? 'Saved.' : 'Save failed.'), !!data.success);
+      } catch {
+        setEmailStatus('emailRulesResult', 'Save could not be completed.', false);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    loadEmailWorkspace();
+    </text>
+  }
+</script>

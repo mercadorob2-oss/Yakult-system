@@ -1,0 +1,32 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    var code = Model.StatusCode ?? 500;
+}
+
+<section class="error-page">
+    <div class="error-card" data-code="@code">
+        <div class="error-code">@code</div>
+        <h1 class="error-title">@Model.Title</h1>
+        <p class="error-message">@Model.Message</p>
+
+        <div class="error-actions">
+            <a class="system-button system-button--primary" href="/">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Back to Home</span>
+            </a>
+            <a class="system-button system-button--secondary" href="/docs/index.html" target="_blank">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <span>View Documentation</span>
+            </a>
+        </div>
+
+        @if (Model.ShowRequestId)
+        {
+            <p class="error-request-id">
+                <span>Request ID:</span>
+                <code>@Model.RequestId</code>
+            </p>
+        }
+    </div>
+</section>

@@ -1,0 +1,98 @@
+@model ConnectionPageUnlockViewModel
+@{
+    Layout = "_AdminLayout";
+    var isSetup = Model.IsSetupMode;
+    ViewData["Title"] = isSetup ? "Secure Database Connection" : "Unlock Database Connection";
+}
+
+<section class="connection-security-page">
+    <div class="connection-security-card">
+        <div class="connection-security-card__hero">
+            <span class="connection-security-card__icon" aria-hidden="true">🔐</span>
+            <div>
+                <span class="connection-security-card__eyebrow">Restricted administration area</span>
+                <h2>@(isSetup ? "Secure Database Connection" : "Unlock Database Connection")</h2>
+                <p>
+                    @(isSetup
+                        ? "Create a separate passphrase to protect connection properties and live connection tests."
+                        : "Enter the dedicated connection passphrase to view connection properties and run a live test.")
+                </p>
+            </div>
+        </div>
+
+        @if (!Model.IsStorageAvailable)
+        {
+            <div class="connection-security-message connection-security-message--error">
+                <strong>Secure storage is unavailable</strong>
+                <span>@(Model.StorageMessage ?? "The portal settings table could not be reached.")</span>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+        {
+            <div class="connection-security-message connection-security-message--error" role="alert">
+                <strong>Unable to continue</strong>
+                <span>@Model.ErrorMessage</span>
+            </div>
+        }
+
+        @if (isSetup)
+        {
+            <div class="connection-security-message connection-security-message--info">
+                <strong>First-time setup</strong>
+                <span>The passphrase is stored as a salted, one-way hash in portal settings. It is never displayed or recoverable.</span>
+            </div>
+        }
+
+        <form method="post" asp-controller="Admin" asp-action="UnlockConnectionPage" class="connection-security-form">
+            @Html.AntiForgeryToken()
+
+            <label>
+                <span>@(isSetup ? "New passphrase" : "Connection passphrase")</span>
+                <input type="password" name="Passphrase" autocomplete="new-password" autofocus disabled="@(!Model.IsStorageAvailable)" placeholder="Enter a secure passphrase" />
+                @if (isSetup)
+                {
+                    <small>Use at least 12 characters. Choose a phrase that is not used for a portal account.</small>
+                }
+            </label>
+
+            @if (isSetup)
+            {
+                <label>
+                    <span>Confirm passphrase</span>
+                    <input type="password" name="ConfirmPassphrase" autocomplete="new-password" disabled="@(!Model.IsStorageAvailable)" placeholder="Enter the passphrase again" />
+                </label>
+            }
+
+            <div class="connection-security-form__actions">
+                <span class="connection-security-form__note">@((isSetup ? "Setup" : "Unlock") + " activity is recorded for developer administrators.")</span>
+                <button type="submit" class="admin-button admin-button--primary" disabled="@(!Model.IsStorageAvailable)">
+                    @(isSetup ? "Set passphrase & unlock" : "Unlock connection page")
+                </button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<style>
+    .connection-security-page { max-width: 760px; margin: 0 auto; padding: 8px 0 28px; }
+    .connection-security-card { overflow: hidden; border: 1px solid var(--admin-line, var(--border-card)); border-radius: 14px; background: #fff; box-shadow: 0 14px 34px rgba(20,38,60,.08); }
+    .connection-security-card__hero { display: flex; gap: 16px; align-items: flex-start; padding: 26px 28px 22px; border-bottom: 1px solid var(--admin-line, var(--border-card)); background: linear-gradient(135deg, #fff7f7, #fff); }
+    .connection-security-card__icon { display: grid; width: 44px; height: 44px; flex: 0 0 auto; place-items: center; border-radius: 12px; background: #ffe9eb; font-size: 1.3rem; }
+    .connection-security-card__eyebrow { display: block; margin-bottom: 5px; color: #b20f18; font-size: .68rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .connection-security-card h2 { margin: 0; color: #172033; font-size: 1.25rem; }
+    .connection-security-card p { margin: 7px 0 0; color: #5f6d7e; font-size: .9rem; line-height: 1.5; }
+    .connection-security-message { display: grid; gap: 3px; margin: 20px 28px 0; padding: 13px 15px; border: 1px solid; border-radius: 10px; font-size: .86rem; line-height: 1.4; }
+    .connection-security-message strong { font-size: .82rem; }
+    .connection-security-message--info { border-color: #cbdbe9; background: #f2f8fc; color: #34536c; }
+    .connection-security-message--error { border-color: #f1c4c7; background: #fff1f1; color: #a90f16; }
+    .connection-security-form { display: grid; gap: 18px; padding: 24px 28px 28px; }
+    .connection-security-form label { display: grid; gap: 7px; }
+    .connection-security-form label > span { color: #5f6d7e; font-size: .7rem; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+    .connection-security-form input { width: 100%; padding: 12px 13px; border: 1px solid #cbd5df; border-radius: 8px; background: #fff; color: #172033; font: inherit; outline: none; }
+    .connection-security-form input:focus { border-color: #d71920; box-shadow: 0 0 0 3px rgba(215,25,32,.13); }
+    .connection-security-form input:disabled { cursor: not-allowed; background: #f4f7f9; }
+    .connection-security-form small { color: #687789; font-size: .78rem; line-height: 1.4; }
+    .connection-security-form__actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 4px; }
+    .connection-security-form__note { color: #687789; font-size: .78rem; line-height: 1.4; }
+    @@media (max-width: 640px) { .connection-security-card__hero, .connection-security-form { padding-inline: 20px; } .connection-security-message { margin-inline: 20px; } .connection-security-form__actions { align-items: stretch; flex-direction: column; } .connection-security-form__actions .admin-button { width: 100%; } }
+</style>

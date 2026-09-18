@@ -1,0 +1,97 @@
+@model List<Inventory.RequestPortal.Models.NotificationDto>
+@{
+    var notifications = Model ?? new List<Inventory.RequestPortal.Models.NotificationDto>();
+    var unreadCount   = notifications.Count(n => !n.IsRead);
+}
+
+<div class="notif-panel-inner">
+    <div class="notif-panel-head">
+        <span class="notif-panel-title">Notifications</span>
+        <div class="d-flex align-items-center gap-2">
+            @if (unreadCount > 0)
+            {
+                <button class="notif-mark-all-btn" onclick="notifMarkAllRead(this)">
+                    Mark all as read
+                </button>
+            }
+            @if (notifications.Any())
+            {
+                <button class="notif-mark-all-btn" style="color:#64748b;"
+                        onclick="notifClearAll(this)">
+                    Clear all
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="notif-list" id="notifList">
+        @if (!notifications.Any())
+        {
+            <div class="notif-empty">
+                <i class="bi bi-bell-slash"></i>
+                <span>No notifications yet</span>
+            </div>
+        }
+        else
+        {
+            foreach (var n in notifications)
+            {
+                <a class="notif-item @(n.IsRead ? "" : "notif-item--unread")"
+                   href="/Notification/Navigate?id=@n.NotificationId&type=@n.NotificationType&referenceId=@n.ReferenceId"
+                   data-id="@n.NotificationId"
+                   onclick="notifItemClick(event, this)">
+                    <div class="notif-item-icon @GetIconClass(n.NotificationType)">
+                        <i class="bi @GetIcon(n.NotificationType)"></i>
+                    </div>
+                    <div class="notif-item-body">
+                        <div class="notif-item-title">@n.Title</div>
+                        <div class="notif-item-msg">@n.Message</div>
+                        <div class="notif-item-time">@n.TimeAgo</div>
+                    </div>
+                    @if (!n.IsRead)
+                    {
+                        <div class="notif-unread-dot"></div>
+                    }
+                </a>
+            }
+        }
+    </div>
+
+    <div style="padding:10px 14px;border-top:1px solid #f0f0f0;text-align:center;">
+        <a href="/NotificationSettings/Index"
+           style="font-size:.78rem;color:#64748b;text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:color .15s;">
+            <i class="bi bi-gear"></i> Notification Settings
+        </a>
+    </div>
+</div>
+
+@functions {
+    string GetIcon(string type) => type switch
+    {
+        "AUTHORIZATION_APPROVED"      => "bi-shield-check",
+        "AUTHORIZATION_REJECTED"      => "bi-shield-x",
+        "REQUEST_APPROVED"            => "bi-check-circle-fill",
+        "REQUEST_REJECTED"            => "bi-x-circle-fill",
+        "REQUEST_COMPLETED"           => "bi-bag-check-fill",
+        "REQUEST_CANCELLED"           => "bi-slash-circle-fill",
+        "REQUEST_STATUS_CHANGED"      => "bi-arrow-repeat",
+        "REQUEST_FULFILLED"           => "bi-box-seam-fill",
+        "REQUEST_PARTIALLY_FULFILLED" => "bi-box-seam",
+        "REQUEST_UNFULFILLED"         => "bi-exclamation-circle-fill",
+        _                             => "bi-bell-fill",
+    };
+
+    string GetIconClass(string type) => type switch
+    {
+        "AUTHORIZATION_APPROVED"      => "notif-icon--green",
+        "AUTHORIZATION_REJECTED"      => "notif-icon--red",
+        "REQUEST_APPROVED"            => "notif-icon--green",
+        "REQUEST_REJECTED"            => "notif-icon--red",
+        "REQUEST_COMPLETED"           => "notif-icon--blue",
+        "REQUEST_CANCELLED"           => "notif-icon--gray",
+        "REQUEST_FULFILLED"           => "notif-icon--green",
+        "REQUEST_PARTIALLY_FULFILLED" => "notif-icon--orange",
+        "REQUEST_UNFULFILLED"         => "notif-icon--red",
+        _                             => "notif-icon--blue",
+    };
+}

@@ -1,0 +1,892 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Item.EditItemDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Edit Item"
+        Width="1000" Height="920"
+        MinWidth="820" MinHeight="600"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        ResizeMode="CanResizeWithGrip">
+
+    <Window.Resources>
+
+        <!-- ── Base TextBlock ─────────────────────────────────────────────── -->
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+        </Style>
+
+        <!-- ── Editable TextBox with animated focus ring ─────────────────── -->
+        <Style x:Key="FormField" TargetType="TextBox">
+            <Setter Property="Height"                   Value="32"/>
+            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Background"               Value="White"/>
+            <Setter Property="BorderBrush"               Value="#C8D2DC"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Padding"                  Value="8,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush"     Value="#3A8EF6"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                                <Setter Property="Foreground"                 Value="#A0ADB9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Multiline variant ─────────────────────────────────────────── -->
+        <Style x:Key="MultiField" TargetType="TextBox" BasedOn="{StaticResource FormField}">
+            <Setter Property="Height"                      Value="Auto"/>
+            <Setter Property="MinHeight"                   Value="72"/>
+            <Setter Property="AcceptsReturn"               Value="True"/>
+            <Setter Property="TextWrapping"                Value="Wrap"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalContentAlignment"    Value="Top"/>
+            <Setter Property="Padding"                     Value="8,6"/>
+        </Style>
+
+        <!-- ── ComboBox ──────────────────────────────────────────────────── -->
+        <Style x:Key="FormCombo" TargetType="ComboBox">
+            <Setter Property="Height"                   Value="32"/>
+            <Setter Property="FontSize"                 Value="12"/>
+            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Background"               Value="White"/>
+            <Setter Property="Padding"                  Value="6,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="IsTextSearchEnabled"      Value="True"/>
+            <!-- While closed, mouse wheel over the combo should scroll the dialog, not
+                 change the selected value — users were accidentally changing dropdown
+                 selections while scrolling through the form. -->
+            <EventSetter Event="PreviewMouseWheel" Handler="FormCombo_PreviewMouseWheel"/>
+        </Style>
+
+        <!-- ── DatePicker — replaces "15" glyph with classic calendar icon ─── -->
+        <Style x:Key="FormDate" TargetType="DatePicker">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Foreground"      Value="#1A2333"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#C8D2DC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding"         Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DatePicker">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="32"/>
+                                </Grid.ColumnDefinitions>
+
+                                <DatePickerTextBox x:Name="PART_TextBox"
+                                                   Grid.Column="0"
+                                                   Foreground="{TemplateBinding Foreground}"
+                                                   Background="Transparent"
+                                                   BorderThickness="0"
+                                                   Padding="8,0"
+                                                   VerticalAlignment="Center"
+                                                   VerticalContentAlignment="Center"/>
+
+                                <Button x:Name="PART_Button"
+                                        Grid.Column="1"
+                                        Focusable="False"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Width="28" Height="26">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="BtnBd" Background="Transparent"
+                                                    CornerRadius="3" Padding="4,3">
+                                                <Path Data="M3,2 L3,0 M9,2 L9,0 M0,4 L12,4 M0,2 L0,12 L12,12 L12,2 Z M2,6 L4,6 M6,6 L8,6 M10,6 L12,6 M2,9 L4,9 M6,9 L8,9"
+                                                      Stroke="#5A6A7A" StrokeThickness="1"
+                                                      Stretch="Uniform" Width="14" Height="14"
+                                                      VerticalAlignment="Center"
+                                                      HorizontalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="BtnBd" Property="Background" Value="#E8ECF0"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                                <Popup x:Name="PART_Popup"
+                                       AllowsTransparency="True"
+                                       Placement="Bottom"
+                                       StaysOpen="False"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                                <Setter Property="Foreground" Value="#A0ADB9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Field label ───────────────────────────────────────────────── -->
+        <Style x:Key="FL" TargetType="TextBlock">
+            <Setter Property="FontSize"          Value="11.5"/>
+            <Setter Property="Foreground"        Value="#4A5A6A"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin"            Value="0,0,12,0"/>
+        </Style>
+
+        <!-- ── Section title ─────────────────────────────────────────────── -->
+        <Style x:Key="ST" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="9.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#3A8EF6"/>
+            <Setter Property="Margin"     Value="0,0,0,10"/>
+        </Style>
+
+        <!-- ── White card ────────────────────────────────────────────────── -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="8"/>
+            <Setter Property="Padding"         Value="18,12"/>
+            <Setter Property="Margin"          Value="0,0,0,8"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="6" ShadowDepth="1"
+                                      Opacity="0.06" Direction="270" Color="#0A1A2A"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Primary action button (Save) ──────────────────────────────── -->
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Height"          Value="38"/>
+            <Setter Property="Padding"         Value="26,0"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background"      Value="#3A8EF6"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.72"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.42"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Secondary button (Cancel, Add a Copy) ─────────────────────── -->
+        <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
+            <Setter Property="Background" Value="#E8ECF0"/>
+            <Setter Property="Foreground" Value="#3A4A5A"/>
+        </Style>
+
+        <!-- ── Small inline button (+Add) ────────────────────────────────── -->
+        <Style x:Key="InlineBtn" TargetType="Button">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="MinWidth"        Value="46"/>
+            <Setter Property="Padding"         Value="10,0"/>
+            <Setter Property="FontSize"        Value="11.5"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background"      Value="#E8F0FE"/>
+            <Setter Property="Foreground"      Value="#3A8EF6"/>
+            <Setter Property="Margin"          Value="6,0,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="4" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#CDD9F8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <!-- Outer shell — rounded corners + drop shadow                         -->
+    <!-- ════════════════════════════════════════════════════════════════════ -->
+    <Border CornerRadius="10" Background="White" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="5"
+                              Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="52"/>    <!-- Header bar        -->
+                <RowDefinition Height="*"/>     <!-- Scrollable body   -->
+                <RowDefinition Height="66"/>    <!-- Footer bar        -->
+            </Grid.RowDefinitions>
+
+            <!-- ════════════════════════════════════════════════════════ -->
+            <!-- ROW 0 · HEADER                                          -->
+            <!-- ════════════════════════════════════════════════════════ -->
+            <Border Grid.Row="0" Background="#3A8EF6"
+                    CornerRadius="10,10,0,0"
+                    MouseLeftButtonDown="OnHeaderDrag"
+                    Cursor="SizeAll">
+                <DockPanel Margin="18,0,10,0" VerticalAlignment="Center">
+                    <!-- Window chrome buttons -->
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                                VerticalAlignment="Center" Cursor="Arrow">
+                        <TextBlock Text="─" FontSize="14" FontWeight="Bold"
+                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   VerticalAlignment="Center"
+                                   Padding="8,0"
+                                   MouseLeftButtonDown="OnMinimizeClick"/>
+                        <TextBlock x:Name="BtnMaximizeGlyph"
+                                   Text="□" FontSize="13" FontWeight="Bold"
+                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   VerticalAlignment="Center"
+                                   Padding="8,0"
+                                   MouseLeftButtonDown="OnMaximizeClick"/>
+                        <TextBlock Text="✕" FontSize="14" FontWeight="Bold"
+                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   VerticalAlignment="Center"
+                                   Padding="8,0"
+                                   MouseLeftButtonDown="OnCloseClick"/>
+                    </StackPanel>
+                    <TextBlock Text="Edit Item"
+                               VerticalAlignment="Center"
+                               FontSize="13" FontWeight="Bold"
+                               Foreground="White"/>
+                </DockPanel>
+            </Border>
+
+            <!-- ════════════════════════════════════════════════════════ -->
+            <!-- ROW 1 · SCROLLABLE BODY                                 -->
+            <!-- ════════════════════════════════════════════════════════ -->
+            <ScrollViewer Grid.Row="1"
+                          Background="#F0F2F6"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="16,10,16,2">
+                <StackPanel>
+
+                    <!-- Info banner ──────────────────────────────────── -->
+                    <Border Background="#EEF4FF" BorderBrush="#BDD0F8"
+                            BorderThickness="1" CornerRadius="6"
+                            Padding="12,7" Margin="0,0,0,5">
+                        <TextBlock FontSize="11" Foreground="#2A5BC8"
+                                   TextWrapping="Wrap"
+                                   Text="Update the selected item details."/>
+                    </Border>
+
+                    <!-- ════════════════════════════════════════════════ -->
+                    <!-- SECTION 1 · ITEM INFORMATION                    -->
+                    <!-- ════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="ITEM INFORMATION" Style="{StaticResource ST}"/>
+
+                            <!-- Item ID (read-only) -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Item ID" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtItemId" Grid.Column="1"
+                                         Style="{StaticResource FormField}"
+                                         IsEnabled="False" IsTabStop="False"/>
+                            </Grid>
+
+                            <!-- Item Name -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Item Name *" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtName" Grid.Column="1"
+                                         Style="{StaticResource FormField}"/>
+                            </Grid>
+
+                            <!-- Description -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Description" Style="{StaticResource FL}"
+                                           VerticalAlignment="Top" Margin="0,7,12,0"/>
+                                <TextBox x:Name="TxtDescription" Grid.Column="1"
+                                         Style="{StaticResource MultiField}" MinHeight="60"/>
+                            </Grid>
+
+                            <!-- Category -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Category *" Style="{StaticResource FL}"/>
+                                <Grid Grid.Column="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="320"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="CmbCategory"
+                                              Style="{StaticResource FormCombo}"
+                                              SelectionChanged="CmbCategory_SelectionChanged"/>
+                                    <Button x:Name="BtnAddCategory" Grid.Column="1"
+                                            Content="+ Add" Style="{StaticResource InlineBtn}"
+                                            Click="BtnAddCategory_Click"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Item Type -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Item Type *" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbItemType" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          HorizontalAlignment="Left" Width="220"
+                                          SelectionChanged="CmbItemType_SelectionChanged"/>
+                            </Grid>
+
+                            <!-- Sub-Type (optional) — default classification used by Invoice Reports;
+                                 distinct from the per-invoice Sub-Type tag on each SetItem. -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Sub-Type" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbSubType" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          HorizontalAlignment="Left" Width="220"/>
+                            </Grid>
+
+                            <!-- Serial Number -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Serial Number" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtSerialNumber" Grid.Column="1"
+                                         Style="{StaticResource FormField}"/>
+                            </Grid>
+
+                            <!-- Model Number -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Model Number *" Style="{StaticResource FL}"
+                                           VerticalAlignment="Top" Margin="0,7,12,0"/>
+                                <TextBox x:Name="TxtModelNumber" Grid.Column="1"
+                                         Style="{StaticResource MultiField}" MinHeight="40"/>
+                            </Grid>
+
+                            <!-- Cartridge Model (conditional — Category = Cartridge) -->
+                            <Grid x:Name="RowCartridgeModel" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Cartridge Model *" Style="{StaticResource FL}"/>
+                                <Grid Grid.Column="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="320"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="CmbCartridgeModel"
+                                              Style="{StaticResource FormCombo}"/>
+                                    <Button x:Name="BtnAddCartridgeModel" Grid.Column="1"
+                                            Content="+ Add" Style="{StaticResource InlineBtn}"
+                                            Click="BtnAddCartridgeModel_Click"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Cartridge Origin (conditional) -->
+                            <Grid x:Name="RowCartridgeOrigin" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Origin" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbCartridgeOrigin" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          HorizontalAlignment="Left" Width="200"/>
+                            </Grid>
+
+                            <!-- Consumable Model (conditional — Category = Ink/Toner/Print Head) -->
+                            <Grid x:Name="RowConsumableModel" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Model *" Style="{StaticResource FL}"/>
+                                <Grid Grid.Column="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="320"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="CmbConsumableModel"
+                                              Style="{StaticResource FormCombo}"/>
+                                    <Button x:Name="BtnAddConsumableModel" Grid.Column="1"
+                                            Content="+ Add" Style="{StaticResource InlineBtn}"
+                                            Click="BtnAddConsumableModel_Click"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Cell Phone tracking (conditional — Category = CellPhone) -->
+                            <Grid x:Name="RowCellPhoneNumber" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Cell Phone Number" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtCellPhoneNumber" Grid.Column="1"
+                                         Style="{StaticResource FormField}" MaxLength="50"/>
+                            </Grid>
+                            <Grid x:Name="RowImei1" Visibility="Collapsed" Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="IMEI 1" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtImei1" Grid.Column="1"
+                                         Style="{StaticResource FormField}" MaxLength="50"/>
+                            </Grid>
+                            <Grid x:Name="RowImei2" Visibility="Collapsed" Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="IMEI 2" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtImei2" Grid.Column="1"
+                                         Style="{StaticResource FormField}" MaxLength="50"/>
+                            </Grid>
+
+                            <!-- Unit of Measure -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Unit of Measure *" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbUnitOfMeasure" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          IsEditable="True"
+                                          HorizontalAlignment="Left" Width="220"/>
+                            </Grid>
+
+                            <!-- Stock On Hand -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Stock On Hand" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtStockOnHand" Grid.Column="1"
+                                         Style="{StaticResource FormField}"
+                                         HorizontalAlignment="Left" Width="120"/>
+                            </Grid>
+
+                            <!-- Amount -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Amount" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtAmount" Grid.Column="1"
+                                         Style="{StaticResource FormField}"
+                                         HorizontalAlignment="Left" Width="120"/>
+                            </Grid>
+
+                            <!-- Status row -->
+                            <Grid Margin="0,5,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <CheckBox x:Name="ChkActive" Content="Item is Active"
+                                              FontSize="12" Foreground="#4A5A6A"
+                                              Margin="0,0,18,0" VerticalAlignment="Center"
+                                              Checked="ChkActive_CheckedOrUncheckedChanged"
+                                              Unchecked="ChkActive_CheckedOrUncheckedChanged"/>
+                                    <CheckBox x:Name="ChkIsBorrowable" Content="Borrowable"
+                                              FontSize="12" Foreground="#4A5A6A"
+                                              Margin="0,0,18,0" VerticalAlignment="Center"/>
+                                    <CheckBox x:Name="ChkIsArchived" Content="Item is Archived"
+                                              FontSize="12" Foreground="#4A5A6A"
+                                              VerticalAlignment="Center"
+                                              Checked="ChkIsArchived_Checked"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <TextBlock x:Name="LblUnavailableInfo" Grid.Column="1"
+                                           Visibility="Collapsed"
+                                           FontSize="11" FontStyle="Italic"
+                                           Foreground="#6A1B9A" TextWrapping="Wrap"/>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ════════════════════════════════════════════════ -->
+                    <!-- SECTION 2 · CONDITION & VENDOR                  -->
+                    <!-- ════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="CONDITION &amp; VENDOR" Style="{StaticResource ST}"/>
+
+                            <!-- Condition -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Condition *" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbCondition" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          HorizontalAlignment="Left" Width="220"/>
+                            </Grid>
+
+                            <!-- Last Repaired (Repair Portal history — read-only, informational) -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <TextBlock x:Name="LblLastRepairedInfo" Grid.Column="1"
+                                           Visibility="Collapsed"
+                                           FontSize="11" FontStyle="Italic"
+                                           Foreground="#2E7D32" TextWrapping="Wrap"/>
+                            </Grid>
+
+                            <!-- Vendor -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Vendor" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbVendor" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          HorizontalAlignment="Left" Width="320"/>
+                            </Grid>
+
+                            <!-- Enable Start/End Date toggle (conditional — Services/Software) -->
+                            <Grid x:Name="RowServiceContractToggle" Visibility="Collapsed"
+                                  Margin="0,5,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkServiceContractDates" Grid.Column="1"
+                                          Content="Enable Start/End Date (Manual)"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          Checked="ChkServiceContractDates_Changed"
+                                          Unchecked="ChkServiceContractDates_Changed"/>
+                            </Grid>
+
+                            <!-- Sync linked invoice dates (conditional) -->
+                            <Grid x:Name="RowSyncLinkedInvoiceDates" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkSyncLinkedInvoiceDates" Grid.Column="1"
+                                          Content="Update linked invoice line dates (this item only)"
+                                          FontSize="12" Foreground="#4A5A6A" IsChecked="True"/>
+                            </Grid>
+
+                            <!-- Start Date -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="LblStartDate" Text="Start Date (Auto)"
+                                           Style="{StaticResource FL}"/>
+                                <DatePicker x:Name="DpStartDate" Grid.Column="1"
+                                            Style="{StaticResource FormDate}"
+                                            HorizontalAlignment="Left" Width="220"
+                                            IsEnabled="False"/>
+                            </Grid>
+
+                            <!-- End Date -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="End Date" Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkEndDate" Grid.Column="1"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <DatePicker x:Name="DpEndDate" Grid.Column="2"
+                                            Style="{StaticResource FormDate}"
+                                            HorizontalAlignment="Left" Width="220"
+                                            IsEnabled="{Binding IsChecked, ElementName=ChkEndDate}"/>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ════════════════════════════════════════════════ -->
+                    <!-- SECTION 3 · REMARKS                             -->
+                    <!-- ════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="REMARKS" FontSize="9.5" FontWeight="Bold"
+                                       Foreground="#8A9AAA" Margin="0,0,0,8"/>
+                            <TextBox x:Name="TxtRemarks"
+                                     Style="{StaticResource MultiField}"
+                                     MinHeight="60"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ════════════════════════════════════════════════ -->
+                    <!-- SECTION 4 · LICENSE & WARRANTY                  -->
+                    <!-- ════════════════════════════════════════════════ -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="LICENSE &amp; WARRANTY" Style="{StaticResource ST}"/>
+
+                            <!-- License Number (conditional) -->
+                            <Grid x:Name="RowLicenseNumber" Visibility="Collapsed"
+                                  Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="License Number" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtLicenseNumber" Grid.Column="1"
+                                         Style="{StaticResource FormField}"/>
+                            </Grid>
+
+                            <!-- Part # -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Part #" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtPartNumber" Grid.Column="1"
+                                         Style="{StaticResource FormField}" MaxLength="100"/>
+                            </Grid>
+
+                            <!-- Warranty (Years) -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Warranty (Years)" Style="{StaticResource FL}"/>
+                                <TextBox x:Name="TxtWarrantyYears" Grid.Column="1"
+                                         Style="{StaticResource FormField}" Text="0"
+                                         HorizontalAlignment="Left" Width="80"/>
+                            </Grid>
+
+                            <!-- Warranty Start -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Warranty Start" Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkWarrantyStart" Grid.Column="1"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <DatePicker x:Name="DpWarrantyStart" Grid.Column="2"
+                                            Style="{StaticResource FormDate}"
+                                            HorizontalAlignment="Left" Width="220"
+                                            IsEnabled="{Binding IsChecked, ElementName=ChkWarrantyStart}"
+                                            SelectedDateChanged="WarrantyDates_ValueChanged"/>
+                            </Grid>
+
+                            <!-- Warranty End -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Warranty End" Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkWarrantyEnd" Grid.Column="1"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <DatePicker x:Name="DpWarrantyEnd" Grid.Column="2"
+                                            Style="{StaticResource FormDate}"
+                                            HorizontalAlignment="Left" Width="220"
+                                            IsEnabled="{Binding IsChecked, ElementName=ChkWarrantyEnd}"
+                                            SelectedDateChanged="WarrantyDates_ValueChanged"/>
+                            </Grid>
+
+                            <!-- Date Purchased -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Date Purchased" Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkDatePurchased" Grid.Column="1"
+                                          FontSize="12" Foreground="#4A5A6A"
+                                          VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <DatePicker x:Name="DpDatePurchased" Grid.Column="2"
+                                            Style="{StaticResource FormDate}"
+                                            HorizontalAlignment="Left" Width="220"
+                                            IsEnabled="{Binding IsChecked, ElementName=ChkDatePurchased}"/>
+                            </Grid>
+
+                            <!-- Acquisition Type -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Acquisition Type" Style="{StaticResource FL}"/>
+                                <ComboBox x:Name="CmbAcquisitionType" Grid.Column="1"
+                                          Style="{StaticResource FormCombo}"
+                                          HorizontalAlignment="Left" Width="220"/>
+                            </Grid>
+
+                            <!-- Fixed Asset -->
+                            <Grid Margin="0,5,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <CheckBox x:Name="ChkIsTrackedAsset" Grid.Column="1"
+                                          Content="Treat this item as a Fixed Asset"
+                                          FontSize="12" Foreground="#4A5A6A"/>
+                            </Grid>
+
+                            <!-- Informational only — does not block editing. Shown when the item
+                                 already has Set/Renewal history so changing this flag is a
+                                 deliberate choice, not an accidental one. -->
+                            <Grid x:Name="RowTrackedAssetWarning" Visibility="Collapsed" Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FL}"/>
+                                <TextBlock Grid.Column="1" FontSize="11" FontStyle="Italic"
+                                           Foreground="#B8860B" TextWrapping="Wrap"
+                                           Text="⚠ This item already has Set or Renewal history. Changing this flag won't update those records."/>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Resize grip spacer -->
+                    <Border Height="8" Background="Transparent"/>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ════════════════════════════════════════════════════════ -->
+            <!-- ROW 2 · FOOTER                                          -->
+            <!-- ════════════════════════════════════════════════════════ -->
+            <Border Grid.Row="2" Background="White"
+                    BorderBrush="#DDE3EC" BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,10,10">
+                <DockPanel Margin="20,0" VerticalAlignment="Center" LastChildFill="False">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button x:Name="BtnCancel" Content="Cancel"
+                                Style="{StaticResource SecBtn}" Margin="0,0,8,0"
+                                Click="BtnCancel_Click" IsCancel="True"/>
+                        <Button x:Name="BtnSave" Content="Save"
+                                Style="{StaticResource PrimaryBtn}" Margin="0,0,8,0"
+                                Click="BtnSave_Click"/>
+                        <Button x:Name="BtnAddCopy" Content="Add a Copy"
+                                Style="{StaticResource SecBtn}"
+                                Click="BtnAddCopy_Click"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>

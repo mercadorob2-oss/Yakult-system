@@ -1,0 +1,19 @@
+@page
+@model Yakult.ITCM.Server.Pages.Account.AccessDeniedModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Access denied - ITCM Server</title>
+    <style>
+        body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f8fafc; color: #1f2937; font-family: "Segoe UI", Arial, sans-serif; }
+        main { width: min(460px, calc(100vw - 32px)); padding: 32px; background: white; border: 1px solid #e5e7eb; border-radius: 14px; text-align: center; box-shadow: 0 14px 40px rgba(15, 23, 42, .1); }
+        h1 { margin-top: 0; } p { color: #64748b; line-height: 1.5; } a { color: #2563eb; }
+    </style>
+</head>
+<body><main><h1>Access denied</h1><p>Your account is authenticated but is not authorized to administer ITCM.</p><a href="/Account/Login">Return to login</a></main></body>
+</html>

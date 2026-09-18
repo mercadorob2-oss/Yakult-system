@@ -1,0 +1,270 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Item.CartridgeCsvImportDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent" ResizeMode="NoResize"
+        Width="820" Height="560"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Background" Value="#3A8EF6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#2272D9"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#A5C8F8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecBtn" TargetType="Button">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#5B6A7D"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#C8D0DC"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="InlineBtn" TargetType="Button">
+            <Setter Property="Background" Value="#EEF4FF"/>
+            <Setter Property="Foreground" Value="#3A8EF6"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Margin" Value="6,0,0,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#BDD0F8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#D6E8FF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="GridCol" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#F0F2F6"/>
+            <Setter Property="Foreground" Value="#5B6A7D"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderBrush" Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+        </Style>
+    </Window.Resources>
+
+    <Border CornerRadius="10" Background="White" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="52"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="60"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border Grid.Row="0" Background="#3A8EF6" CornerRadius="10,10,0,0"
+                    MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
+                <DockPanel Margin="18,0,10,0" VerticalAlignment="Center">
+                    <TextBlock DockPanel.Dock="Right" Text="✕" FontSize="14" FontWeight="Bold"
+                               Foreground="#BDD9FF" Cursor="Hand" VerticalAlignment="Center"
+                               Padding="8,0" MouseLeftButtonDown="OnCloseClick"/>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Import Stock Count from CSV" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="Creates missing cartridge/consumable models and items; updates stock for existing ones. Routed by the TYPE column."
+                                   FontSize="10" Foreground="#BDD9FF" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- File picker row -->
+            <Border Grid.Row="1" Background="#F7F9FC" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1"
+                    Padding="16,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TxtCsvPath" Grid.Column="0"
+                             IsReadOnly="True" VerticalContentAlignment="Center"
+                             FontSize="11" Foreground="#374151"
+                             Background="White" BorderBrush="#C8D0DC" BorderThickness="1"
+                             Padding="8,0" Height="32"
+                             Text="(no file selected)"
+                             Style="{x:Null}">
+                        <TextBox.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="5"/>
+                            </Style>
+                        </TextBox.Resources>
+                    </TextBox>
+                    <Button Grid.Column="1" Content="Browse…" Style="{StaticResource InlineBtn}"
+                            Margin="8,0,0,0" Click="BtnBrowse_Click"/>
+                    <Button Grid.Column="2" x:Name="BtnLoadPreview" Content="Load Preview"
+                            Style="{StaticResource InlineBtn}" Margin="6,0,0,0"
+                            IsEnabled="False" Click="BtnLoadPreview_Click"/>
+                </Grid>
+            </Border>
+
+            <!-- Info banner (duplicate notice) -->
+            <Border x:Name="BannerDupes" Grid.Row="3" Background="#FFF8E6" BorderBrush="#F5C842"
+                    BorderThickness="1" CornerRadius="0" Padding="12,6" Visibility="Collapsed">
+                <TextBlock x:Name="LblDupeNotice" FontSize="10" Foreground="#7A5C00"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Preview grid -->
+            <Border Grid.Row="2" Margin="0" Background="#F0F2F6">
+                <Grid>
+                    <TextBlock x:Name="LblEmptyState"
+                               Text="Select a CSV file and click 'Load Preview' to see what will be imported."
+                               FontSize="12" Foreground="#9AA3B0"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               TextWrapping="Wrap" TextAlignment="Center" Margin="40,0"/>
+
+                    <DataGrid x:Name="PreviewGrid"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserSortColumns="True"
+                              CanUserResizeColumns="True"
+                              CanUserReorderColumns="False"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="#DDE3EC"
+                              Background="White"
+                              RowBackground="White"
+                              AlternatingRowBackground="#FAFBFC"
+                              BorderThickness="0"
+                              RowHeight="30"
+                              FontSize="11"
+                              ColumnHeaderStyle="{StaticResource GridCol}"
+                              Visibility="Collapsed">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Model Name" Binding="{Binding ModelName}" Width="*" MinWidth="160"/>
+                            <DataGridTextColumn Header="Type" Binding="{Binding TypeLabel}" Width="90">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Foreground" Value="#5B6A7D"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="Current Stock" Binding="{Binding CurrentStockDisplay}" Width="90">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Foreground" Value="#9AA3B0"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="CSV Stock" Binding="{Binding CsvStock}" Width="80">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="Model" Width="70">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ModelStatus}" FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{Binding ModelStatusBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Item" Width="70">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding ItemStatus}" FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{Binding ItemStatusBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- Footer -->
+            <Border Grid.Row="4" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0"
+                    CornerRadius="0,0,10,10">
+                <DockPanel Margin="20,0" VerticalAlignment="Center" LastChildFill="False">
+                    <TextBlock x:Name="LblStatus" DockPanel.Dock="Left"
+                               FontSize="11" Foreground="#5B6A7D" VerticalAlignment="Center"/>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                        <Button Content="Cancel" Style="{StaticResource SecBtn}" Margin="0,0,8,0"
+                                Click="BtnCancel_Click" IsCancel="True"/>
+                        <Button x:Name="BtnImport" Content="Import All"
+                                Style="{StaticResource PrimaryBtn}" IsEnabled="False"
+                                Click="BtnImport_Click"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>

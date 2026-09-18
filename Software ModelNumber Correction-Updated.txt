@@ -1,0 +1,183 @@
+ItemId	Name	Description	ModelNumber
+556	Monitor	Lenovo ThinkVision S22i-30 21.5 LCD Monitor w/complete Accs & HDMI Cable	S22i-30
+573	Microsoft Office Home and Business 2024 All Lng APAC EM Retail Online ESD	Microsoft Office Home and Business 2024 All Lng APAC EM Retail Online ESD	
+597	Seagate 1TB One Touch Black USB3.0 HardDisk	Seagate 1TB One Touch Black USB3.0 HardDisk	
+622	Duo-Beyond Cisco Standard Duo Beyond Edition	Duo-Beyond Cisco Standard Duo Beyond Edition	
+623	Duo Sub Cisco Subscription	Duo Sub Cisco Subscription	
+624	Svs-Duo-Sup-B Cisco Duo Basic Support	Svs-Duo-Sup-B Cisco Duo Basic Support	
+633	MS CFQ7TTCOLDPB 365 Business Standard	MS CFQ7TTCOLDPB 365 Business Standard	CFQ7TTCOLDPB
+634	MS CFQ7TTCOLH3L Power Automate Per User Plan	MS CFQ7TTCOLH3L Power Automate Per User Plan	CFQ7TTCOLH3L
+1702	Vmware Workspace One Renewal with SID#M4142237093	WSU-AWOAP-12PTO-C1S Vmware Workspace One Advanced-Shared Cloud Saas Production Support-1 User-Subscription-12 Month Prepaid	WSU-AWOAP-12PTO-C1S
+1703	1-Year Perpetual License Renewal for VMWare Horizon 8 with Contract#4117532908	Vmware - HZ8 - ADC-10B1-1Y TL55UG-C Subscription Upgrade: Omnissa Horizon 8 Advanced Term with VVF for VDI Edition-10 Concurrent User Pack 1-Year Term License 4117532908	HZ8-ADC-10B1-1Y-TL55UG-C
+1704	"Cisco LIC-ENT-3Yr Meraki MR Enterprise License, 3yr Null"	"Cisco LIC-ENT-3Yr Meraki MR Enterprise License, 3yr Null"	LIC-MX250-SEC-3yr
+1705	Cisco LIC-Z3C-ENT-3Yr Meraki Z3C	"Cisco LIC-Z3C-ENT-3Yr Meraki Z3C Enterprise License and Support, 3yr Null"	LIC-Z3C-ENT-3Yr 
+1706	Cisco LIC-MX250-SEC-3yr Meraki Mx250	Cisco LIC-MX250-SEC-3yr Meraki Mx250 Advanced Security License and Support 3yr Null	LIC-MX250-SEC-3yr
+1707	Cisco A-Flex-3 Collaboration Flex Plan 3.0 SUB1653060	Cisco A-Flex-3 Collaboration Flex Plan 3.0 SUB1653060	A-Flex-3 
+1708	Cisco A-Flex-C-Dev-Ent Cloud Device Registration Entitlement SUB1653060	Cisco A-Flex-C-Dev-Ent Cloud Device Registration Entitlement SUB1653060	A-Flex-C-Dev-Ent 
+1709	Cisco SVS-Flex-Supt-Bas Basic Support for Flex Plan SUB1653060	Cisco SVS-Flex-Supt-Bas Basic Support for Flex Plan SUB1653060	SVS-Flex-Supt-Bas 
+1710	Cisco A-Flex-C-Dev-Reg Cloud Device Registration Sub1653060	Cisco A-Flex-C-Dev-Reg Cloud Device Registration Sub1653060	A-Flex-C-Dev-Reg
+1711	Cisco A-Flex-P-Call Prem to Webex Calling/UCM Cloud Sub1653060	Cisco A-Flex-P-Call Prem to Webex Calling/UCM Cloud Sub1653060	A-Flex-P-Call 
+1712	Cisco A-Flex-3- Collaboration Flex Plan 3.0 SUB1653059	Cisco A-Flex-3- Collaboration Flex Plan 3.0 SUB1653059	A-Flex-3 
+1713	Cisco A-Flex-C-Dev-Reg-Cloud Device Registration SUB1653059	Cisco A-Flex-C-Dev-Reg-Cloud Device Registration SUB1653059	A-Flex-C-Dev-Reg-Cloud 
+1714	Cisco A-Flex-C-Dev-Ent Cloud Device Registration Entitlement SUB1653058	Cisco A-Flex-C-Dev-Ent Cloud Device Registration Entitlement SUB1653058	A-Flex-C-Dev-Ent 
+1715	Cisco 5V5-Flex-Supt-Bas Basic Support for Flex Plan Sub1653059	Cisco 5V5-Flex-Supt-Bas Basic Support for Flex Plan Sub1653059	5V5-Flex-Supt-Bas 
+1716	Cisco A-Flex-P-Call Prem to Webex Calling/UCM Cloud SUB1653059	Cisco A-Flex-P-Call Prem to Webex Calling/UCM Cloud SUB1653059	A-Flex-P-Call
+1717	Cisco A-Flex Collaboration Flex Plan 3.0 SUB1653058	Cisco A-Flex Collaboration Flex Plan 3.0 SUB1653058	A-Flex 
+1718	Cisco A-Flex-C-Dev-Reg Cloud Device Registration SUB1653058	Cisco A-Flex-C-Dev-Reg Cloud Device Registration SUB1653058	A-Flex-C-Dev-Reg
+1720	Trustwave Trust_Mail_Lic Mailmarshal Service Agreement (1 Year) 100 User License Marshal Core Protection Antispam Anti-Malware Sophos	Trustwave Trust_Mail_Lic Mailmarshal Service Agreement (1 Year) 100 User License Marshal Core Protection Antispam Anti-Malware Sophos	
+1721	Trustwave Trust_Web_Lic-Webmarshal Service Agreement (1 Year) 100 User License Marshal Core Protection Anti Malware Sophos for Marshal Web Filter Database Standard Support	Trustwave Trust_Web_Lic-Webmarshal Service Agreement (1 Year) 100 User License Marshal Core Protection Anti Malware Sophos for Marshal Web Filter Database Standard Support	
+1722	Cisco A-Flex-C-Dev-Ent Cloud Device Registration Entitlement SUB1653058	Cisco A-Flex-C-Dev-Ent Cloud Device Registration Entitlement SUB1653058	A-Flex-C-Dev-Ent
+1723	Cisco SVS-Flex-Supt-Bas Basic Support for Flex Plan SUB1653058	Cisco SVS-Flex-Supt-Bas Basic Support for Flex Plan SUB1653058	SVS-Flex-Supt-Bas 
+1724	Cisco A-Flex-Call Prem to Webex Calling/UCM Cloud SUB1653058	Cisco A-Flex-Call Prem to Webex Calling/UCM Cloud SUB1653058	A-Flex-Call 
+1725	Cisco A-Flex-3 Collaboration Flex Plan 3.0 SUB1014849	Cisco A-Flex-3 Collaboration Flex Plan 3.0 SUB1014849	A-Flex-3 
+1726	Cisco A-Flex-SRST-Endpoint (1) SUB1014849	Cisco A-Flex-SRST-Endpoint (1) SUB1014849	A-Flex-SRST-Endpoint 
+1727	Cisco A-Flex -P-Acc Access Smart License (1) Sub1014849	Cisco A-Flex -P-Acc Access Smart License (1) Sub1014849	A-Flex -P-Acc 
+1728	Cisco A-Flex -SW-12.5-K9 On-Premises & Partner Hosted Calling SW Bundle V12.5 (1) SUB1014849	Cisco A-Flex -SW-12.5-K9 On-Premises & Partner Hosted Calling SW Bundle V12.5 (1) SUB1014849	A-Flex-SW-12.5-K9
+1729	Cisco A-Flex-Nupla NU On Premises Calling Access SUB1014849	Cisco A-Flex-Nupla NU On Premises Calling Access SUB1014849	A-Flex-Nupla
+1730	Cisco SVS-Flex-Supt-Bas Basic Support for Flex Plan SUB1014849	Cisco SVS-Flex-Supt-Bas Basic Support for Flex Plan SUB1014849	SVS-Flex-Supt-Bas 
+1732	File Automation DMZ Auto WFTP-A WFTP	File Automation DMZ Auto WFTP-A WFTP Automation Corporate License with PGP Module 10 Keys 1-Year Standard Support Services Agreement	WFTP-A
+1737	WEBMARSHAL SERVICE AGREEMENT (1 YEAR) 100 USER LICENSE	WEBMARSHAL SERVICE AGREEMENT (1 YEAR) 100 USER LICENSE	
+1738	WEB-LIC MAILMARSHAL SERVICE AGREEMENT (1 YEAR) 100 USER LICENSE	WEB-LIC MAILMARSHAL SERVICE AGREEMENT (1 YEAR) 100 USER LICENSE	
+1741	UCS Fabric Interconnect 6454	Cisco CON-SNT-HXFI6454 SNTC-8X5XNBD UCS Fabric Interconnect 6454	 CON-SNT-HXFI6454
+1742	Cisco Hyperflex	Cisco CON-SNT-HX240M5L SNTC 8X5XNBD Cisco Hyperflex HX240c M5L	CON-SNT-HX240M5L 
+1743	Cisco Hyperflex	Cisco CON-SNT-HX240M5L SNTC 8X5XNBD Cisco Hyperflex HX240c M5L	CON-SNT-HX240M5L 
+1744	Cisco Hyperflex	Cisco CON-SNT-HX240M5L SNTC 8X5XNBD Cisco Hyperflex HX240c M5L	CON-SNT-HX240M5L 
+1745	UCS Fabric Interconnect	CON-SNT-HXFI6454 SNTC-8X5XNBD UCS Fabric Interconnect 6454	CON-SNT-HXFI6454
+1746	Hyperflex M5 Data Platform	Cisco HXDP-M5-SW-Suite Hyperflex M5 Data Platform Software Suite	HXDP-M5-SW-Suite 
+1748	Basic Support for DCM	Cisco SVS-DCM-SUPT-BAS Basic Support for DCM	SVS-DCM-SUPT-BAS 
+1749	Hyperflex Data Platform M5 Datacenter Premier	Cisco HXDP-M5-DC-PR Hyperflex Data Platform M5 Datacenter Premier	CHXDP-M5-DC-PR 
+1750	Intersight SAAS	Cisco DC-MGT-SAAS Intersight SAAS	DC-MGT-SAAS 
+1751	UCS Central Per Server -1 Server License	Cisco DC-MGT-UCSC-1S UCS Central Per Server -1 Server License	DC-MGT-UCSC-1S 
+1752	Basic Support for DCM	Cisco SVS-DCM-SUPT-BAS Basic Support for DCM	SVS-DCM-SUPT-BAS
+1753	Infrastructure Services SAAS/CVA - Advantage	Cisco DC-MGT-IS-SAAS-AD Infrastructure Services SAAS/CVA - Advantage	DC-MGT-IS-SAAS-AD
+1754	Cisco Webex	Cisco Webex Renewal for Subscription#SUB670302	
+1755	Cisco Webex	Cisco Webex Renewal for Subscription#SUB1283338	
+1756	BREP	MS-REN-NAV Annual Business Ready Enhancement Plan (BREP) for Dynamics NAV Perpetual	MS-REN-NAV 
+1757	MSOC	70% Final Bill Management Security Operations Center Services	
+1758	Cisco Secure Email XAAS	Cisco CSEmail_SEC_SUB Cisco Secure Email Xaas Subscription	CSEmail_SEC_SUB 
+1759	Cisco Secure Email Advantage	"Cisco ESA-ADV-LIC Secure Email Advantage , Essential+G5U+DLP+ENC Null"	ESA-ADV-LIC 
+1760	Cisco Secure Email Malware Analytics Unlimited License Null	CISCO ESA-MA-ULTD-LIC Cisco Secure Email Malware Analytics Unlimited License Null	ESA-MA-ULTD-LIC 
+1761	Cisco Basic Support	CISCO SVS-Email-SUP-B Basic Support for Email Security Null	SVS-Email-SUP-B 
+1762	Crowdstrike	Crowdstrike REN.PC.CS.SOLN. Flex Falcon Complete Flex (Commercial or EU) Null	REN.PC.CS.SOLN. 
+1763	IntelBP Soln Crowstrike	CS REN.CS01-CS. IntelBP Soln Crowstrike - Falcon Intelligence Null	REN.CS01-CS. 
+1764	Crowdstrike - Express Support Null	Crowdstrike REN.RR.HOS.ENT.EXPS. Crowdstrike - Express Support Null	REN.RR.HOS.ENT.EXPS.
+1765	Cisco Webex	Cisco Webex Renewal with Subscription#SUB569776	
+1766	Cisco Webex	Cisco Webex Renewal with Subscription#SUB1244741	
+1767	Basic Support for Email Security Null	CISCO SVS-EMAIL-SUP-B Basic Support for Email Security Null	SVS-EMAIL-SUP-B 
+1768	Cisco Webex Renewal with Subscription#SUB569776	Cisco Webex Renewal with Subscription#SUB569776	
+1769	Cisco Webex Renewal with Subscription#SUB1244741	Cisco Webex Renewal with Subscription#SUB1244741	
+1770	Cisco A-Flex Collaboration Flex Plan Subscription#569776	Cisco A-Flex Collaboration Flex Plan Subscription#569776	A-Flex
+1771	Cisco A-Flex-MC-ENT Subscription#Sub569776	Cisco A-Flex-MC-ENT Subscription#Sub569776	A-Flex-MC-ENT 
+1772	Cisco A-Flex-Toll-Dialin Meetings Toll Dial-IN Audio (1) Subscription#Sub569776	Cisco A-Flex-Toll-Dialin Meetings Toll Dial-IN Audio (1) Subscription#Sub569776	A-Flex-Toll-Dialin 
+1773	Cisco A-Flex -M5G-ENT Messaging Entitlement Subscription#569776	Cisco A-Flex -M5G-ENT Messaging Entitlement Subscription#569776	A-Flex -M5G-ENT 
+1774	Cisco A-Flex Edgaud-User A Flex Webex Edge Audio Subscription#Sub569776	Cisco A-Flex Edgaud-User A Flex Webex Edge Audio Subscription#Sub569776	A-Flex Edgaud-User 
+1775	Cisco 5v5-5PK-SUPT-BAS Basic Support for Cisco Spark Subscription#Sub569776	Cisco 5v5-5PK-SUPT-BAS Basic Support for Cisco Spark Subscription#Sub569776	5v5-5PK-SUPT-BAS 
+1776	Cisco A-Flex-Filestg-ENT-File Storage Entitlement Subscription#Sub569776	Cisco A-Flex-Filestg-ENT-File Storage Entitlement Subscription#Sub569776	A-Flex-Filestg-ENT
+1777	Cisco A-Flex-NUCM-MC NU Cloud Meetings (1) Subscription#Sub569776	Cisco A-Flex-NUCM-MC NU Cloud Meetings (1) Subscription#Sub569776	A-Flex-NUCM-MC 
+1778	Cisco A-Flex-WX-5TG Included Webex Storage for the Subscription#Sub569776	Cisco A-Flex-WX-5TG Included Webex Storage for the Subscription#Sub569776	A-Flex-WX-5TG
+1779	Cisco A-5PK-VOIP Included VOIP (1) Subscription#Sub5699776	Cisco A-5PK-VOIP Included VOIP (1) Subscription#Sub5699776	A-5PK-VOIP 
+1780	Cisco A-Flex-NBR-STG-Webex Cloud Recording Storage Entitlement	Cisco A-Flex-NBR-STG-Webex Cloud Recording Storage Entitlement	A-Flex-NBR-STG-Webex 
+1781	Cisco A-Flex Device Webex Device Subscription#Sub1244741	Cisco A-Flex Device Webex Device Subscription#Sub1244741	A-Flex-Device
+1782	Cisco 5V5-FLXD-SUPT-BAS Basic Support for Flex Device Subscription#Sub1244741	Cisco 5V5-FLXD-SUPT-BAS Basic Support for Flex Device Subscription#Sub1244741	5V5-FLXD-SUPT-BAS 
+1783	Cisco A-Flex-Device Webex Device Subscription#Sub1244741	Cisco A-Flex-Device Webex Device Subscription#Sub1244741	A-Flex-Device 
+1784	Cisco 5V5-FLXD-SUPT-BAS Basic Support for Flex Device Subscription#Sub124471	Cisco 5V5-FLXD-SUPT-BAS Basic Support for Flex Device Subscription#Sub124471	5V5-FLXD-SUPT-BAS 
+1785	Cisco A-Flex DevReg-ENT Cloud Device Registration Entitlement Subscription#Sub124471	Cisco A-Flex DevReg-ENT Cloud Device Registration Entitlement Subscription#Sub124471	A-Flex DevReg-ENT
+1786	Cisco A-Flex-C-Device Webex Device Cloud Subscription Sub1244741	Cisco A-Flex-C-Device Webex Device Cloud Subscription Sub1244741	A-Flex-C-Device 
+1787	Cisco SRC Smartnet Renewal for Contract#100316593	Cisco SRC Smartnet Renewal for Contract#100316593	
+1788	"Cisco CP-8800A-KEM 8800 Series Audio KEM, 28 Button 100316593"	"Cisco CP-8800A-KEM 8800 Series Audio KEM, 28 Button 100316593"	CP-8800A-KEM
+1789	"Cisco BE6M-M5-K9 Business Edition 6000M (M5) Appliance, Export RestR SN 100316593"	"Cisco BE6M-M5-K9 Business Edition 6000M (M5) Appliance, Export RestR SN 100316593"	BE6M-M5-K9
+1790	Cisco CP-7811-K9 Cisco UC Phone 7811 100316593	Cisco CP-7811-K9 Cisco UC Phone 7811 100316593	CP-7811-K9
+1791	Cisco CP-7821-K9 UC Phone 7821 100316593	Cisco CP-7821-K9 UC Phone 7821 100316593	CP-7821-K9 
+1792	Cisco CP-7841-K9 Cisco UC Phone 7841 100316593	Cisco CP-7841-K9 Cisco UC Phone 7841 100316593	CP-7841-K9 
+1793	Cisco CP-8845-K9 Cisco IP Phone 8845 100316593	Cisco CP-8845-K9 Cisco IP Phone 8845 100316593	CP-8845-K9
+1794	Cisco CP-8851-K9 Cisco IP Phone 8851 100316593	Cisco CP-8851-K9 Cisco IP Phone 8851 100316593	CP-8851-K9
+1795	Cisco CP-8865-K9 Cisco IP Phone 8865 100316593	Cisco CP-8865-K9 Cisco IP Phone 8865 100316593	CP-8865-K9
+1796	"Cisco ISR4321-V/K9 Cisco ISR 4321 Bundle, W/UC License 100316593"	"Cisco ISR4321-V/K9 Cisco ISR 4321 Bundle, W/UC License 100316593"	ISR4321-V/K9
+1797	Cisco CS-BAR-T-K9 Cisco Webex Room Bar w/ Table Stand Nabigator 100316593	Cisco CS-BAR-T-K9 Cisco Webex Room Bar w/ Table Stand Nabigator 100316593	CS-BAR-T-K9 
+1798	Cisco CP-HS-W-531-RJ Headset 531 Wired Single+QD RJ Headset Cable 100316593	Cisco CP-HS-W-531-RJ Headset 531 Wired Single+QD RJ Headset Cable 100316593	CP-HS-W-531-RJ
+1799	Cisco SRS Smartnet Renewal for Subscription ID: SUB1220052	Cisco SRS Smartnet Renewal for Subscription ID: SUB1220052	
+1800	"Cisco SP-Informacast Solutions Plus: Informacast Subsc (Mobile,Fusion,EPA,Advanced SUB1220052"	"Cisco SP-Informacast Solutions Plus: Informacast Subsc (Mobile,Fusion,EPA,Advanced SUB1220052"	
+1801	Cisco SP-ICADWR-END-50-C Informacast Advanced Notification with Resiliency ID: SUB1220052	Cisco SP-ICADWR-END-50-C Informacast Advanced Notification with Resiliency ID: SUB1220052	SP-ICADWR-END-50-C 
+1802	Cisco SRFS Smartnet Renewal for Subscription ID: SUB1220051	Cisco SRFS Smartnet Renewal for Subscription ID: SUB1220051	
+1803	Cisco A-Flex -3 Collaboration Flex Plan 3.0 ID: SUB1014849	Cisco A-Flex -3 Collaboration Flex Plan 3.0 ID: SUB1014849	A-Flex -3
+1804	Cisco A-Flex-P-ACC Access Smart License (1) ID: SUB1220051	Cisco A-Flex-P-ACC Access Smart License (1) ID: SUB1220051	A-Flex-P-ACC 
+1805	Cisco A-Flex-Filestg-ENT File Storage Entitlement ID: SUB1220051	Cisco A-Flex-Filestg-ENT File Storage Entitlement ID: SUB1220051	A-Flex-Filestg-ENT 
+1806	Cisco A-Flex-CUAC-S Unified Attendant Console Standard SUB1220051	Cisco A-Flex-CUAC-S Unified Attendant Console Standard SUB1220051	A-Flex-CUAC-S 
+1807	Cisco A-Flex-MSG-NU-ENT Messaging Named User Entitlement (1) SUB1220051	Cisco A-Flex-MSG-NU-ENT Messaging Named User Entitlement (1) SUB1220051	A-Flex-MSG-NU-ENT 1
+1808	Cisco A-Flex-NUPL-A NU On Premises Calling Access SUB1220051	Cisco A-Flex-NUPL-A NU On Premises Calling Access SUB1220051	A-Flex-NUPL-A 
+1809	Cisco A-Flex-P-Pro Unified Communications Manager Smart License-Pro (1) ID: SUB1220051	Cisco A-Flex-P-Pro Unified Communications Manager Smart License-Pro (1) ID: SUB1220051	A-Flex-P-Pro 
+1810	Cisco SVS-Flex-Supt-BAS Basic Support for Flex Plan ID: SUB1220051	Cisco SVS-Flex-Supt-BAS Basic Support for Flex Plan ID: SUB1220051	SVS-Flex-Supt-BAS
+1811	Cisco A-Flex-NUPL-P NU On-Premises Calling Professional ID: SUB1220051	Cisco A-Flex-NUPL-P NU On-Premises Calling Professional ID: SUB1220051	A-Flex-NUPL-P 
+1812	Cisco A-Flex-P-UCXN Unity Connection Smart License (1) ID: SUB1220051	Cisco A-Flex-P-UCXN Unity Connection Smart License (1) ID: SUB1220051	A-Flex-P-UCXN 
+1813	Cisco A-Flex-P-ER Emergency Responder Smart License (1) ID: SUB1220051	Cisco A-Flex-P-ER Emergency Responder Smart License (1) ID: SUB1220051	A-Flex-P-ER
+1814	Cisco A-Flex-Propack-ENT Pro Pack for Cisco Control Hub Entitlement ID: SUB1220051	Cisco A-Flex-Propack-ENT Pro Pack for Cisco Control Hub Entitlement ID: SUB1220051	A-Flex-Propack-ENT 
+1815	Cisco A-Flex-SRST-E SRST Endpoints (1) ID: SUB1220051	Cisco A-Flex-SRST-E SRST Endpoints (1) ID: SUB1220051	A-Flex-SRST-E 
+1816	Cisco A-Flex-SW-15-K9 On Premises SW Bundle V15	Cisco A-Flex-SW-15-K9 On Premises SW Bundle V15	A-Flex-SW-15-K9 
+1817	Sophos XS4500036ZZRCAA Sophos XGS 4500 Xstram Protection	Sophos XS4500036ZZRCAA Sophos XGS 4500 Xstram Protection	XS4500036ZZRCAA
+1818	Sophos SS450036ZZRCAA Sophos XGS 4500 Webserver Protection	Sophos SS450036ZZRCAA Sophos XGS 4500 Webserver Protection	SS450036ZZRCAA 
+1819	Sophos ES450036ZZRCAA Sophos XGS 4500 Email Protection	Sophos ES450036ZZRCAA Sophos XGS 4500 Email Protection	ES450036ZZRCAA 
+1823	"Cisco CON-SNTP-C240M5SX SNTC 24X7X4 UCS C240 M5 SFF + 2 Rear Drives w/o CPU, MEM, H WMP25400129 2044444799"	"Cisco CON-SNTP-C240M5SX SNTC 24X7X4 UCS C240 M5 SFF + 2 Rear Drives w/o CPU, MEM, H WMP25400129 2044444799"	CON-SNTP-C240M5SX
+1824	Cisco CON-SNTP-HXFI5454 SNTC 24X7 UCS Fabric Interconnect 6454 FDO245441NQQ 20444799	Cisco CON-SNTP-HXFI5454 SNTC 24X7 UCS Fabric Interconnect 6454 FDO245441NQQ 20444799	CON-SNTP-HXFI5454 
+1825	Cisco CON-SNTP HXFI6454 SNTC 24X7 UCS Fabric Interconnect 6454 FDO25441NZW 204444799	Cisco CON-SNTP HXFI6454 SNTC 24X7 UCS Fabric Interconnect 6454 FDO25441NZW 204444799	CON-SNTP HXFI6454
+1826	Cisco CON-SNTP-HX240M5L SNTC 24X7 Cisco Hyperflex HX240C M5 LFF WZP254 1008A 204444799	Cisco CON-SNTP-HX240M5L SNTC 24X7 Cisco Hyperflex HX240C M5 LFF WZP254 1008A 204444799	CON-SNTP-HX240M5L 
+1827	Cisco CON-SNTP-HX240M5L SNTC 24X7 Cisco Hyperflex HX240C M5 LFF WZP2541007Y 204444799	Cisco CON-SNTP-HX240M5L SNTC 24X7 Cisco Hyperflex HX240C M5 LFF WZP2541007Y 204444799	CON-SNTP-HX240M5L
+1828	Cisco CON-SNTP-HX 240M5L SNTC 24X7 Cisco Hyperflex HX240C M5 LFFWZP2541007Y 204444799	Cisco CON-SNTP-HX 240M5L SNTC 24X7 Cisco Hyperflex HX240C M5 LFFWZP2541007Y 204444799	CON-SNTP-HX 
+1829	Cisco CON-ISV-1 MSWSS195 UC ISV L1+L2 24X7 Windows Server 2019 Standard (16 Cores/2 VMS) Null 204444799	Cisco CON-ISV-1 MSWSS195 UC ISV L1+L2 24X7 Windows Server 2019 Standard (16 Cores/2 VMS) Null 204444799	CON-ISV-1
+1831	Progress WUP-PREM_100 Dev Whatsup Gold Premium Edition 100 Dev Whatsup Gold Premium Edition 100 Devices	Progress WUP-PREM_100 Dev Whatsup Gold Premium Edition 100 Dev Whatsup Gold Premium Edition 100 Devices	WUP-PREM_100
+1832	Cisco A-Flex-P-ACC Access Smart License (1) SUB1014849	Cisco A-Flex-P-ACC Access Smart License (1) SUB1014849	A-Flex-P-ACC
+1833	Cisco A-Flex-P-ER Emergency Responder Smart License (1) SUB1014849	Cisco A-Flex-P-ER Emergency Responder Smart License (1) SUB1014849	A-Flex-P-ER 
+1834	Cisco A-Flex-3 Collaboration Flex Plan 3.0 SUB1653059	Cisco A-Flex-3 Collaboration Flex Plan 3.0 SUB1653059	A-Flex-3 
+1835	Cisco A-Flex-C-Dev-Reg-Cloud Device Registration SUB1653059	Cisco A-Flex-C-Dev-Reg-Cloud Device Registration SUB1653059	A-Flex-C-Dev-Reg-Cloud 
+1836	Cisco A-Flex-C-Dev-ENT Cloud Device Registration Entitlement SUB1653059	Cisco A-Flex-C-Dev-ENT Cloud Device Registration Entitlement SUB1653059	A-Flex-C-Dev-ENT 
+1837	Cisco 5V5-Flex-Supt-Bas Basic Support for Flex Plan SUB1653059	Cisco 5V5-Flex-Supt-Bas Basic Support for Flex Plan SUB1653059	5V5-Flex-Supt-Bas 
+1838	Cisco A-Flex-P-Call Prem to Webex Calling/UCM Cloud SUB1653059	Cisco A-Flex-P-Call Prem to Webex Calling/UCM Cloud SUB1653059	A-Flex-P-Call 
+1839	Cisco A-Flex-3 Collaboration Flex Plan 3.0 SUB1653058	Cisco A-Flex-3 Collaboration Flex Plan 3.0 SUB1653058	A-Flex-3 
+1840	CV-DP-VM10-41 Commvault Cloud Autonomous Recovery Software for Virtual Machines per VM (10 Pack) 36 Months	CV-DP-VM10-41 Commvault Cloud Autonomous Recovery Software for Virtual Machines per VM (10 Pack) 36 Months	
+1841	JSI-IMPLEM-INT Professional Services Includes Implementation & Knowledge Transfer	JSI-IMPLEM-INT Professional Services Includes Implementation & Knowledge Transfer	JSI-IMPLEM-INT 
+1844	MS Office Home and Business 2024 All Lng APAC EM Retail Online ESD	MS Office Home and Business 2024 All Lng APAC EM Retail Online ESD	
+1845	MS EP2-06604 Office Home and Business 2024 All Lng APAC EM Retail Online ESD	MS EP2-06604 Office Home and Business 2024 All Lng APAC EM Retail Online ESD	EP2-06604
+1976	Microsoft Office and Home Business	Microsoft FPP EP2-06630 Office Home and Business 2024 English APAC EM Medialess	EP2-06630 
+1977	Lenovo Monitor	"Lenovo E22-30 21.5"" Monitor"	E22-30
+2108	Forcepoint DLP Suite	70% Progress Billing   ForcePoint FDLP SIP  ForcePoint DLP Suite (IP Protection)	
+2109	ForcePoint SPRT Essential Support	ForcePoint SPRT Essential Support	
+2110	Forcepoint FOP50-RIMPLEM	Forcepoint FOP50-RIMPLEM ACW ForcePoint Remote Implementation - 8x5 (8:30AM - 5:30PM) Service Man Day	FOP50-RIMPLEM
+2111	ForcePoint FOP60-RMASERVQTR	"ForcePoint FOP60-RMASERVQTR ACW ForcePoint Remote MA Services- One (1) Year Coverage with Unli Phone & Email Support (8x5), Quarterly Health Check"	FOP60-RMASERVQTR
+2112	ForcePoint FOP70-RServices	ForcePoint FOP70-RServices ACW ForcePoint Remote Services/Incidents-8x5 (8:30AM-5:30PM)	FOP70-RServices
+2114	ForcePoint FDLPSOP ForcePoint DLP Suite (IP Protection)	30% Final Billing for  ForcePoint FDLPSOP ForcePoint DLP Suite (IP Protection)	FDLPSOP 
+2115	ForcePoint SPRT Essential Support	ForcePoint SPRT Essential Support - 12 Months	
+2120	Cisco AMP4E-SEC-SUB	Cisco AMP4E-SEC-SUB  Cisco AMP for Endpoints XaaS Subscription	AMP4E-SEC-SUB
+2121	Cisco SVS-AMPE-SUP-B	Cisco SVS-AMPE-SUP-B  Cisco AMP for Endpoints Basic SW Service	SVS-AMPE-SUP-B
+2122	Cisco AMP4E-CL-UC	Cisco AMP4E-CL-UC  AMP for Endpoints Cloud Subscription	AMP4E-CL-UC
+2123	Cisco SEC-AUTO-PUI-LIC Cisco Security	Cisco SEC-AUTO-PUI-LIC Cisco Security - For Internal Use Only	SEC-AUTO-PUI-LIC
+2124	Cisco Umbrella-SUB	Cisco Umbrella-SUB Umbrella Cloud Security Subscription	Umbrella-SUB
+2125	Cisco UMB-SUPT-B	Cisco UMB-SUPT-B Umbrella Support-Basic	UMB-SUPT-B
+2126	Cisco UMB-Insights-K9	Cisco UMB-Insights-K9 Umbrella Insights	UMB-Insights-K9
+2127	MSOC	30% Down Payment Renewal of Management Security Operations Center Services	
+2128	FORTINET	"FORTINET FC-10-0080F-950-02-00 FortiGate-80F Unified Threat Protection (UTP) (IPS, Advanced Malware x Antispam Service, and FortCare Premium)"	FC-10-0080F-950-02-00 
+2129	FORTINET	"FORTINET FC-10-0080F-950-02-00 FortiGate-80F Unified Threat Protection (UTP) (IPS, Advanced Malware x Antispam Service, and FortCare Premium)"	FC-10-0080F-950-02-00 
+2130	FORTINET FC-10-0401E-950-12	"FORTINET FC-10-0401E-950-12 Unified Threat Protection (UTP) (IPS, Advanced Malware Protection, Application Control, Web & Video Filtering, Antispam Service and 24x7 FortCare)"	FC-10-0401E-950-12
+2131	FORTINET FC-10-0401E-950-12	"FORTINET FC-10-0401E-950-12 Unified Threat Protection (UTP) (IPS, Advanced Malware Protection, Application Control, Web & Video Filtering, Antispam Service and 24x7 FortCare)"	FC-10-0401E-950-12
+2132	FORTINET FC-10-WB4HE-580-02-12 Advance Bundle	"FORTINET FC-10-WB4HE-580-02-12 Advance Bundle (For Care Premium plus A FortiWeb Security Service, IP Reputation, FortiSand Cloud Service, Credential Stuffing Defense Service & Threat Analytic)"	FC-10-WB4HE-580-02-12
+2135	Fortinet FC-10-F12HF-140-02-12 Reputation Service	Fortinet FC-10-F12HF-140-02-12 Reputation Service FI-2HTE22000029	FC-10-F12HF-140-02-12
+2136	Fortinet FC-10-F12HF-191-02-12	Fortinet FC-10-F12HF-191-02-12 Domain Reputation Service FI-2HFTE22000029	FC-10-F12HF-191-02-12 
+2137	FC-10-F12HF-247-02-12 24X7 FortiCare Contact	FC-10-F12HF-247-02-12 24X7 FortiCare Contact FI-2HFTE22000029	FC-10-F12HF-247-02-12 
+2138	Fortinet FC 10 F12HF 140-02-12 IF Reputation Service	Fortinet FC 10 F12HF 140-02-12 IF Reputation Service FI 2HFTE22000021	FC-10-F12HF-140-02-12
+2139	Fortinet FC-10-F12HF-191-02-12 Domain Reputation Service FI-2HFTE22000021	Fortinet FC-10-F12HF-191-02-12 Domain Reputation Service FI-2HFTE22000021	FC-10-F12HF-191-02-12 
+2140	Fortinet FC-10-F12HF-247-02-12 24X7 FortiCare Contract FI-2HFTE22000021	Fortinet FC-10-F12HF-247-02-12 24X7 FortiCare Contract FI-2HFTE22000021	FC-10-F12HF-247-02-12 
+2141	Renewal of Forcepoint DLP	Renewal of ForcePoint DLP EndPoint FDLPEIP ForcePoint DLP EndPoint (IP Protection) SPRT Support Essential	FDLPEIP
+2142	ForcePoint Remote MA Services	MA Services: ForcePoint Remote MA Services One Year Coverage with Unli Phone & Email Support (8x5) & Max of 10 Incidents and Quarterly Healthchecks	
+2143	Renewal of ForcePoint Classify	"Renewal of ForcePoint Classify, Classify ForcePoint Classification Powered by Getvisibility SPRT Support Essential"	
+2144	ForcePoint Remote MA Services	MA Services: SG-RMASERV-FP8 ForcePoint Remote MA Services: One Year Coverage with Unli Phone & Email Support (8x5) & Max of 10 Incidents and Quarterly Health Checks	SG-RMASERV-FP8
+2175	Microsoft Office Home and Business 2024 All Lng APAC EM Retail Online	Microsoft Office Home and Business 2024 All Lng APAC EM Retail Online ESD (MSEP206604)	MSEP206604
+2184	Microsoft Office Home and Business 2024	Microsoft Office Home and Business 2024 All Lng APAC EM Retail Online ESD (MSEP206604)	MSEP206604
+2214	MS Support - NAV Dynamics NAV 2018	MS Support - NAV Dynamics NAV 2018 Support Services (10 MAN DAYS)	
+2215	Webmarshal Service Agreement	Webmarshal Service Agreement (1 Year) 100 User License	
+2216	Web-Lic MailMarshal Service Agreement	Web-Lic MailMarshal Service Agreement (1 Year) 100 User License	
+2217	Cisco Duo Security Renewal with Sub ID: 1023047	Duo Beyond Cisco Standard Duo Beyond Edition	
+2218	Duo Sub Cisco Duo Subscription	Duo Sub Cisco Duo Subscription	
+2219	SVS-Duo-Sup-B Cisco Duo Basic Support	SVS-Duo-Sup-B Cisco Duo Basic Support	
+2220	MS-Dynamic LIL Microsost DYN365 Business Central Premium	Includes: 20 Full Users  10 Central Team Users	
+2221	Omnissa Workspace One Renewal with SID#4142237093	WSU-AWO-12PT0-C1S Omnissa Workspace One Advanced - SAAS - Per User Production Support - 12 Months Prepaid Renewal with SID#4142237093	WSU-AWO-12PT0-C1S
+2222	Omissa HZ8-ADC 10-B1-1Y TLSS-C Omnissa - Horizon 8 Advanced Term with WF For VDI Edition:	Omissa HZ8-ADC 10-B1-1Y TLSS-C Omnissa - Horizon 8 Advanced Term with WF For VDI Edition: 10 Concurrent User Pack for 1 Year Term License; Includes Production Support/Subscription 4117532908	HZ8-ADC 10-B1-1Y TLSS-C 
+2223	MS CFQ7TTC0LDPB 365 Business Standard Null	MS CFQ7TTC0LDPB 365 Business Standard Null	CFQ7TTC0LDPB 
+2224	MS CFQ7TTC0LH3L - Power Automate Per User Plan Null	MS CFQ7TTC0LH3L - Power Automate Per User Plan Null	CFQ7TTC0LH3L 

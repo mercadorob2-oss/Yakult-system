@@ -1,0 +1,342 @@
+/*
+ * Requester Portal — Master Root Stylesheet
+ * Design tokens (CSS variables) + reusable component classes shared across pages.
+ * Loaded before site.css / page-level <style> blocks so both can reference these
+ * variables and classes instead of re-declaring the same hex values per page.
+ */
+
+:root {
+  /* Brand — red used sparingly (primary actions, brand accents, danger) */
+  --yakult-red: #d50032;
+  --yakult-red-hover: #b0002a;
+  --yakult-red-dark: #8f0022;
+  --yakult-red-light: rgba(213, 0, 50, 0.08);
+  --yakult-red-shadow: rgba(213, 0, 50, 0.25);
+
+  /* Brand — soft sky blue, the workhorse color for nav highlights, info,
+     links, secondary actions, and analytics (used far more than red). */
+  --yakult-blue: #3aa0e0;
+  --yakult-blue-hover: #2c86bf;
+  --yakult-blue-light: rgba(58, 160, 224, 0.10);
+  --yakult-blue-shadow: rgba(58, 160, 224, 0.25);
+
+  /* Base surfaces */
+  --surface: #fff;
+  --surface-muted: #f5f6fa;
+  --surface-cream: #fff9f4;
+  --border-muted: #e5e7eb;
+  --text-muted: #7a8a9a;
+  --text-strong: #33393f;
+
+  /* Row interaction states */
+  --row-hover: #edf3fb;
+  --row-selected: #b8ceed;
+
+  /* Shared header height — .portal-header and the offcanvas nav headers
+     (_MasterNav.cshtml / _CartridgeManagementNav.cshtml) both pin to this so
+     their red bottom-accent lines land at the same Y coordinate instead of
+     stepping when the offcanvas slides open over the page. */
+  --header-height: 64px;
+
+  /* Spacing / shape */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --gap-sm: 6px;
+  --gap-md: 10px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 4px rgba(30, 41, 59, 0.06);
+  --shadow-md: 0 4px 16px rgba(30, 41, 59, 0.08);
+}
+
+/* =========================================
+   COMPONENT: brand buttons
+   Primary = red (sparingly), Secondary = white/gray outline,
+   Info = blue (nav highlights, secondary actions), Danger = dark red.
+   Usage: <button class="btn btn-brand-primary">
+   ========================================= */
+.btn-brand-primary {
+  background: var(--yakult-red);
+  border: 1px solid var(--yakult-red);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.btn-brand-primary:hover { background: var(--yakult-red-hover); border-color: var(--yakult-red-hover); color: #fff; }
+
+.btn-brand-secondary {
+  background: #fff;
+  border: 1px solid var(--border-muted);
+  color: var(--text-strong);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.btn-brand-secondary:hover { background: var(--surface-muted); border-color: #c7cdd6; color: var(--text-strong); }
+
+.btn-brand-info {
+  background: var(--yakult-blue);
+  border: 1px solid var(--yakult-blue);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.btn-brand-info:hover { background: var(--yakult-blue-hover); border-color: var(--yakult-blue-hover); color: #fff; }
+
+.btn-brand-danger {
+  background: var(--yakult-red-dark);
+  border: 1px solid var(--yakult-red-dark);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.btn-brand-danger:hover { background: #6e0019; border-color: #6e0019; color: #fff; }
+
+/* =========================================
+   COMPONENT: surface-card
+   White-first summary/info card. Color is reserved for the accent bar,
+   an icon, or a status badge — never a fully-colored card body.
+   ========================================= */
+.surface-card {
+  background: var(--surface);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.surface-card .accent-bar {
+  height: 4px;
+  width: 100%;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+/* =========================================
+   COMPONENT: status-badge
+   Usage: <span class="status-badge status-badge-info">Pending</span>
+   ========================================= */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.status-badge-neutral { background: var(--surface-muted); color: var(--text-muted); }
+.status-badge-info    { background: var(--yakult-blue-light); color: var(--yakult-blue-hover); }
+.status-badge-success { background: rgba(34, 153, 84, 0.12); color: #1c7a43; }
+.status-badge-warning { background: rgba(217, 141, 15, 0.14); color: #92620c; }
+.status-badge-danger  { background: var(--yakult-red-light); color: var(--yakult-red); }
+
+/* =========================================
+   SCROLLBAR — hidden but still scrollable
+   ========================================= */
+html {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* Legacy Edge / IE */
+}
+
+html::-webkit-scrollbar {     /* Chrome / Safari / new Edge */
+  display: none;
+}
+
+/* Opt-in for any inner scroll container that should also hide its scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* =========================================
+   COMPONENT: stat-card
+   Small metric tile used in list/history page toolbars
+   (was duplicated per-page as .fc-stat-card / .ue-stat-card)
+   ========================================= */
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  min-width: 100px;
+}
+
+.stat-card .lbl {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: .03em;
+  margin-bottom: 1px;
+}
+
+.stat-card .val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-strong);
+  line-height: 1.2;
+}
+
+.stat-card .val.small-val {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+/* =========================================
+   COMPONENT: search-row
+   Icon + search box (+ optional filter/sort selects)
+   ========================================= */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.search-row input[type="text"] {
+  max-width: 360px;
+}
+
+.search-row select {
+  max-width: 200px;
+}
+
+/* =========================================
+   COMPONENT: toolbar-row
+   Header row holding stat-card(s) + action buttons
+   ========================================= */
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--gap-md);
+  margin-bottom: 8px;
+}
+
+/* =========================================
+   COMPONENT: app-pagination
+   ========================================= */
+.app-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  margin-top: 8px;
+}
+
+/* =========================================
+   COMPONENT: data-table
+   Sortable, selectable Bootstrap table.
+   Usage: <table class="table table-sm table-hover data-table">
+   with <thead class="table-danger"> and <th data-key="..."> for sortable columns.
+   ========================================= */
+.data-table {
+  table-layout: fixed;
+}
+
+.data-table thead th {
+  font-size: .78rem;
+  white-space: nowrap;
+}
+
+.data-table thead th[data-key] {
+  user-select: none;
+  cursor: pointer;
+}
+
+.data-table thead th .sort-arrow {
+  display: inline-block;
+  margin-left: 4px;
+  opacity: .4;
+  font-size: .65rem;
+}
+
+.data-table thead th.sort-asc .sort-arrow,
+.data-table thead th.sort-desc .sort-arrow {
+  opacity: .95;
+}
+
+.data-table thead th.sort-asc .sort-arrow::before { content: "\25B2"; }
+.data-table thead th.sort-desc .sort-arrow::before { content: "\25BC"; }
+.data-table thead th[data-key]:not(.sort-asc):not(.sort-desc) .sort-arrow::before { content: "\25BC"; }
+
+.data-table td,
+.data-table th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.data-table td:not(.text-end) {
+  white-space: nowrap;
+}
+
+.data-table tbody tr {
+  cursor: pointer;
+}
+
+.data-table tbody tr.selected {
+  background: var(--row-selected) !important;
+}
+
+/* =========================================
+   COMPONENT: app-table
+   Modernized table shell — whitespace, soft borders, row hover.
+   Pairs with Bootstrap's .table .table-sm; add alongside them:
+   <table class="table table-sm app-table">
+   ========================================= */
+.app-table {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.app-table thead th {
+  background: var(--surface-cream);
+  color: var(--text-strong);
+  font-size: .74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 2px solid var(--border-muted);
+  padding: .85rem 1rem;
+}
+.app-table tbody td {
+  padding: .85rem 1rem;
+  border-color: var(--border-muted);
+  vertical-align: middle;
+}
+.app-table tbody tr:hover { background: var(--row-hover); }
+.app-table tbody tr:last-child td { border-bottom: none; }
+
+/* =========================================
+   COMPONENT: app-search
+   Icon + input pairing for table/list toolbars.
+   ========================================= */
+.app-search {
+  position: relative;
+  flex: 1 1 260px;
+  max-width: 340px;
+}
+.app-search .bi-search {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: .85rem;
+  pointer-events: none;
+}
+.app-search input {
+  padding-left: 32px;
+  border-radius: var(--radius-sm);
+  border-color: var(--border-muted);
+}
+.app-search input:focus {
+  border-color: var(--yakult-blue);
+  box-shadow: 0 0 0 0.2rem var(--yakult-blue-shadow);
+}

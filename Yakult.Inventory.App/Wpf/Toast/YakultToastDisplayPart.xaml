@@ -1,0 +1,66 @@
+<core:NotificationDisplayPart
+    x:Class="Yakult.Inventory.App.Wpf.Toast.YakultToastDisplayPart"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:core="clr-namespace:ToastNotifications.Core;assembly=ToastNotifications"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType"
+    RenderOptions.EdgeMode="Aliased"
+    Width="360"
+    Margin="0,0,0,10">
+
+    <core:NotificationDisplayPart.Resources>
+        <SolidColorBrush x:Key="CardBackground"  Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="CardBorder"      Color="#E2E8F0"/>
+        <SolidColorBrush x:Key="TitleText"       Color="#0F172A"/>
+        <SolidColorBrush x:Key="MessageText"     Color="#334155"/>
+        <SolidColorBrush x:Key="CloseButtonText" Color="#94A3B8"/>
+    </core:NotificationDisplayPart.Resources>
+
+    <Border Background="{StaticResource CardBackground}"
+            BorderBrush="{StaticResource CardBorder}"
+            BorderThickness="1"
+            CornerRadius="10"
+            SnapsToDevicePixels="True">
+        <Border.Effect>
+            <DropShadowEffect Color="#000000" Opacity="0.18" BlurRadius="14" ShadowDepth="3" Direction="270"/>
+        </Border.Effect>
+
+        <Grid Margin="14,12,10,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="4"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Icon circle, color/glyph set per Kind in code-behind -->
+            <Ellipse x:Name="IconCircle" Grid.Column="0" Width="34" Height="34" VerticalAlignment="Top"/>
+            <TextBlock x:Name="IconGlyph" Grid.Column="0" Width="34" Height="34"
+                       HorizontalAlignment="Center" VerticalAlignment="Top"
+                       TextAlignment="Center" FontFamily="Segoe UI" FontSize="16" FontWeight="Bold"
+                       Padding="0,7,0,0"/>
+
+            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                <TextBlock x:Name="TitleBlock"
+                           Foreground="{StaticResource TitleText}"
+                           FontFamily="Segoe UI" FontSize="13.5" FontWeight="SemiBold"
+                           TextWrapping="Wrap"/>
+                <TextBlock x:Name="MessageBlock"
+                           Foreground="{StaticResource MessageText}"
+                           FontFamily="Segoe UI" FontSize="12.5"
+                           Margin="0,2,0,0"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+
+            <Button x:Name="CloseButton" Grid.Column="3"
+                    Content="&#xE711;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                    Foreground="{StaticResource CloseButtonText}"
+                    Background="Transparent" BorderThickness="0"
+                    Width="24" Height="24" VerticalAlignment="Top"
+                    Cursor="Hand"/>
+        </Grid>
+    </Border>
+</core:NotificationDisplayPart>

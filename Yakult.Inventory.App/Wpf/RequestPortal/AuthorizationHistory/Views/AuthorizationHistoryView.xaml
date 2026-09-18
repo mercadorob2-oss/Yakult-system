@@ -1,0 +1,795 @@
+<UserControl
+    x:Class="Yakult.Inventory.App.WPF.RequestPortal.AuthorizationHistory.Views.AuthorizationHistoryView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.RequestPortal.AuthorizationHistory.ViewModels"
+    xmlns:ctrl="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+    Background="#F0F2F6"
+    FontFamily="Segoe UI"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType"
+    RenderOptions.ClearTypeHint="Enabled">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Yakult.Inventory.App;component/WPF/RequestPortal/RequestPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Override: keep cell foreground dark on selection so white-text glitch doesn't show -->
+            <Style TargetType="DataGridCell">
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding"         Value="0"/>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background"  Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Foreground"  Value="#1A2333"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- HEADER BAR -->
+        <Border x:Name="AuthHeaderBar"
+                Grid.Row="0"
+                Background="White"
+                BorderBrush="#E2E8F0"
+                BorderThickness="0,0,0,1"
+                Padding="28,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Authorization History"
+                               FontSize="18" FontWeight="Bold" Foreground="#2272D9"
+                               VerticalAlignment="Center"/>
+                    <Border Background="#D6E8FF"
+                            CornerRadius="10"
+                            Padding="10,4"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="{Binding TotalCount}"
+                                   FontSize="12" FontWeight="Bold" Foreground="#2272D9"/>
+                    </Border>
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Content="&#x21BB; Refresh"
+                        Command="{Binding RefreshCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        Background="#4E9AFC"
+                        Height="34" Padding="16,0"/>
+            </Grid>
+        </Border>
+
+        <!-- MAIN AREA -->
+        <Grid Grid.Row="1" Margin="20,16,20,16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Tab strip (approvers only) -->
+            <Border Grid.Row="0"
+                    Background="White"
+                    BorderBrush="#E2E8F0"
+                    BorderThickness="0,0,0,1"
+                    Margin="0,0,0,12"
+                    Visibility="{Binding IsApprover, Converter={StaticResource BoolToVis}}">
+                <StackPanel Orientation="Horizontal" Margin="8,0">
+
+                    <!-- My Authorization History tab -->
+                    <Border BorderThickness="0,0,0,3" Padding="0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowMyHistoryTab}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#2272D9"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Button Command="{Binding SwitchToMyHistoryCommand}" Padding="16,10" Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Foreground" Value="#64748B"/>
+                                    <Setter Property="FontWeight" Value="Normal"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F8FAFC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ShowMyHistoryTab}" Value="True">
+                                            <Setter Property="Foreground" Value="#2272D9"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <TextBlock Text="My Authorization History" FontSize="13"/>
+                        </Button>
+                    </Border>
+
+                    <!-- Approvals I've Signed tab -->
+                    <Border BorderThickness="0,0,0,3" Padding="0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowSignedTab}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#2272D9"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Button Command="{Binding SwitchToSignedCommand}" Padding="16,10" Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="FontSize" Value="13"/>
+                                    <Setter Property="Foreground" Value="#64748B"/>
+                                    <Setter Property="FontWeight" Value="Normal"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F8FAFC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ShowSignedTab}" Value="True">
+                                            <Setter Property="Foreground" Value="#2272D9"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <TextBlock Text="Approvals I've Signed" FontSize="13"/>
+                        </Button>
+                    </Border>
+
+                </StackPanel>
+            </Border>
+
+            <!-- Loading overlay -->
+            <Border Grid.Row="1"
+                    Background="#CCFFFFFF"
+                    CornerRadius="8"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
+                    Panel.ZIndex="10">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="&#x27F3;" FontSize="32" Foreground="{StaticResource YakultBlue}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="13" Foreground="{StaticResource TextMuted}"
+                               HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- My Authorization History DataGrid card -->
+            <Border Grid.Row="1"
+                    Style="{StaticResource SectionCard}"
+                    Padding="0"
+                    Visibility="{Binding ShowMyHistoryTab, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <!-- Empty state -->
+                    <Border Background="{StaticResource SurfaceGray}"
+                            CornerRadius="8"
+                            Padding="24,32"
+                            Visibility="{Binding HasRows, Converter={StaticResource InvBoolToVis}}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="&#x1F4CB;" FontSize="36" HorizontalAlignment="Center"/>
+                            <TextBlock Text="No authorization records found."
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMuted}"
+                                       HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            <TextBlock Text="Cartridge request authorizations will appear here."
+                                       FontSize="12" Foreground="{StaticResource TextMuted}"
+                                       HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <DataGrid Grid.Row="0"
+                                  x:Name="AuthGrid"
+                                  ItemsSource="{Binding PagedRows}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  IsReadOnly="True"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="#F0F3F7"
+                                  BorderThickness="0"
+                                  Background="White"
+                                  RowHeaderWidth="0"
+                                  ColumnHeaderHeight="36"
+                                  MinRowHeight="40"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  MouseLeftButtonUp="AuthGrid_MouseLeftButtonUp">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Style.Triggers>
+                                        <!-- Highlighted row (from notification bell) -->
+                                        <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                                            <Setter Property="Background" Value="#EBF5FF"/>
+                                            <Setter Property="BorderBrush" Value="#4E9AFC"/>
+                                            <Setter Property="BorderThickness" Value="0,2,0,2"/>
+                                        </DataTrigger>
+                                        <!-- Hover: visible but readable — dark text enforced -->
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsMouseOver" Value="True"/>
+                                                <Condition Property="IsSelected" Value="False"/>
+                                            </MultiTrigger.Conditions>
+                                            <Setter Property="Background" Value="#D6E8FF"/>
+                                            <Setter Property="Foreground" Value="#1A2333"/>
+                                        </MultiTrigger>
+                                        <!-- Selected -->
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#B8D9FF"/>
+                                            <Setter Property="Foreground" Value="#1A2333"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Auth ID" Binding="{Binding AuthorizationId}" Width="70">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTemplateColumn Header="Status" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Status}"
+                                                       Foreground="{Binding StatusColorBrush}"
+                                                       FontWeight="Bold"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       Padding="6,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Department" Binding="{Binding DepartmentName}" Width="160">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                            <Setter Property="Padding" Value="6,4"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Cartridge Models" Binding="{Binding RequestedModels}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                            <Setter Property="Padding" Value="6,4"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Signed By" Binding="{Binding SignedByName}" Width="140">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Padding" Value="6,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Date Signed" Binding="{Binding SignedDate}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="Padding" Value="6,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Requested On" Binding="{Binding CreatedDate}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="Padding" Value="6,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Tour-targeting phantom zones: invisible, zero hit-test, sized to match grid areas -->
+                        <Border x:Name="AuthColumnHeaderZone"
+                                Grid.Row="0"
+                                Height="36"
+                                VerticalAlignment="Top"
+                                IsHitTestVisible="False"
+                                Opacity="0"/>
+
+                        <Border x:Name="AuthDemoRowsZone"
+                                Grid.Row="0"
+                                Height="80"
+                                VerticalAlignment="Top"
+                                Margin="0,36,0,0"
+                                IsHitTestVisible="False"
+                                Opacity="0"/>
+
+                        <!-- Status column is 2nd column: Auth ID (70px) + Status (130px) -->
+                        <Border x:Name="AuthStatusZone"
+                                Grid.Row="0"
+                                Width="130"
+                                HorizontalAlignment="Left"
+                                Margin="70,0,0,0"
+                                IsHitTestVisible="False"
+                                Opacity="0"/>
+
+                        <!-- Demo data notice (shown when dummy rows are active) -->
+                        <Border Grid.Row="1"
+                                Background="#FFF8E1"
+                                BorderBrush="#FFE082"
+                                BorderThickness="0,1,0,0"
+                                Padding="16,8"
+                                Visibility="{Binding IsDemoDataActive, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="ℹ  "
+                                           FontSize="12"
+                                           Foreground="#856404"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="Demo data for this tour."
+                                           FontSize="12"
+                                           FontStyle="Italic"
+                                           Foreground="#856404"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Pagination bar -->
+                        <Border Grid.Row="2"
+                                Background="#F8FAFC"
+                                BorderBrush="#E8EDF3"
+                                BorderThickness="0,1,0,0"
+                                Padding="16,8"
+                                Visibility="{Binding HasRows, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Record count (left) -->
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding TotalCount, StringFormat='{}{0} records total'}"
+                                           FontSize="12"
+                                           Foreground="#64748B"
+                                           VerticalAlignment="Center"/>
+
+                                <!-- Prev / Page info / Next (center) -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Content="&#x276E;"
+                                            Command="{Binding PreviousPageCommand}"
+                                            Width="30" Height="30"
+                                            FontSize="13"
+                                            Margin="0,0,6,0"
+                                            Background="White"
+                                            BorderBrush="#D1D9E0"
+                                            BorderThickness="1"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                                    CornerRadius="6">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter Property="Opacity" Value="0.35"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+
+                                    <TextBlock Text="{Binding PageInfo}"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="#334155"
+                                               VerticalAlignment="Center"
+                                               Margin="4,0"/>
+
+                                    <Button Content="&#x276F;"
+                                            Command="{Binding NextPageCommand}"
+                                            Width="30" Height="30"
+                                            FontSize="13"
+                                            Margin="6,0,0,0"
+                                            Background="White"
+                                            BorderBrush="#D1D9E0"
+                                            BorderThickness="1"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                                    CornerRadius="6">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter Property="Opacity" Value="0.35"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- Approvals I've Signed DataGrid card -->
+            <Border Grid.Row="1"
+                    Style="{StaticResource SectionCard}"
+                    Padding="0"
+                    Visibility="{Binding ShowSignedTab, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <!-- Empty state -->
+                    <Border Background="{StaticResource SurfaceGray}"
+                            CornerRadius="8"
+                            Padding="24,32"
+                            Visibility="{Binding HasSignedRows, Converter={StaticResource InvBoolToVis}}">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="&#x270D;" FontSize="36" HorizontalAlignment="Center"/>
+                            <TextBlock Text="No approvals signed yet."
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextMuted}"
+                                       HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            <TextBlock Text="Cartridge authorization approvals you've signed will appear here."
+                                       FontSize="12" Foreground="{StaticResource TextMuted}"
+                                       HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <DataGrid Grid.Row="0"
+                                  x:Name="SignedGrid"
+                                  ItemsSource="{Binding PagedSignedRows}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  IsReadOnly="True"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="#F0F3F7"
+                                  BorderThickness="0"
+                                  Background="White"
+                                  RowHeaderWidth="0"
+                                  ColumnHeaderHeight="36"
+                                  MinRowHeight="40"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  MouseLeftButtonUp="SignedGrid_MouseLeftButtonUp">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Style.Triggers>
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsMouseOver" Value="True"/>
+                                                <Condition Property="IsSelected" Value="False"/>
+                                            </MultiTrigger.Conditions>
+                                            <Setter Property="Background" Value="#D6E8FF"/>
+                                            <Setter Property="Foreground" Value="#1A2333"/>
+                                        </MultiTrigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#B8D9FF"/>
+                                            <Setter Property="Foreground" Value="#1A2333"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Auth ID" Binding="{Binding AuthorizationId}" Width="70">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTemplateColumn Header="Status" Width="130">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Status}"
+                                                       Foreground="{Binding StatusColorBrush}"
+                                                       FontWeight="Bold"
+                                                       FontSize="11"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Center"
+                                                       Padding="6,0"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Employee" Binding="{Binding EmployeeName}" Width="160">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                            <Setter Property="Padding" Value="6,4"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Department" Binding="{Binding DepartmentName}" Width="160">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                            <Setter Property="Padding" Value="6,4"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Cartridge Models" Binding="{Binding RequestedModels}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                            <Setter Property="Padding" Value="6,4"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Date Signed" Binding="{Binding SignedDate}" Width="120">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="Padding" Value="6,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Tour-targeting phantom zones for the Signed tab -->
+                        <Border x:Name="SignedColumnHeaderZone"
+                                Grid.Row="0"
+                                Height="36"
+                                VerticalAlignment="Top"
+                                IsHitTestVisible="False"
+                                Opacity="0"/>
+
+                        <Border x:Name="SignedDemoRowsZone"
+                                Grid.Row="0"
+                                Height="80"
+                                VerticalAlignment="Top"
+                                Margin="0,36,0,0"
+                                IsHitTestVisible="False"
+                                Opacity="0"/>
+
+                        <!-- Auth ID (70px) + Status (130px) -->
+                        <Border x:Name="SignedStatusZone"
+                                Grid.Row="0"
+                                Width="130"
+                                HorizontalAlignment="Left"
+                                Margin="70,0,0,0"
+                                IsHitTestVisible="False"
+                                Opacity="0"/>
+
+                        <!-- Demo data notice -->
+                        <Border Grid.Row="1"
+                                Background="#FFF8E1"
+                                BorderBrush="#FFE082"
+                                BorderThickness="0,1,0,0"
+                                Padding="16,8"
+                                Visibility="{Binding IsDemoSignedDataActive, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="ℹ  "
+                                           FontSize="12"
+                                           Foreground="#856404"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="Demo data for this tour."
+                                           FontSize="12"
+                                           FontStyle="Italic"
+                                           Foreground="#856404"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Signed pagination bar -->
+                        <Border Grid.Row="2"
+                                Background="#F8FAFC"
+                                BorderBrush="#E8EDF3"
+                                BorderThickness="0,1,0,0"
+                                Padding="16,8"
+                                Visibility="{Binding HasSignedRows, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding SignedTotalCount, StringFormat='{}{0} records total'}"
+                                           FontSize="12"
+                                           Foreground="#64748B"
+                                           VerticalAlignment="Center"/>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Content="&#x276E;"
+                                            Command="{Binding SignedPreviousPageCommand}"
+                                            Width="30" Height="30"
+                                            FontSize="13"
+                                            Margin="0,0,6,0"
+                                            Background="White"
+                                            BorderBrush="#D1D9E0"
+                                            BorderThickness="1"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                                    CornerRadius="6">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter Property="Opacity" Value="0.35"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+
+                                    <TextBlock Text="{Binding SignedPageInfo}"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="#334155"
+                                               VerticalAlignment="Center"
+                                               Margin="4,0"/>
+
+                                    <Button Content="&#x276F;"
+                                            Command="{Binding SignedNextPageCommand}"
+                                            Width="30" Height="30"
+                                            FontSize="13"
+                                            Margin="6,0,0,0"
+                                            Background="White"
+                                            BorderBrush="#D1D9E0"
+                                            BorderThickness="1"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}"
+                                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                                    CornerRadius="6">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter Property="Opacity" Value="0.35"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+
+        </Grid>
+    </Grid>
+</UserControl>

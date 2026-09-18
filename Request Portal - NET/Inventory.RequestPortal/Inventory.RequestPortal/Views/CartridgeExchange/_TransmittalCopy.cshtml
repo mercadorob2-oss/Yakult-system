@@ -1,0 +1,86 @@
+@model Inventory.RequestPortal.Models.ViewModels.CartridgeTransmittalViewModel
+@* One copy of the form (Gatepass, Transmittal, or File — Model.IsGatepassCopy/IsTransmittalCopy/
+   IsFileCopy decides which single box is checked). Every margin below is copied verbatim from
+   Wpf/CartridgeManagement/Views/CartridgeTransmittalPrintView.xaml's WPF Margin="..." values
+   (WPF's 96-DPI device-independent units = CSS px 1:1) — not approximated. Root inset is the
+   XAML root StackPanel's Margin="20,16" (20 left/right, 16 top/bottom); this div fills whatever
+   box the caller (Transmittal.cshtml) sizes/positions it into via .tr-copy. *@
+
+<div class="tr-form">
+    @* ── Company header (StackPanel Margin="0,0,0,6"; 2nd line Margin="0,2,0,0") ── *@
+    <div class="tr-company">
+        <div><input type="checkbox" disabled @(Model.IsYakultPhilippines ? "checked" : "") /><strong>YAKULT PHILIPPINES INC.</strong></div>
+        <div><input type="checkbox" disabled @(Model.IsYakultMarketing ? "checked" : "") /><strong>YAKULT MARKETING CORP.</strong></div>
+    </div>
+
+    @* ── GATEPASS / TRANSMITTAL / FILE (Grid Margin="0,0,0,10") ── *@
+    <div class="tr-copytype">
+        <span><input type="checkbox" disabled @(Model.IsGatepassCopy ? "checked" : "") />GATEPASS</span>
+        <span><input type="checkbox" disabled @(Model.IsTransmittalCopy ? "checked" : "") />TRANSMITTAL</span>
+        <span><input type="checkbox" disabled @(Model.IsFileCopy ? "checked" : "") />FILE</span>
+    </div>
+
+    @* ── TO / DATE (Grid Margin="0,0,0,6") ── *@
+    <div class="tr-todate">
+        <span class="tr-label">TO :</span>
+        <span class="tr-blank" style="flex:2;">@Model.To</span>
+        <span class="tr-label" style="margin-left:16px;">DATE :</span>
+        <span class="tr-blank">@Model.Date</span>
+    </div>
+
+    @* ── FROM (StackPanel Margin="0,0,0,10") ── *@
+    <div class="tr-from">FROM :&nbsp; @Model.From</div>
+
+    @* ── ITEMS / QUANTITY header (Grid Margin="0,0,0,4") ── *@
+    <div class="tr-items-header">
+        <span style="flex:1;">ITEMS :</span>
+        <span class="qty-col">QUANTITY</span>
+    </div>
+
+    @* ── Cartridge Ribbon row (Grid Margin="0,0,0,2") ── *@
+    <div class="tr-items-row">
+        <div style="flex:1;">
+            <div>
+                <input type="checkbox" disabled @(Model.IsCartridgeRibbon ? "checked" : "") />CARTRIDGE RIBBON
+                &nbsp;&nbsp;&nbsp;&nbsp;LX300 <input type="checkbox" disabled @(Model.IsLx300 ? "checked" : "") />
+                &nbsp;&nbsp;&nbsp;&nbsp;LX310 <input type="checkbox" disabled @(Model.IsLx310 ? "checked" : "") />
+            </div>
+            @* Others sub-row (StackPanel Margin="0,3,0,0") *@
+            @if (Model.IsOtherModel)
+            {
+                <div class="tr-others-sub">
+                    <input type="checkbox" disabled checked />Others: <strong>@Model.OtherModelName</strong>
+                </div>
+            }
+        </div>
+        @* Quantity value border (Margin="0,2") *@
+        <div class="qty-col">@Model.Quantity</div>
+    </div>
+
+    @* ── OTHERS (StackPanel Margin="0,100,0,10" — top margin intentionally large; it fills the
+         vertical space the original paper form's full equipment list (Monitor/CPU/Mouse/.../
+         Computer Table) occupied on desktop too, not a web-only gap) ── *@
+    <div class="tr-others-field">
+        <span class="tr-label">OTHERS :</span>
+        <span class="tr-blank">@Model.Others</span>
+    </div>
+
+    @* ── REMARKS (StackPanel Margin="0,0,0,26") ── *@
+    <div class="tr-remarks-field">
+        <span class="tr-label">REMARKS :</span>
+        <span class="tr-blank">@Model.Remarks</span>
+    </div>
+
+    @* ── Signature block (row 2 label/blank each Margin="0,16,...,0") ── *@
+    <div class="tr-sig-grid">
+        <span class="sig-label">ISSUED BY:</span>
+        <span class="sig-blank">@Model.IssuedBy</span>
+        <span class="sig-label">RECEIVED BY/DATE :</span>
+        <span class="sig-blank">@Model.ReceivedBy @Model.ReceivedDate</span>
+
+        <span class="sig-label row2">NOTED BY:</span>
+        <span class="sig-blank row2">@Model.NotedBy</span>
+        <span class="sig-label row2">APPROVED BY/DATE:</span>
+        <span class="sig-blank row2">@Model.ApprovedBy @Model.ApprovalDate</span>
+    </div>
+</div>

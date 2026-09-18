@@ -1,0 +1,212 @@
+-- Migration: sp_RepairPortal_CreateTicket now flips the item's Condition to "Damaged" whenever a
+-- repair ticket is created for it (unless it's already Damaged). Logging a repair ticket for an
+-- item IS the declaration that it's broken — this removes the separate manual step of going to
+-- the Inventory Portal to change Condition before/after logging the repair, for the common case of
+-- a Set-assigned item (Condition = Good) that just failed.
+-- CREATE OR ALTER is idempotent — safe to re-run. This carries forward the full current body of
+-- the proc from Migration_RepairPortal_CreateTicket_AddRequestedByComBranch.sql (the most recent
+-- version — despite the filename, it was written after AddDateReceived and folds that migration's
+-- @DateReceived param in too).
+
+GO
+CREATE OR ALTER PROCEDURE dbo.sp_RepairPortal_CreateTicket
+    @ItemId               INT,
+    @Problem               NVARCHAR(2000),
+    @Priority              NVARCHAR(20)  = NULL,
+    @SubmittedByEmpId      INT           = NULL,
+    @SubmittedByUserId     INT           = NULL,
+    @CreatedByUserId       INT           = NULL,
+    @RequestedByType       NVARCHAR(20)  = NULL,
+    @RequestedByDeptId     INT           = NULL,
+    @RequestedByEmpId      INT           = NULL,
+    @DateReceived          DATETIME2     = NULL,
+    @RequestedByComId      INT           = NULL,
+    @RequestedByBranchId   INT           = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @ItemId IS NULL THROW 51001, 'ItemId is required.', 1;
+    SET @Problem = LTRIM(RTRIM(@Problem));
+    IF @Problem IS NULL OR @Problem = '' THROW 51002, 'Problem is required.', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Item WHERE ItemId = @ItemId)
+        THROW 51003, 'Item not found.', 1;
+
+    IF @Priority IS NULL OR LTRIM(RTRIM(@Priority)) = '' SET @Priority = 'Medium';
+    SET @Priority = LTRIM(RTRIM(@Priority));
+
+    DECLARE @PriorityCanonical NVARCHAR(20) =
+        CASE UPPER(@Priority)
+            WHEN 'LOW' THEN 'Low'
+            WHEN 'MEDIUM' THEN 'Medium'
+            WHEN 'HIGH' THEN 'High'
+            WHEN 'CRITICAL' THEN 'Critical'
+            ELSE NULL
+        END;
+
+    IF @PriorityCanonical IS NULL
+        THROW 51004, 'Invalid priority. Allowed: Low, Medium, High, Critical.', 1;
+
+    -- Requested By: if provided, must be exactly one of Department/Employee, consistent with type.
+    IF @RequestedByType IS NOT NULL
+    BEGIN
+        IF @RequestedByType NOT IN ('Department', 'Employee')
+            THROW 51005, 'Invalid RequestedByType. Allowed: Department, Employee.', 1;
+
+        IF @RequestedByType = 'Department' AND @RequestedByDeptId IS NULL
+            THROW 51006, 'RequestedByDeptId is required when RequestedByType = Department.', 1;
+
+        IF @RequestedByType = 'Employee' AND @RequestedByEmpId IS NULL
+            THROW 51007, 'RequestedByEmpId is required when RequestedByType = Employee.', 1;
+
+        IF @RequestedByType = 'Department' AND @RequestedByDeptId IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dbo.Department WHERE DeptId = @RequestedByDeptId)
+            THROW 51008, 'RequestedByDeptId is invalid (department not found).', 1;
+
+        IF @RequestedByType = 'Employee' AND @RequestedByEmpId IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dbo.Employee WHERE EmpId = @RequestedByEmpId)
+            THROW 51009, 'RequestedByEmpId is invalid (employee not found).', 1;
+
+        -- Department mode: Company is required (a bare Department is ambiguous across
+        -- Companies/Branches). Branch is optional; if supplied, validate the full
+        -- Company/Branch/Department combination against dbo.BranchDepartmentCompany, mirroring
+        -- sp_Call_CreateTicket's validation block.
+        IF @RequestedByType = 'Department'
+        BEGIN
+            IF @RequestedByComId IS NULL
+                THROW 51010, 'RequestedByComId is required when RequestedByType = Department.', 1;
+
+            IF NOT EXISTS (SELECT 1 FROM dbo.Company WHERE ComId = @RequestedByComId)
+                THROW 51011, 'RequestedByComId is invalid (company not found).', 1;
+
+            IF @RequestedByBranchId IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM dbo.Branch WHERE BranchId = @RequestedByBranchId)
+                THROW 51012, 'RequestedByBranchId is invalid (branch not found).', 1;
+
+            IF OBJECT_ID('dbo.BranchDepartmentCompany', 'U') IS NOT NULL
+            BEGIN
+                IF @RequestedByBranchId IS NOT NULL
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM dbo.BranchDepartmentCompany bdc
+                        WHERE bdc.CompanyID = @RequestedByComId
+                          AND bdc.BranchID = @RequestedByBranchId
+                          AND bdc.DepartmentID = @RequestedByDeptId
+                    )
+                        THROW 51013, 'Invalid Company/Branch/Department combination for Requested By.', 1;
+                END
+                ELSE
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1
+                        FROM dbo.BranchDepartmentCompany bdc
+                        WHERE bdc.CompanyID = @RequestedByComId
+                          AND bdc.DepartmentID = @RequestedByDeptId
+                    )
+                        THROW 51014, 'Invalid Company/Department combination for Requested By.', 1;
+                END
+            END
+        END
+    END
+
+    -- Resolve the item's current active Set (same "latest active set for item" join used by
+    -- RepairedItemsPageViewModel.Actions.cs) so Set/Company/Branch/Department can be snapshotted.
+    DECLARE @SetId INT, @SetCode NVARCHAR(20), @ComId INT, @BranchId INT, @DeptId INT;
+
+    SELECT TOP (1)
+        @SetId = aset.SetId,
+        @SetCode = aset.SetCode,
+        @ComId = s.ComId,
+        @BranchId = s.CurrentBranchId,
+        @DeptId = s.CurrentDepartmentId
+    FROM (
+        SELECT
+            x.ItemId, x.SetId, x.SetCode,
+            ROW_NUMBER() OVER (PARTITION BY x.ItemId ORDER BY x.SetCreatedAt DESC, x.SetId DESC) AS rn
+        FROM (
+            SELECT si.ItemId, s.SetId, s.SetCode, s.CreatedAt AS SetCreatedAt
+            FROM dbo.SetItem si
+            INNER JOIN dbo.[Set] s ON s.SetId = si.SetId
+            LEFT JOIN dbo.ArchiveStatus archS ON archS.EntityType = 'Set' AND archS.EntityId = s.SetId AND archS.IsArchived = 1
+            WHERE s.Active = 1 AND archS.EntityId IS NULL
+
+            UNION ALL
+
+            SELECT r.ItemId, s.SetId, s.SetCode, s.CreatedAt AS SetCreatedAt
+            FROM dbo.Request r
+            INNER JOIN dbo.[Set] s ON s.SetId = r.SetId
+            LEFT JOIN dbo.ArchiveStatus archS ON archS.EntityType = 'Set' AND archS.EntityId = s.SetId AND archS.IsArchived = 1
+            WHERE r.Active = 1 AND r.SetId IS NOT NULL AND s.Active = 1 AND archS.EntityId IS NULL
+        ) x
+    ) aset
+    INNER JOIN dbo.[Set] s ON s.SetId = aset.SetId
+    WHERE aset.ItemId = @ItemId AND aset.rn = 1;
+
+    DECLARE @ItemNameSnapshot NVARCHAR(200), @ItemSerialSnapshot VARCHAR(255);
+    SELECT @ItemNameSnapshot = Name, @ItemSerialSnapshot = SerialNumber
+    FROM dbo.Item WHERE ItemId = @ItemId;
+
+    DECLARE @RepairTicketId INT;
+    DECLARE @DateReceivedResolved DATETIME2 = COALESCE(@DateReceived, SYSUTCDATETIME());
+    DECLARE @DamagedConditionId INT = (SELECT TOP (1) ConditionId FROM dbo.Condition WHERE ConditionName = 'Damaged');
+
+    BEGIN TRAN;
+
+    INSERT dbo.RepairTicket
+    (
+        ItemId, SetId, SetCode, ComId, BranchId, DeptId,
+        ItemNameSnapshot, ItemSerialSnapshot,
+        Problem, Priority, Status,
+        SubmittedByEmpId, SubmittedByUserId,
+        RequestedByType, RequestedByDeptId, RequestedByEmpId,
+        DateReceived,
+        RequestedByComId, RequestedByBranchId
+    )
+    VALUES
+    (
+        @ItemId, @SetId, @SetCode, @ComId, @BranchId, @DeptId,
+        @ItemNameSnapshot, @ItemSerialSnapshot,
+        @Problem, @PriorityCanonical, 'Waiting',
+        @SubmittedByEmpId, @SubmittedByUserId,
+        @RequestedByType, @RequestedByDeptId, @RequestedByEmpId,
+        @DateReceivedResolved,
+        @RequestedByComId, @RequestedByBranchId
+    );
+
+    SET @RepairTicketId = SCOPE_IDENTITY();
+
+    INSERT dbo.RepairTicketHistory (RepairTicketId, ChangedByUserId, FieldName, OldValue, NewValue, Note)
+    VALUES (@RepairTicketId, @CreatedByUserId, 'Created', NULL, NULL, 'Repair ticket created');
+
+    INSERT dbo.RepairTicketHistory (RepairTicketId, ChangedByUserId, FieldName, OldValue, NewValue)
+    VALUES
+        (@RepairTicketId, @CreatedByUserId, 'Status', NULL, 'Waiting'),
+        (@RepairTicketId, @CreatedByUserId, 'Priority', NULL, @PriorityCanonical);
+
+    -- Logging a repair ticket for an item IS the declaration that it's broken — flip Condition to
+    -- Damaged so the technician doesn't have to make a separate trip to the Inventory Portal for
+    -- this. Only touches items that aren't already Damaged, so re-opening a ticket on an item
+    -- that's already flagged doesn't spam its Item history with a no-op change.
+    IF @DamagedConditionId IS NOT NULL
+    BEGIN
+        -- ModifiedBy is NOT NULL on dbo.Item — @CreatedByUserId can legitimately be NULL (no
+        -- linked session user), so fall back to the item's existing ModifiedBy rather than
+        -- attempting to write NULL into a NOT NULL column.
+        UPDATE dbo.Item
+        SET ConditionID = @DamagedConditionId,
+            DateModified = SYSUTCDATETIME(),
+            ModifiedBy = ISNULL(@CreatedByUserId, ModifiedBy)
+        WHERE ItemId = @ItemId AND ISNULL(ConditionID, 0) <> @DamagedConditionId;
+    END
+
+    COMMIT;
+
+    SELECT
+        t.RepairTicketId, t.TicketCode, t.Status, t.Priority, t.CreatedAt
+    FROM dbo.RepairTicket t
+    WHERE t.RepairTicketId = @RepairTicketId;
+END
+GO

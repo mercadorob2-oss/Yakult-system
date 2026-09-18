@@ -1,0 +1,483 @@
+@model PortalContentDetailsViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = Model.Item.Title;
+    var item = Model.Item;
+    var isCourse = item.ContentType.Equals("Course", StringComparison.OrdinalIgnoreCase);
+    var isVideo = item.ContentType.Equals("Video", StringComparison.OrdinalIgnoreCase);
+    var isMediaCourse = isCourse || isVideo;
+    var hasPlayerMedia = Model.Media.Kind == "YouTube" || Model.Media.Kind == "HostedVideo";
+    var isTracked = isCourse || (isVideo && User.Identity?.IsAuthenticated == true);
+}
+@functions {
+    private static string CourseChipState(PortalCourseProgress? course) =>
+        course != null && course.IsCompleted ? "completed"
+        : course != null && course.ProgressPercent > 0 ? "in-progress"
+        : "not-started";
+    private static string CourseChipLabel(PortalCourseProgress? course)
+    {
+        if (course == null || course.ProgressPercent <= 0) return "Not started";
+        if (course.IsCompleted) return "Completed";
+        var minutes = course.LastPositionSec / 60;
+        var seconds = course.LastPositionSec % 60;
+        return $"Watched {course.ProgressPercent}% · Resume from {minutes}:{seconds:00}";
+    }
+    private static string CourseCtaLabel(PortalCourseProgress? course, string contentType)
+    {
+        if (course == null || course.ProgressPercent <= 0) return contentType.Equals("Course", StringComparison.OrdinalIgnoreCase) ? "Start course" : "Watch lesson";
+        if (course.IsCompleted) return "Review again";
+        var minutes = course.LastPositionSec / 60;
+        var seconds = course.LastPositionSec % 60;
+        return $"Resume from {minutes}:{seconds:00}";
+    }
+    private static string FmtTime(int seconds)
+    {
+        seconds = Math.Max(0, seconds);
+        return $"{seconds / 60}:{seconds % 60:00}";
+    }
+}
+
+<article class="article-page @(isMediaCourse ? "article-page--course" : null)">
+    <header class="article-header">
+        <div class="portal-container article-header__inner">
+            <nav class="article-breadcrumb" aria-label="Breadcrumb">
+                <a asp-controller="Public" asp-action="Index">Home</a>
+                <span aria-hidden="true">/</span>
+                @if (isMediaCourse)
+                {
+                    <a asp-controller="Public" asp-action="Learning">Learning &amp; Awareness</a>
+                    <span aria-hidden="true">/</span>
+                }
+                <span>@item.CategoryName</span>
+            </nav>
+            @if (isMediaCourse)
+            {
+                <button type="button" class="article-print article-print--hero" id="articlePrint">Print or save as PDF</button>
+            }
+            @if (isMediaCourse)
+            {
+                <span class="portal-eyebrow course-hero-eyebrow"><span class="course-hero-glyph" aria-hidden="true">▶</span>@item.ContentType · @item.CategoryName</span>
+            }
+            else
+            {
+                <span class="portal-eyebrow">@item.ContentType · @item.CategoryName</span>
+            }
+            <h1>@item.Title</h1>
+            @if (item.IsDemo)
+            {
+                <span class="dummy-data-badge">DUMMY DATA · FRONTEND SAMPLE</span>
+            }
+            @if(!string.IsNullOrWhiteSpace(item.Summary)){<p>@item.Summary</p>}
+            @if (isMediaCourse)
+            {
+                <div class="course-cta-row">
+                    @if (isTracked)
+                    {
+                        <button type="button" class="course-cta" id="courseCta">@CourseCtaLabel(Model.Progress, item.ContentType)</button>
+                    }
+                    else
+                    {
+                        <a class="course-cta course-cta--login" asp-controller="Home" asp-action="Login" asp-route-returnUrl="@Url.Action("ContentDetails", "Public", new { slug = item.Slug })">Sign in to save your progress</a>
+                    }
+                    <div class="course-hero-meta">
+                        <span class="article-type-chip">@item.ContentType</span>
+                        @if (Model.Progress is { DurationSec: > 0 })
+                        {
+                            <span>~@(Math.Max(1, (int)Math.Round(Model.Progress.DurationSec / 60.0))) min</span>
+                        }
+                        <span>Updated @item.UpdatedAtUtc.ToLocalTime().ToString("MMMM d, yyyy")</span>
+                        @if (Model.Progress is { IsCompleted: true })
+                        {
+                            <span class="course-done-pill">✓ Completed @(Model.Progress.CompletedAtUtc?.ToLocalTime().ToString("MMM d, yyyy"))</span>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="article-header__meta">
+                    <span>Updated @item.UpdatedAtUtc.ToLocalTime().ToString("MMMM d, yyyy")</span>
+                    <button type="button" class="article-print" id="articlePrint">Print or save as PDF</button>
+                </div>
+            }
+        </div>
+    </header>
+    <div class="portal-container article-layout">
+        <div class="article-content">
+            @if (!isMediaCourse && !string.IsNullOrWhiteSpace(item.ThumbnailUrl)) { <img class="article-image" src="@item.ThumbnailUrl" alt="" /> }
+            <div class="course-stage" id="courseStage" hidden="@(isMediaCourse && hasPlayerMedia ? false : true)">
+            @if (isTracked)
+            {
+                <div class="course-stage__chrome">
+                    <span class="course-stage__title">Lesson media@(Model.Progress is { DurationSec: > 0 } ? $" · ~{Math.Max(1, (int)Math.Round(Model.Progress.DurationSec / 60.0))} min" : "")</span>
+                    <span class="course-status__chip" id="courseStatusChip" data-state="@CourseChipState(Model.Progress)">@CourseChipLabel(Model.Progress)</span>
+                </div>
+            }
+            @if (Model.Media.Kind == "YouTube")
+            {
+                @if (isTracked)
+                {
+                    <div class="course-player__controls course-player__controls--yt">
+                        <button type="button" class="course-player__rewind" id="courseYtRewind" aria-label="Rewind 10 seconds">⏪ 10s</button>
+                        <span class="course-player__yt-note">YouTube player · seeking not fully locked</span>
+                    </div>
+                }
+                <div class="video-frame"><iframe src="@(isTracked ? Model.Media.EmbedUrl + "?enablejsapi=1&controls=0&disablekb=1&fs=0" : Model.Media.EmbedUrl)" title="@item.Title" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen id="@(isTracked ? "courseYoutube" : null)"></iframe></div>
+                @if (isTracked)
+                {
+                    <div class="course-status">
+                        <div class="course-status__bar" role="presentation"><span id="courseStatusFill" style="width:@(Model.Progress?.ProgressPercent ?? 0)%"></span></div>
+                        <p class="course-player__note">Playback controls are hidden on this video. Seeking cannot be fully restricted on YouTube; your completion is recorded automatically as you watch.</p>
+                        @if (Model.Progress is { IsCompleted: true })
+                        {
+                            <p class="course-player__note course-player__note--done">Completed @(Model.Progress.CompletedAtUtc?.ToLocalTime().ToString("MMMM d, yyyy")) · review anytime.</p>
+                        }
+                    </div>
+                }
+            }
+            else if (Model.Media.Kind == "HostedVideo")
+            {
+                if (isTracked)
+                {
+                    <div class="course-player">
+                        <div class="course-player__stage">
+                            <video id="courseVideo" controls playsinline preload="metadata" poster="@item.ThumbnailUrl"><source src="@Model.Media.SourceUrl" />Your browser does not support embedded video. <a href="@Model.Media.SourceUrl">Open the video</a>.</video>
+                            <button type="button" class="course-player__play" id="coursePlayPause" aria-label="Play or pause course video">►</button>
+                        </div>
+                        <div class="course-player__controls">
+                            <button type="button" class="course-player__rewind" id="courseRewind" aria-label="Rewind 10 seconds">⏪ 10s</button>
+                            <span class="course-player__time" id="courseTime">0:00 / 0:00</span>
+                            <div class="course-player__track" role="presentation" title="Seeking is disabled for this lesson"><div class="course-player__fill" id="courseFill"></div></div>
+                            <span class="course-player__remaining" id="courseRemaining"></span>
+                            <span class="course-player__pct" id="coursePct">0%</span>
+                        </div>
+                        <div class="course-status">
+                            <div class="course-status__bar" role="presentation"><span id="courseStatusFill" style="width:@(Model.Progress?.ProgressPercent ?? 0)%"></span></div>
+                            <p class="course-player__note">Playback is locked for this lesson; fast-forward and rewind are disabled. Completion is recorded automatically once you have watched most of it.</p>
+                            @if (Model.Progress is { IsCompleted: true })
+                            {
+                                <p class="course-player__note course-player__note--done">Completed @(Model.Progress.CompletedAtUtc?.ToLocalTime().ToString("MMMM d, yyyy")) · review anytime.</p>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <video class="hosted-video" controls preload="metadata" poster="@item.ThumbnailUrl"><source src="@Model.Media.SourceUrl" />Your browser does not support embedded video. <a href="@Model.Media.SourceUrl">Open the video</a>.</video>
+                }
+            }
+            else if (Model.Media.Kind == "External")
+            {
+                <a class="external-media" data-track="Media" data-track-key="@item.ContentId" href="@Model.Media.SourceUrl" target="_blank" rel="noopener noreferrer"><span>External @item.ContentType resource</span><strong>Open resource in a new tab →</strong></a>
+            }
+            </div>
+            <div class="article-body">@Html.SafeMarkdown(item.Body)</div>
+        </div>
+        <aside class="article-sidebar">
+            @if (isTracked && Model.Progress != null && (Model.Progress.IsCompleted || Model.Progress.ProgressPercent > 0))
+            {
+                <div class="course-sidebar-progress">
+                    <span class="portal-eyebrow">Your progress</span>
+                    @if (Model.Progress.IsCompleted)
+                    {
+                        <div class="course-sidebar-progress__big course-sidebar-progress__big--done"><strong>✓</strong><span>Completed</span></div>
+                        <div class="course-sidebar-progress__bar"><span style="width:100%"></span></div>
+                        <dl>
+                            <dt>Completed</dt><dd class="course-sidebar-progress__done">@(Model.Progress.CompletedAtUtc?.ToLocalTime().ToString("MMMM d, yyyy"))</dd>
+                            @if (hasPlayerMedia) { <dt>Action</dt><dd><a href="#courseStage">Review again ↺</a></dd> }
+                        </dl>
+                    }
+                    else
+                    {
+                        <div class="course-sidebar-progress__big"><strong id="sidebarPct">@Model.Progress.ProgressPercent%</strong><span>watched</span></div>
+                        <div class="course-sidebar-progress__bar"><span id="sidebarStatusFill" style="width:@(Model.Progress.ProgressPercent)%"></span></div>
+                        <dl>
+                            <dt>Remaining</dt><dd>−@FmtTime(Model.Progress.DurationSec - Model.Progress.LastPositionSec) left</dd>
+                            @if (hasPlayerMedia) { <dt>Resume</dt><dd><a href="#courseStage">@FmtTime(Model.Progress.LastPositionSec)</a></dd> }
+                        </dl>
+                    }
+                </div>
+            }
+            <div><span class="portal-eyebrow">Resource details</span><dl><dt>Type</dt><dd>@item.ContentType</dd><dt>Section</dt><dd>@item.CategoryName</dd><dt>Last updated</dt><dd>@item.UpdatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</dd></dl></div>
+            @if(item.Links.Count>0){<div><h2>Related resources</h2>@foreach(var link in item.Links){<a data-track="ContentLink" data-track-key="@link.LinkId" href="@link.Url" target="_blank" rel="noopener noreferrer">@link.Label <span aria-hidden="true">↗</span></a>}</div>}
+        </aside>
+    </div>
+
+    @if (Model.RelatedItems.Count > 0)
+    {
+        <section class="learning-section related-section" aria-labelledby="relatedLearningHeading">
+            <div class="portal-container">
+                <div class="learning-section-heading">
+                    <div><span class="portal-eyebrow">Keep learning</span><h2 id="relatedLearningHeading">More in @item.CategoryName</h2></div>
+                    <a class="learning-section-link" asp-controller="Public" asp-action="Learning">Browse all learning <span aria-hidden="true">→</span></a>
+                </div>
+                <div class="learning-video-grid">
+                    @foreach (var rel in Model.RelatedItems)
+                    {
+                        var relIsVideo = rel.ContentType is "Video" or "Course";
+                        var relMediaStyle = relIsVideo && !string.IsNullOrWhiteSpace(rel.ThumbnailUrl) ? $"background-image:url('{rel.ThumbnailUrl}')" : null;
+                        PortalCourseProgress? relProgress = null;
+                        var hasRelProgress = Model.RelatedProgress.TryGetValue(rel.ContentId, out relProgress);
+                        <a class="learning-video-card" asp-action="ContentDetails" asp-route-slug="@rel.Slug">
+                            <span class="learning-card-media @(string.IsNullOrWhiteSpace(rel.ThumbnailUrl) ? "is-placeholder" : null)" style="@relMediaStyle">@if (relIsVideo) { <span class="learning-play" aria-hidden="true">▶</span> }</span>
+                            <span class="learning-card-body"><small>@rel.ContentType · @rel.CategoryName</small><strong>@rel.Title</strong><span>@rel.Summary</span><em>@(hasRelProgress && relProgress?.IsCompleted == true ? "Review" : hasRelProgress && (relProgress?.ProgressPercent ?? 0) > 0 ? "Continue" : rel.ContentType == "Course" ? "Start course" : "Watch lesson") <span aria-hidden="true">→</span></em></span>
+                            @if (relProgress is { IsCompleted: true })
+                            {
+                                <span class="course-badge">Completed</span>
+                            }
+                            else if (relProgress is { ProgressPercent: > 0 })
+                            {
+                                <span class="course-card-progress" title="Watched @relProgress.ProgressPercent%"><span style="width:@relProgress.ProgressPercent%"></span></span>
+                                <span class="course-card-pill">@relProgress.ProgressPercent%</span>
+                            }
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+</article>
+
+
+
+<script>
+    document.getElementById('articlePrint')?.addEventListener('click', function () { window.print(); });
+    @if (item.ContentType.Equals("Video", StringComparison.OrdinalIgnoreCase) || isCourse)
+    {
+        <text>
+        try {
+            window.localStorage.setItem('yakult.portal.lastLearning', JSON.stringify({
+                href: window.location.href,
+                title: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(item.Title))
+            }));
+        } catch (_) { }
+        </text>
+    }
+    @if (isTracked)
+    {
+        <text>
+        (function () {
+            var contentId = @item.ContentId;
+            var token = ((document.querySelector('input[name="__RequestVerificationToken"]') || {}).value) || '';
+            var initial = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Progress ?? new PortalCourseProgress(), new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)));
+            var video = document.getElementById('courseVideo');
+            var chip = document.getElementById('courseStatusChip');
+            var statusFill = document.getElementById('courseStatusFill');
+            var playBtn = document.getElementById('coursePlayPause');
+            var fill = document.getElementById('courseFill');
+            var timeEl = document.getElementById('courseTime');
+            var remEl = document.getElementById('courseRemaining');
+            var pctEl = document.getElementById('coursePct');
+            var cta = document.getElementById('courseCta');
+            var sideFill = document.getElementById('sidebarStatusFill');
+            var sidePct = document.getElementById('sidebarPct');
+            var ytPlayer = null;
+            var anchorSec = Math.max(0, initial.lastPositionSec || 0);
+            var completed = !!initial.isCompleted;
+            var lastKnownDuration = initial.durationSec || 0;
+            var lastSaveSec = -1;
+            var TOLERANCE = 0.5;
+
+            function fmt(sec) {
+                sec = Math.max(0, Math.floor(sec));
+                return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+            }
+
+            function render() {
+                if (!video) return;
+                var t = video.currentTime || 0;
+                var d = video.duration || lastKnownDuration || 0;
+                if (fill) fill.style.width = (d > 0 ? Math.min(100, (t / d) * 100) : 0) + '%';
+                if (timeEl) timeEl.textContent = fmt(t) + ' / ' + fmt(d);
+                if (remEl) remEl.textContent = d > t ? '−' + fmt(d - t) + ' left' : '0:00 left';
+                if (pctEl) pctEl.textContent = (d > 0 ? Math.round((t / d) * 100) : 0) + '%';
+            }
+
+            function updateChip() {
+                if (!chip) return;
+                var pct;
+                if (completed) {
+                    pct = 100;
+                    chip.dataset.state = 'completed';
+                    chip.textContent = 'Completed';
+                } else {
+                    pct = lastKnownDuration > 0 ? Math.min(100, Math.round((anchorSec / lastKnownDuration) * 100)) : initial.progressPercent;
+                    chip.dataset.state = pct > 0 ? 'in-progress' : 'not-started';
+                    chip.textContent = pct > 0 ? 'Watched ' + pct + '%' : 'Not started';
+                }
+                if (statusFill) statusFill.style.width = pct + '%';
+                if (sideFill) sideFill.style.width = pct + '%';
+                if (sidePct) sidePct.textContent = pct + '%';
+                if (cta && completed) cta.textContent = 'Review again';
+            }
+
+            function save(force) {
+                if (completed || !token) return;
+                if (!video || !(video.duration > 0)) return;
+                var pos = Math.floor(video.currentTime);
+                var dur = Math.floor(video.duration);
+                if (!force && pos - lastSaveSec < 5) return;
+                lastSaveSec = pos;
+                fetch('/Public/Progress', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                    body: JSON.stringify({ contentId: contentId, positionSec: pos, durationSec: dur })
+                }).then(function (r) { return r.json(); }).then(function (data) {
+                    if (data && data.isCompleted) { completed = true; updateChip(); }
+                }).catch(function () { });
+            }
+
+            function snapBackToAnchor() {
+                if (!video || completed) return;
+                if (Math.abs(video.currentTime - anchorSec) > TOLERANCE) {
+                    try { video.currentTime = anchorSec; } catch (_) { }
+                }
+            }
+
+            function togglePlay() {
+                if (!video) return;
+                if (video.paused) {
+                    var p = video.play();
+                    if (p && p.catch) p.catch(function () { });
+                } else {
+                    video.pause();
+                }
+            }
+
+            if (video) {
+                video.removeAttribute('controls');
+                video.addEventListener('loadedmetadata', function () {
+                    lastKnownDuration = video.duration || lastKnownDuration;
+                    if (!completed && initial.lastPositionSec > 0 && video.currentTime < 1) {
+                        try { video.currentTime = Math.min(initial.lastPositionSec, video.duration || 0); } catch (_) { }
+                    }
+                    render();
+                    updateChip();
+                });
+                video.addEventListener('seeking', snapBackToAnchor);
+                video.addEventListener('timeupdate', function () {
+                    lastKnownDuration = video.duration || lastKnownDuration;
+                    if (!video.seeking && video.currentTime > anchorSec) anchorSec = video.currentTime;
+                    snapBackToAnchor();
+                    render();
+                    if (!video.paused && !video.seeking) save(false);
+                });
+                video.addEventListener('play', function () { if (playBtn) playBtn.textContent = '❚❚'; var stage = video.parentElement; if (stage) stage.classList.add('is-playing'); });
+                video.addEventListener('pause', function () { save(true); if (playBtn) playBtn.textContent = '►'; var stage = video.parentElement; if (stage) stage.classList.remove('is-playing'); });
+                video.addEventListener('ended', function () {
+                    anchorSec = lastKnownDuration || video.duration || 0;
+                    render();
+                    save(true);
+                });
+                video.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+                video.addEventListener('dblclick', function (e) { e.preventDefault(); });
+                video.addEventListener('click', togglePlay);
+            }
+
+            if (playBtn) playBtn.addEventListener('click', togglePlay);
+
+            var rewindBtn = document.getElementById('courseRewind');
+            if (rewindBtn) rewindBtn.addEventListener('click', function () {
+                if (!video) return;
+                var t = Math.max(0, (video.currentTime || anchorSec) - 10);
+                if (!completed) anchorSec = t;
+                try { video.currentTime = t; } catch (_) { }
+                render();
+                updateChip();
+            });
+
+            if (cta) cta.addEventListener('click', function () {
+                var stage = document.getElementById('courseStage');
+                if (stage) stage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (video) { if (video.paused) togglePlay(); }
+                else if (ytPlayer && ytPlayer.playVideo) {
+                    var st = ytPlayer.getPlayerState ? ytPlayer.getPlayerState() : -1;
+                    if (st !== 1 && st !== 3) { try { ytPlayer.playVideo(); } catch (_) { } }
+                }
+            });
+
+            document.addEventListener('visibilitychange', function () { if (document.hidden) save(true); });
+
+            document.addEventListener('keydown', function (e) {
+                var tag = document.activeElement && document.activeElement.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return;
+                if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].indexOf(e.key) >= 0) e.preventDefault();
+                if (e.code === 'Space' && video) { e.preventDefault(); togglePlay(); }
+            });
+
+            if (document.getElementById('courseYoutube')) {
+                var courseVideoId = '@(Model.Media.EmbedUrl?.Split('/').LastOrDefault() ?? "")';
+                window.onYouTubeIframeAPIReady = function () {
+                    var yt = new YT.Player('courseYoutube', {
+                        videoId: courseVideoId,
+                        playerVars: { controls: 0, disablekb: 1, fs: 0 },
+                        events: {
+                            onStateChange: function (event) {
+                                if (event.data === YT.PlayerState.ENDED && !completed && token) {
+                                    var d = Math.floor(yt.getDuration() || 0);
+                                    var postCompletion = function () {
+                                        return fetch('/Public/Progress', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                                            body: JSON.stringify({ contentId: contentId, positionSec: d, durationSec: d })
+                                        }).then(function (r) { return r.json(); });
+                                    };
+                                    postCompletion().then(function (data) {
+                                        if (data && data.isCompleted) { completed = true; updateChip(); }
+                                    }).catch(function () {
+                                        setTimeout(function () {
+                                            postCompletion().then(function (data) {
+                                                if (data && data.isCompleted) { completed = true; updateChip(); }
+                                            }).catch(function (err) { console.error('Course completion save failed.', err); });
+                                        }, 2000);
+                                    });
+                                }
+                                if (event.data === YT.PlayerState.PLAYING && !completed && token) {
+                                    if (yt._progressPoll) window.clearInterval(yt._progressPoll);
+                                    yt._lastPollSec = -1;
+                                    yt._progressPoll = window.setInterval(function () {
+                                        if (completed || !yt.getCurrentTime || !yt.getDuration) return;
+                                        var t = Math.floor(yt.getCurrentTime());
+                                        var d = Math.floor(yt.getDuration());
+                                        if (!(d > 0) || !((t - yt._lastPollSec) >= 5)) return;
+                                        yt._lastPollSec = t;
+                                        fetch('/Public/Progress', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                                            body: JSON.stringify({ contentId: contentId, positionSec: t, durationSec: d })
+                                        }).then(function (r) { return r.json(); }).then(function (data) {
+                                            if (data && data.isCompleted) { completed = true; updateChip(); window.clearInterval(yt._progressPoll); }
+                                        }).catch(function () { });
+                                    }, 1000);
+                                }
+                                if (event.data !== YT.PlayerState.PLAYING && yt._progressPoll) {
+                                    window.clearInterval(yt._progressPoll);
+                                    yt._progressPoll = null;
+                                }
+                            },
+                            onError: function (event) {
+                                console.error('Course YouTube player error.', event);
+                            }
+                        }
+                    });
+                    ytPlayer = yt;
+                };
+                var ytRewindBtn = document.getElementById('courseYtRewind');
+                if (ytRewindBtn) ytRewindBtn.addEventListener('click', function () {
+                    if (!ytPlayer || !ytPlayer.seekTo || !ytPlayer.getCurrentTime) return;
+                    try { ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 10), true); } catch (_) { }
+                });
+                if (typeof YT !== 'undefined' && YT.Player) {
+                    window.onYouTubeIframeAPIReady();
+                } else {
+                    var s = document.createElement('script');
+                    s.src = 'https://www.youtube.com/iframe_api';
+                    document.head.appendChild(s);
+                }
+            }
+
+            updateChip();
+        })();
+        </text>
+    }
+</script>

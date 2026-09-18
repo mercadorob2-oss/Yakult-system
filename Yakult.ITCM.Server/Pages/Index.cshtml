@@ -1,0 +1,461 @@
+@page
+@namespace Yakult.ITCM.Server.Pages
+@model IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- ── Top bar ── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <button class="btn-icon topbar-menu" onclick="toggleSidebar()" aria-label="Toggle sidebar">☰</button>
+    <div>
+      <div class="page-eyebrow">IT OPERATIONS</div>
+      <div class="page-title">ITCM Control Center</div>
+      <div class="page-subtitle">Central scheduler and notification health</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-context" aria-label="Signed-in user">
+      @if (User.HasClaim("ItcmAdministrator", "true"))
+      {
+        <span class="topbar-context-label">SIGNED IN AS</span>
+        <strong>@(User.Identity?.Name ?? "Administrator")</strong>
+        <span class="pill ok">Admin</span>
+      }
+      else if (User.Identity?.IsAuthenticated == true)
+      {
+        <span class="topbar-context-label">SIGNED IN AS</span>
+        <strong>@(User.Identity?.Name ?? "Viewer")</strong>
+        <span class="pill muted">Viewer</span>
+      }
+      else
+      {
+        <span class="topbar-context-label">VIEWING AS</span>
+        <strong>Guest</strong>
+        <span class="pill muted">Viewer</span>
+      }
+    </div>
+    <div class="refresh-indicator" id="refreshIndicator" title="Auto-refresh countdown">
+      <svg class="refresh-ring" viewBox="0 0 20 20">
+        <circle class="track" cx="10" cy="10" r="8"></circle>
+        <circle class="progress" id="refreshRingProgress" cx="10" cy="10" r="8" stroke-dasharray="50.27" stroke-dashoffset="0"></circle>
+      </svg>
+      <span id="refreshCountdown">10s</span>
+    </div>
+    <button class="btn-icon" onclick="loadAll()" title="Refresh data" aria-label="Refresh">↻</button>
+    <button class="btn-icon" onclick="showShortcuts()" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">⌘</button>
+    <button class="btn-icon" id="themeToggleMobile" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle dark mode">🌙</button>
+  </div>
+</header>
+
+<main>
+  <div class="live-strip" role="status" aria-label="Live operations summary">
+    <span class="live-dot" aria-hidden="true"></span>
+    <span>Live</span>
+    <span aria-hidden="true">·</span>
+    <span id="liveSummary">Connecting…</span>
+    <span aria-hidden="true">·</span>
+    <span>Auto-refresh 10s</span>
+  </div>
+  <!-- Connection error banner -->
+  <div class="conn-banner" id="connBanner" role="alert">
+    <span class="banner-icon" aria-hidden="true">⚠️</span>
+    <div><strong>Connection interrupted</strong><span>Unable to reach the ITCM API. Showing the last available values.</span></div>
+    <button class="ghost sm conn-retry" onclick="loadAll()" aria-label="Retry loading data">Retry</button>
+  </div>
+
+  <!-- ── Hero status bar ── -->
+  <section class="status-hero state-idle" id="statusHero" aria-labelledby="schedulerStatusHeading">
+    <div class="status-hero-indicator" id="statusHeroIcon" aria-hidden="true">⏸</div>
+    <div class="hero-copy">
+      <div class="status-hero-label" id="schedulerStatusHeading">SCHEDULER STATUS</div>
+      <div class="status-hero-line"><div class="status-hero-value" id="schedulerState" aria-live="polite">Loading</div><span id="schedulerStatusPill" class="pill muted">Checking</span></div>
+      <div class="status-hero-meta" id="statusHeroMeta">
+        <div id="lastRunLine">Checking the latest scheduler state…</div>
+        <div id="nextRunLine"></div>
+      </div>
+    </div>
+    <div class="status-hero-actions" aria-label="Scheduler actions">
+      @if (User.HasClaim("ItcmAdministrator", "true"))
+      {
+        <button class="primary" id="runNowBtn" onclick="runNow()">▶ <span>Run now</span></button>
+        <button class="warn" id="pauseResumeBtn" data-mode="pause" onclick="togglePauseResume()">⏸ <span>Pause</span></button>
+      }
+      else
+      {
+        <span class="pill muted" title="Scheduler actions need an administrator sign-in">Viewer access</span>
+      }
+    </div>
+  </section>
+
+  <div class="dashboard-tabs" role="tablist" aria-label="ITCM dashboard sections">
+    <button class="dashboard-tab is-active" id="tab-overview" role="tab" aria-selected="true" aria-controls="panel-overview" data-dashboard-tab="overview">Overview</button>
+    <button class="dashboard-tab" id="tab-monitoring" role="tab" aria-selected="false" aria-controls="panel-monitoring" data-dashboard-tab="monitoring">Ticket Monitoring <span class="tab-badge" id="monitoringBadge" hidden></span></button>
+    <button class="dashboard-tab" id="tab-history" role="tab" aria-selected="false" aria-controls="panel-history" data-dashboard-tab="history">Run History <span class="tab-badge" id="historyBadge" hidden></span></button>
+    <button class="dashboard-tab" id="tab-devices" role="tab" aria-selected="false" aria-controls="panel-devices" data-dashboard-tab="devices">Devices <span class="tab-badge" id="devicesBadge" hidden></span></button>
+    <button class="dashboard-tab" id="tab-diagnostics" role="tab" aria-selected="false" aria-controls="panel-diagnostics" data-dashboard-tab="diagnostics">Diagnostics</button>
+  </div>
+
+  <section class="tab-panel is-active" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" data-dashboard-panel="overview">
+  <!-- ── Recent runs timeline ── -->
+  <div class="card row-gap" id="timelineCard">
+    <div class="card-header">
+      <div class="card-title"><span class="dot"></span>Recent Runs</div>
+    </div>
+    <div class="timeline-strip" id="timelineStrip">
+      <div class="empty-state" style="padding:16px">
+        <span class="empty-msg">No runs yet</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Stat tiles ── -->
+  <div class="stat-grid">
+    <div class="stat-card accent-purple">
+      <div class="stat-label">Total Runs</div>
+      <div class="stat-value" id="totalRuns">-</div>
+      <div class="stat-sub" id="totalRunsSub">-</div>
+    </div>
+    <div class="stat-card accent-green">
+      <div class="stat-label">Successful</div>
+      <div class="stat-value" id="successfulRuns">-</div>
+      <div class="stat-sub" id="successRateSub">-</div>
+    </div>
+    <div class="stat-card accent-red">
+      <div class="stat-label">Failed</div>
+      <div class="stat-value" id="failedRuns">-</div>
+      <div class="stat-sub" id="failedRunsSub">-</div>
+    </div>
+    <div class="stat-card accent-blue">
+      <div class="stat-label">Next Run</div>
+      <div class="stat-value stat-value-datetime" id="nextRunAt">-</div>
+      <div class="stat-sub" id="nextRunRel">-</div>
+    </div>
+  </div>
+
+  </section>
+
+  <section class="tab-panel" id="panel-monitoring" role="tabpanel" aria-labelledby="tab-monitoring" data-dashboard-panel="monitoring" hidden>
+  <!-- ── Ticket monitoring ── -->
+  <div class="section-heading">
+    <div>
+      <div class="section-kicker">WORK QUEUE</div>
+      <div class="section-title">Ticket Monitoring</div>
+      <div class="section-subtitle">Read-only visibility into incoming Portal work, ticket changes, and automated activity.</div>
+    </div>
+    <span class="section-badge">LIVE DATA</span>
+  </div>
+  <div class="stat-grid monitoring-stats">
+    <div class="stat-card accent-orange">
+      <div class="stat-label">Unassigned Portal Tickets</div>
+      <div class="stat-value" id="unassignedPortalCount">-</div>
+      <div class="stat-sub">Waiting for IT ownership</div>
+    </div>
+    <div class="stat-card accent-red">
+      <div class="stat-label">Recent Auto-escalations</div>
+      <div class="stat-value" id="recentAutoEscalationCount">-</div>
+      <div class="stat-sub">Within displayed movement history</div>
+    </div>
+    <div class="stat-card accent-green">
+      <div class="stat-label">Reminder Emails Today</div>
+      <div class="stat-value" id="reminderEmailsToday">-</div>
+      <div class="stat-sub">Successfully sent by ITCM</div>
+    </div>
+  </div>
+
+  <div class="monitoring-grid row-gap">
+    <div class="card" data-can-assign="@(User.HasClaim("ItcmAdministrator", "true") ? "true" : "false")">
+      <div class="card-header">
+        <div>
+          <div class="card-title"><span class="dot"></span>Incoming Portal Tickets</div>
+          <div class="card-helper">Unassigned tickets stay here until an IT employee accepts them.</div>
+        </div>
+      </div>
+      <div class="data-table-wrap monitoring-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Ticket</th><th>Caller / Issue</th><th>Priority</th><th>Created</th>@if (User.HasClaim("ItcmAdministrator", "true")) {<th>Action</th>}</tr></thead>
+          <tbody id="portalTriageBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title"><span class="dot"></span>Scheduler Activity</div>
+          <div class="card-helper">Reminder and escalation outcomes from recent background runs.</div>
+        </div>
+      </div>
+      <div class="data-table-wrap monitoring-table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Run</th><th>Completed</th><th>Reminders</th><th>Escalations</th></tr></thead>
+          <tbody id="schedulerActivityBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card row-gap">
+    <div class="card-header">
+      <div>
+        <div class="card-title"><span class="dot"></span>Connected Clients <span class="pill ok" id="clientPresenceCount">-</span></div>
+        <div class="card-helper">Recently seen desktops. Full list, search, and export live in the Devices tab.</div>
+      </div>
+      <button class="ghost sm" onclick="activateDashboardTab('devices')">Open Devices ›</button>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Status</th><th>Machine</th><th>User</th><th>Last seen</th></tr></thead>
+        <tbody id="clientPresenceSummary"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card row-gap">
+    <div class="card-header">
+      <div>
+        <div class="card-title"><span class="dot"></span>Recent Ticket Movement</div>
+        <div class="card-helper">Status, assignment, priority, and note changes recorded in the ticket audit trail.</div>
+      </div>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>When</th><th>Ticket</th><th>Change</th><th>From</th><th>To</th><th>By</th><th>Note</th></tr></thead>
+        <tbody id="ticketMovementBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card row-gap">
+    <div class="card-header">
+      <div>
+        <div class="card-title"><span class="dot"></span>Reminder &amp; Escalation Deliveries</div>
+        <div class="card-helper">Email delivery records produced by the ITCM Server scheduler.</div>
+      </div>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>When</th><th>Ticket</th><th>Type</th><th>Delivery</th><th>Recipients</th><th>Details</th></tr></thead>
+        <tbody id="notificationActivityBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Manual escalation (admin only; run controls live in the hero) ── -->
+  <div class="card row-gap">
+    <div class="card-header">
+      <div>
+        <div class="card-title"><span class="dot"></span>Manual Escalation</div>
+        <div class="card-helper">Escalate a single ticket by code or ID. An escalation note is required.</div>
+      </div>
+    </div>
+    @if (User.HasClaim("ItcmAdministrator", "true"))
+    {
+      <div class="escalate-row">
+        <input type="text" class="filter-input" id="qaEscalateTicket" placeholder="TCK-000123 or 123" aria-label="Ticket code or ID" />
+        <input type="text" class="filter-input escalate-note" id="qaEscalateNote" placeholder="Why is this escalated? (required)" aria-label="Escalation note (required)" />
+        <button class="warn sm" onclick="escalateTicket()">Escalate</button>
+      </div>
+    }
+    else
+    {
+      <div class="quick-action-row">
+        <label class="grow">Manual escalation by ticket ID</label>
+        <span class="pill muted" title="Escalation needs an administrator sign-in">Admin only</span>
+      </div>
+    }
+  </div>
+
+  </section>
+
+  <section class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history" data-dashboard-panel="history" hidden>
+  <!-- ── Run History ── -->
+  <div class="card row-gap">
+    <div class="section-toolbar">
+      <div class="card-title"><span class="dot"></span>Run History</div>
+      <button class="ghost sm" onclick="exportHistoryCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="filter-bar">
+      <input type="text" class="filter-input" id="historySearch" placeholder="Search machine, error…" oninput="applyHistoryFilter()" />
+      <button class="filter-chip active" data-status="all" onclick="setStatusFilter('all')">All</button>
+      <button class="filter-chip" data-status="success" onclick="setStatusFilter('success')">✓ Success</button>
+      <button class="filter-chip" data-status="failed" onclick="setStatusFilter('failed')">✗ Failed</button>
+      <span class="filter-clear" onclick="clearHistoryFilter()">Clear</span>
+    </div>
+    <div class="sparkline-wrap">
+      <svg id="sparkline" width="100%" height="36" viewBox="0 0 400 36" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div class="sparkline-legend">
+        <span style="--scolor:var(--green)">Success</span>
+        <span style="--scolor:var(--red)">Failed</span>
+      </div>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table" id="historyTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Started</th>
+            <th>Finished</th>
+            <th>Status</th>
+            <th>Duration</th>
+            <th>Reminders</th>
+            <th>Escalations</th>
+            <th>Lock</th>
+            <th>Machine</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+    <div id="historyPagination" class="pagination">
+      <button id="prevPage" class="sm" disabled>‹ Prev</button>
+      <span id="pageInfo">Page 1 / 1</span>
+      <button id="nextPage" class="sm" disabled>Next ›</button>
+    </div>
+  </div>
+
+  </section>
+
+  <section class="tab-panel" id="panel-devices" role="tabpanel" aria-labelledby="tab-devices" data-dashboard-panel="devices" hidden>
+  <div class="section-heading">
+    <div>
+      <div class="section-kicker">ENDPOINTS</div>
+      <div class="section-title">Connected Devices</div>
+      <div class="section-subtitle">Every desktop that called the server. Online means seen within the selected window.</div>
+    </div>
+    <span class="section-badge" id="devicePresenceBadge">-</span>
+  </div>
+  <div class="card row-gap">
+    <div class="section-toolbar">
+      <div class="card-title"><span class="dot"></span>Devices <span class="pill ok" id="devicePresenceCount">-</span></div>
+      <button class="ghost sm" onclick="exportPresenceCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="filter-bar">
+      <input type="text" class="filter-input" id="deviceSearch" placeholder="Search machine, user…" oninput="applyDeviceFilter()" />
+      <button class="filter-chip active" data-devstatus="all" onclick="setDeviceFilter('all')">All</button>
+      <button class="filter-chip" data-devstatus="online" onclick="setDeviceFilter('online')">● Online</button>
+      <button class="filter-chip" data-devstatus="stale" onclick="setDeviceFilter('stale')">○ Stale</button>
+      <select id="presenceThreshold" class="filter-input device-select" onchange="setPresenceThreshold(this.value)" title="Online window">
+        <option value="5">Online 5 min</option>
+        <option value="15" selected>Online 15 min</option>
+        <option value="60">Online 60 min</option>
+      </select>
+      <label class="check-toggle" title="Display only; no data is deleted"><input type="checkbox" id="hideStaleDevices" onchange="applyDeviceFilter()" /> Hide stale</label>
+      <span class="filter-clear" onclick="clearDeviceFilter()">Clear</span>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Status</th><th>Machine</th><th>User</th><th>Module</th><th>Version</th><th>First seen</th><th>Last seen</th><th>Session age</th></tr></thead>
+        <tbody id="devicePresenceBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  </section>
+
+  <section class="tab-panel" id="panel-diagnostics" role="tabpanel" aria-labelledby="tab-diagnostics" data-dashboard-panel="diagnostics" hidden>
+  <!-- ── Collapsible sections ── -->
+  <details class="card row-gap" open>
+    <summary>Run Status <span class="chev">&#9656;</span></summary>
+    <div class="details-body">
+      <table class="kv-table">
+        <tr><th>Last started</th>  <td id="lastStartedAt">-</td></tr>
+        <tr><th>Last completed</th><td id="lastCompletedAt">-</td></tr>
+        <tr><th>Last result</th>   <td id="lastRunSucceeded">-</td></tr>
+        <tr><th>Last error</th>    <td id="lastError" style="color:var(--red);word-break:break-word">-</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card row-gap">
+    <summary>Last Run Details <span class="chev">&#9656;</span></summary>
+    <div class="details-body">
+      <table class="kv-table">
+        <tr><th>Reminder candidates</th> <td id="reminderCandidates">-</td></tr>
+        <tr><th>Reminders sent</th>      <td id="remindersSent">-</td></tr>
+        <tr><th>Escalation candidates</th><td id="escalationCandidates">-</td></tr>
+        <tr><th>Escalations applied</th> <td id="escalationsApplied">-</td></tr>
+        <tr><th>Lock acquired</th>       <td id="lockAcquired">-</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card row-gap">
+    <summary>Heartbeat <span class="chev">&#9656;</span></summary>
+    <div class="details-body">
+      <table class="kv-table">
+        <tr><th>Last started</th> <td id="hbLastStarted">-</td></tr>
+        <tr><th>Last finished</th><td id="hbLastFinished">-</td></tr>
+        <tr><th>Last success</th> <td id="hbLastSuccess">-</td></tr>
+        <tr><th>Machine</th>      <td id="hbMachine">-</td></tr>
+        <tr><th>Version</th>      <td id="hbVersion">-</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card row-gap">
+    <summary>Settings <span class="chev">&#9656;</span></summary>
+    <div class="details-body">
+      <table class="kv-table">
+        <tr><th>Enabled</th>         <td><span id="settingsEnabled">-</span></td></tr>
+        <tr><th>Interval</th>        <td><span id="settingsInterval">-</span> min</td></tr>
+        <tr><th>Max tickets/run</th> <td><span id="settingsMaxTickets">-</span></td></tr>
+      </table>
+      @if (User.HasClaim("ItcmAdministrator", "true"))
+      {
+        <div style="margin-top:12px"><a href="/Config"><button class="ghost sm">Edit in Configuration ›</button></a></div>
+      }
+    </div>
+  </details>
+
+  <details class="card row-gap">
+    <summary>API Endpoints <span class="chev">&#9656;</span></summary>
+    <div class="details-body">
+      <table class="kv-table">
+        <tr><th>Health</th>    <td><code>GET /api/itcm/health</code></td></tr>
+        <tr><th>Status</th>    <td><code>GET /api/itcm/scheduler/status</code></td></tr>
+        <tr><th>Run now</th>   <td><code>POST /api/itcm/scheduler/run-now</code></td></tr>
+        <tr><th>Pause</th>     <td><code>POST /api/itcm/scheduler/pause</code></td></tr>
+        <tr><th>Resume</th>    <td><code>POST /api/itcm/scheduler/resume</code></td></tr>
+        <tr><th>Heartbeat</th> <td><code>GET /api/itcm/heartbeat</code></td></tr>
+        <tr><th>History</th>   <td><code>GET /api/itcm/heartbeat/history?page=1&amp;pageSize=20</code></td></tr>
+        <tr><th>Presence</th>  <td><code>GET /api/itcm/presence?onlineMinutes=15</code></td></tr>
+        <tr><th>Beat</th>      <td><code>POST /api/itcm/presence</code> (anonymous client heartbeat)</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details class="card">
+    <summary>Raw Status JSON <span class="chev">&#9656;</span></summary>
+    <div class="details-body">
+      <pre id="rawStatus">Loading…</pre>
+    </div>
+  </details>
+  </section>
+</main>
+
+<!-- ── Assign ticket modal ── -->
+<div class="shortcuts-modal" id="assignModal" onclick="if(event.target===this) hideAssignModal()">
+  <div class="shortcuts-panel" role="dialog" aria-label="Assign ticket">
+    <h3>Assign ticket <span id="assignModalTicket"></span></h3>
+    <div class="shortcut-row"><span>IT staff</span><select id="assignModalSelect" class="filter-input device-select" style="max-width:220px"></select></div>
+    <div class="shortcut-row"><span></span><span><button class="primary sm" onclick="confirmAssign()">Assign</button> <button class="ghost sm" onclick="hideAssignModal()">Cancel</button></span></div>
+  </div>
+</div>
+
+<!-- ── Keyboard shortcuts modal ── -->
+<div class="shortcuts-modal" id="shortcutsModal" onclick="if(event.target===this) hideShortcuts()">
+  <div class="shortcuts-panel" role="dialog" aria-label="Keyboard shortcuts">
+    <h3>⌨️ Keyboard Shortcuts</h3>
+    <div class="shortcut-row"><span>Run scheduler now</span><span class="kbd">R</span></div>
+    <div class="shortcut-row"><span>Pause scheduler</span><span class="kbd">P</span></div>
+    <div class="shortcut-row"><span>Resume scheduler</span><span class="kbd">U</span></div>
+    <div class="shortcut-row"><span>Refresh data</span><span class="kbd">G</span></div>
+    <div class="shortcut-row"><span>Focus history search</span><span class="kbd">F</span></div>
+    <div class="shortcut-row"><span>Toggle dark mode</span><span class="kbd">D</span></div>
+    <div class="shortcut-row"><span>Toggle sidebar</span><span class="kbd">S</span></div>
+    <div class="shortcut-row"><span>Show this menu</span><span class="kbd">?</span></div>
+    <div class="shortcut-row"><span>Close</span><span class="kbd">Esc</span></div>
+  </div>
+</div>

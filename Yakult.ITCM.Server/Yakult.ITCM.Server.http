@@ -1,0 +1,6 @@
+@Yakult.ITCM.Server_HostAddress = http://localhost:5011
+
+GET {{Yakult.ITCM.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

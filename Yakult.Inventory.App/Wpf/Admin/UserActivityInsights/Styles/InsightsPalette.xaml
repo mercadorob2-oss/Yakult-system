@@ -1,0 +1,274 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        Analytics color palette for the User Activity Insights dashboard.
+        Deliberately separate from Wpf\Shared\Styles\ListPageStyles.xaml's app-wide
+        teal/blue brand brushes — this dashboard uses its own chart/KPI palette so it
+        reads as an analytics surface, not a re-skin of the Yakult brand chrome.
+
+        Typography tiers (Fluent/Power BI style):
+          Primary   #111827 — KPI values, section headers
+          Secondary #475569 — card titles, chart axis labels
+          Muted     #64748B — subtitles, timestamps, least-important text
+    -->
+
+    <SolidColorBrush x:Key="InsightsBackgroundBrush"   Color="#F5F7FA"/>
+    <SolidColorBrush x:Key="InsightsCardBrush"         Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="InsightsBorderBrush"       Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="InsightsTextDarkBrush"      Color="#111827"/>
+    <SolidColorBrush x:Key="InsightsTextSecondaryBrush" Color="#475569"/>
+    <SolidColorBrush x:Key="InsightsTextMutedBrush"     Color="#64748B"/>
+
+    <SolidColorBrush x:Key="InsightsBlueBrush"   Color="#3B82F6"/>
+    <SolidColorBrush x:Key="InsightsGreenBrush"  Color="#22C55E"/>
+    <SolidColorBrush x:Key="InsightsAmberBrush"  Color="#F59E0B"/>
+    <SolidColorBrush x:Key="InsightsRedBrush"    Color="#EF4444"/>
+    <SolidColorBrush x:Key="InsightsPurpleBrush" Color="#8B5CF6"/>
+    <SolidColorBrush x:Key="InsightsCyanBrush"   Color="#06B6D4"/>
+    <SolidColorBrush x:Key="InsightsOrangeBrush" Color="#F97316"/>
+    <SolidColorBrush x:Key="InsightsSlateBrush"  Color="#64748B"/>
+
+    <!-- Subtle Fluent elevation: small blur/offset, low opacity, 1px border carries most of the definition -->
+    <Style x:Key="InsightsCard" TargetType="Border">
+        <Setter Property="Background"      Value="{StaticResource InsightsCardBrush}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource InsightsBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius"    Value="8"/>
+        <Setter Property="Padding"         Value="14"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect Color="#1F2937" Direction="270" ShadowDepth="1"
+                                  BlurRadius="8" Opacity="0.08"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="InsightsKpiTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily"  Value="Segoe UI"/>
+        <Setter Property="FontSize"    Value="12"/>
+        <Setter Property="FontWeight"  Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource InsightsTextSecondaryBrush}"/>
+    </Style>
+
+    <Style x:Key="InsightsKpiValue" TargetType="TextBlock">
+        <Setter Property="FontFamily"  Value="Segoe UI"/>
+        <Setter Property="FontSize"    Value="36"/>
+        <Setter Property="FontWeight"  Value="Bold"/>
+        <Setter Property="Foreground" Value="{StaticResource InsightsTextDarkBrush}"/>
+        <Setter Property="Margin"      Value="0,4,0,0"/>
+    </Style>
+
+    <Style x:Key="InsightsKpiSubtitle" TargetType="TextBlock">
+        <Setter Property="FontFamily"  Value="Segoe UI"/>
+        <Setter Property="FontSize"    Value="10.5"/>
+        <Setter Property="Foreground" Value="{StaticResource InsightsTextMutedBrush}"/>
+        <Setter Property="Margin"      Value="0,2,0,0"/>
+    </Style>
+
+    <Style x:Key="InsightsSectionTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily"  Value="Segoe UI"/>
+        <Setter Property="FontSize"    Value="14"/>
+        <Setter Property="FontWeight"  Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource InsightsTextDarkBrush}"/>
+        <Setter Property="Margin"      Value="0,0,0,8"/>
+    </Style>
+
+    <!--
+        Plain WPF Button styles (not Wpf.Ui.Controls.Button) for the filter bar's
+        Apply/Clear actions. Wpf.Ui's own Button relies on accent-color resources that
+        are only populated by Wpf.Ui.Appearance.ApplicationThemeManager.Apply(...) — a
+        bootstrap step this app can't call because Application.Current is always null
+        here (WPF hosted via ElementHost inside WinForms, see CLAUDE.md). Without that
+        bootstrap, ui:Button's hover state renders white-on-white. These explicit
+        templates sidestep the problem entirely, mirroring the pattern already used in
+        Wpf\Shared\Styles\ListPageStyles.xaml (SmallBtn/PrimaryBtn).
+    -->
+    <Style x:Key="InsightsSecondaryBtn" TargetType="Button">
+        <Setter Property="Height"          Value="40"/>
+        <Setter Property="Padding"         Value="16,0"/>
+        <Setter Property="FontSize"        Value="12"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource InsightsBorderBrush}"/>
+        <Setter Property="Background"      Value="White"/>
+        <Setter Property="Foreground"      Value="{StaticResource InsightsTextDarkBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="5"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Background" Value="#F0F2F6"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="bd" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="InsightsPrimaryBtn" TargetType="Button" BasedOn="{StaticResource InsightsSecondaryBtn}">
+        <Setter Property="Background"      Value="{StaticResource InsightsBlueBrush}"/>
+        <Setter Property="Foreground"      Value="White"/>
+        <Setter Property="FontWeight"      Value="SemiBold"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="5"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bd" Property="Opacity" Value="0.88"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="bd" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Plain ComboBox style matching the proven "FilterCombo" pattern already used by
+        Wpf\Items\Views\ItemsPageView.xaml (see Wpf\Shared\Styles\ListPageStyles.xaml).
+        Deliberately NOT a custom ControlTemplate: an earlier hand-rolled Popup/ToggleButton
+        template here was fragile (dropdown wouldn't open, arrow misaligned). Falling back
+        to the native ComboBox template — same as the rest of this app's WPF pages — is
+        the well-tested, working option. This still needs to be an explicit Style (rather
+        than relying on the merged ui:ControlsDictionary) because that dictionary's implicit
+        ComboBox restyle depends on accent resources this app never bootstraps
+        (Application.Current is always null — see CLAUDE.md), which renders the selected
+        item's text invisible.
+    -->
+    <Style x:Key="InsightsComboBox" TargetType="ComboBox">
+        <Setter Property="Height"                   Value="40"/>
+        <Setter Property="Padding"                  Value="10,0"/>
+        <Setter Property="Background"               Value="White"/>
+        <Setter Property="Foreground"               Value="{StaticResource InsightsTextDarkBrush}"/>
+        <Setter Property="BorderBrush"              Value="{StaticResource InsightsBorderBrush}"/>
+        <Setter Property="BorderThickness"          Value="1"/>
+        <Setter Property="FontSize"                 Value="12"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!--
+        Plain native DatePicker, same reasoning as InsightsComboBox above: ui:CalendarDatePicker
+        (Wpf.Ui.Controls) renders its selected date invisible/blank for the same "no
+        ApplicationThemeManager.Apply() bootstrap" reason documented throughout this file.
+        The native DatePicker needs no custom template to look and work correctly.
+    -->
+    <Style x:Key="InsightsDatePicker" TargetType="DatePicker">
+        <Setter Property="Height"                   Value="40"/>
+        <Setter Property="Padding"                  Value="10,0"/>
+        <Setter Property="Background"               Value="White"/>
+        <Setter Property="Foreground"               Value="{StaticResource InsightsTextDarkBrush}"/>
+        <Setter Property="BorderBrush"              Value="{StaticResource InsightsBorderBrush}"/>
+        <Setter Property="BorderThickness"          Value="1"/>
+        <Setter Property="FontSize"                 Value="12"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!--
+        Self-drawn toggle-switch style (a CheckBox in disguise). ui:ToggleSwitch's own
+        Fluent template loses its thumb/fill on hover while checked, for the same
+        "missing ApplicationThemeManager.Apply() bootstrap" reason documented above.
+        This template has no DynamicResource dependency on WPF-UI's theme.
+    -->
+    <Style x:Key="InsightsToggleSwitch" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource InsightsTextDarkBrush}"/>
+        <Setter Property="FontSize"   Value="12"/>
+        <Setter Property="Cursor"     Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal">
+                        <Border x:Name="track" Width="38" Height="20" CornerRadius="10"
+                                Background="#CBD5E1" VerticalAlignment="Center">
+                            <Ellipse x:Name="thumb" Width="16" Height="16" Fill="White"
+                                     HorizontalAlignment="Left" Margin="2,0,0,0"/>
+                        </Border>
+                        <ContentPresenter Margin="8,0,0,0" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="track" Property="Background" Value="{StaticResource InsightsBlueBrush}"/>
+                            <Setter TargetName="thumb" Property="HorizontalAlignment" Value="Right"/>
+                            <Setter TargetName="thumb" Property="Margin" Value="0,0,2,0"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="track" Property="Opacity" Value="0.9"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
+        Explicit CheckBox style for the Compare-months / Quarterly-years pickers.
+        Same root cause as the Button/ComboBox above: ui:ControlsDictionary implicitly
+        restyles every plain CheckBox via Fluent's checkbox.baml, and its checked+hover
+        visual state depends on accent resources this app never bootstraps — so a
+        checked box's fill/checkmark disappears on mouse-over. This template is fully
+        self-drawn (no DynamicResource dependency on WPF-UI's theme), so hover can never
+        hide the checked state.
+    -->
+    <Style x:Key="InsightsCheckBox" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{StaticResource InsightsTextDarkBrush}"/>
+        <Setter Property="FontSize"   Value="12"/>
+        <Setter Property="Cursor"     Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <StackPanel Orientation="Horizontal">
+                        <Border x:Name="box" Width="16" Height="16" CornerRadius="3"
+                                BorderThickness="1.5"
+                                BorderBrush="{StaticResource InsightsBorderBrush}"
+                                Background="White" VerticalAlignment="Center">
+                            <Path x:Name="check" Data="M2,7 L6,11 L14,2"
+                                  Stroke="White" StrokeThickness="2"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Visibility="Collapsed"/>
+                        </Border>
+                        <ContentPresenter Margin="6,0,0,0" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </StackPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="box" Property="Background"  Value="{StaticResource InsightsBlueBrush}"/>
+                            <Setter TargetName="box" Property="BorderBrush" Value="{StaticResource InsightsBlueBrush}"/>
+                            <Setter TargetName="check" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="box" Property="BorderBrush" Value="{StaticResource InsightsBlueBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

@@ -1,0 +1,1024 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.CartridgeManagement.Views.VendorCartridgeRefillView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+             Background="#F0F2F6"
+             FontFamily="Segoe UI"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <UserControl.Resources>
+
+        <conv:BoolToVisibilityConverter        x:Key="BoolToVis"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+
+        <!-- Base TextBlock style -->
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+            <Setter Property="TextOptions.TextRenderingMode"  Value="ClearType"/>
+        </Style>
+
+        <!-- Field label (UPPERCASE small caps) -->
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="9"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Margin"     Value="0,0,0,3"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+        </Style>
+
+        <!-- Stat card -->
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="8"/>
+            <Setter Property="Padding"         Value="14,8"/>
+            <Setter Property="Margin"          Value="0,0,10,0"/>
+            <Setter Property="MinWidth"        Value="90"/>
+        </Style>
+
+        <!-- Action button -->
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Padding"         Value="14,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="Margin"          Value="0,0,6,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.87"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.70"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.38"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Pagination button -->
+        <Style x:Key="PageButton" TargetType="Button">
+            <Setter Property="Width"           Value="30"/>
+            <Setter Property="Height"          Value="28"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="Foreground"      Value="#3A8EF6"/>
+            <Setter Property="BorderBrush"     Value="#CDD5DE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Margin"          Value="2,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"  Value="#EBF5FF"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- DataGrid column header -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background"      Value="#EEF2F7"/>
+            <Setter Property="Foreground"      Value="#3A4A5A"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="FontSize"        Value="10"/>
+            <Setter Property="Padding"         Value="8,7"/>
+            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+
+        <!-- DataGrid row: keep dark foreground on all states so text is always readable -->
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#1A2333"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F0F6FF"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#C8DFFE"/>
+                </Trigger>
+                <MultiTrigger>
+                    <MultiTrigger.Conditions>
+                        <Condition Property="IsSelected"  Value="True"/>
+                        <Condition Property="IsMouseOver" Value="True"/>
+                    </MultiTrigger.Conditions>
+                    <Setter Property="Background" Value="#B8D4FC"/>
+                </MultiTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- DataGrid cell: always dark foreground, let row background show through on selection -->
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"         Value="0"/>
+            <Setter Property="Foreground"      Value="#1A2333"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background"  Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Foreground"  Value="#1A2333"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Filter combo box -->
+        <Style x:Key="FilterCombo" TargetType="ComboBox">
+            <Setter Property="Height"                   Value="28"/>
+            <Setter Property="FontSize"                 Value="10"/>
+            <Setter Property="Padding"                  Value="6,0"/>
+            <Setter Property="Background"               Value="White"/>
+            <Setter Property="BorderBrush"              Value="#C8D2DC"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Search text box -->
+        <Style x:Key="SearchBox" TargetType="TextBox">
+            <Setter Property="BorderBrush"              Value="#B0BAC8"/>
+            <Setter Property="BorderThickness"          Value="1"/>
+            <Setter Property="Background"               Value="White"/>
+            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="FontSize"                 Value="11"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter Property="BorderBrush" Value="#3A8EF6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Thin scrollbar -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width"    Value="6"/>
+            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Width="6" Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" IsTabStop="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border x:Name="Tb" Background="#B8C4D0" CornerRadius="3" Margin="1,2"/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Tb" Property="Background" Value="#7A90A4"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="Tb" Property="Background" Value="#3A8EF6"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" IsTabStop="False"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter Property="Width"  Value="Auto"/>
+                                <Setter Property="Height" Value="6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- Toolbar -->
+            <RowDefinition Height="Auto"/>  <!-- Damaged notice -->
+            <RowDefinition Height="Auto"/>  <!-- Stats + Filters -->
+            <RowDefinition Height="*"/>     <!-- Main content -->
+        </Grid.RowDefinitions>
+
+        <!-- ══════════════════════════════════════════════════════════════════════ -->
+        <!-- Row 0 · Toolbar                                                       -->
+        <!-- ══════════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="White"
+                BorderBrush="#DDE3EC" BorderThickness="0,0,0,1"
+                Padding="14,8">
+            <DockPanel LastChildFill="False">
+
+                <!-- Right: Loading badge + Refresh -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#EBF5FF" CornerRadius="4" Padding="8,3" Margin="0,0,8,0"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="#3A8EF6"/>
+                    </Border>
+                    <Button x:Name="BtnRefresh" Background="#3A8EF6"
+                            Style="{StaticResource ActionButton}"
+                            ToolTip="Refresh data" Click="BtnRefresh_Click"
+                            Content="⟳  Refresh"/>
+                </StackPanel>
+
+                <!-- Left: Action buttons -->
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+
+                    <Button x:Name="BtnCreateBatch" Background="#1E9E5E"
+                            Style="{StaticResource ActionButton}"
+                            Click="BtnCreateBatch_Click" Content="+ Create Batch"/>
+
+                    <Button x:Name="BtnAssignReturns" Background="#3A8EF6"
+                            Style="{StaticResource ActionButton}"
+                            Click="BtnAssignReturns_Click" Content="↩ Assign Returns"/>
+
+                    <!-- Divider -->
+                    <Border Width="1" Height="20" Background="#DDE3EC"
+                            VerticalAlignment="Center" Margin="0,0,6,0"/>
+
+                    <Button x:Name="BtnEditBatch" Background="#E07020"
+                            Style="{StaticResource ActionButton}"
+                            Click="BtnEditBatch_Click" Content="Edit Batch"
+                            IsEnabled="{Binding CanEditBatch}"/>
+
+                    <Button x:Name="BtnDeleteBatch" Background="#C03020"
+                            Style="{StaticResource ActionButton}"
+                            Click="BtnDeleteBatch_Click" Content="🗑 Delete"
+                            IsEnabled="{Binding CanDeleteBatch}"/>
+
+                    <!-- Divider -->
+                    <Border Width="1" Height="20" Background="#DDE3EC"
+                            VerticalAlignment="Center" Margin="0,0,6,0"/>
+
+                    <Button x:Name="BtnSendToVendor" Background="#3A8EF6"
+                            Style="{StaticResource ActionButton}"
+                            Click="BtnSendToVendor_Click" Content="✈ Send to Vendor"
+                            IsEnabled="{Binding CanSendToVendor}"/>
+
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════════════ -->
+        <!-- Row 1 · Damaged cartridge notice                                      -->
+        <!-- ══════════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="1" Background="#FFF8E1"
+                BorderBrush="#FFE082" BorderThickness="0,0,0,1"
+                Padding="14,7"
+                Visibility="{Binding ShowDamagedNotice, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="{Binding DamagedNoticeText}"
+                       Foreground="#7A5400" FontSize="11"
+                       TextWrapping="Wrap"/>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════════════ -->
+        <!-- Row 2 · Stats bar + Filters                                           -->
+        <!-- ══════════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="White"
+                BorderBrush="#DDE3EC" BorderThickness="0,0,0,1"
+                Padding="14,10,14,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="10"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Stat chips -->
+                <WrapPanel Grid.Row="0" Orientation="Horizontal">
+
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel>
+                            <TextBlock Text="TOTAL BATCHES" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding TotalBatches}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#2A3A4A"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel>
+                            <TextBlock Text="ACTIVE" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding ActiveCount}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#3A8EF6"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel>
+                            <TextBlock Text="SENT FOR REFILL" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding SentForRefillCount}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#E07020"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource StatCard}">
+                        <StackPanel>
+                            <TextBlock Text="CLOSED" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding ClosedCount}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#8090A0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource StatCard}" Margin="0">
+                        <StackPanel>
+                            <TextBlock Text="TOTAL RETURNED" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding TotalReturnedQty}"
+                                       FontSize="22" FontWeight="Bold" Foreground="#1E9E5E"/>
+                        </StackPanel>
+                    </Border>
+
+                </WrapPanel>
+
+                <!-- Filter row -->
+                <DockPanel Grid.Row="2" LastChildFill="False">
+
+                    <!-- Search box -->
+                    <Grid DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,10,0" Width="220">
+                        <TextBox x:Name="TxtSearch"
+                                 Style="{StaticResource SearchBox}"
+                                 Height="28" Padding="26,4,8,4"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock Text="🔍" IsHitTestVisible="False"
+                                   FontSize="10" Foreground="#9DAAB8"
+                                   VerticalAlignment="Center" Margin="9,0,0,0"/>
+                        <TextBlock IsHitTestVisible="False" FontSize="10" Foreground="#9DAAB8"
+                                   VerticalAlignment="Center" Margin="26,0,0,0"
+                                   Text="Search batch, vendor, model…">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SearchText}" Value="">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SearchText}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+
+                    <!-- Divider -->
+                    <Border DockPanel.Dock="Left" Width="1" Height="18" Background="#DDE3EC"
+                            Margin="0,0,10,0" VerticalAlignment="Center"/>
+
+                    <!-- Vendor filter -->
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal"
+                                VerticalAlignment="Center" Margin="0,0,10,0">
+                        <TextBlock Text="Vendor" FontSize="10" Foreground="#4A5A6A"
+                                   VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox x:Name="CmbVendor"
+                                  Style="{StaticResource FilterCombo}"
+                                  MinWidth="130"
+                                  ItemsSource="{Binding VendorOptions}"
+                                  SelectedItem="{Binding VendorFilter, Mode=TwoWay}"/>
+                    </StackPanel>
+
+                    <!-- Divider -->
+                    <Border DockPanel.Dock="Left" Width="1" Height="18" Background="#DDE3EC"
+                            Margin="0,0,10,0" VerticalAlignment="Center"/>
+
+                    <!-- Status filter -->
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal"
+                                VerticalAlignment="Center" Margin="0,0,10,0">
+                        <TextBlock Text="Status" FontSize="10" Foreground="#4A5A6A"
+                                   VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <ComboBox x:Name="CmbStatus"
+                                  Style="{StaticResource FilterCombo}"
+                                  MinWidth="120"
+                                  SelectionChanged="CmbStatus_SelectionChanged">
+                            <ComboBoxItem>All</ComboBoxItem>
+                            <ComboBoxItem>Active</ComboBoxItem>
+                            <ComboBoxItem>SentForRefill</ComboBoxItem>
+                            <ComboBoxItem>Closed</ComboBoxItem>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Clear button -->
+                    <Button DockPanel.Dock="Left"
+                            Content="✕ Clear"
+                            Height="26" Padding="8,0"
+                            FontSize="10" FontWeight="SemiBold"
+                            Foreground="#5A6A7E"
+                            Background="#F0F3F7"
+                            BorderBrush="#CDD5DE" BorderThickness="1"
+                            Cursor="Hand"
+                            Click="BtnClearFilters_Click"
+                            VerticalContentAlignment="Center">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="4"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#E4E9F0"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                </DockPanel>
+            </Grid>
+        </Border>
+
+        <!-- ══════════════════════════════════════════════════════════════════════ -->
+        <!-- Row 3 · Main content — Batches (left) | Details + Audit (right)       -->
+        <!-- ══════════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="58*"/>
+                <ColumnDefinition Width="6"/>
+                <ColumnDefinition Width="42*" MinWidth="320"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── LEFT PANEL: Vendor Batches ─────────────────────────────────── -->
+            <Grid Grid.Column="0" Background="White">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- Section header -->
+                    <RowDefinition Height="*"/>     <!-- DataGrid -->
+                    <RowDefinition Height="Auto"/>  <!-- Pagination -->
+                </Grid.RowDefinitions>
+
+                <!-- Section header -->
+                <Border Grid.Row="0" Background="White" Padding="14,10,14,8"
+                        BorderBrush="#DDE3EC" BorderThickness="0,0,0,1">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Left"
+                                   Text="Vendor Batches"
+                                   FontSize="13" FontWeight="Bold" Foreground="#3A8EF6"
+                                   VerticalAlignment="Center"/>
+                        <Border DockPanel.Dock="Left"
+                                Background="#EBF5FF" CornerRadius="10"
+                                Padding="8,2" Margin="8,0,0,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{Binding PagedBatches.Count, StringFormat='{}{0} shown'}"
+                                       FontSize="10" Foreground="#3A8EF6"/>
+                        </Border>
+                        <TextBlock DockPanel.Dock="Right"
+                                   Text="Click a row to view audit trail →"
+                                   FontSize="10" FontStyle="Italic"
+                                   Foreground="#9DAAB8" VerticalAlignment="Center"/>
+                    </DockPanel>
+                </Border>
+
+                <!-- Batches DataGrid -->
+                <DataGrid Grid.Row="1"
+                          x:Name="BatchesGrid"
+                          ItemsSource="{Binding PagedBatches}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#EEF2F7"
+                          BorderThickness="0"
+                          Background="White"
+                          RowHeaderWidth="0"
+                          ColumnHeaderHeight="34"
+                          MinRowHeight="42"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          SelectionChanged="BatchesGrid_SelectionChanged">
+
+                    <DataGrid.Columns>
+
+                        <!-- Batch ID -->
+                        <DataGridTextColumn Header="Batch ID" Binding="{Binding BatchId}" Width="65">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize"   Value="11"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Foreground" Value="#2A3A4A"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="VerticalAlignment"   Value="Center"/>
+                                    <Setter Property="Padding" Value="4,0"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Vendor -->
+                        <DataGridTextColumn Header="Vendor" Binding="{Binding VendorName}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize"     Value="11"/>
+                                    <Setter Property="FontWeight"   Value="SemiBold"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="Padding"      Value="6,0"/>
+                                    <Setter Property="TextWrapping" Value="Wrap"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Cartridge Model -->
+                        <DataGridTextColumn Header="Model/s" Binding="{Binding CartridgeModel}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize"     Value="11"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="Padding"      Value="6,0"/>
+                                    <Setter Property="TextWrapping" Value="Wrap"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Original Qty -->
+                        <DataGridTextColumn Header="Original" Binding="{Binding OriginalQty}" Width="65">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize"  Value="11"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="VerticalAlignment"   Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Returned Qty -->
+                        <DataGridTextColumn Header="Returned" Binding="{Binding ReturnedQty}" Width="70">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize"   Value="11"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Foreground" Value="#1E9E5E"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                    <Setter Property="VerticalAlignment"   Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Qty Per Cartridge -->
+                        <DataGridTextColumn Header="Qty / Cartridge" Binding="{Binding QtyPerCartridge}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontSize"     Value="10"/>
+                                    <Setter Property="Foreground"   Value="#4A5A6A"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="Padding"      Value="6,0"/>
+                                    <Setter Property="TextWrapping" Value="Wrap"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <!-- Status badge -->
+                        <DataGridTemplateColumn Header="Status" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border CornerRadius="10" Padding="10,3"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Margin="6,8">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#3A8EF6"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="SentForRefill">
+                                                        <Setter Property="Background" Value="#E07020"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Closed">
+                                                        <Setter Property="Background" Value="#8090A0"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding Status}"
+                                                   Foreground="White"
+                                                   FontSize="10" FontWeight="SemiBold"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Inline action button -->
+                        <DataGridTemplateColumn Header="Action" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Tag="{Binding}"
+                                            Click="BatchActionButton_Click"
+                                            Padding="10,4" FontSize="10" FontWeight="SemiBold"
+                                            Foreground="White" Cursor="Hand"
+                                            Margin="6,7" VerticalAlignment="Center">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Content"    Value="Send to Vendor"/>
+                                                <Setter Property="Background" Value="#3A8EF6"/>
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="Bd"
+                                                                    Background="{TemplateBinding Background}"
+                                                                    CornerRadius="4"
+                                                                    Padding="{TemplateBinding Padding}">
+                                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                                  VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsPressed" Value="True">
+                                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.70"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="SentForRefill">
+                                                        <Setter Property="Content"    Value="Close Batch"/>
+                                                        <Setter Property="Background" Value="#7A8A9A"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="Closed">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsRefillable}" Value="False">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Pagination bar -->
+                <Border Grid.Row="2" Background="#F5F7FA"
+                        BorderBrush="#DDE3EC" BorderThickness="0,1,0,0"
+                        Padding="12,7">
+                    <DockPanel LastChildFill="False">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+
+                            <Button Style="{StaticResource PageButton}"
+                                    IsEnabled="{Binding CanGoPrev}"
+                                    Click="BtnPrevPage_Click" ToolTip="Previous page">
+                                <TextBlock Text="‹" FontSize="14"/>
+                            </Button>
+
+                            <Border Background="#EEF3FF" BorderBrush="#DDE3EC"
+                                    BorderThickness="1" CornerRadius="4"
+                                    Padding="12,3" Margin="3,0"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="{Binding PageInfo}"
+                                           FontSize="10" Foreground="#3A4A5A"/>
+                            </Border>
+
+                            <Button Style="{StaticResource PageButton}"
+                                    IsEnabled="{Binding CanGoNext}"
+                                    Click="BtnNextPage_Click" ToolTip="Next page">
+                                <TextBlock Text="›" FontSize="14"/>
+                            </Button>
+
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1"
+                          Width="6"
+                          Background="#DDE3EC"
+                          ResizeDirection="Columns"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"/>
+
+            <!-- ── RIGHT PANEL: Details + Audit Trail ──────────────────────────── -->
+            <Grid Grid.Column="2" Background="#F0F2F6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- Selected batch details -->
+                    <RowDefinition Height="*"/>     <!-- Audit trail -->
+                </Grid.RowDefinitions>
+
+                <!-- ── Selected Batch Details card ── -->
+                <Border Grid.Row="0" Margin="10,10,10,6"
+                        Background="White"
+                        BorderBrush="#DDE3EC" BorderThickness="1"
+                        CornerRadius="8" Padding="14,12"
+                        Visibility="{Binding HasSelectedBatch, Converter={StaticResource BoolToVis}}">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="8" ShadowDepth="1"
+                                          Opacity="0.08" Direction="270" Color="#000000"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Header: Batch ID + status badge -->
+                        <DockPanel Grid.Row="0">
+                            <TextBlock DockPanel.Dock="Left"
+                                       Text="{Binding SelectedBatch.BatchId, StringFormat='Batch #{0}'}"
+                                       FontSize="14" FontWeight="Bold" Foreground="#2A3A4A"
+                                       VerticalAlignment="Center"/>
+                            <Border DockPanel.Dock="Left" Margin="10,0,0,0"
+                                    CornerRadius="10" Padding="10,3"
+                                    VerticalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#3A8EF6"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedBatch.Status}" Value="SentForRefill">
+                                                <Setter Property="Background" Value="#E07020"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SelectedBatch.Status}" Value="Closed">
+                                                <Setter Property="Background" Value="#8090A0"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding SelectedBatch.Status}"
+                                           Foreground="White" FontSize="10" FontWeight="SemiBold"/>
+                            </Border>
+                        </DockPanel>
+
+                        <!-- Info grid: 2-column layout -->
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Vendor -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
+                                <TextBlock Text="VENDOR" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding SelectedBatch.VendorName}"
+                                           FontSize="11" Foreground="#1A2333"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Model/s -->
+                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,8">
+                                <TextBlock Text="CARTRIDGE MODEL/S" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding SelectedBatch.CartridgeModel}"
+                                           FontSize="11" Foreground="#1A2333"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Original Qty -->
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                                <TextBlock Text="ORIGINAL QTY" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding SelectedBatch.OriginalQty}"
+                                           FontSize="16" FontWeight="Bold" Foreground="#2A3A4A"/>
+                            </StackPanel>
+
+                            <!-- Returned Qty -->
+                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,8">
+                                <TextBlock Text="RETURNED QTY" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding SelectedBatch.ReturnedQty}"
+                                           FontSize="16" FontWeight="Bold" Foreground="#1E9E5E"/>
+                            </StackPanel>
+
+                            <!-- Qty Per Cartridge (full width) -->
+                            <StackPanel Grid.Row="2" Grid.ColumnSpan="2">
+                                <TextBlock Text="QTY PER CARTRIDGE" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Text="{Binding SelectedBatch.QtyPerCartridge}"
+                                           FontSize="11" Foreground="#4A5A6A"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- Empty state: no batch selected -->
+                <Border Grid.Row="0" Margin="10,10,10,6"
+                        Background="White" BorderBrush="#DDE3EC" BorderThickness="1"
+                        CornerRadius="8" Padding="20,16"
+                        Visibility="{Binding HasSelectedBatch, Converter={StaticResource InvBoolToVis}}">
+                    <TextBlock Text="← Select a batch to view its details"
+                               FontSize="11" Foreground="#9DAAB8"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- ── Audit Trail card ── -->
+                <Border Grid.Row="1" Margin="10,0,10,10"
+                        Background="White"
+                        BorderBrush="#DDE3EC" BorderThickness="1"
+                        CornerRadius="8">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="8" ShadowDepth="1"
+                                          Opacity="0.08" Direction="270" Color="#000000"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>  <!-- Header -->
+                            <RowDefinition Height="*"/>     <!-- Content -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Audit Trail header -->
+                        <Border Grid.Row="0" Padding="14,10"
+                                BorderBrush="#EEF2F7" BorderThickness="0,0,0,1">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left"
+                                           Text="Requests in Selected Batch"
+                                           FontSize="12" FontWeight="Bold"
+                                           Foreground="#3A8EF6" VerticalAlignment="Center"/>
+                                <Border DockPanel.Dock="Left"
+                                        Background="#EBF5FF" CornerRadius="10"
+                                        Padding="8,2" Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding HasSelectedBatch, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding AuditTrailItems.Count, StringFormat='{}{0} request(s)'}"
+                                               FontSize="10" Foreground="#3A8EF6"/>
+                                </Border>
+                                <TextBlock DockPanel.Dock="Right"
+                                           Text="Right-click → transfer or remove"
+                                           FontSize="9" FontStyle="Italic"
+                                           Foreground="#9DAAB8" VerticalAlignment="Center"
+                                           Visibility="{Binding HasSelectedBatch, Converter={StaticResource BoolToVis}}"/>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- Audit Trail DataGrid (shown when batch selected) -->
+                        <DataGrid Grid.Row="1"
+                                  x:Name="AuditGrid"
+                                  ItemsSource="{Binding AuditTrailItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  IsReadOnly="True"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="#EEF2F7"
+                                  BorderThickness="0"
+                                  Background="White"
+                                  RowHeaderWidth="0"
+                                  ColumnHeaderHeight="34"
+                                  MinRowHeight="38"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  Visibility="{Binding HasSelectedBatch, Converter={StaticResource BoolToVis}}">
+
+                            <DataGrid.Columns>
+
+                                <DataGridTextColumn Header="Req #" Binding="{Binding RequestId}" Width="55">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontSize"   Value="10"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="Foreground" Value="#2A3A4A"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment"   Value="Center"/>
+                                            <Setter Property="Padding" Value="4,6"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Date"
+                                                    Binding="{Binding RequestDate, StringFormat='yyyy-MM-dd HH:mm'}"
+                                                    Width="112">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontSize"  Value="10"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Padding"   Value="4,6"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Qty" Binding="{Binding ReturnedQty}" Width="42">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontSize"   Value="10"/>
+                                            <Setter Property="FontWeight" Value="Bold"/>
+                                            <Setter Property="Foreground" Value="#1E9E5E"/>
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                            <Setter Property="VerticalAlignment"   Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Model" Binding="{Binding CartridgeModel}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontSize"     Value="10"/>
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="Padding"      Value="4,6"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Returned By" Binding="{Binding ReturnedByName}" Width="*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontSize"     Value="10"/>
+                                            <Setter Property="VerticalAlignment" Value="Top"/>
+                                            <Setter Property="Padding"      Value="4,6"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Remarks" Binding="{Binding Remarks}" Width="2*">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="FontSize"     Value="10"/>
+                                            <Setter Property="Foreground"   Value="#5A6A7E"/>
+                                            <Setter Property="FontStyle"    Value="Italic"/>
+                                            <Setter Property="VerticalAlignment" Value="Top"/>
+                                            <Setter Property="Padding"      Value="4,6"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <!-- Empty state: no batch selected -->
+                        <Border Grid.Row="1"
+                                Background="White"
+                                Visibility="{Binding HasSelectedBatch, Converter={StaticResource InvBoolToVis}}">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <TextBlock Text="Select a batch to view its request history"
+                                           FontSize="12" Foreground="#9DAAB8"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="Requests assigned to the batch will appear here"
+                                           FontSize="10" Foreground="#B8C4D0"
+                                           HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

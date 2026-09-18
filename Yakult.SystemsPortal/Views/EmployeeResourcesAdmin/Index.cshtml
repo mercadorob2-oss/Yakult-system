@@ -1,0 +1,404 @@
+@model EmployeeResourceAdminViewModel
+@using System.Text.Json
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Employee Resources Management";
+    var item = Model.SelectedItem;
+    var hasResource = item is { ResourceId: > 0 };
+    var isDemoData = Model.IsDemoData;
+    var frontendMockMode = !Model.IsDatabaseAvailable;
+    var canEdit = frontendMockMode || (Model.IsDatabaseAvailable && (!hasResource || item!.Status.Equals("Draft", StringComparison.OrdinalIgnoreCase) || item.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase)));
+    var notice = TempData["EmployeeResourceNotice"]?.ToString();
+    var error = TempData["EmployeeResourceError"]?.ToString();
+    var highlights = item is null ? string.Empty : string.Join(Environment.NewLine, item.Highlights);
+    var mockCategoryNames = new[] { "IT Support", "Systems & Access", "Cybersecurity", "IT Operations", "IT Service Management" };
+    var mockOwnerNames = new[] { "Information Technology" };
+    IReadOnlyList<EmployeeResourceOption> categoryOptions = Model.Categories.Count > 0
+        ? Model.Categories
+        : mockCategoryNames.Select((name, index) => new EmployeeResourceOption { Id = -(index + 1), Name = name }).ToList();
+    IReadOnlyList<EmployeeResourceOption> departmentOptions = Model.Departments.Count > 0
+        ? Model.Departments
+        : mockOwnerNames.Select((name, index) => new EmployeeResourceOption { Id = -(index + 1), Name = name }).ToList();
+    var mockSeedJson = JsonSerializer.Serialize(Model.Items, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    string DateValue(DateTime? value) => value.HasValue ? value.Value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm") : string.Empty;
+}
+
+@Html.AntiForgeryToken()
+
+<div id="employeeResourcesAdminApp"
+     data-frontend-mock="@frontendMockMode.ToString().ToLowerInvariant()"
+     data-can-publish="@Model.CanPublish.ToString().ToLowerInvariant()"
+     data-has-resource="@hasResource.ToString().ToLowerInvariant()"
+     data-storage-key="yakult.employeeResources.adminMock.v1">
+    <section class="resource-admin-intro">
+        <div>
+            <span class="eyebrow">Content / Employee Resources</span>
+            <h2>Employee Resources Management</h2>
+            <p>This is an independent resource catalog, separate from Learning Content and Services &amp; Portals. Create drafts, attach approved files, publish through the resource workflow, and review the change history here.</p>
+        </div>
+        <div class="resource-admin-intro__actions">
+            <a class="admin-button admin-button--primary" href="/EmployeeResources" target="_blank" rel="noopener noreferrer">Preview public page <span aria-hidden="true">↗</span></a>
+            <a class="admin-button" id="newEmployeeResourceLink" href="/Admin/EmployeeResources?id=0">New resource</a>
+            @if (frontendMockMode)
+            {
+                <button class="admin-button" id="resetEmployeeResourceMock" type="button">Reset local drafts</button>
+            }
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(notice))
+    {
+        <div class="resource-admin-alert resource-admin-alert--success" role="status">@notice</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(error))
+    {
+        <div class="resource-admin-alert resource-admin-alert--error" role="alert">@error</div>
+    }
+    @if (frontendMockMode)
+    {
+        <div class="demo-data-banner resource-admin-setup-warning" role="status">
+            <span class="dummy-data-badge">FRONTEND MOCK</span>
+            <div>
+                <strong>Frontend-first Employee Resources preview</strong>
+                <p>Dummy resources are read-only. New drafts, template copies, and attachment metadata are saved only in this browser using localStorage.</p>
+                <p>Real database records, uploads, permissions, and downloads will be connected in the backend phase.</p>
+            </div>
+        </div>
+        <p class="resource-admin-mock-state" id="mockStateMessage" role="status" aria-live="polite">Frontend mock mode is ready.</p>
+    }
+    else if (isDemoData)
+    {
+        <div class="demo-data-banner resource-admin-setup-warning" role="status">
+            <span class="dummy-data-badge">REFERENCE DATA</span>
+            <div>
+                <strong>Employee Resources database is ready</strong>
+                <p>@Model.SetupMessage</p>
+                <p>The IT resources in the library are read-only examples. Use <strong>New resource</strong> to save the first managed resource to the connected database.</p>
+            </div>
+        </div>
+    }
+
+    <section class="resource-admin-summary" aria-label="Employee Resources summary">
+        <div><strong id="resourceSummaryTotal">@Model.Items.Count</strong><span>Total records</span></div>
+        <div><strong id="resourceSummaryDrafts">@Model.Items.Count(x => x.Status.Equals("Draft", StringComparison.OrdinalIgnoreCase))</strong><span>Drafts</span></div>
+        <div><strong id="resourceSummaryPublished">@Model.Items.Count(x => x.Status.Equals("Published", StringComparison.OrdinalIgnoreCase))</strong><span>Published</span></div>
+        <div><strong id="resourceSummaryArchived">@Model.Items.Count(x => x.Status.Equals("Archived", StringComparison.OrdinalIgnoreCase))</strong><span>Archived</span></div>
+        <div><strong id="resourceSummaryDemo">@(isDemoData ? Model.Items.Count : 0)</strong><span>Demo references</span></div>
+    </section>
+
+    <div class="resource-admin-workspace">
+        <aside class="resource-admin-library" aria-label="Employee Resources library">
+            <header>
+                <div>
+                    <span class="eyebrow">@(frontendMockMode ? "Frontend catalog" : (isDemoData ? "IT-only demo catalog" : "Managed catalog"))</span>
+                    <h2>@(frontendMockMode ? "Resources" : (isDemoData ? "Demo resources" : "Resources"))</h2>
+                </div>
+                <span class="resource-admin-count" id="resourceAdminLibraryCount">@Model.Items.Count</span>
+            </header>
+            <div class="resource-admin-library__list" data-resource-library-list>
+                @foreach (var resource in Model.Items)
+                {
+                    var isSelected = item?.ResourceId > 0 && item.ResourceId == resource.ResourceId;
+                    if (resource.ResourceId > 0)
+                    {
+                        <a class="resource-admin-library__item @(isSelected ? "is-selected" : null)" data-managed-resource="@resource.ResourceId" href="/Admin/EmployeeResources?id=@resource.ResourceId">
+                            <strong>@resource.Title</strong>
+                            <span>@resource.Category · @resource.ResourceType</span>
+                            <small class="resource-admin-status resource-admin-status--@resource.Status.ToLowerInvariant()">@resource.Status</small>
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="resource-admin-library__item resource-admin-library__item--demo" data-demo-resource="@resource.Slug">
+                            <span class="dummy-data-badge dummy-data-badge--compact">DUMMY DATA</span>
+                            <strong>@resource.Title</strong>
+                            <span>@resource.Category · @resource.ResourceType</span>
+                            <small>Preview only · @resource.Attachments.Count attachment@(resource.Attachments.Count == 1 ? "" : "s")</small>
+                            @if (frontendMockMode)
+                            {
+                                <button type="button" class="resource-admin-template-button" data-use-template="@resource.Slug" aria-label="Use @resource.Title as a template">Use as template</button>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </aside>
+
+        <main class="resource-admin-editor" id="resourceAdminEditor">
+            @if (!Model.IsDatabaseAvailable && !frontendMockMode)
+            {
+                <div class="resource-admin-empty-editor">
+                    <span class="resource-admin-empty-editor__icon" aria-hidden="true">⚙</span>
+                    <h2>Apply the database migration to start editing</h2>
+                    <p>Once the Employee Resources tables are installed, this workspace will support drafts, file uploads, publishing, and audit history without mixing records into Learning Content.</p>
+                </div>
+            }
+            else
+            {
+                <header class="resource-admin-editor__header">
+                    <div>
+                        <span class="eyebrow" id="resourceEditorEyebrow">@(hasResource ? "Edit resource" : "New resource")</span>
+                        <h2 id="resourceEditorTitle">@(item?.Title ?? "Create Employee Resource")</h2>
+                        <p id="resourceEditorMeta">@(item is null ? (frontendMockMode ? "Frontend mock draft · saved only in this browser" : "New resource") : $"{item.Status} · Last updated {item.LastUpdatedUtc.ToLocalTime():MMM d, yyyy h:mm tt}")</p>
+                    </div>
+                    <span class="resource-admin-status resource-admin-status--@(item is null ? "draft" : item.Status.ToLowerInvariant())" id="resourceEditorStatus" hidden="@(item is null ? "hidden" : null)">@(item?.Status ?? "Draft")</span>
+                </header>
+
+                <nav class="resource-admin-tabs" id="resourceAdminTabs" aria-label="Resource editor sections" role="tablist">
+                    <button class="resource-admin-tab is-active" id="resourceTabDetails" type="button" role="tab" aria-selected="true" aria-controls="employeeResourceForm" data-resource-tab="details">Details</button>
+                    <button class="resource-admin-tab" id="resourceTabAttachments" type="button" role="tab" aria-selected="false" aria-controls="@(frontendMockMode ? "mockAttachmentSection" : "managedAttachmentsSection")" data-resource-tab="attachments" data-requires-resource>Attachments</button>
+                    <button class="resource-admin-tab" id="resourceTabWorkflow" type="button" role="tab" aria-selected="false" aria-controls="@(frontendMockMode ? "mockWorkflowSection" : "managedWorkflowSection")" data-resource-tab="workflow" data-requires-resource>Workflow &amp; Preview</button>
+                </nav>
+
+                @if (item is not null && !canEdit)
+                {
+                    <div class="resource-admin-alert resource-admin-alert--info">This resource is @item.Status.ToLowerInvariant(). Archive it, or restore it to draft before making content or attachment changes.</div>
+                }
+
+                <form method="post" action="/Admin/EmployeeResources/Save" class="resource-admin-form" id="employeeResourceForm" data-resource-form data-resource-tab-panel="details" role="tabpanel" aria-labelledby="resourceTabDetails">
+                    @Html.AntiForgeryToken()
+                    <div class="resource-admin-validation" id="resourceAdminErrorSummary" role="alert" tabindex="-1" hidden>
+                        <strong>Review the highlighted fields:</strong>
+                        <ul id="resourceAdminErrorList"></ul>
+                    </div>
+                    <div asp-validation-summary="ModelOnly" class="resource-admin-validation"></div>
+                    <input type="hidden" name="ResourceId" value="@(item?.ResourceId > 0 ? item.ResourceId.ToString() : string.Empty)" />
+                    <input type="hidden" name="RowVersion" value="@item?.RowVersion" />
+                    <div class="resource-admin-form__grid">
+                        <label for="resourceTitle">Title<input id="resourceTitle" data-resource-field name="Title" maxlength="180" required value="@item?.Title" disabled="@(!canEdit)" aria-describedby="resourceTitleError" /><span class="resource-admin-field-error" id="resourceTitleError"></span></label>
+                        <label for="resourceSlug">Slug<input id="resourceSlug" data-resource-field name="Slug" maxlength="200" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value="@item?.Slug" disabled="@(!canEdit)" aria-describedby="resourceSlugHelp resourceSlugError" /><small id="resourceSlugHelp">Lowercase letters, numbers, and hyphens.</small><span class="resource-admin-field-error" id="resourceSlugError"></span></label>
+                        <label for="resourceType">Resource type<select id="resourceType" data-resource-field name="ResourceType" disabled="@(!canEdit)" aria-describedby="resourceTypeError">
+                            @foreach (var type in new[] { "Policy", "Form", "Guide", "FAQ", "Checklist", "Directory", "Handbook", "Reference", "Template" })
+                            {
+                                <option value="@type" selected="@(string.Equals(item?.ResourceType, type, StringComparison.OrdinalIgnoreCase) || (item is null && type == "Guide") ? "selected" : null)">@type</option>
+                            }
+                        </select><span class="resource-admin-field-error" id="resourceTypeError"></span></label>
+                        <label for="resourceCategoryId">Category<select id="resourceCategoryId" data-resource-field name="CategoryId" required disabled="@(!canEdit)" aria-describedby="resourceCategoryError">
+                            <option value="">Select category</option>
+                            @foreach (var category in categoryOptions)
+                            {
+                                <option value="@category.Id" data-name="@category.Name" selected="@(item?.CategoryId == category.Id ? "selected" : null)">@category.Name</option>
+                            }
+                        </select><span class="resource-admin-field-error" id="resourceCategoryError"></span></label>
+                        <label for="resourceOwnerDepartmentId">IT owner team<select id="resourceOwnerDepartmentId" data-resource-field name="OwnerDepartmentId" disabled="@(!canEdit)" aria-describedby="resourceOwnerError">
+                            <option value="">Unassigned</option>
+                            @foreach (var department in departmentOptions)
+                            {
+                                <option value="@department.Id" data-name="@department.Name" selected="@(item?.OwnerDepartmentId == department.Id ? "selected" : null)">@department.Name</option>
+                            }
+                        </select><span class="resource-admin-field-error" id="resourceOwnerError"></span></label>
+                        <label for="resourceVersion">Version<input id="resourceVersion" data-resource-field name="Version" maxlength="20" required value="@(item?.Version ?? "v1.0")" disabled="@(!canEdit)" aria-describedby="resourceVersionError" /><span class="resource-admin-field-error" id="resourceVersionError"></span></label>
+                        <label for="resourceReviewDateUtc">Review date<input id="resourceReviewDateUtc" data-resource-field name="ReviewDateUtc" type="datetime-local" value="@DateValue(item?.ReviewDateUtc)" disabled="@(!canEdit)" aria-describedby="resourceReviewDateError" /><span class="resource-admin-field-error" id="resourceReviewDateError"></span></label>
+                        <label for="resourcePublishStartUtc">Publish start<input id="resourcePublishStartUtc" data-resource-field name="PublishStartUtc" type="datetime-local" value="@DateValue(item?.PublishStartUtc)" disabled="@(!canEdit)" aria-describedby="resourcePublishStartError" /><span class="resource-admin-field-error" id="resourcePublishStartError"></span></label>
+                        <label for="resourcePublishEndUtc">Publish end<input id="resourcePublishEndUtc" data-resource-field name="PublishEndUtc" type="datetime-local" value="@DateValue(item?.PublishEndUtc)" disabled="@(!canEdit)" aria-describedby="resourcePublishEndError" /><span class="resource-admin-field-error" id="resourcePublishEndError"></span></label>
+                        <label class="resource-admin-form__full" for="resourceSummary">Summary<textarea id="resourceSummary" data-resource-field name="Summary" maxlength="500" rows="3" disabled="@(!canEdit)" aria-describedby="resourceSummaryError">@item?.Summary</textarea><span class="resource-admin-field-error" id="resourceSummaryError"></span></label>
+                        <label class="resource-admin-form__full" for="resourceOverview">Overview<textarea id="resourceOverview" data-resource-field name="Overview" rows="8" required disabled="@(!canEdit)" aria-describedby="resourceOverviewError">@item?.Overview</textarea><span class="resource-admin-field-error" id="resourceOverviewError"></span></label>
+                        <label class="resource-admin-form__full" for="resourceHighlightsText">Highlights <small>One highlight per line.</small><textarea id="resourceHighlightsText" data-resource-field name="HighlightsText" rows="5" disabled="@(!canEdit)" aria-describedby="resourceHighlightsHelp resourceHighlightsError">@highlights</textarea><small id="resourceHighlightsHelp">Use up to 20 highlights, with no more than 200 characters each.</small><span class="resource-admin-field-error" id="resourceHighlightsError"></span></label>
+                    </div>
+                    <div class="resource-admin-form__actions">
+                        <button class="admin-button admin-button--primary" id="saveResourceDraftButton" type="submit" disabled="@(!canEdit)">Save draft</button>
+                        @if (hasResource && canEdit)
+                        {
+                            <button class="admin-button admin-button--danger" type="submit" formaction="/Admin/EmployeeResources/Delete/@item!.ResourceId" formmethod="post" onclick="return confirm('Delete this draft and its attachments?')">Delete draft</button>
+                        }
+                        @if (frontendMockMode)
+                        {
+                            <button class="admin-button admin-button--danger" id="mockDeleteDraft" type="button" hidden>Delete local draft</button>
+                        }
+                    </div>
+                </form>
+
+                @if (frontendMockMode)
+                {
+                    <section class="resource-admin-subsection" id="mockWorkflowSection" data-resource-tab-panel="workflow" aria-labelledby="mockWorkflowHeading" hidden>
+                        <header><div><span class="eyebrow">Lifecycle</span><h3 id="mockWorkflowHeading">Publishing workflow</h3></div><span id="mockWorkflowHint">Frontend mock lifecycle actions do not call the backend.</span></header>
+                        <div class="resource-admin-workflow-actions" id="mockWorkflowActions">
+                            @if (Model.CanPublish)
+                            {
+                                <button class="admin-button admin-button--primary" type="button" data-mock-action="publish">Simulate publish</button>
+                                <button class="admin-button admin-button--danger" type="button" data-mock-action="archive" hidden>Simulate archive</button>
+                                <button class="admin-button" type="button" data-mock-action="restore" hidden>Restore to draft</button>
+                            }
+                            <button class="admin-button" id="mockPreviewButton" type="button">Preview draft</button>
+                        </div>
+                    </section>
+
+                    <section class="resource-admin-subsection" id="mockAttachmentSection" data-resource-tab-panel="attachments" aria-labelledby="mockAttachmentsHeading" hidden>
+                        <header><div><span class="eyebrow">Frontend files</span><h3 id="mockAttachmentsHeading">Local attachments</h3></div><span>Metadata only · no server upload</span></header>
+                        <form id="mockAttachmentForm" class="resource-admin-upload-form" enctype="multipart/form-data">
+                            <label class="resource-admin-file-picker" for="mockAttachmentFiles">Choose local files<input id="mockAttachmentFiles" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.png,.jpg,.jpeg" /></label>
+                            <label for="mockAttachmentDescription">Description<input id="mockAttachmentDescription" type="text" maxlength="500" placeholder="Optional attachment description" /></label>
+                            <button class="admin-button" id="mockAddFilesButton" type="submit">Add selected files</button>
+                        </form>
+                        <input id="mockAttachmentReplaceInput" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.png,.jpg,.jpeg" hidden />
+                        <p class="resource-admin-upload-help">Allowed: PDF, Office, ZIP, and image files up to 100 MB. Selected file contents stay in memory until the backend phase.</p>
+                        <p class="resource-admin-attachment-status" id="mockAttachmentStatus" role="status" aria-live="polite"></p>
+                        <div class="resource-admin-attachments" id="mockAttachmentList"></div>
+                    </section>
+
+                    <section class="resource-admin-subsection resource-admin-mock-preview" id="mockPreviewSection" data-resource-tab-panel="workflow" aria-labelledby="mockPreviewHeading" hidden>
+                        <header><div><span class="eyebrow">Preview</span><h3 id="mockPreviewHeading">Current local draft</h3></div><span>Rendered from browser state</span></header>
+                        <div class="resource-admin-mock-preview__body" id="mockPreviewBody"></div>
+                    </section>
+                }
+                else if (hasResource)
+                {
+                    <section class="resource-admin-subsection" id="managedWorkflowSection" data-resource-tab-panel="workflow" aria-labelledby="resourceWorkflowHeading">
+                        <header><div><span class="eyebrow">Lifecycle</span><h3 id="resourceWorkflowHeading">Publishing workflow</h3></div><span>Publisher permission required to publish or archive.</span></header>
+                        <div class="resource-admin-workflow-actions">
+                            @if (Model.CanPublish && (item!.Status.Equals("Draft", StringComparison.OrdinalIgnoreCase) || item.Status.Equals("Rejected", StringComparison.OrdinalIgnoreCase)))
+                            {
+                                <form method="post" action="/Admin/EmployeeResources/Publish/@item.ResourceId">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="ResourceId" value="@item.ResourceId" />
+                                    <input type="hidden" name="PublishStartUtc" value="@DateValue(item.PublishStartUtc)" />
+                                    <button class="admin-button admin-button--primary" type="submit">Publish</button>
+                                </form>
+                            }
+                            @if (Model.CanPublish && item!.Status.Equals("Published", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <form method="post" action="/Admin/EmployeeResources/Archive/@item.ResourceId">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="ResourceId" value="@item.ResourceId" />
+                                    <button class="admin-button admin-button--danger" type="submit">Archive</button>
+                                </form>
+                            }
+                            @if (Model.CanPublish && item!.Status.Equals("Archived", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <form method="post" action="/Admin/EmployeeResources/Restore/@item.ResourceId">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="ResourceId" value="@item.ResourceId" />
+                                    <button class="admin-button" type="submit">Restore to draft</button>
+                                </form>
+                            }
+                            @if (item!.Status.Equals("Published", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <a class="admin-button" href="/EmployeeResources/@item.Slug" target="_blank" rel="noopener noreferrer">Open public resource ↗</a>
+                            }
+                        </div>
+                    </section>
+
+                    <section class="resource-admin-subsection" id="managedAttachmentsSection" data-resource-tab-panel="attachments" aria-labelledby="resourceAttachmentsHeading">
+                        <header><div><span class="eyebrow">Files</span><h3 id="resourceAttachmentsHeading">Attachments</h3></div><span>PDF, Office, ZIP, and image files up to 100 MB.</span></header>
+                        @if (canEdit)
+                        {
+                            <form method="post" enctype="multipart/form-data" action="/Admin/EmployeeResources/Upload/@item.ResourceId" class="resource-admin-upload-form">
+                                @Html.AntiForgeryToken()
+                                <label for="managedAttachmentFile">Attachment<input id="managedAttachmentFile" type="file" name="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.png,.jpg,.jpeg" /></label>
+                                <label for="managedAttachmentDescription">Description<input id="managedAttachmentDescription" type="text" name="description" maxlength="500" placeholder="Optional attachment description" /></label>
+                                <button class="admin-button" type="submit">Upload attachment</button>
+                            </form>
+                        }
+                        <div class="resource-admin-attachments">
+                            @if (item.Attachments.Count == 0)
+                            {
+                                <p class="resource-admin-muted">No managed attachments yet.</p>
+                            }
+                            @foreach (var attachment in item.Attachments)
+                            {
+                                <div class="resource-admin-attachment"><div><strong>@attachment.FileName</strong><span>@attachment.Format · @attachment.SizeLabel · uploaded by @attachment.UploadedByName</span></div><div class="resource-admin-attachment__actions"><a href="@attachment.DownloadUrl" target="_blank" rel="noopener noreferrer">Download</a>@if(canEdit){<form method="post" action="/Admin/EmployeeResources/DeleteAttachment/@attachment.AttachmentId">
+@Html.AntiForgeryToken()
+<input type="hidden" name="resourceId" value="@item.ResourceId" /><button type="submit" onclick="return confirm('Remove this attachment?')">Remove</button></form>}</div></div>
+                            }
+                        </div>
+                    </section>
+
+                    <section class="resource-admin-subsection" id="managedHistorySection" data-resource-tab-panel="workflow" aria-labelledby="resourceHistoryHeading">
+                        <header><div><span class="eyebrow">Audit history</span><h3 id="resourceHistoryHeading">Revision timeline</h3></div><span>@item.Revisions.Count changes</span></header>
+                        <div class="resource-admin-revisions">
+                            @if (item.Revisions.Count == 0)
+                            {
+                                <p class="resource-admin-muted">No revisions recorded.</p>
+                            }
+                            @foreach (var revision in item.Revisions)
+                            {
+                                <article><strong>@revision.Action</strong><span>@revision.ChangedAtUtc.ToLocalTime().ToString("MMM d, yyyy h:mm tt") · @revision.ChangedByName</span>@if(!string.IsNullOrWhiteSpace(revision.Remarks)){<p>@revision.Remarks</p>}</article>
+                            }
+                        </div>
+                    </section>
+                }
+            }
+        </main>
+    </div>
+
+    @if (frontendMockMode)
+    {
+        <script type="application/json" id="employeeResourcesMockSeed">@Html.Raw(mockSeedJson)</script>
+    }
+    <script>
+        (() => {
+            const root = document.getElementById('employeeResourcesAdminApp');
+            const tabList = document.getElementById('resourceAdminTabs');
+            if (!root || !tabList) return;
+
+            const tabs = Array.from(tabList.querySelectorAll('[data-resource-tab]'));
+            const panels = Array.from(root.querySelectorAll('[data-resource-tab-panel]'));
+            let activeTab = 'details';
+
+            function hasResource() {
+                return root.dataset.frontendMock === 'true'
+                    ? root.dataset.mockDraft === 'true'
+                    : root.dataset.hasResource === 'true';
+            }
+
+            function setActiveTab(name, shouldFocus = false) {
+                const selectedTab = tabs.find(tab => tab.dataset.resourceTab === name);
+                if (!selectedTab || selectedTab.disabled) return;
+                activeTab = name;
+                const resourceAvailable = hasResource();
+
+                tabs.forEach(tab => {
+                    const selected = tab === selectedTab;
+                    tab.classList.toggle('is-active', selected);
+                    tab.setAttribute('aria-selected', selected ? 'true' : 'false');
+                    tab.tabIndex = selected ? 0 : -1;
+                });
+
+                panels.forEach(panel => {
+                    const belongsToTab = panel.dataset.resourceTabPanel === name;
+                    const visible = belongsToTab && (name === 'details' || resourceAvailable);
+                    panel.hidden = !visible;
+                    panel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+                });
+
+                if (shouldFocus) selectedTab.focus();
+            }
+
+            function syncTabs() {
+                const resourceAvailable = hasResource();
+                tabs.forEach(tab => {
+                    const requiresResource = tab.hasAttribute('data-requires-resource');
+                    tab.disabled = requiresResource && !resourceAvailable;
+                    tab.setAttribute('aria-disabled', tab.disabled ? 'true' : 'false');
+                });
+                if (!resourceAvailable) activeTab = 'details';
+                setActiveTab(activeTab);
+            }
+
+            tabs.forEach(tab => tab.addEventListener('click', () => setActiveTab(tab.dataset.resourceTab)));
+            tabList.addEventListener('keydown', event => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                const availableTabs = tabs.filter(tab => !tab.disabled);
+                const currentIndex = availableTabs.indexOf(document.activeElement);
+                if (currentIndex < 0) return;
+                event.preventDefault();
+                let nextIndex = currentIndex;
+                if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % availableTabs.length;
+                if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + availableTabs.length) % availableTabs.length;
+                if (event.key === 'Home') nextIndex = 0;
+                if (event.key === 'End') nextIndex = availableTabs.length - 1;
+                setActiveTab(availableTabs[nextIndex].dataset.resourceTab, true);
+            });
+
+            window.employeeResourcesAdminTabs = {
+                select: name => {
+                    syncTabs();
+                    setActiveTab(name);
+                },
+                sync: syncTabs
+            };
+            syncTabs();
+        })();
+    </script>
+    <script src="~/js/employee-resources-admin.js" asp-append-version="true"></script>
+</div>

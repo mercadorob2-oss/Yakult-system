@@ -1,0 +1,235 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Update.Views.UpdatesPageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls"
+             xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+             Background="#F0F2F6"
+             FontFamily="Segoe UI"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <conv:BoolToCardBrushConverter x:Key="BoolToCardBrush"/>
+            <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ══ Page header: title (left) + compact summary cards (right) ═════ -->
+        <Border Grid.Row="0" Style="{StaticResource PageHeaderBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                               Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <StackPanel>
+                        <TextBlock Text="Mobile Updates" Style="{StaticResource PageTitle}"/>
+                        <TextBlock Text="Item status updates submitted from the mobile app" Style="{StaticResource PageSubtitle}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
+                    <Border Style="{StaticResource StatCardClickable}" Cursor="Hand" Background="{Binding IsTotalCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding TotalCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="TOTAL" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding TotalCount}" Style="{StaticResource StatCardValue}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Cursor="Hand" Background="{Binding IsProcessedCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ProcessedCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="PROCESSED" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding ProcessedCount}" Style="{StaticResource StatCardValue}" Foreground="{StaticResource SuccessBrush}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource StatCardClickable}" Margin="0" Cursor="Hand" Background="{Binding IsUnprocessedCardActive, Converter={StaticResource BoolToCardBrush}}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding UnprocessedCardCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="UNPROCESSED" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding UnprocessedCount}" Style="{StaticResource StatCardValue}" Foreground="{StaticResource DangerBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <Button Grid.Column="2" Style="{StaticResource PrimaryBtn}" Command="{Binding RefreshCommand}" Margin="0">
+                    <TextBlock Text="⟳  Refresh"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- ══ Toolbar: actions + date presets + search + Advanced Filters ══ -->
+        <Border Grid.Row="1" Style="{StaticResource ToolbarBar}">
+            <WrapPanel VerticalAlignment="Center">
+                <Button Style="{StaticResource SmallBtn}" Click="BtnViewDetails_Click"><TextBlock Text="👁  View Detail"/></Button>
+                <Button Style="{StaticResource SmallBtn}" Click="BtnMarkProcessed_Click"><TextBlock Text="✅  Mark Processed"/></Button>
+                <Button Style="{StaticResource DangerBtn}" Click="BtnDelete_Click"><TextBlock Text="🗑  Delete"/></Button>
+                <Button Style="{StaticResource SmallBtn}" Click="BtnAuditTimeline_Click"><TextBlock Text="📈  Audit Timeline"/></Button>
+                <Button Style="{StaticResource SmallBtn}" Click="BtnConfigureApi_Click" Margin="0,0,16,8"><TextBlock Text="⚙  Configure API"/></Button>
+
+                <Button Content="Today" Style="{StaticResource SmallBtn}" Click="BtnDatePreset_Click" Tag="0" Margin="0,0,2,8"/>
+                <Button Content="7d" Style="{StaticResource SmallBtn}" Click="BtnDatePreset_Click" Tag="7" Margin="0,0,2,8"/>
+                <Button Content="30d" Style="{StaticResource SmallBtn}" Click="BtnDatePreset_Click" Tag="30" Margin="0,0,2,8"/>
+                <Button Content="Month" Style="{StaticResource SmallBtn}" Click="BtnDatePreset_Click" Tag="-1" Margin="0,0,10,8"/>
+                <TextBlock Text="{Binding DateRangeText}" FontSize="12" FontWeight="SemiBold"
+                           Foreground="#334155" VerticalAlignment="Center" Margin="0,0,16,8"/>
+
+                <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,8" Foreground="#7A8A9A"/>
+                <TextBox Style="{StaticResource SearchBox}" Width="220" Margin="0,0,8,8"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Search by Set Code, Serial, Item Type, Model, Branch, Department, Remark, Updated By..."/>
+
+                <ToggleButton x:Name="AdvancedFiltersToggle" Style="{StaticResource CategoryFilterToggleBtn}"
+                              Width="140" Height="30" Margin="0,0,8,8" Content="Advanced Filters"/>
+                <Popup PlacementTarget="{Binding ElementName=AdvancedFiltersToggle}"
+                       IsOpen="{Binding IsChecked, ElementName=AdvancedFiltersToggle, Mode=TwoWay}"
+                       StaysOpen="False" Placement="Bottom" HorizontalOffset="-220" AllowsTransparency="True">
+                    <Border Background="White" BorderBrush="{StaticResource BorderBrush1}" BorderThickness="1"
+                            CornerRadius="8" Padding="18" Width="320">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="#1A2333"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock Text="Advanced Filters" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="From" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <DatePicker HorizontalAlignment="Stretch" SelectedDate="{Binding DateFrom, Mode=TwoWay}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="To" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <DatePicker HorizontalAlignment="Stretch" SelectedDate="{Binding DateTo, Mode=TwoWay}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Set Code" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                            <TextBox Style="{StaticResource SearchBox}" HorizontalAlignment="Stretch" Margin="0,0,0,12"
+                                     Text="{Binding SetCodeFilter, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <CheckBox Content="Problems only" IsChecked="{Binding ProblemsOnly}"
+                                      FontSize="11" Foreground="{StaticResource TextSubtleBrush}" Margin="0,0,0,12"/>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                    <TextBlock Text="Rows" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding PageSizeOptions}" SelectedItem="{Binding PageSize, Mode=TwoWay}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Sort By" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                                    <ComboBox Style="{StaticResource FilterCombo}" HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding SortByOptions}" SelectedItem="{Binding SelectedSortBy, Mode=TwoWay}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Separator Margin="0,2,0,12"/>
+
+                            <Button HorizontalAlignment="Right" Style="{StaticResource SmallBtn}" Command="{Binding ResetFiltersCommand}" ClickMode="Press" Margin="0">
+                                <TextBlock Text="↺  Reset Filters"/>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+            </WrapPanel>
+        </Border>
+
+        <!-- ══ Grid ═════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="2" Background="White" Margin="14,0,14,0">
+            <Grid>
+                <DataGrid x:Name="UpdatesGrid"
+                          Style="{StaticResource ListDataGridChrome}"
+                          IsReadOnly="True"
+                          SelectionMode="Extended" SelectionUnit="FullRow"
+                          ItemsSource="{Binding PagedUpdates}"
+                          SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                          MouseDoubleClick="UpdatesGrid_MouseDoubleClick"
+                          Sorting="UpdatesGrid_Sorting">
+                    <DataGrid.Resources>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                    </DataGrid.Resources>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="ID" Binding="{Binding UpdateId}" Width="60" SortMemberPath="UpdateId"/>
+                        <DataGridTextColumn Header="Set Code" Binding="{Binding SetCode}" Width="100" SortMemberPath="SetCode"/>
+                        <DataGridTextColumn Header="Item" Binding="{Binding ItemType}" Width="120" SortMemberPath="ItemType"/>
+                        <DataGridTextColumn Header="Serial" Binding="{Binding SerialNumber}" Width="130" SortMemberPath="SerialNumber"/>
+                        <DataGridTextColumn Header="Model" Binding="{Binding ModelNumber}" Width="110" SortMemberPath="ModelNumber"/>
+                        <DataGridTextColumn Header="Branch" Binding="{Binding BranchName}" Width="110" SortMemberPath="BranchName"/>
+                        <DataGridTextColumn Header="Department" Binding="{Binding DepartmentName}" Width="120" SortMemberPath="DepartmentName"/>
+                        <DataGridTextColumn Header="Prev Status" Binding="{Binding PreviousStatus}" Width="100" SortMemberPath="PreviousStatus"/>
+                        <DataGridTemplateColumn Header="New Status" Width="100" SortMemberPath="NewStatus">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding NewStatus}" FontWeight="SemiBold" VerticalAlignment="Center" Padding="8,0"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Remark" Binding="{Binding Remark}" Width="*" MinWidth="160" SortMemberPath="Remark">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource WrapCellText}"/>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="Updated By" Binding="{Binding UpdatedByName}" Width="120" SortMemberPath="UpdatedByName"/>
+                        <DataGridTextColumn Header="Created At" Binding="{Binding CreatedAt, StringFormat=yyyy-MM-dd HH:mm}" Width="140" SortMemberPath="CreatedAt"/>
+                        <DataGridTemplateColumn Header="Processed" Width="80" SortMemberPath="Processed">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsHitTestVisible="False" IsChecked="{Binding Processed, Mode=OneWay}" HorizontalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <ProgressBar Height="4" VerticalAlignment="Top" IsIndeterminate="True"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+            </Grid>
+        </Border>
+
+        <!-- ══ Pagination ═══════════════════════════════════════════════════ -->
+        <Border Grid.Row="3" Style="{StaticResource FooterBar}">
+            <shared:PagingControl HorizontalAlignment="Left"
+                                   FirstPageCommand="{Binding FirstPageCommand}"
+                                   PrevPageCommand="{Binding PrevPageCommand}"
+                                   NextPageCommand="{Binding NextPageCommand}"
+                                   LastPageCommand="{Binding LastPageCommand}"
+                                   PageInfoText="{Binding PageInfoText}"/>
+        </Border>
+    </Grid>
+</UserControl>

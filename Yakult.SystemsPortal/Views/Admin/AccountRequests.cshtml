@@ -1,0 +1,449 @@
+@model AccountRequestsViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Account Requests";
+    var pending = Model.Requests.Count(x => x.Status == "Pending");
+    var approved = Model.Requests.Count(x => x.Status == "Approved");
+    var rejected = Model.Requests.Count(x => x.Status == "Rejected");
+}
+
+@Html.AntiForgeryToken()
+
+<section class="account-metrics" aria-label="Account request summary">
+    <div class="account-metric"><strong>@pending</strong><span>Pending review</span></div>
+    <div class="account-metric"><strong>@approved</strong><span>Approved requests</span></div>
+    <div class="account-metric"><strong>@rejected</strong><span>Rejected requests</span></div>
+    <div class="account-metric"><strong>@Model.Users.Count</strong><span>Managed accounts</span></div>
+</section>
+
+<div class="account-switcher" role="tablist" aria-label="Account administration views">
+    <button type="button" class="is-active" data-account-tab="requests">Requests (@pending pending)</button>
+    <button type="button" data-account-tab="users">User accounts (@Model.Users.Count)</button>
+</div>
+
+<section class="account-panel" data-account-panel="requests">
+    <header class="account-panel__head">
+        <div>
+            <h2>Registration requests</h2>
+            <p>Newest employee requests appear first.</p>
+        </div>
+    </header>
+    <div class="account-toolbar" aria-label="Filter registration requests">
+        <input type="search" id="requestSearch" placeholder="Search employee, username, email, department, or branch..." autocomplete="off" />
+        <select id="requestStatusFilter">
+            <option value="all">All statuses</option>
+            <option value="pending">Pending (@pending)</option>
+            <option value="approved">Approved (@approved)</option>
+            <option value="rejected">Rejected (@rejected)</option>
+        </select>
+        <select id="requestDepartmentFilter">
+            <option value="all">All departments</option>
+            @foreach (var department in Model.Requests.Select(x => x.Department).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x))
+            {
+                <option value="@department">@department</option>
+            }
+        </select>
+    </div>
+    @if (Model.Requests.Count == 0)
+    {
+        <div class="account-empty">No account requests have been submitted.</div>
+    }
+    else
+    {
+        <div class="request-grid">
+            @foreach (var item in Model.Requests)
+            {
+                var requestSearch = $"{item.EmployeeName} {item.EmployeeNumber} {item.WorkEmail} {item.Position} {item.Department} {item.Username} {item.Company} {item.Branch}".ToLowerInvariant();
+                <article class="request-card" data-status="@item.Status.ToLowerInvariant()" data-department="@item.Department" data-request-search="@requestSearch">
+                    <div class="request-card__person">
+                        <strong>@item.EmployeeName</strong>
+                        <span>Employee #@item.EmployeeNumber &middot; @item.WorkEmail</span>
+                        <span>@item.Position &middot; @item.Department</span>
+                    </div>
+                    <div class="request-card__details">
+                        <strong>Requested username: @item.Username</strong>
+                        <span>@item.Company &middot; @item.Branch</span>
+                        <span>Submitted @item.SubmittedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span>
+                        @if (!string.IsNullOrWhiteSpace(item.ReviewRemarks))
+                        {
+                            <span>Remarks: @item.ReviewRemarks</span>
+                        }
+                    </div>
+                    <div class="request-card__review">
+                        <span class="account-status-pill account-status-pill--@item.Status.ToLowerInvariant()">@item.Status</span>
+                        @if (item.Status == "Pending")
+                        {
+                            <div class="request-actions request-actions--stacked">
+                                <button type="button" class="account-btn account-btn--approve" data-review="approve" data-id="@item.AccountRequestId">Approve</button>
+                                <button type="button" class="account-btn account-btn--reject" data-review="reject" data-id="@item.AccountRequestId">Reject</button>
+                            </div>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+<section class="account-panel" data-account-panel="users" hidden>
+    <header class="account-panel__head">
+        <div>
+            <h2>User account management</h2>
+            <p>Manage active status, primary role, and password resets.</p>
+        </div>
+    </header>
+    <div class="account-toolbar" aria-label="Filter managed accounts">
+        <input type="search" id="userSearch" placeholder="Search username, email, employee, or role..." autocomplete="off" />
+        <select id="userStatusFilter">
+            <option value="all">All account states</option>
+            <option value="active">Active accounts</option>
+            <option value="inactive">Inactive accounts</option>
+        </select>
+        <select id="userRoleFilter">
+            <option value="all">All primary roles</option>
+            @foreach (var role in Model.Roles)
+            {
+                <option value="@role">@role</option>
+            }
+        </select>
+    </div>
+    <div class="account-table-wrap">
+        <table class="account-table">
+            <thead>
+                <tr><th>User</th><th>Employee</th><th>Current roles</th><th>Primary role</th><th>Active</th><th>Password</th><th></th></tr>
+            </thead>
+            <tbody>
+            @foreach (var user in Model.Users)
+            {
+                var selectedRole = user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? "Requester";
+                var userSearch = $"{user.Username} {user.Email} {user.EmployeeName} {user.Roles}".ToLowerInvariant();
+                <tr data-user-id="@user.UserId" data-user-search="@userSearch" data-user-active="@user.IsActive.ToString().ToLowerInvariant()" data-user-role="@selectedRole">
+                    <td><strong>@user.Username</strong><br><span class="account-table__muted">@user.Email</span></td>
+                    <td>@(string.IsNullOrWhiteSpace(user.EmployeeName) ? "-" : user.EmployeeName)</td>
+                    <td>@(string.IsNullOrWhiteSpace(user.Roles) ? "-" : user.Roles)</td>
+                    <td><select data-user-role disabled="@user.IsDeveloper">@foreach(var role in Model.Roles){<option value="@role" selected="@(role == selectedRole)">@role</option>}</select></td>
+                    <td><input type="checkbox" data-user-active checked="@user.IsActive" disabled="@user.IsDeveloper" /></td>
+                    <td>
+                        <span class="account-table__muted">@(user.MustChangePassword ? "Change required" : "Configured")</span>
+                        <div class="request-actions request-actions--inline">
+                            <button type="button" class="account-btn" data-reset-password="temporary" disabled="@(user.IsDeveloper || !user.IsActive)">Temporary</button>
+                            <button type="button" class="account-btn" data-reset-password="manual" disabled="@(user.IsDeveloper || !user.IsActive)">Manual</button>
+                        </div>
+                    </td>
+                    <td>
+                        <button type="button" class="account-btn" data-save-user disabled="@user.IsDeveloper">Save access</button>
+                        @if(user.IsDeveloper)
+                        {
+                            <span class="account-table__muted"> Developer protected</span>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="account-modal-backdrop" id="accountModal" hidden>
+    <section class="account-modal" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle" aria-describedby="accountModalMessage">
+        <header class="account-modal__head">
+            <div>
+                <span class="eyebrow" id="accountModalEyebrow">Account administration</span>
+                <h2 id="accountModalTitle">Confirm action</h2>
+            </div>
+            <button type="button" class="account-modal__close" id="accountModalClose" aria-label="Close dialog">&times;</button>
+        </header>
+        <div class="account-modal__body">
+            <p id="accountModalMessage"></p>
+            <label class="account-modal__field" id="accountRemarksGroup" hidden>
+                <span id="accountRemarksLabel">Remarks</span>
+                <textarea id="accountRemarks" rows="4"></textarea>
+            </label>
+            <label class="account-modal__field" id="accountPasswordGroup" hidden>
+                <span>New password</span>
+                <input type="password" id="accountPassword" autocomplete="new-password" />
+            </label>
+            <label class="account-modal__field" id="accountConfirmPasswordGroup" hidden>
+                <span>Confirm password</span>
+                <input type="password" id="accountConfirmPassword" autocomplete="new-password" />
+            </label>
+            <div class="account-generated-password" id="accountGeneratedPasswordGroup" hidden>
+                <span>Temporary password</span>
+                <div>
+                    <input type="text" id="accountGeneratedPassword" readonly />
+                    <button type="button" class="account-btn" id="accountCopyPassword">Copy</button>
+                </div>
+            </div>
+            <div class="account-modal__error" id="accountModalError" hidden></div>
+        </div>
+        <footer class="account-modal__actions">
+            <button type="button" class="admin-button admin-button--ghost" id="accountModalCancel">Cancel</button>
+            <button type="button" class="admin-button admin-button--primary" id="accountModalConfirm">Confirm</button>
+        </footer>
+    </section>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+    var modal = document.getElementById('accountModal');
+    var modalTitle = document.getElementById('accountModalTitle');
+    var modalEyebrow = document.getElementById('accountModalEyebrow');
+    var modalMessage = document.getElementById('accountModalMessage');
+    var modalError = document.getElementById('accountModalError');
+    var modalConfirm = document.getElementById('accountModalConfirm');
+    var modalCancel = document.getElementById('accountModalCancel');
+    var modalClose = document.getElementById('accountModalClose');
+    var remarksGroup = document.getElementById('accountRemarksGroup');
+    var remarksInput = document.getElementById('accountRemarks');
+    var remarksLabel = document.getElementById('accountRemarksLabel');
+    var passwordGroup = document.getElementById('accountPasswordGroup');
+    var passwordInput = document.getElementById('accountPassword');
+    var confirmPasswordGroup = document.getElementById('accountConfirmPasswordGroup');
+    var confirmPasswordInput = document.getElementById('accountConfirmPassword');
+    var generatedGroup = document.getElementById('accountGeneratedPasswordGroup');
+    var generatedPasswordInput = document.getElementById('accountGeneratedPassword');
+    var copyPasswordButton = document.getElementById('accountCopyPassword');
+    var activeModal = null;
+    var requestSearch = document.getElementById('requestSearch');
+    var requestStatusFilter = document.getElementById('requestStatusFilter');
+    var requestDepartmentFilter = document.getElementById('requestDepartmentFilter');
+    var userSearch = document.getElementById('userSearch');
+    var userStatusFilter = document.getElementById('userStatusFilter');
+    var userRoleFilter = document.getElementById('userRoleFilter');
+
+    document.querySelectorAll('[data-account-tab]').forEach(function(button){
+        button.addEventListener('click', function(){
+            document.querySelectorAll('[data-account-tab]').forEach(function(x){ x.classList.toggle('is-active', x === button); });
+            document.querySelectorAll('[data-account-panel]').forEach(function(panel){ panel.hidden = panel.dataset.accountPanel !== button.dataset.accountTab; });
+        });
+    });
+
+    function applyRequestFilters() {
+        var term = (requestSearch?.value || '').toLowerCase().trim();
+        var status = requestStatusFilter?.value || 'all';
+        var department = requestDepartmentFilter?.value || 'all';
+        document.querySelectorAll('.request-card').forEach(function(card) {
+            var matchesTerm = !term || (card.dataset.requestSearch || '').includes(term);
+            var matchesStatus = status === 'all' || card.dataset.status === status;
+            var matchesDepartment = department === 'all' || String(card.dataset.department || '').toLowerCase() === department.toLowerCase();
+            card.hidden = !(matchesTerm && matchesStatus && matchesDepartment);
+        });
+    }
+
+    function applyUserFilters() {
+        var term = (userSearch?.value || '').toLowerCase().trim();
+        var status = userStatusFilter?.value || 'all';
+        var role = userRoleFilter?.value || 'all';
+        document.querySelectorAll('[data-user-id]').forEach(function(row) {
+            var matchesTerm = !term || (row.dataset.userSearch || '').includes(term);
+            var matchesStatus = status === 'all' || row.dataset.userActive === (status === 'active' ? 'true' : 'false');
+            var matchesRole = role === 'all' || String(row.dataset.userRole || '').toLowerCase() === role.toLowerCase();
+            row.hidden = !(matchesTerm && matchesStatus && matchesRole);
+        });
+    }
+
+    [requestSearch, requestStatusFilter, requestDepartmentFilter].forEach(function(control) {
+        control?.addEventListener('input', applyRequestFilters);
+        control?.addEventListener('change', applyRequestFilters);
+    });
+    [userSearch, userStatusFilter, userRoleFilter].forEach(function(control) {
+        control?.addEventListener('input', applyUserFilters);
+        control?.addEventListener('change', applyUserFilters);
+    });
+    applyRequestFilters();
+    applyUserFilters();
+
+    async function post(url, body) {
+        var response = await fetch(url, {
+            method:'POST',
+            credentials:'same-origin',
+            headers:{'Content-Type':'application/json','Accept':'application/json','RequestVerificationToken':token},
+            body:JSON.stringify(body)
+        });
+        var payload = await response.json().catch(function(){ return {}; });
+        if (!response.ok || !payload.success) throw new Error(payload.message || 'The operation failed.');
+        return payload;
+    }
+
+    function openAccountModal(options) {
+        return new Promise(function(resolve) {
+            activeModal = { options: options, resolve: resolve };
+            modalTitle.textContent = options.title || 'Confirm action';
+            modalEyebrow.textContent = options.eyebrow || 'Account administration';
+            modalMessage.textContent = options.message || '';
+            modalConfirm.textContent = options.confirmText || 'Confirm';
+            modalConfirm.className = 'admin-button admin-button--primary';
+            if (options.tone === 'danger') modalConfirm.classList.add('account-modal__danger');
+            modalCancel.hidden = !!options.hideCancel;
+            modalClose.hidden = !!options.hideCancel;
+            modalError.hidden = true;
+            modalError.textContent = '';
+            remarksInput.value = options.initialValue || '';
+            passwordInput.value = '';
+            confirmPasswordInput.value = '';
+            generatedPasswordInput.value = options.generatedPassword || '';
+            remarksGroup.hidden = options.mode !== 'remarks';
+            passwordGroup.hidden = options.mode !== 'password';
+            confirmPasswordGroup.hidden = options.mode !== 'password';
+            generatedGroup.hidden = options.mode !== 'generated';
+            remarksLabel.textContent = options.label || 'Remarks';
+            modal.hidden = false;
+            document.body.classList.add('has-admin-modal');
+            window.setTimeout(function() {
+                if (options.mode === 'remarks') remarksInput.focus();
+                else if (options.mode === 'password') passwordInput.focus();
+                else if (options.mode === 'generated') generatedPasswordInput.focus();
+                else modalConfirm.focus();
+            }, 0);
+        });
+    }
+
+    function closeAccountModal(value) {
+        if (!activeModal) return;
+        var resolver = activeModal.resolve;
+        activeModal = null;
+        modal.hidden = true;
+        document.body.classList.remove('has-admin-modal');
+        resolver(value);
+    }
+
+    function showModalError(message) {
+        modalError.textContent = message;
+        modalError.hidden = false;
+    }
+
+    modalConfirm.addEventListener('click', function() {
+        if (!activeModal) return;
+        var options = activeModal.options;
+        if (options.mode === 'remarks') {
+            var remarks = remarksInput.value.trim();
+            if (options.required && !remarks) {
+                showModalError(options.requiredMessage || 'This field is required.');
+                return;
+            }
+            closeAccountModal(remarks);
+            return;
+        }
+        if (options.mode === 'password') {
+            var password = passwordInput.value;
+            if (password !== confirmPasswordInput.value) {
+                showModalError('Passwords do not match.');
+                return;
+            }
+            if (password.length < 8 || password.length > 128) {
+                showModalError('Password must contain between 8 and 128 characters.');
+                return;
+            }
+            closeAccountModal(password);
+            return;
+        }
+        closeAccountModal(true);
+    });
+
+    [modalCancel, modalClose].forEach(function(button) {
+        button.addEventListener('click', function() { closeAccountModal(null); });
+    });
+
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal && !modalCancel.hidden) closeAccountModal(null);
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && !modal.hidden && !modalCancel.hidden) closeAccountModal(null);
+    });
+
+    copyPasswordButton.addEventListener('click', async function() {
+        generatedPasswordInput.select();
+        try {
+            await navigator.clipboard.writeText(generatedPasswordInput.value);
+            window.yakultToast?.('Temporary password copied.', 'success');
+        } catch(error) {
+            window.yakultToast?.('Select the password field and copy it manually.', 'warning');
+        }
+    });
+
+    document.querySelectorAll('[data-review]').forEach(function(button){
+        button.addEventListener('click', async function(){
+            var action = button.dataset.review;
+            var isReject = action === 'reject';
+            var remarks = await openAccountModal({
+                mode: 'remarks',
+                title: isReject ? 'Reject account request' : 'Approve account request',
+                message: isReject ? 'Add the reason for rejecting this employee account request.' : 'Add optional approval remarks for the employee account request.',
+                label: isReject ? 'Rejection reason' : 'Approval remarks',
+                confirmText: isReject ? 'Reject request' : 'Approve request',
+                tone: isReject ? 'danger' : 'default',
+                required: isReject,
+                requiredMessage: 'A rejection reason is required.'
+            });
+            if (remarks === null) return;
+            button.disabled = true;
+            try {
+                var url = action === 'approve' ? '@Url.Action("ApproveAccountRequest", "Admin")' : '@Url.Action("RejectAccountRequest", "Admin")';
+                var result = await post(url, { accountRequestId:Number(button.dataset.id), remarks:remarks });
+                window.yakultToast(result.message, 'success');
+                window.location.reload();
+            } catch(error) { window.yakultToast(error.message, 'error'); button.disabled = false; }
+        });
+    });
+
+    document.querySelectorAll('[data-save-user]').forEach(function(button){
+        button.addEventListener('click', async function(){
+            var row = button.closest('[data-user-id]');
+            button.disabled = true;
+            try {
+                var result = await post('@Url.Action("UpdateManagedUser", "Admin")', {
+                    userId:Number(row.dataset.userId), isActive:row.querySelector('[data-user-active]').checked,
+                    roleName:row.querySelector('[data-user-role]').value
+                });
+                window.yakultToast(result.message, 'success');
+                window.location.reload();
+            } catch(error) { window.yakultToast(error.message, 'error'); button.disabled = false; }
+        });
+    });
+
+    document.querySelectorAll('[data-reset-password]').forEach(function(button){
+        button.addEventListener('click', async function(){
+            var row = button.closest('[data-user-id]');
+            var username = row.querySelector('strong').textContent.trim();
+            var mode = button.dataset.resetPassword;
+            var password = null;
+            if (mode === 'manual') {
+                password = await openAccountModal({
+                    mode: 'password',
+                    title: 'Set manual password',
+                    message: 'Enter a new password for ' + username + '.',
+                    confirmText: 'Set password'
+                });
+                if (password === null) return;
+            } else {
+                var confirmed = await openAccountModal({
+                    mode: 'confirm',
+                    title: 'Generate temporary password',
+                    message: 'Generate a temporary password for ' + username + '? The user must change it after signing in.',
+                    confirmText: 'Generate password'
+                });
+                if (!confirmed) return;
+            }
+            button.disabled = true;
+            try {
+                var result = await post('@Url.Action("ResetManagedUserPassword", "Admin")', { userId:Number(row.dataset.userId), mode:mode, password:password });
+                if (mode === 'temporary') {
+                    await openAccountModal({
+                        mode: 'generated',
+                        title: 'Temporary password created',
+                        message: 'Copy this password now. It will not be shown again after the page refreshes.',
+                        confirmText: 'Done',
+                        hideCancel: true,
+                        generatedPassword: result.temporaryPassword || ''
+                    });
+                } else {
+                    window.yakultToast(result.message, 'success');
+                }
+                window.location.reload();
+            } catch(error) { window.yakultToast(error.message, 'error'); button.disabled = false; }
+        });
+    });
+});
+</script>

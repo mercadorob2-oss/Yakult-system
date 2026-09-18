@@ -1,0 +1,497 @@
+<Window x:Class="Yakult.Inventory.App.WPF.CartridgeManagement.Dialogs.OutboundBatchAssignmentWpfDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Assign to Outbound Batch"
+        Width="1000" Height="680"
+        MinWidth="860" MinHeight="580"
+        WindowStartupLocation="CenterOwner"
+        Background="White"
+        FontFamily="Segoe UI">
+
+    <Window.Resources>
+
+        <!-- ── Button style ─────────────────────────────────────────────────── -->
+        <Style x:Key="Btn" TargetType="Button">
+            <Setter Property="Height"          Value="34"/>
+            <Setter Property="MinWidth"        Value="88"/>
+            <Setter Property="Padding"         Value="18,0"/>
+            <Setter Property="FontFamily"      Value="Segoe UI"/>
+            <Setter Property="FontSize"        Value="13"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.40"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ── Field label ──────────────────────────────────────────────────── -->
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily"  Value="Segoe UI"/>
+            <Setter Property="FontSize"    Value="10"/>
+            <Setter Property="FontWeight"  Value="SemiBold"/>
+            <Setter Property="Foreground"  Value="#7A8A9A"/>
+            <Setter Property="Margin"      Value="0,0,0,5"/>
+        </Style>
+
+        <!-- ── DataGrid ─────────────────────────────────────────────────────── -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background"            Value="White"/>
+            <Setter Property="BorderBrush"           Value="#DDE2E8"/>
+            <Setter Property="BorderThickness"       Value="0,1,0,0"/>
+            <Setter Property="GridLinesVisibility"   Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#EEF1F4"/>
+            <Setter Property="RowBackground"         Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#FAFBFC"/>
+            <Setter Property="CanUserAddRows"        Value="False"/>
+            <Setter Property="CanUserDeleteRows"     Value="False"/>
+            <Setter Property="AutoGenerateColumns"   Value="False"/>
+            <Setter Property="SelectionMode"         Value="Single"/>
+            <Setter Property="RowHeaderWidth"        Value="0"/>
+            <Setter Property="FontFamily"            Value="Segoe UI"/>
+            <Setter Property="FontSize"              Value="12"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background"                 Value="#E07820"/>
+            <Setter Property="Foreground"                 Value="White"/>
+            <Setter Property="FontFamily"                 Value="Segoe UI"/>
+            <Setter Property="FontSize"                   Value="11"/>
+            <Setter Property="FontWeight"                 Value="SemiBold"/>
+            <Setter Property="Height"                     Value="34"/>
+            <Setter Property="Padding"                    Value="8,0"/>
+            <Setter Property="BorderBrush"                Value="#C06510"/>
+            <Setter Property="BorderThickness"            Value="0,0,1,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Height" Value="30"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#FFF8F0"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#FFE8CC"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding"         Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="{TemplateBinding Background}" Padding="6,0">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background"  Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Foreground"  Value="#1A2333"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ── Thin scrollbar ───────────────────────────────────────────────── -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width"    Value="6"/>
+            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Width="6" Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False" IsTabStop="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border x:Name="Tb" Background="#B8C4D0" CornerRadius="3" Margin="1,2"/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Tb" Property="Background" Value="#7A90A4"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="Tb" Property="Background" Value="#E07820"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False" IsTabStop="False"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter Property="Width"  Value="Auto"/>
+                                <Setter Property="Height" Value="6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="52"/>   <!-- Header bar -->
+            <RowDefinition Height="66"/>   <!-- Step indicator -->
+            <RowDefinition Height="*"/>    <!-- Content area -->
+            <RowDefinition Height="55"/>   <!-- Button bar -->
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- Row 0 · Orange header bar                                          -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="0" Background="#E07820">
+            <TextBlock Text="Assign to Outbound Batch  (Dispose / Sell)"
+                       FontFamily="Segoe UI" FontSize="15" FontWeight="Bold"
+                       Foreground="White" Margin="20,0,0,0"
+                       VerticalAlignment="Center"/>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- Row 1 · Step indicator                                             -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="1" Background="#FAFBFC" BorderBrush="#EEF1F4" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="24,0,0,0">
+                <Grid Width="30" Height="30">
+                    <Ellipse x:Name="Dot1" Fill="#E07820"/>
+                    <TextBlock Text="1" FontFamily="Segoe UI" FontSize="14" FontWeight="Bold"
+                               Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+                <TextBlock x:Name="Lbl1" Text="Select Cartridges"
+                           FontFamily="Segoe UI" FontSize="12" FontWeight="SemiBold"
+                           Foreground="#E07820" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                <Rectangle x:Name="StepConnector" Width="90" Height="2" Fill="#CCCCCC" Margin="16,0"/>
+                <Grid Width="30" Height="30">
+                    <Ellipse x:Name="Dot2" Fill="#CCCCCC"/>
+                    <TextBlock Text="2" FontFamily="Segoe UI" FontSize="14" FontWeight="Bold"
+                               Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+                <TextBlock x:Name="Lbl2" Text="Batch Details"
+                           FontFamily="Segoe UI" FontSize="12" FontWeight="SemiBold"
+                           Foreground="#AAAAAA" Margin="8,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- Row 2 · Content area (Step 1 and Step 2 overlap)                  -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2">
+
+            <!-- ── STEP 1: Select Cartridges ─────────────────────────────── -->
+            <Grid x:Name="Step1Panel" Visibility="Visible">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>   <!-- Toolbar: title + filter + select-all -->
+                    <RowDefinition Height="*"/>      <!-- DataGrid -->
+                    <RowDefinition Height="Auto"/>   <!-- Status bar -->
+                </Grid.RowDefinitions>
+
+                <!-- Toolbar -->
+                <Border Grid.Row="0" Background="White" BorderBrush="#EEF1F4"
+                        BorderThickness="0,0,0,1" Padding="16,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Non-Refillable / Damaged Cartridges — Unassigned"
+                                   FontFamily="Segoe UI" FontSize="13" FontWeight="Bold"
+                                   Foreground="#2A3A4A" VerticalAlignment="Center"/>
+                        <Rectangle Grid.Column="1" Width="1" Height="20" Fill="#DDE2E8" Margin="14,0"/>
+                        <TextBlock Grid.Column="2" Text="Filter by model:"
+                                   FontFamily="Segoe UI" FontSize="11" Foreground="#7A8A9A"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox x:Name="CmbModelFilter" Grid.Column="3"
+                                  Width="220" Height="28"
+                                  FontFamily="Segoe UI" FontSize="12"
+                                  HorizontalAlignment="Left"
+                                  SelectionChanged="CmbModelFilter_SelectionChanged"/>
+                        <CheckBox x:Name="ChkSelectAll" Grid.Column="4"
+                                  Content="Select All"
+                                  FontFamily="Segoe UI" FontSize="12"
+                                  VerticalAlignment="Center" Margin="16,0,0,0"
+                                  Checked="ChkSelectAll_CheckChanged"
+                                  Unchecked="ChkSelectAll_CheckChanged"/>
+                    </Grid>
+                </Border>
+
+                <!-- DataGrid -->
+                <DataGrid x:Name="ReturnsGrid" Grid.Row="1">
+                    <DataGrid.Columns>
+                        <!-- Checkbox -->
+                        <DataGridTemplateColumn Width="44" CanUserSort="False" CanUserResize="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Click="RowCheckBox_Click"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="ID"        Binding="{Binding EmptyCartridgeId}" Width="60"  IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Model"     Binding="{Binding CartridgeModel}"   Width="*"   IsReadOnly="True"/>
+
+                        <!-- Condition badge column -->
+                        <DataGridTemplateColumn Header="Condition" Width="95" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border x:Name="CondBorder"
+                                            Background="#D4EDDA" CornerRadius="8"
+                                            Padding="8,2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock x:Name="CondText" Text="Good"
+                                                   FontSize="10" FontWeight="SemiBold" Foreground="#1B7835"/>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding ConditionStatus}" Value="DAMAGED">
+                                            <Setter TargetName="CondBorder" Property="Background" Value="#FFECD2"/>
+                                            <Setter TargetName="CondText"   Property="Foreground" Value="#B45000"/>
+                                            <Setter TargetName="CondText"   Property="Text"       Value="Damaged"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="Qty"      Binding="{Binding Quantity}"           Width="55"  IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Returned" Binding="{Binding ReturnedAtFormatted}" Width="130" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="Remarks"  Binding="{Binding Remarks}"             Width="2*"  IsReadOnly="True"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Status bar -->
+                <Border Grid.Row="2" Background="White" BorderBrush="#EEF1F4"
+                        BorderThickness="0,1,0,0" Padding="16,6">
+                    <TextBlock x:Name="TxtSelectionStatus"
+                               Text="0 rows selected  •  0 units"
+                               FontFamily="Segoe UI" FontSize="12"
+                               FontStyle="Italic" Foreground="#7A8A9A"/>
+                </Border>
+            </Grid>
+
+            <!-- ── STEP 2: Batch Details ──────────────────────────────────── -->
+            <Grid x:Name="Step2Panel" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>   <!-- Config section -->
+                    <RowDefinition Height="*"/>      <!-- Model cards -->
+                </Grid.RowDefinitions>
+
+                <!-- Config section -->
+                <Border Grid.Row="0" Background="White" BorderBrush="#EEF1F4"
+                        BorderThickness="0,0,0,1" Padding="22,16">
+                    <StackPanel>
+
+                        <!-- Title + selection summary -->
+                        <TextBlock Text="Batch Details"
+                                   FontFamily="Segoe UI" FontSize="14" FontWeight="Bold"
+                                   Foreground="#2A3A4A" Margin="0,0,0,3"/>
+                        <TextBlock x:Name="TxtStep2Summary"
+                                   FontFamily="Segoe UI" FontSize="12" Foreground="#5A7A9A"
+                                   Margin="0,0,0,14"/>
+
+                        <Rectangle Height="1" Fill="#EEF1F4" Margin="0,0,0,14"/>
+
+                        <!-- Batch mode toggle -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <RadioButton x:Name="RadNew" Content="Create New Batch"
+                                         GroupName="OutboundBatchMode" IsChecked="True"
+                                         FontFamily="Segoe UI" FontSize="13" FontWeight="SemiBold"
+                                         Foreground="#2A3A4A" Margin="0,0,28,0"
+                                         Checked="RadBatchMode_Changed"/>
+                            <RadioButton x:Name="RadExisting" Content="Use Existing Active Batch"
+                                         GroupName="OutboundBatchMode"
+                                         FontFamily="Segoe UI" FontSize="13" FontWeight="SemiBold"
+                                         Foreground="#2A3A4A"
+                                         Checked="RadBatchMode_Changed"/>
+                        </StackPanel>
+
+                        <!-- Create New sub-section -->
+                        <StackPanel x:Name="PnlNew" Visibility="Visible">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="12"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="12"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- PURPOSE row -->
+                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                           Text="PURPOSE" Style="{StaticResource FieldLabel}"/>
+                                <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal">
+                                    <RadioButton x:Name="RadDispose"
+                                                 Content="DISPOSE"
+                                                 GroupName="OutboundPurpose"
+                                                 IsChecked="True"
+                                                 FontFamily="Segoe UI" FontSize="13" FontWeight="Bold"
+                                                 Foreground="#B45000" Margin="0,0,22,0"
+                                                 Checked="RadPurpose_Changed"/>
+                                    <RadioButton x:Name="RadSell"
+                                                 Content="SELL"
+                                                 GroupName="OutboundPurpose"
+                                                 FontFamily="Segoe UI" FontSize="13" FontWeight="Bold"
+                                                 Foreground="#1B7835"
+                                                 Checked="RadPurpose_Changed"/>
+                                </StackPanel>
+
+                                <!-- VENDOR row -->
+                                <TextBlock Grid.Row="3" Grid.Column="0"
+                                           Text="VENDOR" Style="{StaticResource FieldLabel}"/>
+                                <ComboBox x:Name="CmbVendor"
+                                          Grid.Row="4" Grid.Column="0"
+                                          Width="320" Height="32"
+                                          FontFamily="Segoe UI" FontSize="12"
+                                          BorderBrush="#DDE2E8" Background="White"
+                                          VerticalContentAlignment="Center"/>
+
+                                <!-- REMARKS row -->
+                                <TextBlock Grid.Row="3" Grid.Column="2"
+                                           Text="REMARKS (OPTIONAL)" Style="{StaticResource FieldLabel}"/>
+                                <TextBox x:Name="TxtRemarks"
+                                         Grid.Row="4" Grid.Column="2"
+                                         Height="32" FontFamily="Segoe UI" FontSize="12"
+                                         BorderBrush="#DDE2E8" Padding="8,0"
+                                         VerticalContentAlignment="Center"/>
+
+                                <!-- DAMAGED warning -->
+                                <Border x:Name="DamagedWarnBorder"
+                                        Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="3"
+                                        Background="#FFF3E0" BorderBrush="#FFB74D" BorderThickness="1"
+                                        CornerRadius="5" Padding="12,8" Margin="0,8,0,0"
+                                        Visibility="Collapsed">
+                                    <TextBlock Text="⚠  Selection includes DAMAGED cartridges. Only DISPOSE is available for damaged items."
+                                               FontFamily="Segoe UI" FontSize="11" FontStyle="Italic"
+                                               Foreground="#B45000" TextWrapping="Wrap"/>
+                                </Border>
+
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Use Existing sub-section -->
+                        <StackPanel x:Name="PnlExisting" Visibility="Collapsed">
+                            <TextBlock Text="ACTIVE BATCH" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="CmbExistingBatch"
+                                      Height="32" FontFamily="Segoe UI" FontSize="12"
+                                      BorderBrush="#DDE2E8" Background="White"
+                                      VerticalContentAlignment="Center"/>
+                            <TextBlock Text="Selected cartridges will be added to the chosen batch — no new batch will be created."
+                                       FontFamily="Segoe UI" FontSize="11" FontStyle="Italic"
+                                       Foreground="#9AA0A8" Margin="0,8,0,0"/>
+                        </StackPanel>
+
+                        <Rectangle Height="1" Fill="#EEF1F4" Margin="0,14,0,6"/>
+                        <TextBlock Text="MODELS TO ASSIGN" Style="{StaticResource FieldLabel}" Margin="0"/>
+
+                    </StackPanel>
+                </Border>
+
+                <!-- Model cards scroll area -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="22,12,22,12">
+                    <ItemsControl x:Name="ModelCards">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#F8F9FA" BorderBrush="#DDE2E8" BorderThickness="1"
+                                        CornerRadius="6" Margin="0,0,0,8" Padding="16,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding CartridgeModel}"
+                                                       FontFamily="Segoe UI" FontSize="13"
+                                                       FontWeight="SemiBold" Foreground="#2A3A4A"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding RowCount, StringFormat={}{0} row(s)}"
+                                                           FontFamily="Segoe UI" FontSize="12" Foreground="#7A8A9A"/>
+                                                <TextBlock Text=" • " FontFamily="Segoe UI" FontSize="12" Foreground="#AABBCC"/>
+                                                <TextBlock Text="{Binding TotalQty, StringFormat={}{0} unit(s)}"
+                                                           FontFamily="Segoe UI" FontSize="12" Foreground="#7A8A9A"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- Row 3 · Button bar                                                 -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <Border Grid.Row="3" Background="#F5F7FA" BorderBrush="#DDE2E8" BorderThickness="0,1,0,0">
+            <Grid Margin="16,0">
+                <Button x:Name="BtnCancel" Content="Cancel"
+                        Background="#9AACBC"
+                        Style="{StaticResource Btn}"
+                        HorizontalAlignment="Left"
+                        Click="BtnCancel_Click"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button x:Name="BtnBack" Content="← Back"
+                            Background="#7A8A9A"
+                            Style="{StaticResource Btn}"
+                            Visibility="Collapsed"
+                            Margin="0,0,8,0"
+                            Click="BtnBack_Click"/>
+                    <Button x:Name="BtnNext" Content="Next →"
+                            Background="#E07820"
+                            Style="{StaticResource Btn}"
+                            Click="BtnNext_Click"/>
+                    <Button x:Name="BtnConfirm" Content="Create Batch"
+                            Background="#E07820"
+                            Style="{StaticResource Btn}"
+                            Visibility="Collapsed"
+                            Click="BtnConfirm_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+    </Grid>
+</Window>

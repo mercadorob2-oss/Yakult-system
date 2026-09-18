@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YakultScanner Mobile App - User Manual</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <div class="logo-header">
+                    <h2>📱 YakultScanner</h2>
+                    <button id="sidebar-toggle" class="toggle-btn" title="Toggle Sidebar">☰</button>
+                </div>
+                <p class="logo-text">Mobile App Manual</p>
+            </div>
+
+            <!-- Search Box -->
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Search mobile guide...">
+            </div>
+
+            <!-- PDF Export Utility -->
+            <div style="padding: 0 1.5rem; margin-bottom: 1rem;">
+                <button onclick="window.print()" class="btn btn-secondary"
+                    style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>🖨️</span> <span class="text">Print / Save as PDF</span>
+                </button>
+            </div>
+
+            <div style="padding: 0 1.5rem; margin-bottom: 1rem;">
+                <a href="index.html" class="btn btn-secondary"
+                    style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>↩️</span> <span class="text">Back to Desktop Manual</span>
+                </a>
+            </div>
+
+            <ul class="nav-menu">
+                <li><a href="#mobile-overview" class="nav-link active"><span class="icon">🚀</span> <span
+                            class="text">Overview</span></a></li>
+                <li><a href="#installation" class="nav-link"><span class="icon">⬇️</span> <span
+                            class="text">Installation</span></a></li>
+                <li><a href="#auth" class="nav-link"><span class="icon">🔐</span> <span class="text">Login &
+                            Accounts</span></a></li>
+                <li><a href="#scanning" class="nav-link"><span class="icon">📷</span> <span class="text">Scanning
+                            Modes</span></a></li>
+                <li><a href="#hardware" class="nav-link"><span class="icon">🧰</span> <span class="text">Hardware
+                            Setup</span></a></li>
+                <li><a href="#data" class="nav-link"><span class="icon">🗂️</span> <span class="text">Data &
+                            Uploads</span></a></li>
+                <li><a href="#support" class="nav-link"><span class="icon">🔧</span> <span
+                            class="text">Troubleshooting</span></a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content">
+            <div class="header">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: start; gap: 1rem; flex-wrap: wrap;">
+                    <div>
+                        <h1>YakultScanner Mobile App</h1>
+                        <p class="subtitle">Field scanning companion for Yakult Inventory System</p>
+                    </div>
+                    <button id="global-toggle" class="btn btn-secondary">Expand All</button>
+                </div>
+
+                <div class="filter-bar" style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="filter-btn active" data-filter="all">🏠 All</button>
+                    <button class="filter-btn" data-filter="general">📖 Overview</button>
+                    <button class="filter-btn" data-filter="scan">📷 Scanning</button>
+                    <button class="filter-btn" data-filter="data">🗂️ Data</button>
+                    <button class="filter-btn" data-filter="support">🛟 Support</button>
+                </div>
+            </div>
+
+            <section id="mobile-overview" class="section" data-category="general">
+                <div class="section-header">
+                    <h2>🚀 Overview</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>What is YakultScanner?</h3>
+                        <p>YakultScanner is the mobile companion app for the Yakult Inventory Management System. It lets
+                            field teams capture serials and dispatch updates directly from their devices.</p>
+                        <ul>
+                            <li>Fast barcode/QR capture with CameraX + ML Kit</li>
+                            <li>Offline-friendly flows with queued uploads</li>
+                            <li>Dispatch validation and history visibility</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/home_screen.png" alt="Home screen">
+                                <figcaption>Home screen</figcaption>
+                            </figure>
+                            <figure><img src="images-mobile/homescreen_qr.png" alt="Home with QR prompt">
+                                <figcaption>QR prompt from home</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Requirements</h3>
+                        <ul>
+                            <li>Android 7.0 (API 24) or later</li>
+                            <li>Camera permission for scanning</li>
+                            <li>Storage permission for gallery imports (legacy devices)</li>
+                            <li>Network access to Yakult API (uses cleartext traffic per manifest)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="installation" class="section" data-category="general">
+                <div class="section-header">
+                    <h2>⬇️ Installation & Setup</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Install the App</h3>
+                        <ol>
+                            <li>Obtain the YakultScanner APK from IT or approved store.</li>
+                            <li>Enable "Install unknown apps" if sideloading.</li>
+                            <li>Open the APK and complete installation.</li>
+                            <li>Launch the app and grant camera/storage permissions.</li>
+                        </ol>
+                        <div class="card"
+                            style="background: #fdf2f2; border: 1px dashed #e31e24; text-align: center; padding: 2rem;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">📷</div>
+                            <h4>Screenshots Coming Soon</h4>
+                            <p style="color: #666;">Our team is currently capturing the latest installation flow screens
+                                for Android 14. Check back in the next version!</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Environment Configuration</h3>
+                        <p>The app reads its API base URL from the packaged config. If you need to switch environments
+                            (e.g., staging vs. production), request an updated build from IT.</p>
+                        <ul>
+                            <li><strong>API base URL:</strong> bundled in build; no in-app switch.</li>
+                            <li><strong>Auth domain:</strong> matches Yakult IMS backend.</li>
+                            <li><strong>Certificates:</strong> uses cleartext traffic per manifest; ensure network
+                                allows it.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="auth" class="section" data-category="general">
+                <div class="section-header">
+                    <h2>🔐 Login & Accounts</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Login</h3>
+                        <ul>
+                            <li>Enter your Yakult IMS credentials.</li>
+                            <li>Session is persisted locally; logout to switch users.</li>
+                            <li>Connectivity issues will prompt a retry or offline note.</li>
+                            <li>On first login, camera permission will be requested to enable scanning.</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/login_screen.png" alt="Login screen">
+                                <figcaption>Login</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Registration</h3>
+                        <p>If enabled, you can create an account with the same validation rules as the desktop system.
+                            Otherwise, accounts are provisioned by administrators.</p>
+                        <ul>
+                            <li>Password policy mirrors desktop rules.</li>
+                            <li>Email verification follows backend settings (if enabled).</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/register_screen.png" alt="Registration screen">
+                                <figcaption>Register</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="scanning" class="section" data-category="scan">
+                <div class="section-header">
+                    <h2>📷 Scanning Modes</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Enhanced Scanner (Camera)</h3>
+                        <ul>
+                            <li>Live camera with ML Kit barcode scanning.</li>
+                            <li>Auto-focus and torch controls where supported.</li>
+                            <li>Good for single or continuous scans.</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/scan_qr_interface.png" alt="Camera scan interface">
+                                <figcaption>Camera scan interface</figcaption>
+                            </figure>
+                            <figure><img src="IMAGES_MOBILE/homescreen_qr.png" alt="Scan from home shortcut">
+                                <figcaption>Scan shortcut from home</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Direct Serial Scan</h3>
+                        <ul>
+                            <li>Optimized for one-by-one scans with immediate validation.</li>
+                            <li>Flags duplicates/invalid formats quickly.</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/direct_serial_scan.png" alt="Direct serial scan">
+                                <figcaption>Direct serial scan</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Batch Serial Entry</h3>
+                        <ul>
+                            <li>Paste or scan multiple serials before uploading.</li>
+                            <li>Review and edit entries; duplicates are flagged.</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/add_items_byserial.png" alt="Add items by serial">
+                                <figcaption>Batch add by serial</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Gallery / QR Uploads</h3>
+                        <ul>
+                            <li>Import barcode/QR images from gallery.</li>
+                            <li>Useful for scanned paperwork or emailed labels.</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/upload_qr.png" alt="Upload QR from gallery">
+                                <figcaption>Upload QR from gallery</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="hardware" class="section" data-category="scan">
+                <div class="section-header">
+                    <h2>🧰 Hardware Integration</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Honeywell / External Scanner Support</h3>
+                        <ul>
+                            <li>Listens to broadcast intents:
+                                <code>com.honeywell.decode.intent.action.DECODE_DATA</code> and
+                                <code>com.example.yakultscanner.SCAN</code>.
+                            </li>
+                            <li>Ensure Honeywell DataCollection app is configured to send broadcasts.</li>
+                            <li>App captures scans even when the camera view is not active.</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>Permissions Checklist</h3>
+                        <ul>
+                            <li>Camera: required for live scanning.</li>
+                            <li>Storage (legacy): gallery import and PDF/file sharing.</li>
+                            <li>FileProvider: enabled for secure file sharing on Android 7.0+.</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/scan_history.png" alt="Scan history view">
+                                <figcaption>Scan history</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="data" class="section" data-category="data">
+                <div class="section-header">
+                    <h2>🗂️ Data, Uploads & History</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Uploaded & Pending Items</h3>
+                        <ul>
+                            <li>View items sent to the server with status indicators.</li>
+                            <li>Identify pending/failed items and retry as needed.</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/processed_updates_page.png" alt="Processed updates">
+                                <figcaption>Processed updates</figcaption>
+                            </figure>
+                            <figure><img src="images-mobile/pending_updates_page.png" alt="Pending updates">
+                                <figcaption>Pending updates</figcaption>
+                            </figure>
+                            <figure><img src="images-mobile/item_after_processed.png" alt="Item after processed">
+                                <figcaption>After processing</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Scan History</h3>
+                        <ul>
+                            <li>Shows recent scans with timestamps and dispatch status.</li>
+                            <li>Filter by success/failed/queued.</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="IMAGES_MOBILE/Scan_history.png" alt="Scan history">
+                                <figcaption>Scan history</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Dispatch Details & Issues</h3>
+                        <ul>
+                            <li>Review dispatch payload before upload.</li>
+                            <li>Report issues on specific items.</li>
+                            <li>Upload updates when ready.</li>
+                        </ul>
+                        <div class="image-grid">
+                            <figure><img src="images-mobile/serial_scan_dashboard.png" alt="Serial scan dashboard">
+                                <figcaption>Serial scan dashboard</figcaption>
+                            </figure>
+                            <figure><img src="images-mobile/dispatch_details.png" alt="Dispatch details">
+                                <figcaption>Dispatch details</figcaption>
+                            </figure>
+                            <figure><img src="images-mobile/report_issue.png" alt="Report issue flow">
+                                <figcaption>Report issue</figcaption>
+                            </figure>
+                            <figure><img src="images-mobile/upload_updates.png" alt="Upload updates">
+                                <figcaption>Upload updates</figcaption>
+                            </figure>
+                            <figure><img src="IMAGES_MOBILE/Processed_updates_page.png" alt="Processed updates summary">
+                                <figcaption>Processed summary</figcaption>
+                            </figure>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="support" class="section" data-category="support">
+                <div class="section-header">
+                    <h2>🔧 Troubleshooting</h2>
+                    <i class="toggle-icon">▼</i>
+                </div>
+                <div class="section-content">
+                    <div class="card">
+                        <h3>Common Issues</h3>
+                        <ul>
+                            <li><strong>Camera permission denied:</strong> Enable in Settings → Apps → YakultScanner →
+                                Permissions.</li>
+                            <li><strong>Scanner broadcasts not received:</strong> Verify Honeywell DataCollection
+                                broadcast profile.</li>
+                            <li><strong>Uploads failing:</strong> Check network, then retry from Uploaded Items.</li>
+                            <li><strong>Duplicate serials:</strong> Remove duplicates in Batch or Direct mode before
+                                submitting.</li>
+                            <li><strong>Blurry scans:</strong> Clean lens, enable torch, move to 10–20 cm distance.</li>
+                            <li><strong>Slow detection:</strong> Improve lighting, avoid glossy reflections, center
+                                barcode.</li>
+                        </ul>
+                    </div>
+                    <div class="card">
+                        <h3>Support Contacts</h3>
+                        <p>Contact Yakult IT for updated builds or environment changes. Provide device model, Android
+                            version, and logs when reporting issues.</p>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="footer">
+                <p>&copy; 2025 Yakult Inc. Philippines - YakultScanner Mobile</p>
+                <p>Developed by Shawn & Russel | Version 1.0</p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

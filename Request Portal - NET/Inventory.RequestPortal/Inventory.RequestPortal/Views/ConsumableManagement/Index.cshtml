@@ -1,0 +1,152 @@
+@{
+    ViewData["Title"] = "Consumable Management";
+}
+
+@await Html.PartialAsync("_MasterNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Consumable Management</h1>
+        <p class="subtitle mb-0">Fulfill requests submitted through the Request Portal</p>
+    </div>
+</div>
+
+<div class="content-padded">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <style>
+        /* Mirrors Views/PortalHub/Index.cshtml's .module-card pattern (accent bar, watermark,
+           hover lift) for visual consistency across the portal's hub-style landing pages —
+           this page previously used a plain bordered Bootstrap card that didn't match. */
+        .cm-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #9aa3b0;
+            margin-bottom: 1rem;
+        }
+
+        .cm-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .cm-card {
+            position: relative;
+            flex: 1 1 320px;
+            min-height: 172px;
+            background: #fff;
+            border-radius: 6px;
+            overflow: hidden;
+            text-decoration: none !important;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid transparent;
+            transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+        }
+
+        .cm-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.13);
+            background: #F8FAFC;
+            border-color: #e0e0e0;
+        }
+
+        .cm-card .cm-accent-bar {
+            height: 5px;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .cm-card .cm-inner {
+            flex: 1;
+            padding: 20px 22px 22px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cm-card .cm-watermark {
+            position: absolute;
+            right: -8px;
+            bottom: 8px;
+            font-size: 80px;
+            line-height: 1;
+            opacity: 0.10;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .cm-card .cm-title {
+            font-size: 1.08rem;
+            font-weight: 700;
+            color: #2b2b2b;
+            margin: 0 0 8px;
+            padding-right: 50px;
+        }
+
+        .cm-card .cm-title i {
+            margin-right: 0.4rem;
+        }
+
+        .cm-card .cm-desc {
+            font-size: 0.875rem;
+            color: #7c8494;
+            line-height: 1.5;
+            margin: 0;
+            max-width: 320px;
+        }
+
+        .cm-card .cm-action {
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        @@media (max-width: 575.98px) {
+            .cm-grid { gap: 12px; }
+            .cm-card { flex: 1 1 100%; min-height: 0; }
+            .cm-card .cm-watermark { font-size: 56px; }
+        }
+    </style>
+
+    <p class="cm-eyebrow">Choose a fulfillment area</p>
+
+    <div class="cm-grid">
+        <a asp-controller="RequestFulfillment" asp-action="Unfulfilled" class="cm-card">
+            <div class="cm-accent-bar" style="background:#d50032;"></div>
+            <div class="cm-inner">
+                <div class="cm-watermark">💧</div>
+                <p class="cm-title"><i class="bi bi-droplet-fill text-danger"></i>Ink / Toner / Print Head Fulfillment</p>
+                <p class="cm-desc">View and fulfill Unfulfilled / Partially Fulfilled Ink, Toner, and Print Head requests.</p>
+                <span class="cm-action" style="color:#d50032;">Open &rarr;</span>
+            </div>
+        </a>
+
+        <a asp-controller="CartridgeExchange" asp-action="Index" class="cm-card">
+            <div class="cm-accent-bar" style="background:#0891b2;"></div>
+            <div class="cm-inner">
+                <div class="cm-watermark">🖨️</div>
+                <p class="cm-title"><i class="bi bi-printer-fill text-info"></i>Cartridge Exchange Fulfillment</p>
+                <p class="cm-desc">Fulfill pending cartridge requests (Cartridge Exchange), plus the Unfulfilled / Partially Fulfilled backlog and fulfilled history.</p>
+                <span class="cm-action" style="color:#0891b2;">Open &rarr;</span>
+            </div>
+        </a>
+
+    </div>
+
+</div>

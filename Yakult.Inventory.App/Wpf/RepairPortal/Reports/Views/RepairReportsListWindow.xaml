@@ -1,0 +1,80 @@
+<Window x:Class="Yakult.Inventory.App.Wpf.RepairPortal.Reports.Views.RepairReportsListWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Repair Reports" Height="640" Width="1000"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Background="#F1F5F9">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Tier 2 popup header — see RepairPortalStyles.xaml's header-tier note. A compact
+             red/blue accent bar echoes the shell's identity without restaging its full banner
+             treatment, so this doesn't visually double up when opened on top of the shell. -->
+        <Border Grid.Row="0" Style="{StaticResource PopupHeaderBar}">
+            <StackPanel Orientation="Horizontal">
+                <Border Style="{StaticResource PopupTitleAccentBar}" VerticalAlignment="Stretch"/>
+                <StackPanel>
+                    <TextBlock Text="Repair Reports" Style="{StaticResource PopupTitleText}"/>
+                    <TextBlock Text="Tick one or more tickets, then View Reports — or open a single ticket's report from its row" Style="{StaticResource PopupSubtitleText}"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource FilterBar}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <StackPanel VerticalAlignment="Bottom" Margin="0,0,10,0">
+                        <TextBlock Text="Search" Style="{StaticResource FilterLabel}" Margin="2,0,0,2"/>
+                        <TextBox Width="280" Style="{StaticResource SearchBox}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Tag="Search ticket, item, serial, problem..." KeyDown="SearchBox_KeyDown"/>
+                    </StackPanel>
+                    <Button Content="Search" Style="{StaticResource RepairPrimaryBtn}" VerticalAlignment="Bottom" Command="{Binding SearchCommand}"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="View Reports" Style="{StaticResource RepairPrimaryBtn}" VerticalAlignment="Bottom"
+                        Command="{Binding ViewSelectedReportsCommand}"
+                        ToolTip="Opens the report for every ticket you've checked below"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Margin="16" Background="White" CornerRadius="10" Padding="4">
+            <DataGrid ItemsSource="{Binding Tickets}" AutoGenerateColumns="False" CanUserAddRows="False"
+                      Style="{StaticResource ListDataGridChrome}" MouseDoubleClick="Grid_MouseDoubleClick">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="56">
+                        <DataGridCheckBoxColumn.HeaderStyle>
+                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource ListDataGridColumnHeader}">
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridCheckBoxColumn.HeaderStyle>
+                        <DataGridCheckBoxColumn.Header>
+                            <CheckBox x:Name="SelectAllCheckBox" HorizontalAlignment="Center" VerticalAlignment="Center" Click="SelectAllCheckBox_Click"
+                                      ToolTip="Select/deselect all"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Header="Ticket Code" Binding="{Binding Ticket.TicketCode}" Width="120" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Item" Binding="{Binding Ticket.ItemName}" Width="*" MinWidth="220" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Requester" Binding="{Binding Ticket.RequestedByDisplay}" Width="160" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Status" Binding="{Binding Ticket.Status}" Width="110" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Date Received" Binding="{Binding Ticket.DateReceived, StringFormat='{}{0:MMM d, yyyy h:mm tt}'}" Width="160" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </Grid>
+</Window>

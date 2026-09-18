@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=tcp:<host>,<port>;Database=<db>;User ID=<user>;Password=<password>;TrustServerCertificate=True;Encrypt=True;Connection Timeout=30;"
+  }
+}

@@ -1,0 +1,82 @@
+<UserControl x:Class="Yakult.Inventory.App.Wpf.RepairPortal.Detail.Views.ImageCarouselControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel>
+        <Border Style="{StaticResource EquipmentImagePlaceholderStyle}"
+                Visibility="{Binding HasAttachments, ElementName=Root, Converter={StaticResource BoolToVisibilityInverseConverter}}">
+            <TextBlock Style="{StaticResource EquipmentGlyphStyle}"/>
+        </Border>
+
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                      PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
+                      Visibility="{Binding HasAttachments, ElementName=Root, Converter={StaticResource BoolToVisibilityConverter}}">
+            <ItemsControl ItemsSource="{Binding ItemsSource, ElementName=Root}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Width="220" Height="220" Margin="0,0,10,0" CornerRadius="10" Background="#E5E9F0"
+                                Cursor="Hand" MouseLeftButtonUp="Thumbnail_MouseLeftButtonUp" Tag="{Binding}"
+                                ToolTip="Click to view fullscreen">
+                            <Grid>
+                                <!-- Video placeholder glyph (only when this item is a video) -->
+                                <TextBlock Style="{StaticResource EquipmentGlyphStyle}" Text="&#xE714;"
+                                           Visibility="{Binding IsVideo, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                <!-- Generic document glyph (anything that's neither image nor video) -->
+                                <TextBlock Text="&#xE8A5;">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource EquipmentGlyphStyle}">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsImage}" Value="False"/>
+                                                        <Condition Binding="{Binding IsVideo}" Value="False"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <Image Source="{Binding Bytes, Converter={StaticResource BytesToImageConverter}}" Stretch="Uniform"
+                                       Visibility="{Binding IsImage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                <!-- Multi-select checkbox, top-left corner — no visible backing at
+                                     all now, just the checkbox control itself. -->
+                                <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Width="22" Height="22"
+                                        Background="Transparent">
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Cursor="Arrow"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <Border VerticalAlignment="Bottom" Background="#B0000000" Padding="6,4">
+                                    <TextBlock Text="{Binding FileName}" Foreground="White" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <Button Content="Delete Selected" Style="{StaticResource RepairSecondaryBtn}" Foreground="#DC2626"
+                HorizontalAlignment="Left" Margin="0,8,0,0" Padding="10,5"
+                Command="{Binding DeleteSelectedCommand, ElementName=Root}"
+                Visibility="{Binding HasAttachments, ElementName=Root, Converter={StaticResource BoolToVisibilityConverter}}"/>
+    </StackPanel>
+</UserControl>

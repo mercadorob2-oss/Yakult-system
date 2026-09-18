@@ -1,0 +1,136 @@
+<UserControl x:Class="Yakult.Inventory.App.Wpf.RepairPortal.Table.Views.RepairTicketTableView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Wrapping column headers/cells so long Company/Branch/Department/Employee names
+                 don't get clipped with an ellipsis in a fixed-width column, and headers like
+                 "Image"/"Item ID" don't get cut off mid-word in their narrower columns. -->
+            <DataTemplate x:Key="WrappingHeaderTemplate">
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="10.5" FontWeight="SemiBold" Foreground="White"/>
+            </DataTemplate>
+            <Style x:Key="WrappingColumnHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ListDataGridColumnHeader}">
+                <Setter Property="Height" Value="48"/>
+                <Setter Property="ContentTemplate" Value="{StaticResource WrappingHeaderTemplate}"/>
+            </Style>
+
+            <!-- The base ListDataGridColumnHeader template always renders its sort-arrow glyph
+                 (just dimmed when unsorted) — CanUserSort="False" only disables the click behavior,
+                 not the icon, which crowds the checkbox in this column's narrow 36px header. This
+                 local override drops the glyph entirely rather than editing the shared style, which
+                 many other pages also use. -->
+            <Style x:Key="CheckBoxColumnHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource ListDataGridColumnHeader}">
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="DataGridColumnHeader">
+                            <Grid>
+                                <Border x:Name="Bd"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                      VerticalAlignment="Center"/>
+                                </Border>
+                                <Thumb x:Name="PART_LeftHeaderGripper"  HorizontalAlignment="Left"  Width="8" Cursor="SizeWE" Opacity="0"/>
+                                <Thumb x:Name="PART_RightHeaderGripper" HorizontalAlignment="Right" Width="8" Cursor="SizeWE" Opacity="0"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrimaryHoverBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <!-- VerticalAlignment="Top" is the key fix for the old design's large empty area: without it,
+         this Border stretches to fill the Shell's whole remaining Grid.Row="3" height even when
+         there are only a few tickets. Shrink-wrapping to content keeps the table right under the
+         filter bar, and TicketsGrid's MaxHeight below makes a long list scroll internally instead
+         of growing past the viewport. -->
+    <Border Margin="16" Background="White" CornerRadius="10" Padding="4" VerticalAlignment="Top">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Open/Delete for the checked row(s) live in the Shell's summary-cards row instead of
+                 a bar here — a bar that appears/disappears right above the grid shifted the table up
+                 and down on every selection change, which is exactly what this compact redesign was
+                 meant to avoid. Selection is pushed up via RepairPortalShellViewModel.SetTableSelection. -->
+            <DataGrid x:Name="TicketsGrid" Grid.Row="0" AutoGenerateColumns="False" MaxHeight="560"
+                      Style="{StaticResource ListDataGridChrome}" ColumnHeaderStyle="{StaticResource WrappingColumnHeaderStyle}">
+                <DataGrid.Columns>
+                    <!-- DataGrid.IsReadOnly is deliberately left unset (default False) — WPF's
+                         DataGrid.IsReadOnly="True" overrides EVERY column's own IsReadOnly, even
+                         when a column sets IsReadOnly="False" itself, which silently made this
+                         checkbox column unclickable. Each non-checkbox column is marked read-only
+                         individually instead. -->
+                    <!-- HeaderStyle overrides the grid-wide WrappingColumnHeaderStyle back to the
+                         plain base style for just this column — that style's ContentTemplate routes
+                         all header content through a TextBlock bound to {Binding}, which renders a
+                         non-string Header (this CheckBox) as its garbled ToString() instead of the
+                         checkbox itself. -->
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="36"
+                                             CanUserSort="False"
+                                             HeaderStyle="{StaticResource CheckBoxColumnHeaderStyle}">
+                        <DataGridCheckBoxColumn.Header>
+                            <CheckBox x:Name="SelectAllCheckBox" HorizontalAlignment="Center" Click="SelectAllCheckBox_Click"
+                                      ToolTip="Select/deselect all on this page"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Header="Item ID" Binding="{Binding Ticket.ItemId}" Width="70" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Item Name" Binding="{Binding Ticket.ItemName}" Width="150" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Company" Binding="{Binding Ticket.CompanyName}" Width="90" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Branch" Binding="{Binding Ticket.BranchName}" Width="100" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Department" Binding="{Binding Ticket.DeptName}" Width="100" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Employee" Binding="{Binding Ticket.RequestedByDisplay}" Width="120" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Problem" Binding="{Binding Ticket.Problem}" Width="*" MinWidth="160" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTemplateColumn Header="Status" Width="130">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <!-- DataContext set to Ticket so StatusBadgeStyle's own Background binding
+                                 ({Binding Status}, in RepairPortalStyles.xaml) resolves correctly —
+                                 that Style binds relative to ambient DataContext, which is the row
+                                 wrapper (RepairTicketTableRow) one level up, not the ticket itself. -->
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" DataContext="{Binding Ticket}">
+                                    <Border Style="{StaticResource StatusBadgeStyle}" Margin="0,0,6,0">
+                                        <TextBlock Text="{Binding Status}" Style="{StaticResource BadgeTextStyle}"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding DaysInCurrentStatus, StringFormat='{}{0}d'}" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Priority" Width="90">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource PriorityBadgeStyle}" DataContext="{Binding Ticket}">
+                                    <TextBlock Text="{Binding Priority}" Style="{StaticResource BadgeTextStyle}"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Date Received" Binding="{Binding Ticket.DateReceived, StringFormat='{}{0:MMM d, yyyy h:mm tt}'}" Width="85" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Ticket Created By" Binding="{Binding Ticket.SubmittedByName}" Width="120" IsReadOnly="True" ElementStyle="{StaticResource WrapCellText}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <Border Grid.Row="1" Padding="8" HorizontalAlignment="Right">
+                <shared:PagingControl x:Name="PagingBar"/>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

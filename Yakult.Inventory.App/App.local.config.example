@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <appSettings>
+    <add key="ApiBaseUrl" value="https://your-api-host" />
+    <add key="DbConnectionString" value="Server=YOUR_SQL_HOST,50300;Database=Yakult_Inventory_System_DEV;User ID=YOUR_USER;Password=YOUR_PASSWORD;TrustServerCertificate=False;Encrypt=True;" />
+  </appSettings>
+  <connectionStrings>
+    <add name="Yakult.Inventory.App.Properties.Settings.Yakult_Inventory_SystemConnectionString"
+         connectionString="Server=YOUR_SQL_HOST,50300;Database=Yakult_Inventory_System_DEV;User ID=YOUR_USER;Password=YOUR_PASSWORD;TrustServerCertificate=False;Encrypt=True;" />
+  </connectionStrings>
+</configuration>

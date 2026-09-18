@@ -1,0 +1,186 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Yakult.Inventory.App.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="DbConnectionString" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ViewUpdates_DateFrom" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">0001-01-01</Value>
+    </Setting>
+    <Setting Name="ViewUpdates_DateTo" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">0001-01-01</Value>
+    </Setting>
+    <Setting Name="ViewUpdates_StatusIndex" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">2</Value>
+    </Setting>
+    <Setting Name="ViewUpdates_SetCode" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ViewUpdates_Search" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ViewUpdates_ProblemsOnly" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ViewUpdates_PageSize" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="ViewUpdates_SortKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ViewUpdates_SortOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_DateFrom" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">0001-01-01</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_DateTo" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">0001-01-01</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_ViewMode" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Latest only</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_Direction" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_Source" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_Category" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_Type" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_Serial" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ItemMovementAudit_SetCode" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ItemMovementAudit_User" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ItemMovementAudit_Search" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ItemMovementAudit_PageSize" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_TopRows" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">1000</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_SortKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ItemMovementAudit_SortOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="ItemMovementAudit_ShowArchived" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="RepairedItems_RepairStatus" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="RepairedItems_Condition" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="RepairedItems_Category" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="RepairedItems_Spare" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="RepairedItems_Active" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Active only</Value>
+    </Setting>
+    <Setting Name="RepairedItems_Location" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="RepairedItems_Origin" Type="System.String" Scope="User">
+      <Value Profile="(Default)">All</Value>
+    </Setting>
+    <Setting Name="RepairedItems_ProblemsOnly" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="RepairedItems_Search" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="RepairedItems_SortKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="RepairedItems_SortOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="RepairPortal_LastViewMode" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Gallery</Value>
+    </Setting>
+    <Setting Name="RepairPortal_LastQuickFilter" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="RepairPortal_LastSearch" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="RepairPortal_LastSortKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">DateReceivedDesc</Value>
+    </Setting>
+    <Setting Name="RepairPortal_HideCompleted" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="ViewReceipts_StatusIndex" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="ViewReceipts_PageSize" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+    <Setting Name="ViewReceipts_SortKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ViewReceipts_SortOrder" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="ViewReceipts_SearchText" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ViewReceipts_FilterByIndex" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="ViewReceipts_Supplier" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ViewReceipts_CreatedFromEnabled" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ViewReceipts_CreatedFrom" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">0001-01-01</Value>
+    </Setting>
+    <Setting Name="ViewReceipts_CreatedToEnabled" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ViewReceipts_CreatedTo" Type="System.DateTime" Scope="User">
+      <Value Profile="(Default)">0001-01-01</Value>
+    </Setting>
+    <Setting Name="Yakult_Inventory_SystemConnectionString" Type="(Connection string)" Scope="Application">
+      <DesignTimeValue Profile="(Default)">&lt;?xml version="1.0" encoding="utf-16"?&gt;
+&lt;SerializableConnectionString xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
+  &lt;ConnectionString&gt;Data Source=192.168.100.186,50301;Initial Catalog=;User ID=;Password=;Encrypt=False;TrustServerCertificate=True&lt;/ConnectionString&gt;
+&lt;/SerializableConnectionString&gt;</DesignTimeValue>
+      <Value Profile="(Default)">Data Source=192.168.100.186,50301;Initial Catalog=;User ID=;Password=;Encrypt=False;TrustServerCertificate=True</Value>
+    </Setting>
+    <Setting Name="Yakult_Inventory_System_DEVConnectionString" Type="(Connection string)" Scope="Application">
+      <DesignTimeValue Profile="(Default)">&lt;?xml version="1.0" encoding="utf-16"?&gt;
+&lt;SerializableConnectionString xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
+  &lt;ConnectionString&gt;Data Source=192.168.100.186,50301;Initial Catalog=Yakult_Inventory_System_DEV;Persist Security Info=True;User ID=remote_user;Encrypt=False;TrustServerCertificate=True&lt;/ConnectionString&gt;
+  &lt;ProviderName&gt;Microsoft.Data.SqlClient&lt;/ProviderName&gt;
+&lt;/SerializableConnectionString&gt;</DesignTimeValue>
+      <Value Profile="(Default)">Data Source=192.168.100.186,50301;Initial Catalog=Yakult_Inventory_System_DEV;Persist Security Info=True;User ID=remote_user;Encrypt=False;TrustServerCertificate=True</Value>
+    </Setting>
+    <Setting Name="ITContactEmail" Type="System.String" Scope="User">
+      <Value Profile="(Default)">it-support@yakult.com</Value>
+    </Setting>
+    <Setting Name="ITContactReference" Type="System.String" Scope="User">
+      <Value Profile="(Default)">IT Helpdesk - Mon-Fri 8AM-5PM</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

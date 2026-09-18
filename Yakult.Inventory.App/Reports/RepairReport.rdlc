@@ -1,0 +1,799 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RepairReport.rdlc
+  ══════════════════════════════════════════════════════════════════════
+  Data-driven printable Repair Report (one RepairTicket per render), A4
+  portrait. A section only prints when it has something meaningful to
+  say — no "N/A", "No parts logged.", zero-value stats, or raw audit
+  timeline. A simple repair should render as roughly one page.
+
+  Single master Tablix ("MasterLayout"), 2 columns (90mm each), bound to
+  the ONE-ROW "RepairReportHeader" dataset with NO grouping — every
+  section is a flat TablixRow, and every field/flag needed to decide
+  what to show was already computed in Helpers/RepairReportBuilder.cs
+  (dedup, N/A filtering, per-section Show* booleans). Using ONE dataset
+  for literally everything (no separate Timeline/Parts/Attachments
+  tables) is deliberate: RDLC's local (WinForms ReportViewer) rendering
+  engine does not reliably support a Tablix nested inside another Tablix
+  bound to a DIFFERENT dataset — see git history for the render error
+  that caused this file to move away from that design. Conditional
+  section visibility is set via <Visibility><Hidden>=expr</Hidden> on
+  each section's TablixMember in the RowHierarchy — Tablix ROW hiding
+  (unlike hiding a Body-level sibling item) genuinely collapses the
+  row's space and shifts subsequent rows up, which is what makes a
+  simple repair naturally render as one short page instead of leaving
+  gaps where empty sections used to be.
+  Data source: in-memory DataTable built by Helpers/RepairReportBuilder.cs
+  from Models/RepairPortal/RepairReportData.cs (see RepairTicketRepository
+  .GetReportDataAsync). No live DB query is embedded in this file.
+  ══════════════════════════════════════════════════════════════════════
+-->
+<Report MustUnderstand="df"
+        xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition"
+        xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner"
+        xmlns:df="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition/defaultfontfamily">
+  <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
+  <AutoRefresh>0</AutoRefresh>
+
+  <DataSources>
+    <DataSource Name="DataSource1">
+      <ConnectionProperties>
+        <DataProvider>System.Data.DataSet</DataProvider>
+        <ConnectString />
+      </ConnectionProperties>
+      <rd:DataSourceID>b7e1a2c3-1111-4a7b-8c9d-000000000010</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+
+  <DataSets>
+    <DataSet Name="RepairReportHeader">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <CommandText>/* Provided at runtime via ReportDataSource */</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="TicketCode">                   <DataField>TicketCode</DataField>                   <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="RepairTicketId">                <DataField>RepairTicketId</DataField>                <rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="Status">                        <DataField>Status</DataField>                        <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="CreatedAtText">                 <DataField>CreatedAtText</DataField>                 <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="CompletedAtText">                <DataField>CompletedAtText</DataField>                <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="GeneratedAtText">                <DataField>GeneratedAtText</DataField>                <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="GeneratedByName">                <DataField>GeneratedByName</DataField>                <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="AssetL1">                       <DataField>AssetL1</DataField>                       <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="AssetR1">                       <DataField>AssetR1</DataField>                       <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="AssetL2">                       <DataField>AssetL2</DataField>                       <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="AssetR2">                       <DataField>AssetR2</DataField>                       <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="AssetL3">                       <DataField>AssetL3</DataField>                       <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="AssetR3">                       <DataField>AssetR3</DataField>                       <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="AssetL4">                       <DataField>AssetL4</DataField>                       <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="AssetR4">                       <DataField>AssetR4</DataField>                       <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ShowReportedProblem">            <DataField>ShowReportedProblem</DataField>            <rd:TypeName>System.Boolean</rd:TypeName></Field>
+        <Field Name="ProblemText">                    <DataField>ProblemText</DataField>                    <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="DetailsText">                    <DataField>DetailsText</DataField>                    <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ShowWorkPerformed">              <DataField>ShowWorkPerformed</DataField>              <rd:TypeName>System.Boolean</rd:TypeName></Field>
+        <Field Name="WorkPerformedText">              <DataField>WorkPerformedText</DataField>              <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ShowParts">                      <DataField>ShowParts</DataField>                      <rd:TypeName>System.Boolean</rd:TypeName></Field>
+        <Field Name="PartsText">                      <DataField>PartsText</DataField>                      <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ShowDiagnosis">                  <DataField>ShowDiagnosis</DataField>                  <rd:TypeName>System.Boolean</rd:TypeName></Field>
+        <Field Name="DiagnosisText">                  <DataField>DiagnosisText</DataField>                  <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ShowItemDisposition">            <DataField>ShowItemDisposition</DataField>            <rd:TypeName>System.Boolean</rd:TypeName></Field>
+        <Field Name="ItemDispositionText">            <DataField>ItemDispositionText</DataField>            <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ShowRecommendations">            <DataField>ShowRecommendations</DataField>            <rd:TypeName>System.Boolean</rd:TypeName></Field>
+        <Field Name="RecommendationsText">            <DataField>RecommendationsText</DataField>            <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ShowAttachments">                <DataField>ShowAttachments</DataField>                <rd:TypeName>System.Boolean</rd:TypeName></Field>
+        <Field Name="AttachmentsPreviewImage">        <DataField>AttachmentsPreviewImage</DataField>        <rd:TypeName>System.Byte[]</rd:TypeName></Field>
+        <Field Name="PreparedByPosition">             <DataField>PreparedByPosition</DataField>             <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="PreparedByDateText">             <DataField>PreparedByDateText</DataField>             <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ReviewedByName">                 <DataField>ReviewedByName</DataField>                 <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ReviewedByPosition">             <DataField>ReviewedByPosition</DataField>             <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ReviewedByDateText">             <DataField>ReviewedByDateText</DataField>             <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ReceivedByName">                 <DataField>ReceivedByName</DataField>                 <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ReceivedByPosition">             <DataField>ReceivedByPosition</DataField>             <rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="ReceivedByDateText">             <DataField>ReceivedByDateText</DataField>             <rd:TypeName>System.String</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+
+          <Tablix Name="MasterLayout">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>90mm</Width></TablixColumn>
+                <TablixColumn><Width>90mm</Width></TablixColumn>
+              </TablixColumns>
+
+              <TablixRows>
+
+                <!-- R1: ASSET INFORMATION header -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrAsset">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>ASSET INFORMATION</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R2-R5: Asset Info paired fields -->
+                <TablixRow>
+                  <Height>5.5mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="AssetC1"><CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!AssetL1.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                      </TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingTop>1pt</PaddingTop></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="AssetC2"><CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!AssetR1.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                      </TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingTop>1pt</PaddingTop></Style>
+                    </Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>5.5mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="AssetC3"><CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!AssetL2.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                      </TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingTop>1pt</PaddingTop></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="AssetC4"><CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!AssetR2.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                      </TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingTop>1pt</PaddingTop></Style>
+                    </Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>5.5mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="AssetC5"><CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!AssetL3.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                      </TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingTop>1pt</PaddingTop></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="AssetC6"><CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!AssetR3.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                      </TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingTop>1pt</PaddingTop></Style>
+                    </Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="AssetC7"><CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!AssetL4.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                      </TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingTop>1pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="AssetC8"><CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!AssetR4.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                      </TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingTop>1pt</PaddingTop><PaddingBottom>3pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R6-R7: REPORTED PROBLEM (only if data) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrProblem">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>REPORTED PROBLEM</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>10mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="TxtProblem">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun>
+                          <Value>=Fields!ProblemText.Value</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><Color>#0f172a</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border><PaddingBottom>4pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R8-R9: REPAIR DETAILS (always) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrDetails">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>REPAIR DETAILS</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>22mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="TxtDetails">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun>
+                          <Value>=Fields!DetailsText.Value</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border><PaddingBottom>4pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R10-R11: WORK PERFORMED (only if data) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrWork">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>WORK PERFORMED</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>10mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="TxtWork">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun>
+                          <Value>=Fields!WorkPerformedText.Value</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border><PaddingBottom>4pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R12-R13: PARTS (only if data) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrParts">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>PARTS</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>10mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="TxtParts">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun>
+                          <Value>=Fields!PartsText.Value</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border><PaddingBottom>4pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R14-R15: DIAGNOSIS & RESOLUTION (only if data) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrDiagnosis">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>DIAGNOSIS &amp; RESOLUTION</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>12mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="TxtDiagnosis">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun>
+                          <Value>=Fields!DiagnosisText.Value</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border><PaddingBottom>4pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R15b-R15c: ITEM DISPOSITION (only if Spare assigned and/or Replace disposition) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrItemDisposition">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>ITEM DISPOSITION</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>10mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="TxtItemDisposition">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun>
+                          <Value>=Fields!ItemDispositionText.Value</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border><PaddingBottom>4pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R16-R17: RECOMMENDATIONS (only if data) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrRecommendations">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>RECOMMENDATIONS</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>10mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="TxtRecommendations">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun>
+                          <Value>=Fields!RecommendationsText.Value</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#334155</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border><PaddingBottom>4pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R18: ATTACHMENTS header (only if any attachments) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrAttachments">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>ATTACHMENTS</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R19: Attachments preview — every image attachment composited into one montage
+                     image in C# (RepairReportBuilder.BuildAttachmentsMontage), no filenames. -->
+                <TablixRow>
+                  <Height>62mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Image Name="ImgAttachmentsPreview">
+                        <Source>Database</Source>
+                        <Value>=Fields!AttachmentsPreviewImage.Value</Value>
+                        <MIMEType>image/jpeg</MIMEType>
+                        <Sizing>FitProportional</Sizing>
+                        <Top>0mm</Top><Left>0mm</Left><Height>60mm</Height><Width>170mm</Width>
+                        <Style><Border><Style>None</Style></Border></Style>
+                      </Image>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- R21-R22: SIGNATURES (always) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+                      <Textbox Name="HdrSignatures">
+                        <CanGrow>true</CanGrow>
+                        <Paragraphs><Paragraph><TextRuns><TextRun><Value>SIGNATURES</Value>
+                          <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                        </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                        <Style><Border><Style>None</Style></Border>
+                          <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1pt</Width></TopBorder>
+                          <PaddingTop>3pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                      </Textbox>
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>33mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents>
+
+                      <!-- Each column, top to bottom: signature line, NAME (bold), Position, plain
+                           role word (Prepared By/Reviewed By/Received By — no parenthetical), then
+                           the actual signed date (picked via RepairSignatoryPickerWindow's own
+                           DatePicker) instead of a blank fill-in line. -->
+                      <Rectangle Name="RectSignatures">
+                        <ReportItems>
+
+                          <Textbox Name="SigNamePrepared">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun>
+                              <Value>=Fields!GeneratedByName.Value</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>12mm</Top><Left>0mm</Left><Height>5mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border>
+                              <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>0.5pt</Width></TopBorder>
+                              <VerticalAlign>Middle</VerticalAlign></Style>
+                          </Textbox>
+                          <Textbox Name="SigPositionPrepared">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!PreparedByPosition.Value</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>7.5pt</FontSize><Color>#334155</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>17mm</Top><Left>0mm</Left><Height>4mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border></Style>
+                          </Textbox>
+                          <Textbox Name="SigRolePrepared">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun><Value>Prepared By</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>7.5pt</FontSize><Color>#64748b</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>21mm</Top><Left>0mm</Left><Height>4mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border></Style>
+                          </Textbox>
+                          <Textbox Name="SigDatePrepared">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun>
+                              <Value>=IIF(Fields!PreparedByDateText.Value = "", "Date: ____________________", "Date: " &amp; Fields!PreparedByDateText.Value)</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>7.5pt</FontSize><Color>#64748b</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>26mm</Top><Left>0mm</Left><Height>5mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border></Style>
+                          </Textbox>
+
+                          <Textbox Name="SigNameReviewed">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun>
+                              <Value>=Fields!ReviewedByName.Value</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>12mm</Top><Left>62mm</Left><Height>5mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border>
+                              <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>0.5pt</Width></TopBorder>
+                              <VerticalAlign>Middle</VerticalAlign></Style>
+                          </Textbox>
+                          <Textbox Name="SigPositionReviewed">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!ReviewedByPosition.Value</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>7.5pt</FontSize><Color>#334155</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>17mm</Top><Left>62mm</Left><Height>4mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border></Style>
+                          </Textbox>
+                          <Textbox Name="SigRoleReviewed">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun><Value>Reviewed By</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>7.5pt</FontSize><Color>#64748b</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>21mm</Top><Left>62mm</Left><Height>4mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border></Style>
+                          </Textbox>
+                          <Textbox Name="SigDateReviewed">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun>
+                              <Value>=IIF(Fields!ReviewedByDateText.Value = "", "Date: ____________________", "Date: " &amp; Fields!ReviewedByDateText.Value)</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>7.5pt</FontSize><Color>#64748b</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>26mm</Top><Left>62mm</Left><Height>5mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border></Style>
+                          </Textbox>
+
+                          <Textbox Name="SigNameReceived">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun>
+                              <Value>=Fields!ReceivedByName.Value</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>12mm</Top><Left>124mm</Left><Height>5mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border>
+                              <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>0.5pt</Width></TopBorder>
+                              <VerticalAlign>Middle</VerticalAlign></Style>
+                          </Textbox>
+                          <Textbox Name="SigPositionReceived">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun><Value>=Fields!ReceivedByPosition.Value</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>7.5pt</FontSize><Color>#334155</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>17mm</Top><Left>124mm</Left><Height>4mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border></Style>
+                          </Textbox>
+                          <Textbox Name="SigRoleReceived">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun><Value>Received By</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>7.5pt</FontSize><Color>#64748b</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>21mm</Top><Left>124mm</Left><Height>4mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border></Style>
+                          </Textbox>
+                          <Textbox Name="SigDateReceived">
+                            <CanGrow>false</CanGrow>
+                            <Paragraphs><Paragraph><TextRuns><TextRun>
+                              <Value>=IIF(Fields!ReceivedByDateText.Value = "", "Date: ____________________", "Date: " &amp; Fields!ReceivedByDateText.Value)</Value>
+                              <Style><FontFamily>Segoe UI</FontFamily><FontSize>7.5pt</FontSize><Color>#64748b</Color></Style>
+                            </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                            <Top>26mm</Top><Left>124mm</Left><Height>5mm</Height><Width>56mm</Width>
+                            <Style><Border><Style>None</Style></Border></Style>
+                          </Textbox>
+
+                        </ReportItems>
+                        <Top>0mm</Top><Left>0mm</Left><Height>33mm</Height><Width>180mm</Width>
+                        <Style><Border><Style>None</Style></Border></Style>
+                      </Rectangle>
+
+                      <ColSpan>2</ColSpan>
+                    </CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+              </TablixRows>
+            </TablixBody>
+
+            <TablixColumnHierarchy><TablixMembers><TablixMember /><TablixMember /></TablixMembers></TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember />                                                                                       <!-- R1 Asset header -->
+                <TablixMember /><TablixMember /><TablixMember /><TablixMember />                                       <!-- R2-R5 Asset fields -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowReportedProblem.Value)</Hidden></Visibility></TablixMember>  <!-- R6 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowReportedProblem.Value)</Hidden></Visibility></TablixMember>  <!-- R7 -->
+                <TablixMember />                                                                                       <!-- R8 Details header -->
+                <TablixMember />                                                                                       <!-- R9 Details text -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowWorkPerformed.Value)</Hidden></Visibility></TablixMember>    <!-- R10 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowWorkPerformed.Value)</Hidden></Visibility></TablixMember>    <!-- R11 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowParts.Value)</Hidden></Visibility></TablixMember>            <!-- R12 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowParts.Value)</Hidden></Visibility></TablixMember>            <!-- R13 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowDiagnosis.Value)</Hidden></Visibility></TablixMember>        <!-- R14 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowDiagnosis.Value)</Hidden></Visibility></TablixMember>        <!-- R15 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowItemDisposition.Value)</Hidden></Visibility></TablixMember>  <!-- R15b -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowItemDisposition.Value)</Hidden></Visibility></TablixMember>  <!-- R15c -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowRecommendations.Value)</Hidden></Visibility></TablixMember>  <!-- R16 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowRecommendations.Value)</Hidden></Visibility></TablixMember>  <!-- R17 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowAttachments.Value)</Hidden></Visibility></TablixMember>      <!-- R18 -->
+                <TablixMember><Visibility><Hidden>=Not(Fields!ShowAttachments.Value)</Hidden></Visibility></TablixMember>      <!-- R19 -->
+                <TablixMember />                                                                                       <!-- R20 Signatures header -->
+                <TablixMember />                                                                                       <!-- R21 Signatures block -->
+              </TablixMembers>
+            </TablixRowHierarchy>
+
+            <DataSetName>RepairReportHeader</DataSetName>
+            <Top>0mm</Top><Left>0mm</Left>
+            <Height>200mm</Height><Width>180mm</Width>
+            <Style><Border><Style>None</Style></Border></Style>
+          </Tablix>
+
+        </ReportItems>
+        <Height>200mm</Height>
+        <Style><Border><Style>None</Style></Border></Style>
+      </Body>
+
+      <Width>180mm</Width>
+      <Page>
+        <PageHeader>
+          <!-- RDLC/SSRS does not allow a real Tablix (data region) inside a Page Header — so the
+               "shared column" for the right-side metadata block is implemented as five Textboxes
+               that all share the EXACT SAME Left/Width and TextAlign=Left, which is what actually
+               produces a fixed, non-shifting column start regardless of each line's text length.
+               Do not vary Left/Width between PhReportNo/PhRepairId/PhStatus/PhDateCreated/
+               PhDateCompleted — that shared value IS the column definition. -->
+          <Height>30mm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="PhCompanyName">
+              <CanGrow>false</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>Yakult Philippines Inc.</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>12pt</FontSize><FontWeight>Bold</FontWeight><Color>#DC2626</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>0mm</Top><Left>0mm</Left><Height>5mm</Height><Width>90mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="PhDeptName">
+              <CanGrow>false</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>Information Technology Dept.</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#64748b</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>4.5mm</Top><Left>0mm</Left><Height>4mm</Height><Width>90mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+
+            <!-- Right metadata column — shared Left=95mm / Width=85mm / TextAlign=Left across all
+                 five rows. Rows 3-5 have no left-side counterpart (left cell is simply empty). -->
+            <Textbox Name="PhReportNo">
+              <CanGrow>false</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>="Report No.: " &amp; First(Fields!TicketCode.Value, "RepairReportHeader")</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>0mm</Top><Left>95mm</Left><Height>4.5mm</Height><Width>85mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="PhRepairId">
+              <CanGrow>false</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>="Repair ID: " &amp; First(Fields!RepairTicketId.Value, "RepairReportHeader")</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#334155</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>4.5mm</Top><Left>95mm</Left><Height>4.5mm</Height><Width>85mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="PhStatus">
+              <CanGrow>false</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>="Status: " &amp; First(Fields!Status.Value, "RepairReportHeader")</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#334155</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>9mm</Top><Left>95mm</Left><Height>4.5mm</Height><Width>85mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="PhDateCreated">
+              <CanGrow>false</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>="Date Created: " &amp; First(Fields!CreatedAtText.Value, "RepairReportHeader")</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#334155</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>13.5mm</Top><Left>95mm</Left><Height>4.5mm</Height><Width>85mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="PhDateCompleted">
+              <CanGrow>false</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>=IIF(First(Fields!CompletedAtText.Value, "RepairReportHeader") = "", "", "Date Completed: " &amp; First(Fields!CompletedAtText.Value, "RepairReportHeader"))</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#334155</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>18mm</Top><Left>95mm</Left><Height>4.5mm</Height><Width>85mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+
+            <!-- Row 6 — full-width bold title, left-aligned to the same edge as the company name,
+                 spans both columns, docked directly above the divider. -->
+            <Textbox Name="PhReportTitle">
+              <CanGrow>false</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value>Repair Report</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>13pt</FontSize><FontWeight>Bold</FontWeight><Color>#2563EB</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>23mm</Top><Left>0mm</Left><Height>6mm</Height><Width>180mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="PhRule">
+              <CanGrow>false</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun><Value /></TextRun></TextRuns></Paragraph></Paragraphs>
+              <Top>29mm</Top><Left>0mm</Left><Height>1mm</Height><Width>180mm</Width>
+              <Style><Border><Style>None</Style></Border>
+                <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>1.5pt</Width></TopBorder></Style>
+            </Textbox>
+          </ReportItems>
+          <Style><Border><Style>None</Style></Border></Style>
+        </PageHeader>
+        <PageHeight>29.7cm</PageHeight>
+        <PageWidth>21cm</PageWidth>
+        <LeftMargin>1.5cm</LeftMargin><RightMargin>1.5cm</RightMargin>
+        <TopMargin>1.5cm</TopMargin><BottomMargin>1.5cm</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+</Report>

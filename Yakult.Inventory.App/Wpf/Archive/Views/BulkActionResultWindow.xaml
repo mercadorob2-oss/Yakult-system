@@ -1,0 +1,138 @@
+<Window
+    x:Class="Yakult.Inventory.App.WPF.Archive.Views.BulkActionResultWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+    Title="{Binding WindowTitle}"
+    Width="560" MinWidth="460"
+    Height="480" MinHeight="260"
+    SizeToContent="Height"
+    MaxHeight="700"
+    WindowStartupLocation="CenterOwner"
+    ResizeMode="CanResizeWithGrip"
+    Background="#F0F2F6"
+    FontFamily="Segoe UI"
+    UseLayoutRounding="True"
+    SnapsToDevicePixels="True"
+    TextOptions.TextFormattingMode="Display"
+    TextOptions.TextRenderingMode="ClearType">
+
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily"                     Value="Segoe UI"/>
+            <Setter Property="Foreground"                     Value="#1A2333"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+        </Style>
+
+        <Style x:Key="Pill" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding"      Value="10,4"/>
+            <Setter Property="Margin"       Value="0,0,8,0"/>
+        </Style>
+
+        <Style x:Key="PillText" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+
+        <Style x:Key="OkBtn" TargetType="Button">
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="Padding"         Value="20,0"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background"      Value="#3A8EF6"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="5"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#3A8EF6" Padding="18,14">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding HeaderIcon}" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                           Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding WindowTitle}" FontSize="15" FontWeight="Bold" Foreground="White"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Summary pills -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="18,12">
+            <StackPanel Orientation="Horizontal">
+                <Border Style="{StaticResource Pill}" Background="#27AE60">
+                    <TextBlock Style="{StaticResource PillText}" Text="{Binding SucceededSummary}"/>
+                </Border>
+                <Border Style="{StaticResource Pill}" Background="#E67E22"
+                        Visibility="{Binding HasBlocked, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource PillText}" Text="{Binding BlockedSummary}"/>
+                </Border>
+                <Border Style="{StaticResource Pill}" Background="#D9534F"
+                        Visibility="{Binding HasOtherErrors, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Style="{StaticResource PillText}" Text="{Binding OtherErrorsSummary}"/>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Result rows -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="18,12" MaxHeight="440">
+            <StackPanel>
+                <TextBlock Text="{Binding BlockedIntro}" FontSize="11" Foreground="#5A6A7E" TextWrapping="Wrap"
+                           Margin="0,0,0,10"
+                           Visibility="{Binding HasBlocked, Converter={StaticResource BoolToVis}}"/>
+
+                <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="White" BorderBrush="#DDE3EC" BorderThickness="1"
+                                    CornerRadius="6" Padding="12,8" Margin="0,0,0,6">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Icon}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                                   Foreground="{Binding IconBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding RecordName}" FontSize="12" FontWeight="SemiBold"
+                                                   TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Reason}" FontSize="10.5" Foreground="#6B7A8D"
+                                               TextWrapping="Wrap" Margin="20,3,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="3" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="18,12">
+            <Button Content="OK" Style="{StaticResource OkBtn}" HorizontalAlignment="Right"
+                    Click="BtnOk_Click" IsDefault="True"/>
+        </Border>
+    </Grid>
+</Window>

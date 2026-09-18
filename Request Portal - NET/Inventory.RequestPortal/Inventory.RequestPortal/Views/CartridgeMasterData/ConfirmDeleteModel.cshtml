@@ -1,0 +1,73 @@
+@model Inventory.RequestPortal.Models.CartridgeModelDto
+@{
+    ViewData["Title"] = "Delete Cartridge Model";
+    bool hasItems = ViewBag.HasItems ?? false;
+    int itemCount = ViewBag.ItemCount ?? 0;
+}
+
+@await Html.PartialAsync("_CartridgeManagementNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>Delete Cartridge Model</h1>
+        <p class="subtitle mb-0">@Model.ModelNumber</p>
+    </div>
+</div>
+
+<div class="content-padded">
+    <div class="card" style="max-width:640px;">
+        <div class="card-body">
+            @if (!hasItems)
+            {
+                <p>Permanently delete "<strong>@Model.ModelNumber</strong>"? This cannot be undone.</p>
+                <form method="post" asp-action="DeleteModelConfirmed">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.CartridgeModelId" />
+                    <input type="hidden" name="mode" value="simple" />
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">Delete Permanently</button>
+                        <a asp-action="Models" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <p class="text-danger fw-bold">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    This model has @itemCount linked item record(s).
+                </p>
+                <p class="text-muted small">
+                    Deleting a model that has linked items will unlink those items (their CartridgeModelId field
+                    will be cleared, but items will NOT be deleted). How do you want to proceed?
+                </p>
+
+                <form method="post" asp-action="DeleteModelConfirmed" class="mb-2">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.CartridgeModelId" />
+                    <input type="hidden" name="mode" value="inactive" />
+                    <button type="submit" class="btn btn-primary w-100 text-start">
+                        <strong>Option A: Mark as Inactive (Safe)</strong><br />
+                        <span class="small">Keeps all data intact · Maintains audit trail · Reversible via Edit</span>
+                    </button>
+                </form>
+
+                <form method="post" asp-action="DeleteModelConfirmed"
+                      onsubmit="return confirm('FINAL WARNING\n\nYou are about to permanently delete &quot;@Model.ModelNumber&quot;.\n\nThis will unlink @itemCount item record(s). This CANNOT be undone. Proceed?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.CartridgeModelId" />
+                    <input type="hidden" name="mode" value="force" />
+                    <button type="submit" class="btn btn-danger w-100 text-start mb-3">
+                        <strong>Option B: Delete Permanently (Unlinks Linked Items)</strong><br />
+                        <span class="small">Permanently removes the model · Clears CartridgeModelId on linked items · Cannot be undone</span>
+                    </button>
+                </form>
+
+                <a asp-action="Models" class="btn btn-outline-secondary">Cancel</a>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,1111 @@
+@model AdminCardsViewModel
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Services & Portals";
+    var jsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+    jsonOptions.Converters.Add(new JsonStringEnumConverter());
+}
+
+<section class="admin-card-summary" aria-label="Card status summary">
+    <div class="admin-stat">
+        <span class="admin-stat__value" id="totalCount">@Model.Cards.Count</span>
+        <span class="admin-stat__label">Services</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value" id="connectedCount">0</span>
+        <span class="admin-stat__label">Connected</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value" id="maintenanceCount">0</span>
+        <span class="admin-stat__label">Maintenance</span>
+    </div>
+    <div class="admin-stat">
+        <span class="admin-stat__value" id="draftCount">0</span>
+        <span class="admin-stat__label">Unsaved edits</span>
+    </div>
+</section>
+@Html.AntiForgeryToken()
+
+<div class="upload-dialog-backdrop" id="installerUploadDialog" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="installerUploadDialogTitle">
+    <div class="upload-dialog" id="installerUploadDialogPanel">
+        <div class="upload-dialog__head">
+            <span class="upload-dialog__spinner" aria-hidden="true"></span>
+            <span class="upload-dialog__check" id="installerUploadDialogIcon" aria-hidden="true">✓</span>
+            <div>
+                <h3 id="installerUploadDialogTitle">Uploading installer</h3>
+                <p id="installerUploadDialogMessage">Preparing upload...</p>
+            </div>
+        </div>
+        <div class="upload-progress" aria-hidden="true"><span id="installerUploadDialogProgress"></span></div>
+        <div class="upload-dialog__meta"><span id="installerUploadDialogFile">Selected file</span><span id="installerUploadDialogPercent">0%</span></div>
+        <div class="upload-dialog__details" id="installerUploadDialogDetails" aria-live="polite"></div>
+        <div class="upload-dialog__actions"><button type="button" class="admin-button admin-button--primary" id="installerUploadDialogClose">OK</button></div>
+    </div>
+</div>
+
+<section class="admin-workspace">
+    <div class="admin-list-panel">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Services &amp; Portals Registry</h2>
+                <p>Manage public service entries, launch instructions, visibility, and display order.</p>
+            </div>
+            <div class="admin-form-actions">
+                <button type="button" class="admin-button admin-button--ghost" id="newCardBtn">New Service</button>
+                <button type="button" class="admin-button admin-button--ghost" id="resetDraftsBtn">Discard Edits</button>
+            </div>
+        </div>
+
+        <div class="admin-card-toolbar">
+            <input type="text" id="cardSearch" placeholder="Search services..." autocomplete="off" />
+            <select id="cardFilter">
+                <option value="all">All services</option>
+                <option value="visible">Visible</option>
+                <option value="hidden">Hidden</option>
+                <option value="connected">Connected</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="disabled">Disabled</option>
+                <option value="draft">Drafts</option>
+            </select>
+        </div>
+
+        <div class="admin-card-list" id="adminCardList"></div>
+    </div>
+
+    <aside class="admin-editor" id="adminEditor" aria-label="Card editor">
+        <div class="admin-panel-header">
+            <div>
+                <h2>Edit Service</h2>
+                <p id="editorSourceLabel">Select a service to edit.</p>
+            </div>
+            <button type="button" class="admin-icon-button" id="resetCardBtn" title="Reset selected service">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v6h6"/></svg>
+            </button>
+        </div>
+
+        <form class="admin-form" id="cardEditForm">
+            <div class="admin-selected-card">
+                <div class="admin-selected-card__main">
+                    <span class="admin-selected-card__eyebrow" id="selectedCardKey">No service selected</span>
+                    <strong id="selectedCardName">Select a service</strong>
+                </div>
+                <div class="admin-selected-card__chips">
+                    <span class="admin-mini-chip" id="selectedLaunchChip">Launch</span>
+                    <span class="admin-mini-chip" id="selectedVisibilityChip">Visibility</span>
+                    <span class="admin-mini-chip" id="selectedStatusChip">Status</span>
+                    <span class="admin-mini-chip" id="selectedInstallerChip">Installer</span>
+                </div>
+            </div>
+
+            <div class="admin-editor-tabs" role="tablist" aria-label="Card editor sections">
+                <button type="button" class="admin-tab is-active" data-tab="content">Content</button>
+                <button type="button" class="admin-tab" data-tab="launch">Launch</button>
+                <button type="button" class="admin-tab" data-tab="visibility">Visibility</button>
+                <button type="button" class="admin-tab" data-tab="maintenance">Maintenance</button>
+                <button type="button" class="admin-tab" data-tab="health">Health</button>
+            </div>
+
+            <div class="admin-editor-body">
+                <div class="admin-editor-main">
+                    <section class="admin-tab-panel is-active" data-tab-panel="content">
+                        <label>
+                            <span>Service Key</span>
+                            <input type="text" id="cardKey" autocomplete="off" />
+                        </label>
+                        <label>
+                            <span>Name</span>
+                            <input type="text" id="cardName" autocomplete="off" />
+                        </label>
+                        <label>
+                            <span>Description</span>
+                            <textarea id="cardDescription" rows="4"></textarea>
+                        </label>
+                        <div class="admin-form-grid">
+                            <label>
+                                <span>Category label</span>
+                                <input type="text" id="cardBadge" autocomplete="off" />
+                            </label>
+                            <label>
+                                <span>Sort Order</span>
+                                <input type="number" id="cardSortOrder" min="0" step="1" />
+                            </label>
+                        </div>
+                        <div class="admin-form-grid">
+                            <label>
+                                <span>Display category</span>
+                                <select id="cardTheme">
+                                    <option value="">Default</option>
+                                    <option value="inventory">Inventory</option>
+                                    <option value="cadena">Cadena</option>
+                                    <option value="yds">YDS</option>
+                                    <option value="request">Request</option>
+                                    <option value="borrow">Borrow</option>
+                                    <option value="scanner">Scanner</option>
+                                    <option value="itcm">ITCM</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Icon</span>
+                                <select id="cardIcon">
+                                    <option value="package">Package</option>
+                                    <option value="users">Users</option>
+                                    <option value="bar-chart">Chart</option>
+                                    <option value="clipboard">Clipboard</option>
+                                    <option value="smartphone">Phone</option>
+                                    <option value="tool">Tool</option>
+                                    <option value="database">Database</option>
+                                    <option value="book">Book</option>
+                                    <option value="grid">Grid</option>
+                                    <option value="layers">Layers</option>
+                                </select>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="admin-tab-panel" data-tab-panel="launch">
+                        <div class="admin-form-section">
+                            <div class="admin-form-section__head">
+                                <div>
+                                    <strong>Launch behavior</strong>
+                                    <span>Control how the employee-facing service opens and what status it displays.</span>
+                                </div>
+                            </div>
+                            <div class="admin-form-grid">
+                                <label>
+                                    <span>Launch Type</span>
+                                    <select id="cardLaunchType">
+                                        <option value="url">Open web URL</option>
+                                        <option value="rdp">RDP download</option>
+                                        <option value="installer">Installer download</option>
+                                        <option value="rdpInstaller">RDP + installer</option>
+                                        <option value="disabled">Disabled / reserved</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    <span>Status</span>
+                                    <select id="cardStatus">
+                                        <option value="Connected">Connected</option>
+                                        <option value="Maintenance">Maintenance</option>
+                                        <option value="NotConnected">Not connected</option>
+                                        <option value="Disabled">Disabled / planned</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <label data-launch-field="url">
+                                <span>URL</span>
+                                <input type="text" id="cardUrl" autocomplete="off" placeholder="https://example.local or # for reserved" />
+                            </label>
+                        </div>
+
+                        <div class="admin-form-section admin-form-section--installer admin-installer-fields" data-launch-field="installer">
+                            <div class="admin-form-section__head">
+                                <div>
+                                    <strong>Installer package</strong>
+                                    <span>Upload, version, and describe the package downloaded from the employee page.</span>
+                                </div>
+                            </div>
+                            <label>
+                                <span>Installer path</span>
+                                <input type="text" id="cardInstallerPath" autocomplete="off" placeholder="installer\app-setup.apk" />
+                            </label>
+                            <div class="admin-form-grid">
+                                <label>
+                                    <span>Version</span>
+                                    <input type="text" id="cardInstallerVersion" autocomplete="off" placeholder="Optional version" />
+                                </label>
+                                <label>
+                                    <span>Upload installer</span>
+                                    <input type="file" id="cardInstallerFile" accept=".apk,.exe,.msi,.zip" />
+                                    <small class="admin-field-help" id="installerSelectedFile">No upload file selected.</small>
+                                </label>
+                            </div>
+                            <label>
+                                <span>Install notes</span>
+                                <textarea id="cardInstallerNotes" rows="3" placeholder="Optional instructions shown to admins for this installer."></textarea>
+                            </label>
+                            <div class="admin-form-actions admin-form-actions--compact">
+                                <span class="admin-save-status" id="installerUploadStatus">No installer uploaded in this session.</span>
+                                <button type="button" class="admin-button admin-button--ghost" id="uploadInstallerBtn">Upload Installer</button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="cardDeepLink" />
+                    </section>
+
+                    <section class="admin-tab-panel" data-tab-panel="visibility">
+                        <label class="admin-check-row">
+                            <input type="checkbox" id="cardIsVisible" />
+                            <span>Visible on employee Services &amp; Portals</span>
+                        </label>
+                        <input type="hidden" id="cardAllowedRoles" />
+                        <input type="hidden" id="cardAllowedUserIds" />
+                    </section>
+
+                    <section class="admin-tab-panel" data-tab-panel="maintenance">
+                        <div class="admin-form-grid">
+                            <label>
+                                <span>Maintenance Start UTC</span>
+                                <input type="datetime-local" id="cardMaintenanceStartUtc" />
+                            </label>
+                            <label>
+                                <span>Maintenance End UTC</span>
+                                <input type="datetime-local" id="cardMaintenanceEndUtc" />
+                            </label>
+                        </div>
+                        <label>
+                            <span>Maintenance note</span>
+                            <textarea id="cardMaintenanceNote" rows="3" placeholder="Optional note shown while in maintenance."></textarea>
+                        </label>
+                    </section>
+
+                    <section class="admin-tab-panel" data-tab-panel="health">
+                        <label>
+                            <span>Health Check URL</span>
+                            <input type="text" id="cardHealthCheckUrl" autocomplete="off" placeholder="Optional HTTP endpoint for status checks" />
+                        </label>
+                        <div class="admin-health-meta">
+                            <span id="cardHealthStatusText">Not checked</span>
+                            <span id="cardHealthCheckedText">No timestamp</span>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="admin-preview-column">
+                    <span class="admin-preview-column__label">Employee-facing preview</span>
+                    <div class="admin-preview-card" id="adminPreviewCard">
+                        <div class="admin-preview-accent"></div>
+                        <div class="admin-preview-top">
+                            <div class="admin-preview-icon" id="adminPreviewIcon">P</div>
+                            <div class="card-meta"><span class="system-badge"></span></div>
+                        </div>
+                        <h3 class="card-title"></h3>
+                        <p class="card-desc"></p>
+                        <div class="card-status">
+                            <span class="status-dot"></span>
+                            <span class="status-text"></span>
+                        </div>
+                        <div class="admin-preview-launch" id="adminPreviewLaunch">Open URL</div>
+                        <p class="card-note"></p>
+                    </div>
+                </aside>
+            </div>
+
+            <div class="admin-form-actions admin-editor-savebar" aria-live="polite">
+                <span class="admin-save-status" id="saveStatus">No unsaved changes.</span>
+                <div class="admin-form-actions">
+                    <button type="button" class="admin-button admin-button--ghost" id="resetCardBtnSecondary">Discard Changes</button>
+                    <button type="button" class="admin-button admin-button--primary" id="saveCardBtn">Save Changes</button>
+                </div>
+            </div>
+            <div class="admin-danger-zone">
+                <div>
+                    <strong>Archive service</strong>
+                    <p>Hide this service from the public directory without deleting its audit history.</p>
+                </div>
+                <button type="button" class="admin-button admin-button--ghost" id="archiveCardBtn">Archive</button>
+            </div>
+        </form>
+    </aside>
+</section>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let savedCards = @Html.Raw(JsonSerializer.Serialize(Model.Cards, jsonOptions));
+            let workingCards = savedCards.map(card => ({ ...card }));
+            const dirtyCards = new Set();
+            let selectedId = savedCards[0]?.id || '';
+            let newCardCounter = 1;
+
+            const list = document.getElementById('adminCardList');
+            const cardSearch = document.getElementById('cardSearch');
+            const cardFilter = document.getElementById('cardFilter');
+            const connectedCount = document.getElementById('connectedCount');
+            const maintenanceCount = document.getElementById('maintenanceCount');
+            const draftCount = document.getElementById('draftCount');
+            const newCardBtn = document.getElementById('newCardBtn');
+            const resetDraftsBtn = document.getElementById('resetDraftsBtn');
+            const resetCardBtn = document.getElementById('resetCardBtn');
+            const saveCardBtn = document.getElementById('saveCardBtn');
+            const archiveCardBtn = document.getElementById('archiveCardBtn');
+            const saveStatus = document.getElementById('saveStatus');
+            const editorSourceLabel = document.getElementById('editorSourceLabel');
+            const previewCard = document.getElementById('adminPreviewCard');
+            const previewIcon = document.getElementById('adminPreviewIcon');
+            const previewLaunch = document.getElementById('adminPreviewLaunch');
+            const selectedCardKey = document.getElementById('selectedCardKey');
+            const selectedCardName = document.getElementById('selectedCardName');
+            const selectedLaunchChip = document.getElementById('selectedLaunchChip');
+            const selectedVisibilityChip = document.getElementById('selectedVisibilityChip');
+            const selectedStatusChip = document.getElementById('selectedStatusChip');
+            const selectedInstallerChip = document.getElementById('selectedInstallerChip');
+            const healthStatusText = document.getElementById('cardHealthStatusText');
+            const healthCheckedText = document.getElementById('cardHealthCheckedText');
+            const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+            const installerFileInput = document.getElementById('cardInstallerFile');
+            const uploadInstallerBtn = document.getElementById('uploadInstallerBtn');
+            const installerUploadStatus = document.getElementById('installerUploadStatus');
+            const installerSelectedFile = document.getElementById('installerSelectedFile');
+            const resetCardBtnSecondary = document.getElementById('resetCardBtnSecondary');
+            const query = new URLSearchParams(window.location.search);
+            const requestedFilter = query.get('filter');
+            const requestedService = query.get('service');
+
+            if (requestedFilter && Array.from(cardFilter.options).some(option => option.value === requestedFilter)) {
+                cardFilter.value = requestedFilter;
+            }
+            if (requestedService) {
+                const requestedCard = workingCards.find(card => String(card.cardKey || '').toLowerCase() === requestedService.toLowerCase());
+                if (requestedCard) selectedId = requestedCard.id;
+            }
+
+            const fields = {
+                cardKey: document.getElementById('cardKey'),
+                name: document.getElementById('cardName'),
+                description: document.getElementById('cardDescription'),
+                url: document.getElementById('cardUrl'),
+                badge: document.getElementById('cardBadge'),
+                status: document.getElementById('cardStatus'),
+                launchType: document.getElementById('cardLaunchType'),
+                sortOrder: document.getElementById('cardSortOrder'),
+                theme: document.getElementById('cardTheme'),
+                icon: document.getElementById('cardIcon'),
+                isVisible: document.getElementById('cardIsVisible'),
+                allowedRoles: document.getElementById('cardAllowedRoles'),
+                allowedUserIds: document.getElementById('cardAllowedUserIds'),
+                healthCheckUrl: document.getElementById('cardHealthCheckUrl'),
+                deepLink: document.getElementById('cardDeepLink'),
+                installerPath: document.getElementById('cardInstallerPath'),
+                installerVersion: document.getElementById('cardInstallerVersion'),
+                installerNotes: document.getElementById('cardInstallerNotes'),
+                maintenanceStartUtc: document.getElementById('cardMaintenanceStartUtc'),
+                maintenanceEndUtc: document.getElementById('cardMaintenanceEndUtc'),
+                maintenanceNote: document.getElementById('cardMaintenanceNote')
+            };
+
+            function getSavedCard(id) {
+                return savedCards.find(card => card.id === id);
+            }
+
+            function getCard(id) {
+                return workingCards.find(card => card.id === id);
+            }
+
+            function isNewCard(card) {
+                return !!card && !card.rowVersion;
+            }
+
+            function statusMeta(status) {
+                if (status === 'Connected') return { label: 'Connected and operational', className: 'is-operational' };
+                if (status === 'Maintenance') return { label: 'In maintenance', className: 'is-maintenance' };
+                if (status === 'Disabled') return { label: 'Planned / disabled', className: 'is-disabled' };
+                return { label: 'Not yet connected', className: 'is-offline' };
+            }
+
+            function launchTypeOf(card) {
+                if (card.status === 'Disabled') return 'disabled';
+                if (card.isRdpDownload && card.isInstallerDownload) return 'rdpInstaller';
+                if (card.isRdpDownload) return 'rdp';
+                if (card.isInstallerDownload) return 'installer';
+                return 'url';
+            }
+
+
+            function installerAssociation(card) {
+                const path = String(card?.installerPath || '').trim();
+                const fileName = path ? path.split(/[\\/]/).pop() : '';
+                const launchType = launchTypeOf(card || {});
+                const installerExpected = launchType === 'installer' || launchType === 'rdpInstaller';
+                if (path) {
+                    return {
+                        label: installerExpected ? 'Installer linked' : 'Installer associated',
+                        detail: fileName,
+                        className: 'installer-association'
+                    };
+                }
+                return {
+                    label: installerExpected ? 'Installer missing' : 'No installer linked',
+                    detail: '',
+                    className: installerExpected ? 'installer-association installer-association--missing' : 'installer-association installer-association--none'
+                };
+            }
+
+            function truncateMiddle(value, maxLength) {
+                const text = String(value || '');
+                const limit = Number(maxLength || 0);
+                if (!limit || text.length <= limit) return text;
+                if (limit <= 6) return text.slice(0, limit);
+                const keep = limit - 3;
+                const start = Math.ceil(keep * 0.55);
+                const end = Math.floor(keep * 0.45);
+                return `${text.slice(0, start)}...${text.slice(text.length - end)}`;
+            }
+
+            function installerAssociationText(card, maxDetailLength) {
+                const association = installerAssociation(card);
+                const detail = maxDetailLength ? truncateMiddle(association.detail, maxDetailLength) : association.detail;
+                return detail ? `${association.label}: ${detail}` : association.label;
+            }
+            function flagsFromLaunchType(value) {
+                return {
+                    isRdpDownload: value === 'rdp' || value === 'rdpInstaller',
+                    isInstallerDownload: value === 'installer' || value === 'rdpInstaller',
+                    status: value === 'disabled' ? 'Disabled' : fields.status.value
+                };
+            }
+
+            function renderList() {
+                const query = (cardSearch.value || '').toLowerCase().trim();
+                const filter = cardFilter.value || 'all';
+                const filteredCards = workingCards.filter(card => {
+                    const haystack = [card.name, card.cardKey, card.description, card.status, launchTypeOf(card)]
+                        .join(' ')
+                        .toLowerCase();
+                    if (query && !haystack.includes(query)) return false;
+                    if (filter === 'visible') return card.isVisible !== false;
+                    if (filter === 'hidden') return card.isVisible === false;
+                    if (filter === 'connected') return card.status === 'Connected';
+                    if (filter === 'maintenance') return card.status === 'Maintenance';
+                    if (filter === 'disabled') return card.status === 'Disabled';
+                    if (filter === 'draft') return dirtyCards.has(card.id);
+                    return true;
+                });
+
+                if (filteredCards.length === 0) {
+                    list.innerHTML = '<div class="admin-empty-state admin-empty-state--action"><strong>No services match this view</strong><span>Adjust search or filter settings, or create a new service.</span></div>';
+                    renderCounts();
+                    return;
+                }
+
+                list.innerHTML = filteredCards.map(card => {
+                    const meta = statusMeta(card.status);
+                    const hasDraft = dirtyCards.has(card.id);
+                    const launchType = launchTypeOf(card);
+                    const visibilityText = card.isVisible === false ? 'Hidden' : 'Visible';
+                    const installerText = installerAssociationText(card, 34);
+                    const installerFullText = installerAssociationText(card);
+                    return `
+                        <button type="button" class="admin-card-row ${card.id === selectedId ? 'is-selected' : ''}" data-card-id="${card.id}" title="${escapeHtml(installerFullText)}">
+                            <span class="admin-card-row__main">
+                                <span class="admin-card-row__title">${escapeHtml(card.name)}</span>
+                                <span class="admin-card-row__desc">${escapeHtml(card.cardKey)} · ${escapeHtml(launchType)} · ${escapeHtml(visibilityText)} · ${escapeHtml(installerText)}</span>
+                            </span>
+                            <span class="admin-status-pill ${meta.className}">${meta.label}</span>
+                            ${hasDraft ? '<span class="admin-draft-pill">Draft</span>' : ''}
+                        </button>
+                    `;
+                }).join('');
+
+                list.querySelectorAll('.admin-card-row').forEach(row => {
+                    row.addEventListener('click', function() {
+                        const nextId = this.dataset.cardId;
+                        if (nextId === selectedId) return;
+                        const current = getCard(selectedId);
+                        if (current && dirtyCards.has(selectedId) && !window.confirm(`Discard unsaved changes to "${current.name || 'this service'}"?`)) {
+                            return;
+                        }
+                        selectedId = nextId;
+                        loadEditor();
+                        renderList();
+                    });
+                });
+
+                renderCounts();
+            }
+
+            function renderCounts() {
+                connectedCount.textContent = workingCards.filter(card => card.status === 'Connected').length.toString();
+                maintenanceCount.textContent = workingCards.filter(card => card.status === 'Maintenance').length.toString();
+                draftCount.textContent = dirtyCards.size.toString();
+                document.getElementById('totalCount').textContent = workingCards.length.toString();
+            }
+
+            function loadEditor() {
+                const card = getCard(selectedId);
+                if (!card) {
+                    saveCardBtn.disabled = true;
+                    archiveCardBtn.disabled = true;
+                    return;
+                }
+
+                fields.cardKey.value = card.cardKey || '';
+                fields.cardKey.readOnly = !isNewCard(card);
+                fields.name.value = card.name || '';
+                fields.description.value = card.description || '';
+                fields.url.value = card.url || '';
+                fields.badge.value = card.badge || '';
+                fields.status.value = card.status || 'NotConnected';
+                fields.launchType.value = launchTypeOf(card);
+                fields.sortOrder.value = Number.isFinite(card.sortOrder) ? card.sortOrder : 0;
+                fields.theme.value = card.theme || '';
+                fields.icon.value = card.icon || 'package';
+                fields.isVisible.checked = card.isVisible !== false;
+                fields.allowedRoles.value = card.allowedRoles || '';
+                fields.allowedUserIds.value = card.allowedUserIds || '';
+                fields.healthCheckUrl.value = card.healthCheckUrl || '';
+                fields.deepLink.value = card.deepLink || '';
+                fields.installerPath.value = card.installerPath || '';
+                fields.installerVersion.value = card.installerVersion || '';
+                fields.installerNotes.value = card.installerNotes || '';
+                if (installerFileInput) installerFileInput.value = '';
+                if (installerSelectedFile) installerSelectedFile.textContent = card.installerPath ? `Current saved path: ${card.installerPath}` : 'No upload file selected.';
+                if (installerUploadStatus) installerUploadStatus.textContent = card.installerPath ? `Current: ${card.installerPath}` : 'No installer uploaded in this session.';
+                fields.maintenanceStartUtc.value = toDateTimeLocal(card.maintenanceStartUtc);
+                fields.maintenanceEndUtc.value = toDateTimeLocal(card.maintenanceEndUtc);
+                fields.maintenanceNote.value = card.maintenanceNote || '';
+                editorSourceLabel.textContent = isNewCard(card) ? 'New unsaved card.' : (dirtyCards.has(selectedId) ? 'Unsaved database change.' : 'Saved database value.');
+                saveStatus.textContent = dirtyCards.has(selectedId) ? 'Unsaved changes.' : 'No unsaved changes.';
+                saveStatus.classList.toggle('is-dirty', dirtyCards.has(selectedId));
+                saveCardBtn.disabled = !dirtyCards.has(selectedId);
+                archiveCardBtn.disabled = isNewCard(card);
+                healthStatusText.textContent = card.lastHealthStatus || 'Not checked';
+                healthCheckedText.textContent = card.lastHealthCheckedAt ? `Last checked: ${new Date(card.lastHealthCheckedAt).toLocaleString()}` : 'No timestamp';
+                applyLaunchFieldVisibility();
+                renderSelectedSummary(card);
+                renderPreview(card);
+            }
+
+            function renderPreview(card) {
+                const meta = statusMeta(card.status);
+                previewCard.querySelector('.system-badge').textContent = card.badge || 'System';
+                previewCard.querySelector('.card-title').textContent = card.name || 'Untitled card';
+                previewCard.querySelector('.card-desc').textContent = card.description || '';
+                previewCard.className = `admin-preview-card theme-${(card.theme || 'default').toLowerCase()}`;
+                previewIcon.textContent = getInitials(card.name || card.cardKey || 'P');
+                const dot = previewCard.querySelector('.status-dot');
+                const text = previewCard.querySelector('.status-text');
+                dot.className = `status-dot ${meta.className}`;
+                text.className = `status-text ${meta.className}`;
+                text.textContent = meta.label;
+                previewLaunch.textContent = launchLabel(launchTypeOf(card));
+                const note = previewCard.querySelector('.card-note');
+                note.textContent = card.status === 'Maintenance'
+                    ? (card.maintenanceNote || 'Maintenance details are not set.')
+                    : installerAssociationText(card, 38);
+                note.title = card.status === 'Maintenance'
+                    ? (card.maintenanceNote || '')
+                    : installerAssociationText(card);
+            }
+
+            function renderSelectedSummary(card) {
+                const meta = statusMeta(card.status);
+                const launchType = launchTypeOf(card);
+                selectedCardKey.textContent = card.cardKey || 'new-card';
+                selectedCardName.textContent = card.name || 'Untitled card';
+                selectedLaunchChip.textContent = launchLabel(launchType);
+                selectedVisibilityChip.textContent = card.isVisible === false ? 'Hidden' : 'Visible';
+                selectedStatusChip.textContent = meta.label;
+                selectedStatusChip.className = `admin-mini-chip ${meta.className}`;
+                const installer = installerAssociation(card);
+                selectedInstallerChip.textContent = installerAssociationText(card, 42);
+                selectedInstallerChip.title = installerAssociationText(card);
+                selectedInstallerChip.className = installer.className.replace('installer-association', 'admin-mini-chip');
+            }
+
+            function updateDraftFromEditor() {
+                const source = getSavedCard(selectedId);
+                const card = getCard(selectedId);
+                if (!card) return;
+                const launchFlags = flagsFromLaunchType(fields.launchType.value);
+
+                const next = {
+                    cardKey: fields.cardKey.value.trim(),
+                    name: fields.name.value.trim(),
+                    description: fields.description.value.trim(),
+                    url: fields.url.value.trim(),
+                    badge: fields.badge.value.trim(),
+                    status: launchFlags.status,
+                    isRdpDownload: launchFlags.isRdpDownload,
+                    isInstallerDownload: launchFlags.isInstallerDownload,
+                    isVisible: fields.isVisible.checked,
+                    sortOrder: parseInt(fields.sortOrder.value || '0', 10),
+                    allowedRoles: fields.allowedRoles.value.trim(),
+                    allowedUserIds: fields.allowedUserIds.value.trim(),
+                    healthCheckUrl: fields.healthCheckUrl.value.trim(),
+                    deepLink: fields.deepLink.value.trim(),
+                    installerPath: fields.installerPath.value.trim(),
+                    installerVersion: fields.installerVersion.value.trim(),
+                    installerNotes: fields.installerNotes.value.trim(),
+                    maintenanceStartUtc: fromDateTimeLocal(fields.maintenanceStartUtc.value),
+                    maintenanceEndUtc: fromDateTimeLocal(fields.maintenanceEndUtc.value),
+                    theme: fields.theme.value,
+                    icon: fields.icon.value,
+                    maintenanceNote: fields.maintenanceNote.value.trim()
+                };
+
+                Object.assign(card, next);
+                const changed = !source || Object.keys(next).some(key => normalizeValue(next[key]) !== normalizeValue(source[key]));
+                if (changed) {
+                    dirtyCards.add(selectedId);
+                } else {
+                    dirtyCards.delete(selectedId);
+                }
+
+                renderPreview(getCard(selectedId));
+                renderSelectedSummary(getCard(selectedId));
+                renderList();
+                editorSourceLabel.textContent = isNewCard(card) ? 'New unsaved card.' : (dirtyCards.has(selectedId) ? 'Unsaved database change.' : 'Saved database value.');
+                saveStatus.textContent = dirtyCards.has(selectedId) ? 'Unsaved changes.' : 'No unsaved changes.';
+                saveStatus.classList.toggle('is-dirty', dirtyCards.has(selectedId));
+                saveCardBtn.disabled = !dirtyCards.has(selectedId);
+                archiveCardBtn.disabled = isNewCard(card);
+                applyLaunchFieldVisibility();
+            }
+
+            function resetSelectedCard() {
+                const saved = getSavedCard(selectedId);
+                const card = getCard(selectedId);
+                if (dirtyCards.has(selectedId) && !window.confirm(`Discard unsaved changes to "${card?.name || 'this service'}"?`)) {
+                    return;
+                }
+                const index = workingCards.findIndex(card => card.id === selectedId);
+                if (saved && index >= 0) {
+                    workingCards[index] = { ...saved };
+                }
+                dirtyCards.delete(selectedId);
+                loadEditor();
+                renderList();
+            }
+
+            function resetAllDrafts() {
+                if (dirtyCards.size > 0 && !window.confirm(`Discard ${dirtyCards.size} unsaved service edit${dirtyCards.size === 1 ? '' : 's'}?`)) {
+                    return;
+                }
+                workingCards = savedCards.map(card => ({ ...card }));
+                dirtyCards.clear();
+                selectedId = workingCards[0]?.id || '';
+                loadEditor();
+                renderList();
+            }
+
+            function createNewCard() {
+                const id = `new-${Date.now()}-${newCardCounter++}`;
+                const sortOrder = workingCards.length === 0
+                    ? 10
+                    : Math.max(...workingCards.map(card => Number(card.sortOrder || 0))) + 10;
+                const card = {
+                    id,
+                    cardKey: `new-card-${newCardCounter}`,
+                    index: workingCards.length,
+                    name: 'New Service Entry',
+                    description: '',
+                    url: '#',
+                    badge: 'System',
+                    theme: '',
+                    icon: 'grid',
+                    isRdpDownload: false,
+                    isInstallerDownload: false,
+                    isOperational: false,
+                    status: 'NotConnected',
+                    maintenanceNote: '',
+                    allowedRoles: '',
+                    allowedUserIds: '',
+                    healthCheckUrl: '',
+                    lastHealthStatus: '',
+                    lastHealthCheckedAt: null,
+                    maintenanceStartUtc: null,
+                    maintenanceEndUtc: null,
+                    deepLink: '',
+                    installerPath: '',
+                    installerVersion: '',
+                    installerNotes: '',
+                    isVisible: true,
+                    sortOrder,
+                    rowVersion: ''
+                };
+
+                workingCards.push(card);
+                selectedId = id;
+                dirtyCards.add(id);
+                renderList();
+                loadEditor();
+                fields.cardKey.focus();
+                fields.cardKey.select();
+                window.yakultToast?.('New draft service created.', 'info');
+            }
+
+            async function saveSelectedCard() {
+                const card = getCard(selectedId);
+                if (!card || !dirtyCards.has(selectedId)) return;
+
+                saveCardBtn.disabled = true;
+                saveCardBtn.classList.add('is-loading');
+                saveStatus.textContent = 'Saving...';
+
+                try {
+                    const response = await fetch('@Url.Action("SaveCard", "Admin")', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': antiForgeryToken
+                        },
+                        body: JSON.stringify({
+                            cardKey: card.cardKey,
+                            name: card.name,
+                            description: card.description,
+                            url: card.url,
+                            badge: card.badge,
+                            theme: card.theme,
+                            icon: card.icon,
+                            isRdpDownload: card.isRdpDownload,
+                            isInstallerDownload: card.isInstallerDownload,
+                            isVisible: card.isVisible,
+                            sortOrder: card.sortOrder,
+                            allowedRoles: card.allowedRoles,
+                            allowedUserIds: card.allowedUserIds,
+                            healthCheckUrl: card.healthCheckUrl,
+                            deepLink: card.deepLink,
+                            installerPath: card.installerPath,
+                            installerVersion: card.installerVersion,
+                            installerNotes: card.installerNotes,
+                            maintenanceStartUtc: card.maintenanceStartUtc,
+                            maintenanceEndUtc: card.maintenanceEndUtc,
+                            status: card.status,
+                            maintenanceNote: card.maintenanceNote,
+                            rowVersion: card.rowVersion
+                        })
+                    });
+
+                    const responseText = await response.text();
+                    let result = {};
+                    try {
+                        result = responseText ? JSON.parse(responseText) : {};
+                    } catch {
+                        const message = responseText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                        throw new Error(message || `Save failed with HTTP ${response.status}.`);
+                    }
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'Save failed.');
+                    }
+
+                    const previousId = card.id;
+                    replaceCard(result.card, previousId);
+                    dirtyCards.delete(previousId);
+                    dirtyCards.delete(result.card.id);
+                    selectedId = result.card.id;
+                    saveStatus.textContent = 'Saved.';
+                    window.yakultToast?.('Service saved.', 'success');
+                    renderList();
+                    loadEditor();
+                } catch (error) {
+                    saveStatus.textContent = error.message || 'Unable to save.';
+                    window.yakultToast?.(error.message || 'Unable to save service.', 'error');
+                    saveCardBtn.disabled = false;
+                } finally {
+                    saveCardBtn.classList.remove('is-loading');
+                }
+            }
+
+            async function archiveSelectedCard() {
+                const card = getCard(selectedId);
+                if (!card || isNewCard(card)) return;
+                if (!confirm(`Archive "${card.name}"? It will be hidden from Services & Portals.`)) return;
+
+                archiveCardBtn.disabled = true;
+                archiveCardBtn.classList.add('is-loading');
+                saveStatus.textContent = 'Archiving...';
+
+                try {
+                    const response = await fetch('@Url.Action("ArchiveCard", "Admin")', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': antiForgeryToken
+                        },
+                        body: JSON.stringify({
+                            cardKey: card.cardKey,
+                            rowVersion: card.rowVersion
+                        })
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'Archive failed.');
+                    }
+
+                    savedCards = savedCards.filter(item => item.id !== card.id);
+                    workingCards = workingCards.filter(item => item.id !== card.id);
+                    dirtyCards.delete(card.id);
+                    selectedId = workingCards[0]?.id || '';
+                    saveStatus.textContent = 'Archived.';
+                    window.yakultToast?.('Service archived.', 'success');
+                    renderList();
+                    loadEditor();
+                } catch (error) {
+                    saveStatus.textContent = error.message || 'Unable to archive.';
+                    window.yakultToast?.(error.message || 'Unable to archive service.', 'error');
+                    archiveCardBtn.disabled = false;
+                } finally {
+                    archiveCardBtn.classList.remove('is-loading');
+                }
+            }
+
+            function replaceCard(card, previousId) {
+                const savedIndex = savedCards.findIndex(item => item.id === card.id);
+                if (savedIndex >= 0) {
+                    savedCards[savedIndex] = { ...card };
+                } else {
+                    savedCards.push({ ...card });
+                }
+
+                const workingIndex = workingCards.findIndex(item => item.id === (previousId || card.id));
+                if (workingIndex >= 0) {
+                    workingCards[workingIndex] = { ...card };
+                } else {
+                    workingCards.push({ ...card });
+                }
+            }
+
+            function escapeHtml(value) {
+                return String(value || '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+
+            function normalizeValue(value) {
+                if (typeof value === 'boolean') return value ? 'true' : 'false';
+                if (typeof value === 'number') return value.toString();
+                return String(value || '');
+            }
+
+            function launchLabel(value) {
+                if (value === 'rdp') return 'RDP launch';
+                if (value === 'installer') return 'Installer';
+                if (value === 'rdpInstaller') return 'RDP + installer';
+                if (value === 'disabled') return 'Disabled';
+                return 'Open URL';
+            }
+
+            function getInitials(value) {
+                return String(value || 'P')
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map(part => part[0].toUpperCase())
+                    .join('') || 'P';
+            }
+
+            function toDateTimeLocal(value) {
+                if (!value) return '';
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) return '';
+                const pad = number => number.toString().padStart(2, '0');
+                return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+            }
+
+            function fromDateTimeLocal(value) {
+                return value ? `${value}:00Z` : null;
+            }
+
+            function applyLaunchFieldVisibility() {
+                const launchType = fields.launchType.value;
+                const urlField = document.querySelector('[data-launch-field="url"]');
+                const installerField = document.querySelector('[data-launch-field="installer"]');
+                const shouldShowUrl = launchType === 'url';
+                const shouldShowInstaller = launchType === 'installer' || launchType === 'rdpInstaller';
+                if (urlField) urlField.style.display = shouldShowUrl ? '' : 'none';
+                if (installerField) installerField.style.display = shouldShowInstaller ? '' : 'none';
+            }
+
+
+            function formatUploadSize(bytes) {
+                if (!Number.isFinite(bytes) || bytes <= 0) return '';
+                const units = ['B', 'KB', 'MB', 'GB'];
+                let size = bytes;
+                let index = 0;
+                while (size >= 1024 && index < units.length - 1) {
+                    size /= 1024;
+                    index++;
+                }
+                return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
+            }
+
+            function renderInstallerUploadDetails(details) {
+                const detailsBox = document.getElementById('installerUploadDialogDetails');
+                if (!detailsBox) return;
+                const rows = [
+                    ['Original file', details?.originalName],
+                    ['Upload type', details?.uploadType],
+                    ['Transferred', details?.transferredText],
+                    ['Stored as', details?.storedName],
+                    ['Installer path', details?.storedPath]
+                ].filter(row => row[1]);
+                detailsBox.replaceChildren(...rows.map(([label, value]) => {
+                    const row = document.createElement('div');
+                    const labelNode = document.createElement('span');
+                    const valueNode = document.createElement('strong');
+                    labelNode.textContent = label;
+                    valueNode.textContent = value;
+                    row.append(labelNode, valueNode);
+                    return row;
+                }));
+            }
+
+            function setInstallerUploadDialog(state, title, message, percent, fileText, details) {
+                const overlay = document.getElementById('installerUploadDialog');
+                const panel = document.getElementById('installerUploadDialogPanel');
+                const progress = document.getElementById('installerUploadDialogProgress');
+                const percentText = document.getElementById('installerUploadDialogPercent');
+                const fileLabel = document.getElementById('installerUploadDialogFile');
+                const icon = document.getElementById('installerUploadDialogIcon');
+                if (!overlay || !panel) return;
+                overlay.classList.add('is-visible');
+                overlay.setAttribute('aria-hidden', 'false');
+                panel.classList.toggle('is-complete', state === 'complete');
+                panel.classList.toggle('is-error', state === 'error');
+                if (icon) icon.textContent = state === 'error' ? '!' : '✓';
+                document.getElementById('installerUploadDialogTitle').textContent = title;
+                document.getElementById('installerUploadDialogMessage').textContent = message;
+                const boundedPercent = Math.max(0, Math.min(percent || 0, 100));
+                if (progress) progress.style.width = `${boundedPercent}%`;
+                if (percentText) percentText.textContent = `${Math.round(boundedPercent)}%`;
+                if (fileLabel) fileLabel.textContent = fileText || 'Selected file';
+                renderInstallerUploadDetails(details);
+            }
+
+            function hideInstallerUploadDialog() {
+                const overlay = document.getElementById('installerUploadDialog');
+                if (!overlay) return;
+                overlay.classList.remove('is-visible');
+                overlay.setAttribute('aria-hidden', 'true');
+            }
+
+            function uploadInstallerRequest(formData, onProgress) {
+                return new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('POST', '@Url.Action("UploadInstaller", "Admin")');
+                    xhr.setRequestHeader('RequestVerificationToken', antiForgeryToken);
+                    xhr.upload.onprogress = event => {
+                        if (event.lengthComputable && onProgress) {
+                            onProgress({ percent: Math.round((event.loaded / event.total) * 100), loaded: event.loaded, total: event.total });
+                        }
+                    };
+                    xhr.onload = () => {
+                        let result = {};
+                        try {
+                            result = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+                        } catch {
+                            const message = xhr.responseText.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+                            reject(new Error(message || `Upload failed with HTTP ${xhr.status}.`));
+                            return;
+                        }
+                        if (xhr.status < 200 || xhr.status >= 300 || result.success === false) {
+                            reject(new Error(result.message || 'Upload failed.'));
+                            return;
+                        }
+                        resolve(result);
+                    };
+                    xhr.onerror = () => reject(new Error('Upload failed because the connection was interrupted.'));
+                    xhr.onabort = () => reject(new Error('Upload was cancelled.'));
+                    xhr.send(formData);
+                });
+            }
+
+            async function uploadInstallerFile() {
+                const card = getCard(selectedId);
+                const file = installerFileInput?.files?.[0];
+                if (!card || !file) {
+                    window.yakultToast?.('Choose an installer file first.', 'error');
+                    return;
+                }
+
+                const fileSize = formatUploadSize(file.size);
+                const fileText = `${file.name}${fileSize ? ' - ' + fileSize : ''}`;
+                const baseDetails = {
+                    originalName: file.name,
+                    uploadType: 'Installer package',
+                    transferredText: fileSize ? `0 B of ${fileSize}` : '',
+                    storedName: 'Assigned after upload',
+                    storedPath: 'Assigned after upload'
+                };
+                uploadInstallerBtn.disabled = true;
+                uploadInstallerBtn.classList.add('is-loading');
+                if (installerUploadStatus) installerUploadStatus.textContent = `Uploading installer: ${file.name}`;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('cardKey', fields.cardKey.value.trim() || card.cardKey || 'desktop-app');
+
+                    setInstallerUploadDialog('uploading', 'Uploading installer', `Sending ${file.name} to the server...`, 0, fileText, baseDetails);
+                    const result = await uploadInstallerRequest(formData, progress => {
+                        const transferred = progress?.total ? `${formatUploadSize(progress.loaded)} of ${formatUploadSize(progress.total)}` : baseDetails.transferredText;
+                        setInstallerUploadDialog('uploading', 'Uploading installer', `Sending ${file.name} to the server...`, progress?.percent || 0, fileText, { ...baseDetails, transferredText: transferred });
+                    });
+
+                    const installerPath = result.installerPath || '';
+                    const storedName = installerPath ? installerPath.split(/[\\/]/).pop() : '';
+                    fields.installerPath.value = installerPath;
+                    if (installerSelectedFile) installerSelectedFile.textContent = `Uploaded installer: ${storedName || result.fileName || file.name}`;
+                    if (installerUploadStatus) installerUploadStatus.textContent = `Uploaded and linked: ${storedName || result.fileName || file.name}`;
+                    updateDraftFromEditor();
+                    setInstallerUploadDialog('complete', 'Upload complete', `${result.fileName || file.name} was renamed and linked to this service. Save the service to keep the path.`, 100, fileText, {
+                        ...baseDetails,
+                        transferredText: fileSize ? `${fileSize} of ${fileSize}` : '',
+                        storedName: storedName || result.fileName || file.name,
+                        storedPath: installerPath
+                    });
+                    installerFileInput.value = '';
+                    window.yakultToast?.('Installer uploaded. Save the service to keep this path.', 'success');
+                } catch (error) {
+                    if (installerUploadStatus) installerUploadStatus.textContent = error.message || 'Upload failed.';
+                    setInstallerUploadDialog('error', 'Upload failed', error.message || 'Unable to upload the selected installer.', 100, fileText, baseDetails);
+                    window.yakultToast?.(error.message || 'Installer upload failed.', 'error');
+                } finally {
+                    uploadInstallerBtn.disabled = false;
+                    uploadInstallerBtn.classList.remove('is-loading');
+                }
+            }
+            function activateTab(name) {
+                document.querySelectorAll('.admin-tab').forEach(tab => {
+                    tab.classList.toggle('is-active', tab.dataset.tab === name);
+                });
+                document.querySelectorAll('.admin-tab-panel').forEach(panel => {
+                    panel.classList.toggle('is-active', panel.dataset.tabPanel === name);
+                });
+            }
+
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    activateTab(this.dataset.tab);
+                });
+            });
+
+            Object.values(fields).forEach(field => {
+                field.addEventListener('input', updateDraftFromEditor);
+                field.addEventListener('change', updateDraftFromEditor);
+            });
+            cardSearch.addEventListener('input', renderList);
+            cardFilter.addEventListener('change', renderList);
+            newCardBtn.addEventListener('click', createNewCard);
+            resetCardBtn.addEventListener('click', resetSelectedCard);
+            resetCardBtnSecondary?.addEventListener('click', resetSelectedCard);
+            resetDraftsBtn.addEventListener('click', resetAllDrafts);
+            saveCardBtn.addEventListener('click', saveSelectedCard);
+            archiveCardBtn.addEventListener('click', archiveSelectedCard);
+            installerFileInput?.addEventListener('change', function() {
+                const file = this.files?.[0];
+                if (installerSelectedFile) installerSelectedFile.textContent = file ? `Selected upload file: ${file.name}${formatUploadSize(file.size) ? ' - ' + formatUploadSize(file.size) : ''}` : 'No upload file selected.';
+            });
+            uploadInstallerBtn?.addEventListener('click', uploadInstallerFile);
+            document.getElementById('installerUploadDialogClose')?.addEventListener('click', hideInstallerUploadDialog);
+            window.addEventListener('beforeunload', function(event) {
+                if (dirtyCards.size === 0) return;
+                event.preventDefault();
+                event.returnValue = '';
+            });
+
+            renderList();
+            loadEditor();
+        });
+    </script>
+}

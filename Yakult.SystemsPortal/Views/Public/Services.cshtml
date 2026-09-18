@@ -1,0 +1,257 @@
+@model ServicesDirectoryViewModel
+@using Yakult.SystemsPortal.Extensions
+@{ Layout = "_PublicLayout"; ViewData["Title"] = "Services & Portals"; }
+@functions {
+    string ThemeClass(string theme) => theme.ToLowerInvariant() switch
+    {
+        "inventory" => "inventory",
+        "cadena" => "cadena",
+        "yds" => "yds",
+        "request" => "request",
+        "borrow" => "borrow",
+        "scanner" => "scanner",
+        "itcm" => "itcm",
+        _ => "default"
+    };
+}
+
+<header class="launcher-heading">
+    <div class="portal-container launcher-heading__inner">
+        <div>
+            <span class="portal-eyebrow">Employee applications</span>
+            <h1>Services &amp; Portals</h1>
+            <p>Access the Yakult systems you use at work.</p>
+        </div>
+    </div>
+</header>
+
+<main class="portal-container launcher-main">
+    <div class="service-directory-toolbar" aria-label="Find a service">
+        <label for="serviceDirectorySearch">Find a service</label>
+        <div>
+            <input id="serviceDirectorySearch" type="search" autocomplete="off" placeholder="Search by service name, description, or type" />
+            <select id="serviceDirectoryStatus" aria-label="Filter services by status">
+                <option value="all">All available services</option>
+                <option value="operational">Operational</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="other">Other status</option>
+            </select>
+        </div>
+    </div>
+    <p class="service-directory-no-results" id="serviceDirectoryNoResults" hidden>No available services match your search. Try a different name or status.</p>
+    @if (Model.ActiveSystems.Count > 0)
+    {
+        <div class="service-directory-list" aria-label="Available employee applications">
+            @foreach (var card in Model.ActiveSystems)
+            {
+                var theme = ThemeClass(card.System.Theme);
+                <article class="service-directory-row service-directory-row--@theme" data-service-row data-service-state="@card.StatusKind" data-service-search="@($"{card.System.Name} {card.System.Description} {card.System.Badge} {card.StatusLabel}".ToLowerInvariant())">
+                    <span class="service-directory-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">@Html.IconSvg(card.System.Icon)</svg></span>
+                    <div class="service-directory-row__body">
+                        <small>@(string.IsNullOrWhiteSpace(card.System.Badge) ? "Yakult application" : card.System.Badge)</small>
+                        <strong>@card.System.Name</strong>
+                        <span>@card.System.Description</span>
+                        @if (card.StatusKind == "maintenance" && card.System.MaintenanceEndUtc.HasValue)
+                        {
+                            <p class="service-directory-row__timing">Expected availability: @card.System.MaintenanceEndUtc.Value.ToUniversalTime().ToString("MMM d, yyyy h:mm tt") UTC</p>
+                        }
+                        @if (card.System.LastHealthCheckedAt.HasValue)
+                        {
+                            <span class="service-directory-row__freshness">Last status check: @card.System.LastHealthCheckedAt.Value.ToUniversalTime().ToString("MMM d, yyyy h:mm tt") UTC</span>
+                        }
+                        @if (card.StatusKind == "maintenance" && !string.IsNullOrWhiteSpace(card.System.MaintenanceNote))
+                        {
+                            <p class="launcher-maintenance">@card.System.MaintenanceNote</p>
+                        }
+                    </div>
+                    <span class="launcher-state launcher-state--@card.StatusKind"><i aria-hidden="true"></i>@card.StatusLabel</span>
+                    <div class="service-directory-row__actions">
+                        @foreach (var action in card.Actions)
+                        {
+                            var requiresItConfirm = action.Kind is "Rdp" or "Installer";
+                            if (action.IsEnabled)
+                            {
+                                <a class="service-directory-action service-directory-action--@action.Kind.ToLowerInvariant()" data-track="Service" data-track-key="@($"{card.System.CardKey}:{action.Kind}")" data-it-launch="@(requiresItConfirm ? "true" : null)" data-it-launch-kind="@(requiresItConfirm ? action.Kind : null)" href="@action.Url" target="@(action.OpensNewWindow ? "_blank" : null)" rel="@(action.OpensNewWindow ? "noopener noreferrer" : null)">@(action.Kind == "Login" ? "Open application" : action.Label) <span aria-hidden="true">@(action.OpensNewWindow ? "↗" : "→")</span></a>
+                            }
+                            else
+                            {
+                                <button class="service-directory-action" disabled>@action.Label</button>
+                            }
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else if (Model.UpcomingSystems.Count == 0)
+    {
+        <div class="portal-empty"><h2>No applications are currently available</h2><p>Operational employee systems will appear here.</p></div>
+    }
+
+    @if (Model.UpcomingSystems.Count > 0)
+    {
+        <section class="launcher-upcoming" aria-labelledby="upcomingSystemsTitle">
+            <div class="launcher-section-heading">
+                <span class="portal-eyebrow">Planned applications</span>
+                <h2 id="upcomingSystemsTitle">Visible soon</h2>
+            </div>
+            <div class="service-directory-list service-directory-list--upcoming">
+                @foreach (var card in Model.UpcomingSystems)
+                {
+                    var theme = ThemeClass(card.System.Theme);
+                    <article class="service-directory-row service-directory-row--@theme service-directory-row--disabled">
+                        <span class="service-directory-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">@Html.IconSvg(card.System.Icon)</svg></span>
+                        <div class="service-directory-row__body">
+                            <small>@(string.IsNullOrWhiteSpace(card.System.Badge) ? "Yakult application" : card.System.Badge)</small>
+                            <strong>@card.System.Name</strong>
+                            <span>@card.System.Description</span>
+                        </div>
+                        <span class="launcher-state launcher-state--@card.StatusKind"><i aria-hidden="true"></i>@card.StatusLabel</span>
+                        <div class="service-directory-row__actions"><button class="service-directory-action" disabled>Unavailable</button></div>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+    <aside class="launcher-help">
+        <div>
+            <span class="launcher-help__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 2-3 4"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
+            <span><strong>Need access or technical assistance?</strong><small>Find account guidance, troubleshooting, and support information.</small></span>
+        </div>
+        <a asp-action="Help">Get IT help <span aria-hidden="true">→</span></a>
+    </aside>
+
+    <dialog class="it-launch-dialog" id="itLaunchDialog" aria-labelledby="itLaunchTitle">
+        <form id="itLaunchForm">
+            <span class="it-launch-dialog__mark" aria-hidden="true">IT</span>
+            <h2 id="itLaunchTitle">IT credential required</h2>
+            <p id="itLaunchMessage">This application action is for authorized users. Sign in with your portal credentials before continuing.</p>
+            <label class="it-launch-dialog__field">
+                <span>Username</span>
+                <input type="text" id="itLaunchUsername" autocomplete="username" required />
+            </label>
+            <label class="it-launch-dialog__field">
+                <span>Password</span>
+                <input type="password" id="itLaunchPassword" autocomplete="current-password" required />
+            </label>
+            <label class="it-launch-dialog__remember">
+                <input type="checkbox" id="itLaunchRemember" />
+                <span>Keep me signed in</span>
+            </label>
+            <p class="it-launch-dialog__error" id="itLaunchError" role="alert"></p>
+            <div class="it-launch-dialog__actions">
+                <button type="button" class="it-launch-dialog__button it-launch-dialog__button--secondary" value="cancel">Cancel</button>
+                <button type="submit" class="it-launch-dialog__button it-launch-dialog__button--primary" id="itLaunchConfirm">Sign in and continue</button>
+            </div>
+        </form>
+    </dialog>
+</main>
+
+<script>
+    (() => {
+        const dialog = document.getElementById('itLaunchDialog');
+        const form = document.getElementById('itLaunchForm');
+        const confirmButton = document.getElementById('itLaunchConfirm');
+        const message = document.getElementById('itLaunchMessage');
+        const username = document.getElementById('itLaunchUsername');
+        const password = document.getElementById('itLaunchPassword');
+        const remember = document.getElementById('itLaunchRemember');
+        const error = document.getElementById('itLaunchError');
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        let pendingUrl = '';
+
+        document.addEventListener('click', event => {
+            const link = event.target.closest('a[data-it-launch="true"]');
+            if (!link || !dialog) return;
+            event.preventDefault();
+            pendingUrl = link.href;
+            const kind = link.dataset.itLaunchKind === 'Installer' ? 'download the installer' : 'launch via Remote Desktop';
+            message.textContent = `This application action will ${kind}. Enter your portal credentials to continue.`;
+            if (error) error.textContent = '';
+            if (password) password.value = '';
+            if (typeof dialog.showModal === 'function') {
+                dialog.showModal();
+                setTimeout(() => username?.focus(), 50);
+            } else if (confirm(message.textContent)) {
+                window.location.href = pendingUrl;
+            }
+        });
+
+        dialog?.querySelector('[value="cancel"]')?.addEventListener('click', () => {
+            pendingUrl = '';
+            form?.reset();
+            if (error) error.textContent = '';
+            dialog.close();
+        });
+
+        form?.addEventListener('submit', async event => {
+            event.preventDefault();
+            if (!pendingUrl) return;
+            if (error) error.textContent = '';
+            if (confirmButton) {
+                confirmButton.disabled = true;
+                confirmButton.textContent = 'Signing in...';
+            }
+
+            try {
+                const response = await fetch('@Url.Action("LoginForLaunch", "Home")', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify({
+                        username: username?.value || '',
+                        password: password?.value || '',
+                        rememberMe: remember?.checked || false,
+                        returnUrl: pendingUrl
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Unable to sign in.');
+                }
+                window.location.href = pendingUrl;
+            } catch (ex) {
+                if (error) error.textContent = ex.message || 'Unable to sign in.';
+            } finally {
+                if (confirmButton) {
+                    confirmButton.disabled = false;
+                    confirmButton.textContent = 'Sign in and continue';
+                }
+            }
+        });
+    })();
+</script>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const search = document.getElementById('serviceDirectorySearch');
+        const status = document.getElementById('serviceDirectoryStatus');
+        const noResults = document.getElementById('serviceDirectoryNoResults');
+        const rows = () => Array.from(document.querySelectorAll('[data-service-row]'));
+
+        function applyServiceFilters() {
+            const term = (search?.value || '').trim().toLowerCase();
+            const selectedStatus = status?.value || 'all';
+            let visible = 0;
+            rows().forEach(function (row) {
+                const state = row.dataset.serviceState || 'other';
+                const matchesSearch = !term || (row.dataset.serviceSearch || '').includes(term);
+                const matchesStatus = selectedStatus === 'all'
+                    || state === selectedStatus
+                    || (selectedStatus === 'other' && state !== 'operational' && state !== 'maintenance');
+                row.hidden = !(matchesSearch && matchesStatus);
+                if (!row.hidden) visible++;
+            });
+            if (noResults) noResults.hidden = visible !== 0;
+        }
+
+        search?.addEventListener('input', applyServiceFilters);
+        status?.addEventListener('change', applyServiceFilters);
+        applyServiceFilters();
+    });
+</script>

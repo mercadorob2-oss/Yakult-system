@@ -1,0 +1,123 @@
+@model Inventory.RequestPortal.Models.ViewModels.CartridgeAuthorizationViewModel
+@using System.Text.Json
+@{
+    List<(string Model, int Qty, int Good, int Damaged)>? items = null;
+    if (!string.IsNullOrWhiteSpace(Model.RequestedModels) && Model.RequestedModels.TrimStart().StartsWith("["))
+    {
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<List<JsonElement>>(Model.RequestedModels);
+            items = parsed?.Select(e => (
+                Model:   e.GetProperty("model").GetString() ?? "",
+                Qty:     e.GetProperty("qty").GetInt32(),
+                Good:    e.GetProperty("good").GetInt32(),
+                Damaged: e.GetProperty("damaged").GetInt32()
+            )).ToList();
+        }
+        catch { }
+    }
+    bool isStructured = items?.Count > 0;
+
+    string statusBadge = Model.Status switch
+    {
+        "Approved" => "bg-success",
+        "Pending"  => "bg-warning text-dark",
+        "Rejected" => "bg-danger",
+        "Used"     => "bg-secondary",
+        _          => "bg-secondary"
+    };
+}
+
+<div style="font-size:0.92rem;">
+
+    @* ── Header info row ── *@
+    <div id="authDetailInfoSection" class="row g-3 mb-4">
+        <div class="col-sm-3">
+            <small class="text-muted d-block">Authorization ID</small>
+            <strong>#@Model.AuthorizationId</strong>
+        </div>
+        <div class="col-sm-3">
+            <small class="text-muted d-block">Status</small>
+            <span class="badge @statusBadge fs-6">@Model.Status</span>
+        </div>
+        <div class="col-sm-3">
+            <small class="text-muted d-block">Department</small>
+            <span>@(Model.DepartmentName ?? "—")</span>
+        </div>
+        <div class="col-sm-3">
+            <small class="text-muted d-block">Source</small>
+            @if (Model.SubmissionSessionId.HasValue)
+            { <span class="badge rounded-pill" style="background:#e8f4fd; color:#1565c0; font-weight:600;"><i class="bi bi-globe me-1"></i>Web Portal</span> }
+            else
+            { <span class="badge rounded-pill" style="background:#f3f0ff; color:#5e35b1; font-weight:600;"><i class="bi bi-display me-1"></i>Desktop App</span> }
+        </div>
+        <div class="col-sm-6">
+            <small class="text-muted d-block">Requested On</small>
+            <span>@Model.CreatedDate.ToString("MMMM dd, yyyy  h:mm tt")</span>
+        </div>
+        <div class="col-sm-6">
+            <small class="text-muted d-block">Signed By</small>
+            <span>@(Model.SignedByName ?? "—")</span>
+        </div>
+        @if (Model.SignedDate.HasValue)
+        {
+            <div class="col-sm-6">
+                <small class="text-muted d-block">Date Signed</small>
+                <span>@Model.SignedDate.Value.ToString("MMMM dd, yyyy  h:mm tt")</span>
+            </div>
+        }
+    </div>
+
+    @* ── Cartridge models ── *@
+    <div id="authDetailCartridgeSection" class="mb-4">
+        <small class="text-muted fw-semibold d-block mb-2" style="text-transform:uppercase; letter-spacing:.4px;">
+            <i class="bi bi-printer me-1"></i> Cartridge Models
+        </small>
+        @if (isStructured && items != null)
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm mb-0" style="font-size:0.88rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Model</th>
+                            <th class="text-center">Qty</th>
+                            <th class="text-center">Returned Cartridges (Good)</th>
+                            <th class="text-center">Returned Cartridges (Damaged)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in items)
+                        {
+                            <tr>
+                                <td><strong>@item.Model</strong></td>
+                                <td class="text-center">@item.Qty</td>
+                                <td class="text-center">@item.Good</td>
+                                <td class="text-center">@item.Damaged</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(Model.RequestedModels))
+        {
+            <p class="mb-0">@Model.RequestedModels</p>
+        }
+        else
+        {
+            <p class="text-muted fst-italic mb-0">—</p>
+        }
+    </div>
+
+    @if (Model.IsRejected)
+    {
+        <div class="alert alert-danger mb-0">
+            <i class="bi bi-x-circle-fill me-1"></i>
+            This authorization was <strong>rejected</strong>
+            @if (Model.SignedDate.HasValue)
+            { <span> on @Model.SignedDate.Value.ToString("MMMM dd, yyyy")</span> }
+            @if (!string.IsNullOrEmpty(Model.SignedByName))
+            { <span> by <strong>@Model.SignedByName</strong></span> }.
+        </div>
+    }
+</div>

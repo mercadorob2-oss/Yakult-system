@@ -1,0 +1,139 @@
+<UserControl x:Class="Yakult.Inventory.App.Wpf.RepairPortal.Detail.Views.RepairPartCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Yakult.Inventory.App.Wpf.RepairPortal.Detail.Views"
+             AllowDrop="True" Drop="Card_Drop" DragOver="Card_DragOver">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border Background="White" CornerRadius="10" BorderThickness="1" BorderBrush="#E2E8F0" Margin="0,0,0,10">
+        <StackPanel>
+            <!-- ── Collapsed header (always visible) ─────────────────────── -->
+            <Button Command="{Binding ToggleExpandCommand}" Cursor="Hand">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Padding="12" Background="Transparent">
+                            <ContentPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding PartDisplayName}" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                            <Border Style="{StaticResource PartStatusBadgeStyle}" Margin="8,0,0,0">
+                                <TextBlock Style="{StaticResource BadgeTextStyle}">
+                                    <TextBlock.Text>
+                                        <Binding Path="Status"/>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </Border>
+                            <Border Style="{StaticResource PartSeverityBadgeStyle}" Margin="6,0,0,0">
+                                <TextBlock Text="{Binding Severity}" Style="{StaticResource BadgeTextStyle}"/>
+                            </Border>
+                            <TextBlock Text="{Binding DaysInCurrentStatus, StringFormat='{}{0}d'}" FontSize="11" Foreground="#94A3B8"
+                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock FontSize="11" Foreground="#94A3B8" Margin="0,4,0,0">
+                            <Run Text="{Binding ImageCount, Mode=OneWay}"/><Run Text=" Images · "/>
+                            <Run Text="{Binding VideoCount, Mode=OneWay}"/><Run Text=" Videos · "/>
+                            <Run Text="{Binding DocumentCount, Mode=OneWay}"/><Run Text=" Documents · "/>
+                            <Run Text="{Binding NoteCount, Mode=OneWay}"/><Run Text=" Notes"/>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <TextBlock Grid.Column="1" FontFamily="Segoe MDL2 Assets" FontSize="14" Foreground="#94A3B8" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="&#xE70D;"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                        <Setter Property="Text" Value="&#xE70E;"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Button>
+
+            <!-- ── Expanded content (lazy-loaded on first expand) ─────────── -->
+            <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVisibilityConverter}}" Margin="12,0,12,12">
+                <Border BorderThickness="0,1,0,0" BorderBrush="#E2E8F0" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Problem Description" Style="{StaticResource FilterLabel}"/>
+                <TextBlock Text="{Binding ProblemDescription, TargetNullValue='(none recorded)'}" TextWrapping="Wrap" Margin="0,2,0,12" FontSize="12"/>
+
+                <TextBlock Text="Change Status" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                <WrapPanel Margin="0,0,0,14">
+                    <Button Content="Waiting Diagnosis" Style="{StaticResource RepairSecondaryBtn}" FontSize="11" Padding="8,5" Margin="0,0,6,6" Command="{Binding SelectStatusCommand}" CommandParameter="WaitingDiagnosis"
+                            Background="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToBackgroundConverter}, ConverterParameter=WaitingDiagnosis}"
+                            Foreground="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToForegroundConverter}, ConverterParameter=WaitingDiagnosis}"/>
+                    <Button Content="Diagnosing" Style="{StaticResource RepairSecondaryBtn}" FontSize="11" Padding="8,5" Margin="0,0,6,6" Command="{Binding SelectStatusCommand}" CommandParameter="Diagnosing"
+                            Background="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToBackgroundConverter}, ConverterParameter=Diagnosing}"
+                            Foreground="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToForegroundConverter}, ConverterParameter=Diagnosing}"/>
+                    <Button Content="Repairing" Style="{StaticResource RepairSecondaryBtn}" FontSize="11" Padding="8,5" Margin="0,0,6,6" Command="{Binding SelectStatusCommand}" CommandParameter="Repairing"
+                            Background="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToBackgroundConverter}, ConverterParameter=Repairing}"
+                            Foreground="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToForegroundConverter}, ConverterParameter=Repairing}"/>
+                    <Button Content="Waiting Parts" Style="{StaticResource RepairSecondaryBtn}" FontSize="11" Padding="8,5" Margin="0,0,6,6" Command="{Binding SelectStatusCommand}" CommandParameter="WaitingParts"
+                            Background="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToBackgroundConverter}, ConverterParameter=WaitingParts}"
+                            Foreground="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToForegroundConverter}, ConverterParameter=WaitingParts}"/>
+                    <Button Content="Testing" Style="{StaticResource RepairSecondaryBtn}" FontSize="11" Padding="8,5" Margin="0,0,6,6" Command="{Binding SelectStatusCommand}" CommandParameter="Testing"
+                            Background="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToBackgroundConverter}, ConverterParameter=Testing}"
+                            Foreground="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToForegroundConverter}, ConverterParameter=Testing}"/>
+                    <Button Content="Repaired" Style="{StaticResource RepairSecondaryBtn}" FontSize="11" Padding="8,5" Margin="0,0,6,6" Command="{Binding SelectStatusCommand}" CommandParameter="Repaired"
+                            Background="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToBackgroundConverter}, ConverterParameter=Repaired}"
+                            Foreground="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToForegroundConverter}, ConverterParameter=Repaired}"/>
+                    <Button Content="Cannot Repair" Style="{StaticResource RepairSecondaryBtn}" FontSize="11" Padding="8,5" Margin="0,0,6,6" Command="{Binding SelectStatusCommand}" CommandParameter="CannotRepair"
+                            Background="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToBackgroundConverter}, ConverterParameter=CannotRepair}"
+                            Foreground="{Binding PendingStatus, Converter={StaticResource PartStatusMatchToForegroundConverter}, ConverterParameter=CannotRepair}"/>
+                </WrapPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,14" Visibility="{Binding HasUnsavedStatus, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Button Content="Save Status" Style="{StaticResource RepairPrimaryBtn}" Padding="10,5" Command="{Binding SaveStatusCommand}"/>
+                    <TextBlock Text="Unsaved status change — click Save to apply it." FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <TextBlock Text="Evidence" Style="{StaticResource FilterLabel}" Margin="0,0,0,4"/>
+                <local:ImageCarouselControl ItemsSource="{Binding Attachments}" DeleteSelectedCommand="{Binding DeleteSelectedAttachmentsCommand}" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                    <Button Content="Upload Evidence" Style="{StaticResource RepairSecondaryBtn}" Command="{Binding UploadEvidenceCommand}"/>
+                    <TextBlock Text="or drag &amp; drop files onto this card" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Diagnostic Notes" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
+                        <local:NoteThreadControl ItemsSource="{Binding DiagnosticNotes}" NoteText="{Binding NewDiagnosticNoteText, Mode=TwoWay}" AddNoteCommand="{Binding AddDiagnosticNoteCommand}"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Repair Notes" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
+                        <local:NoteThreadControl ItemsSource="{Binding RepairNotes}" NoteText="{Binding NewRepairNoteText, Mode=TwoWay}" AddNoteCommand="{Binding AddRepairNoteCommand}"/>
+                    </StackPanel>
+                </Grid>
+
+                <TextBlock Text="Part Timeline" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
+                <local:RepairTimelineControl ItemsSource="{Binding History}" Title="Part Timeline" Margin="0,0,0,12"/>
+
+                <Button Content="Delete Part" Style="{StaticResource RepairSecondaryBtn}" Foreground="#DC2626" HorizontalAlignment="Left" Command="{Binding DeleteCommand}"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

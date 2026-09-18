@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Internal Request Portal — Higher-Up Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.7; color: #1a1a1a; background: #f5f5f0; }
+    .page-wrapper { display: flex; min-height: 100vh; }
+    .sidebar { width: 268px; min-width: 268px; background: #ffffff; color: #1a1a1a; padding: 28px 0 40px; position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; border-right: 1px solid #e8e5e0; }
+    .sidebar-logo { padding: 0 24px 20px; border-bottom: 1px solid #f0ede8; margin-bottom: 12px; }
+    .sidebar-logo .app-title { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #bbb; margin-bottom: 5px; font-weight: 600; }
+    .sidebar-logo .guide-title { font-size: 13.5px; font-weight: 700; color: #1a1a1a; line-height: 1.4; }
+    .toc-section-label { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #ccc; padding: 14px 24px 5px; font-weight: 700; }
+    .sidebar a { display: block; padding: 6px 24px; color: #555; text-decoration: none; font-size: 13px; transition: color 0.15s, background 0.15s, border-color 0.15s; border-left: 2px solid transparent; font-weight: 500; }
+    .sidebar a:hover { color: #d50032; background: #fdf7f8; border-left-color: #d50032; }
+    .sidebar a.sub { padding-left: 36px; font-size: 12.5px; color: #888; }
+    .main { flex: 1; padding: 48px 56px; max-width: 900px; background: #ffffff; }
+    .page-header { margin-bottom: 48px; padding-bottom: 24px; border-bottom: 1px solid #ece9e4; }
+    .page-header .badge { display: inline-block; background: #d50032; color: #fff; font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 4px; margin-bottom: 10px; }
+    .page-header .role-badge { display: inline-block; background: #ede9fe; color: #6d28d9; font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 4px; margin-bottom: 10px; margin-left: 6px; }
+    .page-header h1 { font-size: 27px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; letter-spacing: -0.01em; }
+    .page-header p { color: #777; font-size: 14px; max-width: 640px; }
+    .section { margin-bottom: 56px; }
+    .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #ece9e4; }
+    .section-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+    .icon-teal { background: #d1faf3; } .icon-orange { background: #ffedd5; } .icon-green { background: #dcfce7; }
+    .icon-red { background: #fee2e2; } .icon-blue { background: #dbeafe; } .icon-purple { background: #ede9fe; }
+    .icon-amber { background: #fef3c7; } .icon-gray { background: #f1f5f9; }
+    .section-header h2 { font-size: 19px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.01em; }
+    .section-header .section-num { font-size: 11.5px; color: #bbb; font-weight: 600; }
+    .subsection { margin-bottom: 32px; }
+    .subsection h3 { font-size: 14.5px; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .subsection h3::before { content: ''; display: inline-block; width: 3px; height: 15px; background: #d50032; border-radius: 2px; flex-shrink: 0; }
+    .steps { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .steps > li { color: #444; padding-left: 4px; }
+    .step-label { font-weight: 700; color: #d50032; margin-right: 4px; }
+    .steps > li strong { font-weight: 700; color: #1a1a1a; }
+    .bullets { list-style: none; display: flex; flex-direction: column; gap: 5px; margin-top: 6px; margin-left: 8px; }
+    .bullets li { padding-left: 16px; position: relative; color: #555; }
+    .bullets li::before { content: '–'; position: absolute; left: 0; color: #ccc; }
+    .callout { border-radius: 8px; padding: 14px 16px; margin: 14px 0; font-size: 13.5px; display: flex; gap: 12px; align-items: flex-start; }
+    .callout .callout-icon { font-size: 16px; line-height: 1.4; flex-shrink: 0; }
+    .callout .callout-body { flex: 1; }
+    .callout .callout-body strong { display: block; margin-bottom: 2px; font-weight: 700; }
+    .callout-info { background: #eff6ff; border-left: 4px solid #3b82f6; }
+    .callout-warn { background: #fffbeb; border-left: 4px solid #f59e0b; }
+    .callout-danger { background: #fef2f2; border-left: 4px solid #ef4444; }
+    .callout-success { background: #f0fdf4; border-left: 4px solid #22c55e; }
+    .callout-tip { background: #fff5f6; border-left: 4px solid #d50032; }
+    .tag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: 0.03em; }
+    .tag-teal { background: #ccfbf1; color: #0f766e; } .tag-orange { background: #ffedd5; color: #c2410c; }
+    .tag-green { background: #dcfce7; color: #15803d; } .tag-red { background: #fee2e2; color: #b91c1c; }
+    .tag-blue { background: #dbeafe; color: #1d4ed8; } .tag-gray { background: #f1f5f9; color: #475569; }
+    .tag-amber { background: #fef3c7; color: #92400e; } .tag-purple { background: #ede9fe; color: #6d28d9; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin: 16px 0; }
+    .feature-card { background: #faf9f7; border: 1px solid #ece9e4; border-radius: 10px; padding: 16px; }
+    .feature-card .fc-title { font-size: 13px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+    .feature-card p { font-size: 12.5px; color: #777; line-height: 1.55; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+    .data-table th { background: #faf9f7; text-align: left; padding: 9px 12px; font-weight: 700; color: #444; border-bottom: 1px solid #ece9e4; font-size: 12px; letter-spacing: 0.02em; }
+    .data-table td { padding: 9px 12px; border-bottom: 1px solid #f5f4f1; color: #444; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #faf9f7; }
+    .divider { border: none; border-top: 1px solid #ece9e4; margin: 32px 0; }
+    .page-footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid #ece9e4; color: #bbb; font-size: 12px; }
+    .positions-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="app-title">YIMS Internal</div>
+      <div class="guide-title">Internal Request Portal<br>Higher-Up Guide</div>
+    </div>
+    <div class="toc-section-label">Getting Started</div>
+    <a href="#login">Logging In</a>
+    <a href="#overview">Your Role in the Portal</a>
+    <a href="#tabs">Your Tabs</a>
+    <div class="toc-section-label">Authorizing Requests</div>
+    <a href="#approver-landing">Approver Landing Panel</a>
+    <a href="#approval-queue">Viewing the Approval Queue</a>
+    <a href="#signing">Signing a Request</a>
+    <a href="#rejecting">Rejecting a Request</a>
+    <div class="toc-section-label">Submitting Your Own Request</div>
+    <a href="#own-request">New Request Tab</a>
+    <a href="#multi-model" class="sub">Multiple Models</a>
+    <div class="toc-section-label">Tracking Your Requests</div>
+    <a href="#my-requests">My Requests Tab</a>
+    <a href="#auth-history">Authorization History Tab</a>
+    <div class="toc-section-label">Reference</div>
+    <a href="#statuses">Request Statuses</a>
+    <a href="#fulfillment-methods">Fulfillment Methods</a>
+  </nav>
+
+  <main class="main">
+
+    <div class="page-header">
+      <div class="badge">User Guide</div>
+      <div class="role-badge">Higher-Up</div>
+      <h1>Internal Request Portal</h1>
+      <p>This guide is for supervisors, managers, and coordinators using the Internal Request Portal in YIMS. It covers how to authorize pending requests from your department and how to submit your own personal cartridge requests.</p>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="section" id="login">
+      <div class="section-header">
+        <div class="section-icon icon-red">&#128274;</div>
+        <div>
+          <div class="section-num">Before You Begin</div>
+          <h2>Logging In</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">Before you can authorize requests or submit your own, you need to log in to the YIMS desktop application using your Yakult employee credentials.</p>
+      <ul class="steps">
+        <li><span class="step-label">Step 1:</span> Open the <strong>YIMS</strong> application on your computer. You can find it on your desktop or in the Start menu.</li>
+        <li><span class="step-label">Step 2:</span> Enter your <strong>Employee ID</strong> and <strong>Password</strong> on the login screen, then click <strong>Log In</strong>.</li>
+        <li><span class="step-label">Step 3:</span> Once logged in, navigate to the <strong>Internal Request Portal</strong> from the main menu or sidebar. Because your position is recognized as a higher-up, you will land directly on the <strong>Approver Landing Panel</strong>.</li>
+      </ul>
+      <div class="callout callout-warn" style="margin-top:16px;">
+        <div class="callout-icon">&#9888;&#65039;</div>
+        <div class="callout-body">
+          <strong>Can't log in?</strong>
+          If you don't have credentials or your login is not working, contact the IT department to have your account set up or reset.
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="section" id="overview">
+      <div class="section-header">
+        <div class="section-icon icon-purple">&#128081;</div>
+        <div>
+          <div class="section-num">Introduction</div>
+          <h2>Your Role in the Portal</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">As a higher-up, you have two responsibilities in the Internal Request Portal:</p>
+      <ol style="margin-left:20px; color:#374151; line-height:2;">
+        <li><strong>Authorize</strong> cartridge requests submitted by employees in your department — IT cannot fulfill a request without your signature.</li>
+        <li><strong>Submit</strong> your own personal cartridge requests, the same way any employee would.</li>
+      </ol>
+      <div class="callout callout-tip" style="margin-top:18px;">
+        <div class="callout-icon">&#128161;</div>
+        <div class="callout-body">
+          <strong>Which positions qualify as Higher-Up?</strong>
+          Your access is determined automatically from your employee position. The following titles are recognized as approvers:
+          <div class="positions-list" style="margin-top:10px;">
+            <span class="tag tag-purple">Supervisor</span>
+            <span class="tag tag-purple">Manager</span>
+            <span class="tag tag-purple">Coordinator</span>
+            <span class="tag tag-purple">Account Coordinator</span>
+            <span class="tag tag-purple">Acting Account Coordinator</span>
+            <span class="tag tag-purple">Asst. Coordinator</span>
+            <span class="tag tag-purple">Lady Coordinator</span>
+            <span class="tag tag-purple">Jr. Asst. Manager</span>
+            <span class="tag tag-purple">Asst. Manager</span>
+            <span class="tag tag-purple">Acting Jr. Asst. Manager</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="section" id="tabs">
+      <div class="section-header">
+        <div class="section-icon icon-blue">&#128450;</div>
+        <div>
+          <div class="section-num">Section 1</div>
+          <h2>Your Tabs</h2>
+        </div>
+      </div>
+      <p>As a higher-up you see all the same tabs as a regular employee, plus the dedicated approver controls.</p>
+      <table class="data-table" style="margin-top:12px;">
+        <thead><tr><th>Tab / Panel</th><th>What It Is For</th><th>Who Sees It</th></tr></thead>
+        <tbody>
+          <tr><td><strong>New Request</strong></td><td>Submit your own personal cartridge request.</td><td>Everyone</td></tr>
+          <tr><td><strong>My Requests</strong></td><td>View and manage all requests you have personally submitted.</td><td>Everyone</td></tr>
+          <tr><td><strong>Authorization History</strong></td><td>See approval records for your own submitted requests.</td><td>Everyone</td></tr>
+          <tr><td><strong>Approver Landing Panel</strong></td><td>Dashboard with pending count and shortcuts to the authorization queue.</td><td>Higher-Ups only</td></tr>
+          <tr><td><strong>Approver Area</strong></td><td>Review and sign (or reject) pending requests from your department.</td><td>Higher-Ups only</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- APPROVER LANDING -->
+    <div class="section" id="approver-landing">
+      <div class="section-header">
+        <div class="section-icon icon-purple">&#128202;</div>
+        <div>
+          <div class="section-num">Section 2</div>
+          <h2>Approver Landing Panel</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">When you open the portal, you are presented with the <strong>Approver Landing Panel</strong> — a three-card dashboard that gives you an at-a-glance view of your authorization workload.</p>
+      <table class="data-table">
+        <thead><tr><th>Card</th><th>What It Shows</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-amber">Pending Authorizations</span></td><td>Live count of requests from your department currently awaiting your signature.</td><td>Click to open the Approver Area and see the full list.</td></tr>
+          <tr><td><span class="tag tag-blue">Submit a Request</span></td><td>Shortcut to the New Request tab for your own personal request.</td><td>Click to go directly to the New Request form.</td></tr>
+          <tr><td><span class="tag tag-green">Authorization History</span></td><td>Quick link to the record of all authorizations you have previously signed.</td><td>Click to open the history view.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-info" style="margin-top:14px;">
+        <div class="callout-icon">&#8505;&#65039;</div>
+        <div class="callout-body">
+          <strong>Department-scoped view</strong>
+          The pending count and the approval queue only show requests from employees in your own department. You will never see requests from other departments.
+        </div>
+      </div>
+    </div>
+
+    <!-- APPROVAL QUEUE -->
+    <div class="section" id="approval-queue">
+      <div class="section-header">
+        <div class="section-icon icon-purple">&#128220;</div>
+        <div>
+          <div class="section-num">Section 3</div>
+          <h2>Viewing the Approval Queue</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">The <strong>Approver Area</strong> tab shows two lists side by side — requests that need your action and requests you have already handled.</p>
+
+      <div class="subsection">
+        <h3>What Each Column Shows</h3>
+        <table class="data-table">
+          <thead><tr><th>Column</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>Employee</td><td>Name of the employee who submitted the request.</td></tr>
+            <tr><td>Model</td><td>Cartridge model name and ID.</td></tr>
+            <tr><td>Quantity</td><td>Number of cartridges requested.</td></tr>
+            <tr><td>Branch / Dept</td><td>The requester's branch and department.</td></tr>
+            <tr><td>Date Submitted</td><td>When the employee sent in the request.</td></tr>
+            <tr><td>Status</td><td><span class="tag tag-amber">Pending</span> = awaiting your signature. <span class="tag tag-green">Approved</span> = already signed.</td></tr>
+            <tr><td>Signature</td><td>Shown inline for requests you have already approved.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subsection">
+        <h3>Opening a Request</h3>
+        <p>Click on any row to open the full request detail page. You can review the complete information — employee, model, quantity, destination, and the pre-formatted authorization statement — before making your decision.</p>
+      </div>
+    </div>
+
+    <!-- SIGNING -->
+    <div class="section" id="signing">
+      <div class="section-header">
+        <div class="section-icon icon-green">&#9999;&#65039;</div>
+        <div>
+          <div class="section-num">Section 4</div>
+          <h2>Signing a Request</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">To authorize a request, open it from the Approval Queue and follow these steps.</p>
+      <ul class="steps">
+        <li><span class="step-label">Step 1:</span> Click the request row in the Approver Area. The full detail page opens showing the employee's name, cartridge model, quantity, branch, department, and the <strong>pre-formatted authorization statement</strong> summarizing the request.</li>
+        <li><span class="step-label">Step 2:</span> Read the authorization statement carefully. This is the formal record of your approval.</li>
+        <li><span class="step-label">Step 3:</span> Provide your signature using one of the following methods:
+          <ul class="bullets">
+            <li><strong>Draw</strong> — use the on-screen signature canvas. Draw your signature with your mouse or a stylus.</li>
+            <li><strong>Upload Image</strong> — click the upload button to import a saved signature image (PNG or JPG).</li>
+          </ul>
+        </li>
+        <li><span class="step-label">Step 4:</span> Optionally add <strong>Notes</strong> in the text box. Notes are visible to the requester in their Authorization History tab.</li>
+        <li><span class="step-label">Step 5:</span> Click <strong>Approve</strong>. The request status changes to <span class="tag tag-green">Approved</span>, your signature and timestamp are recorded, and IT is able to proceed with fulfillment.</li>
+      </ul>
+      <div class="callout callout-success" style="margin-top:16px;">
+        <div class="callout-icon">&#9989;</div>
+        <div class="callout-body">
+          <strong>After approval</strong>
+          The request disappears from the Pending section and moves to the Approved section of the queue. IT will see it in the Cartridge Management Portal and can begin fulfillment.
+        </div>
+      </div>
+    </div>
+
+    <!-- REJECTING -->
+    <div class="section" id="rejecting">
+      <div class="section-header">
+        <div class="section-icon icon-red">&#10060;</div>
+        <div>
+          <div class="section-num">Section 5</div>
+          <h2>Rejecting a Request</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">If a request should not be fulfilled, you can reject it from the same detail page you use for approval.</p>
+      <ul class="steps">
+        <li><span class="step-label">Step 1:</span> Open the request from the Approver Area.</li>
+        <li><span class="step-label">Step 2:</span> Add a <strong>Note</strong> explaining the reason for rejection. This is strongly recommended — the employee will see this note in their Authorization History tab.</li>
+        <li><span class="step-label">Step 3:</span> Click <strong>Reject</strong>. The request status changes to <span class="tag tag-red">Rejected</span> and the employee is notified through their request history.</li>
+      </ul>
+      <div class="callout callout-warn" style="margin-top:14px;">
+        <div class="callout-icon">&#9888;&#65039;</div>
+        <div class="callout-body">
+          <strong>Rejections are visible to the employee</strong>
+          The employee can see the rejection decision and your notes in their Authorization History tab. Use clear and professional language in rejection notes.
+        </div>
+      </div>
+      <div class="callout callout-danger" style="margin-top:8px;">
+        <div class="callout-icon">&#128683;</div>
+        <div class="callout-body">
+          <strong>Approvals and rejections cannot be undone through the portal</strong>
+          Once you confirm either action, the status is recorded immediately. If you approved a request in error before IT fulfills it, contact the IT department to place it on hold.
+        </div>
+      </div>
+    </div>
+
+    <!-- OWN REQUEST -->
+    <div class="section" id="own-request">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#128196;</div>
+        <div>
+          <div class="section-num">Section 6</div>
+          <h2>Submitting Your Own Request</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">You can submit your own personal cartridge request the same way any employee would. Click <strong>New Request</strong> from the tab bar or use the <em>Submit a Request</em> shortcut on your landing panel.</p>
+
+      <div class="subsection">
+        <h3>Submitting a Single-Model Request</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Open the <strong>New Request</strong> tab. Your Company, Branch, and Department are pre-filled and read-only.</li>
+          <li><span class="step-label">Step 2:</span> Select a cartridge model from the dropdown. Each option shows the model name and available stock, e.g. <em>HP 680 – Black (Available: 3)</em>.</li>
+          <li><span class="step-label">Step 3:</span> Enter the <strong>Quantity</strong> you need. The field shows "Max: X" indicating the maximum allowed.</li>
+          <li><span class="step-label">Step 4:</span> Select the <strong>Cartridge Condition</strong> — <em>With Cartridge</em> (you have empties to return) or <em>Without Cartridge</em> (you do not).</li>
+          <li><span class="step-label">Step 5:</span> Choose your <strong>Fulfillment Method</strong> — <em>Pickup</em> (select a Received By person) or <em>Delivery</em>.</li>
+          <li><span class="step-label">Step 6:</span> Optionally add <strong>Remarks</strong> (up to 500 characters).</li>
+          <li><span class="step-label">Step 7:</span> Click <strong>Submit Request</strong> and confirm.</li>
+        </ul>
+        <div class="callout callout-info" style="margin-top:14px;">
+          <div class="callout-icon">&#8505;&#65039;</div>
+          <div class="callout-body">
+            <strong>Your own requests also need authorization</strong>
+            Even if you are an approver, your personal requests must be authorized by another approver from your department (or one above you) before IT can fulfill them. You cannot approve your own requests.
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection" id="multi-model">
+        <h3>Requesting Multiple Cartridge Models at Once</h3>
+        <ul class="steps">
+          <li><span class="step-label">Step 1:</span> Fill in the first cartridge row as above.</li>
+          <li><span class="step-label">Step 2:</span> Click <strong>Add Row</strong> to insert another model line. Repeat for each additional model.</li>
+          <li><span class="step-label">Step 3:</span> To remove a row, click the <strong>Remove (×)</strong> button on that row.</li>
+          <li><span class="step-label">Step 4:</span> The Fulfillment Method and Remarks apply to the entire submission. Set them once.</li>
+          <li><span class="step-label">Step 5:</span> Click <strong>Submit Request</strong> and confirm. All rows are sent as a single grouped session.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MY REQUESTS -->
+    <div class="section" id="my-requests">
+      <div class="section-header">
+        <div class="section-icon icon-blue">&#128203;</div>
+        <div>
+          <div class="section-num">Section 7</div>
+          <h2>My Requests Tab</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">The <strong>My Requests</strong> tab shows all cartridge requests that <em>you personally</em> have submitted (not the requests from your department's employees). Use it to track the status of your own requests.</p>
+      <ul class="bullets">
+        <li>Requests are shown 10 per page with pagination controls at the bottom.</li>
+        <li>Summary cards at the top break down your requests by status: Total, Under Review, On Hold, Submitted, Completed.</li>
+        <li>Click any row to open the full Request Detail dialog.</li>
+        <li>Use the <strong>Status</strong> dropdown and <strong>Search</strong> box to filter the list.</li>
+      </ul>
+      <div class="subsection" style="margin-top:16px;">
+        <h3>Available Actions</h3>
+        <table class="data-table">
+          <thead><tr><th>Action</th><th>What It Does</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-gray">Archive</span></td><td>Hides the request from the default view. Still searchable.</td></tr>
+            <tr><td><span class="tag tag-red">Delete</span></td><td>Permanently removes the request. Only available before IT processes it.</td></tr>
+            <tr><td><span class="tag tag-blue">Export PDF</span></td><td>Generates a printable PDF summary of the selected request.</td></tr>
+            <tr><td><span class="tag tag-green">Mark Submitted</span></td><td>Manually marks a request as Submitted for requests handled outside the system.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AUTH HISTORY -->
+    <div class="section" id="auth-history">
+      <div class="section-header">
+        <div class="section-icon icon-green">&#128196;</div>
+        <div>
+          <div class="section-num">Section 8</div>
+          <h2>Authorization History Tab</h2>
+        </div>
+      </div>
+      <p style="margin-bottom:16px;">The <strong>Authorization History</strong> tab shows the approval records for your own submitted requests — not the ones you have approved for others. Use it to check whether another approver has signed your personal requests.</p>
+      <ul class="bullets">
+        <li>Displays the approver's name, position, decision, date, and a signature preview.</li>
+        <li>Requests showing <span class="tag tag-amber">Pending</span> have not yet been reviewed by another approver.</li>
+        <li>Requests showing <span class="tag tag-green">Approved</span> have been signed and are ready for IT fulfillment.</li>
+        <li>Requests showing <span class="tag tag-red">Rejected</span> were declined — check the Notes column for the reason.</li>
+      </ul>
+    </div>
+
+    <!-- STATUSES REFERENCE -->
+    <div class="section" id="statuses">
+      <div class="section-header">
+        <div class="section-icon icon-gray">&#128313;</div>
+        <div>
+          <div class="section-num">Reference</div>
+          <h2>Request Statuses</h2>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Status</th><th>What It Means</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag tag-amber">Awaiting Authorization</span></td><td>Submitted and waiting for a supervisor's signature.</td></tr>
+          <tr><td><span class="tag tag-green">Approved</span></td><td>Signed off by an approver. IT will now process it.</td></tr>
+          <tr><td><span class="tag tag-blue">Pending</span></td><td>With IT, being actively processed.</td></tr>
+          <tr><td><span class="tag tag-orange">Under Review</span></td><td>Being reviewed by IT or an approver before action is taken.</td></tr>
+          <tr><td><span class="tag tag-gray">On Hold</span></td><td>Temporarily suspended. Follow up with IT.</td></tr>
+          <tr><td><span class="tag tag-teal">Completed</span></td><td>Fulfilled. Cartridges have been issued.</td></tr>
+          <tr><td><span class="tag tag-red">Rejected</span></td><td>Declined by an approver. Check Authorization History for notes.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FULFILLMENT METHODS REFERENCE -->
+    <div class="section" id="fulfillment-methods">
+      <div class="section-header">
+        <div class="section-icon icon-teal">&#128666;</div>
+        <div>
+          <div class="section-num">Reference</div>
+          <h2>Fulfillment Methods</h2>
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Method</th><th>Description</th><th>Receiver Required?</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tag tag-blue">Pickup</span></td>
+            <td>You or a designated colleague collects from the IT office. A <em>Received By</em> employee must be selected when submitting. IT may confirm or update this at fulfillment.</td>
+            <td>Yes — select from dropdown</td>
+          </tr>
+          <tr>
+            <td><span class="tag tag-green">Delivery</span></td>
+            <td>IT delivers cartridges to your registered branch and department location.</td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="page-footer">
+      YIMS Internal &mdash; Internal Request Portal &mdash; Higher-Up Guide &mdash; For internal use only.
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

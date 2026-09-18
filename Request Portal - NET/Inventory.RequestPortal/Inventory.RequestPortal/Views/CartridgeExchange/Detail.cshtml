@@ -1,0 +1,22 @@
+@model Inventory.RequestPortal.Models.FulfilledCartridgeDetailDto
+@{
+    ViewData["Title"] = "Fulfilled Cartridge Detail";
+}
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <a class="btn btn-link text-white p-0 lh-1" asp-action="History"
+       style="font-size:1.4rem; text-decoration:none;" title="Back">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+        <h1>Set @Model.SetCode</h1>
+        <p class="subtitle mb-0">Fulfilled @Model.FulfilledAtDisplay</p>
+    </div>
+    <a class="btn btn-sm btn-outline-light ms-auto" asp-action="Reprint" asp-route-setId="@Model.SetId">
+        <i class="bi bi-printer"></i> Reprint
+    </a>
+</div>
+
+<div class="content-padded">
+    <partial name="_DetailBody" model="Model" />
+</div>

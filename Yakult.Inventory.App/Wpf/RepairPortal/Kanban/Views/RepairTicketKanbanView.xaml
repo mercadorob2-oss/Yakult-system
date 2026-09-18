@@ -1,0 +1,65 @@
+<UserControl x:Class="Yakult.Inventory.App.Wpf.RepairPortal.Kanban.Views.RepairTicketKanbanView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <DataTemplate x:Key="KanbanCardTemplate">
+                <Border Background="White" CornerRadius="10" Padding="10" Margin="0,0,0,8" BorderThickness="1" BorderBrush="#E2E8F0"
+                        Cursor="Hand" MouseLeftButtonUp="Card_MouseLeftButtonUp" Tag="{Binding}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ItemName}" FontWeight="Bold" FontSize="12" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding TicketCode}" FontSize="10" Foreground="#94A3B8"/>
+                        <TextBlock Text="{Binding Problem}" FontSize="11" Foreground="#475569" TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis" Margin="0,4,0,4"/>
+                        <Border Style="{StaticResource PriorityBadgeStyle}">
+                            <TextBlock Text="{Binding Priority}" Style="{StaticResource BadgeTextStyle}"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="8">
+        <StackPanel Orientation="Horizontal">
+            <Border Style="{StaticResource KanbanColumnStyle}">
+                <StackPanel>
+                    <TextBlock Text="Waiting" Style="{StaticResource KanbanColumnHeaderStyle}"/>
+                    <ItemsControl x:Name="WaitingItems" ItemTemplate="{StaticResource KanbanCardTemplate}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource KanbanColumnStyle}">
+                <StackPanel>
+                    <TextBlock Text="Diagnosing" Style="{StaticResource KanbanColumnHeaderStyle}"/>
+                    <ItemsControl x:Name="DiagnosingItems" ItemTemplate="{StaticResource KanbanCardTemplate}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource KanbanColumnStyle}">
+                <StackPanel>
+                    <TextBlock Text="Repairing" Style="{StaticResource KanbanColumnHeaderStyle}"/>
+                    <ItemsControl x:Name="RepairingItems" ItemTemplate="{StaticResource KanbanCardTemplate}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource KanbanColumnStyle}">
+                <StackPanel>
+                    <TextBlock Text="Testing" Style="{StaticResource KanbanColumnHeaderStyle}"/>
+                    <ItemsControl x:Name="TestingItems" ItemTemplate="{StaticResource KanbanCardTemplate}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource KanbanColumnStyle}">
+                <StackPanel>
+                    <TextBlock Text="Completed" Style="{StaticResource KanbanColumnHeaderStyle}"/>
+                    <ItemsControl x:Name="CompletedItems" ItemTemplate="{StaticResource KanbanCardTemplate}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource KanbanColumnStyle}">
+                <StackPanel>
+                    <TextBlock Text="Unrepairable" Style="{StaticResource KanbanColumnHeaderStyle}"/>
+                    <ItemsControl x:Name="UnrepairableItems" ItemTemplate="{StaticResource KanbanCardTemplate}"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

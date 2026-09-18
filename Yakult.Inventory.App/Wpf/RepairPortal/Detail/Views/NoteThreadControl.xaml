@@ -1,0 +1,53 @@
+<UserControl x:Class="Yakult.Inventory.App.Wpf.RepairPortal.Detail.Views.NoteThreadControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="Root">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" MaxHeight="220">
+            <ItemsControl ItemsSource="{Binding ItemsSource, ElementName=Root}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Border Style="{StaticResource AvatarPlaceholderStyle}" VerticalAlignment="Top">
+                                <TextBlock Style="{StaticResource AvatarGlyphStyle}"/>
+                            </Border>
+                            <StackPanel Margin="8,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding CreatedByName, TargetNullValue='System'}" FontWeight="SemiBold" FontSize="12"/>
+                                    <TextBlock Text="{Binding CreatedAt, StringFormat=' · {0:MMM d, h:mm tt}'}" FontSize="10" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <Border Background="#F1F5F9" CornerRadius="8" Padding="8" MaxWidth="380">
+                                    <TextBlock Text="{Binding NoteText}" FontSize="12" TextWrapping="Wrap" Foreground="#334155"/>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" Text="{Binding NoteText, ElementName=Root, UpdateSourceTrigger=PropertyChanged}"
+                     Padding="6" VerticalContentAlignment="Center"/>
+            <Button Grid.Column="1" Content="Add Note" Style="{StaticResource RepairPrimaryBtn}" Margin="8,0,0,0"
+                    Command="{Binding AddNoteCommand, ElementName=Root}"/>
+        </Grid>
+    </Grid>
+</UserControl>

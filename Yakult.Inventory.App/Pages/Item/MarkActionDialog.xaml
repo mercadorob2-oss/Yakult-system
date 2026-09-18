@@ -1,0 +1,317 @@
+<Window x:Class="Yakult.Inventory.App.Pages.Item.MarkActionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Confirm Action"
+        Width="700" Height="760"
+        MinWidth="640" MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None" AllowsTransparency="True"
+        Background="Transparent"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        ResizeMode="CanResize">
+
+    <Window.Resources>
+        <!-- reuse shared palette via local definitions to avoid extra merge -->
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#3A8EF6"/>
+        <SolidColorBrush x:Key="BorderBrush1" Color="#DDE3EC"/>
+        <SolidColorBrush x:Key="InputBorder" Color="#C8D2DC"/>
+        <SolidColorBrush x:Key="TextDark" Color="#1A2333"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#6B7A8D"/>
+        <SolidColorBrush x:Key="PageBg" Color="#F0F2F6"/>
+
+        <Style x:Key="FormField" TargetType="TextBox">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#C8D2DC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                                <Setter Property="Foreground" Value="#A0ADB9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="MultiField" TargetType="TextBox" BasedOn="{StaticResource FormField}">
+            <Setter Property="Height" Value="Auto"/>
+            <Setter Property="MinHeight" Value="72"/>
+            <Setter Property="AcceptsReturn" Value="True"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+        <Style x:Key="FL" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#8A94A6"/>
+            <Setter Property="Margin" Value="0,0,0,3"/>
+        </Style>
+        <Style x:Key="ST" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="9.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#3A8EF6"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16,14"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.06" Direction="270" Color="#0A1A2A"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PrimaryBtn" TargetType="Button">
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="22,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="#3A8EF6"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.88"/></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.72"/></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Bd" Property="Opacity" Value="0.42"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
+            <Setter Property="Background" Value="#E8ECF0"/>
+            <Setter Property="Foreground" Value="#3A4A5A"/>
+        </Style>
+        <Style x:Key="InlineBtn" TargetType="Button">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="#EEF4FF"/>
+            <Setter Property="Foreground" Value="#3A8EF6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#BDD0F8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#D6E8FF"/></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Bd" Property="Opacity" Value="0.45"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border CornerRadius="10" Background="White" ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="30" ShadowDepth="5" Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="62"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="66"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Border x:Name="HeaderBar" Grid.Row="0" CornerRadius="10,10,0,0" MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
+                <DockPanel Margin="18,0,10,0" VerticalAlignment="Center">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Cursor="Arrow">
+                        <TextBlock Text="─" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF" Cursor="Hand" Padding="8,0" MouseLeftButtonDown="OnMinimizeClick"/>
+                        <TextBlock Text="✕" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF" Cursor="Hand" Padding="8,0" MouseLeftButtonDown="OnCloseClick"/>
+                    </StackPanel>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="TxtTitle" Text="Confirm Action" FontSize="14" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock x:Name="TxtSubtitle" Text="Serial — Model — Category" FontSize="10" Foreground="#E8F0FF" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- Body -->
+            <ScrollViewer Grid.Row="1" Background="#F0F2F6" VerticalScrollBarVisibility="Auto" Padding="16,14,16,8">
+                <StackPanel>
+
+                    <!-- Bulk banner -->
+                    <Border x:Name="BulkBanner" Visibility="Collapsed" Background="#EEF4FF" BorderBrush="#BDD0F8" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
+                        <TextBlock x:Name="TxtBulkBanner" FontSize="11" Foreground="#2A5BC8" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- SELECTED ITEMS (batch-ready) -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,6" LastChildFill="False">
+                                <TextBlock x:Name="TxtSelectedHeader" Text="SELECTED ITEMS" Style="{StaticResource ST}" Margin="0"/>
+                                <Border DockPanel.Dock="Right" Background="#3A8EF6" CornerRadius="10" Padding="8,2">
+                                    <TextBlock x:Name="TxtSelectedCount" Text="1 item" FontSize="10" FontWeight="Bold" Foreground="White"/>
+                                </Border>
+                            </DockPanel>
+                            <DataGrid x:Name="SelectedItemsGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
+                                      HeadersVisibility="Column" GridLinesVisibility="All" AlternationCount="2" RowHeaderWidth="0"
+                                      MaxHeight="210" MinHeight="52" FontSize="11" BorderBrush="#DDE3EC" BorderThickness="1"
+                                      HorizontalGridLinesBrush="#EEF1F4" VerticalGridLinesBrush="#E4E8EF" Background="White"
+                                      CanUserSortColumns="False" CanUserReorderColumns="False" CanUserResizeRows="False">
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#F0F2F6"/><Setter Property="Foreground" Value="#5B6A7D"/>
+                                        <Setter Property="FontSize" Value="10"/><Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Padding" Value="8,6"/><Setter Property="BorderBrush" Value="#DDE3EC"/><Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="White"/><Setter Property="MinHeight" Value="28"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="AlternationIndex" Value="1"><Setter Property="Background" Value="#FAFBFC"/></Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="1.8*" MinWidth="140"/>
+                                    <DataGridTextColumn Header="Serial" Binding="{Binding SerialNumber}" Width="1*" MinWidth="100"/>
+                                    <DataGridTextColumn Header="Model" Binding="{Binding ModelNumber}" Width="1*" MinWidth="100"/>
+                                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="1*" MinWidth="90"/>
+                                    <DataGridTextColumn Header="Condition" Binding="{Binding ConditionName}" Width="0.9*" MinWidth="85"/>
+                                    <DataGridTextColumn Header="Stock" Binding="{Binding StockOnHand}" Width="0.6*" MinWidth="55"/>
+                                    <DataGridTextColumn Header="Last Action" Binding="{Binding LastRepairAction}" Width="1.1*" MinWidth="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <TextBlock x:Name="TxtMoreHint" Visibility="Collapsed" FontSize="10" Foreground="#8A94A6" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- REASON -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel LastChildFill="False" Margin="0,0,0,6">
+                                <TextBlock Text="REASON FOR REPAIR *" FontSize="9.5" FontWeight="Bold" Foreground="#3A8EF6"/>
+                                <TextBlock x:Name="LblReasonHint" DockPanel.Dock="Right" Text="Required" FontSize="10" Foreground="#C0392B" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBox x:Name="TxtReason" Style="{StaticResource FormField}" MaxLength="180" TextChanged="OnReasonChanged"/>
+                            <TextBlock Text="Briefly explain why this action is needed. This is saved with the history entry." FontSize="10" Foreground="#8A94A6" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- REMARK -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <DockPanel Margin="0,0,0,6">
+                                <TextBlock Text="REMARK (OPTIONAL)" FontSize="9.5" FontWeight="Bold" Foreground="#8A94A6"/>
+                                <TextBlock x:Name="LblCounter" DockPanel.Dock="Right" Text="0 / 500" FontSize="10" Foreground="#8A94A6" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <TextBox x:Name="TxtRemark" Style="{StaticResource MultiField}" MinHeight="84" MaxLength="500" TextChanged="OnRemarkChanged" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                            <TextBlock Text="Extra context shown in repair history. Long remarks are truncated safely to 500 chars." FontSize="10" Foreground="#8A94A6" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ITCALL TICKET -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="ITCALL TICKET (OPTIONAL)" Style="{StaticResource ST}" Foreground="#8A94A6"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="TxtAssociatedTicket" Grid.Column="0" IsReadOnly="True" IsReadOnlyCaretVisible="False" Style="{StaticResource FormField}" Background="#FAFBFC" Text="Not linked"/>
+                                <Button Grid.Column="1" Content="Select…" Style="{StaticResource InlineBtn}" Margin="8,0,0,0" Click="OnPickTicketClick"/>
+                                <Button x:Name="BtnClearTicket" Grid.Column="2" Content="Clear" Style="{StaticResource SecBtn}" Height="30" Margin="6,0,0,0" Padding="12,0" Click="OnClearTicketClick" IsEnabled="False"/>
+                                <Button x:Name="BtnOpenTicket" Grid.Column="3" Content="Open" Style="{StaticResource InlineBtn}" Margin="6,0,0,0" Click="OnOpenTicketClick" IsEnabled="False"/>
+                            </Grid>
+                            <TextBlock Text="Links [ITCALL:CODE#ID] into the remark for traceability. Open jumps to TicketDetails." FontSize="10" Foreground="#8A94A6" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- REPLACEMENT -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <CheckBox x:Name="ChkReplacement" Content="Replacement item — also resolve Call Monitoring ticket" FontSize="12" Foreground="#4A5A6A" Checked="OnReplacementToggled" Unchecked="OnReplacementToggled"/>
+                            <Grid x:Name="ReplacementGrid" Margin="0,12,0,0" IsEnabled="False" Opacity="0.6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0" Grid.Column="0">
+                                    <TextBlock Text="CALL TICKET ID *" Style="{StaticResource FL}"/>
+                                    <TextBox x:Name="TxtTicketId" Style="{StaticResource FormField}" Text="0" PreviewTextInput="OnTicketIdPreviewTextInput" TextChanged="OnTicketIdChanged"/>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="2">
+                                    <TextBlock Text="SET STATUS" Style="{StaticResource FL}"/>
+                                    <ComboBox x:Name="CmbResolveStatus" Height="32" FontSize="12" SelectionChanged="OnResolveStatusChanged">
+                                        <ComboBoxItem Content="Solved" IsSelected="True"/>
+                                        <ComboBoxItem Content="Resolved (Temporary)"/>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.ColumnSpan="3">
+                                    <TextBlock Text="TICKET NOTE (OPTIONAL)" Style="{StaticResource FL}"/>
+                                    <TextBox x:Name="TxtTicketNote" Style="{StaticResource FormField}" Height="32"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="When checked, a ticket note is added and the ticket status is updated after the repair history is saved." FontSize="10" Foreground="#8A94A6" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#FFF8E6" BorderBrush="#F5C842" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                        <TextBlock Text="Note: This action only adds a repair history entry. It does not change stock or inventory." FontSize="10.5" Foreground="#7A5C00" TextWrapping="Wrap"/>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Footer -->
+            <Border Grid.Row="2" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10">
+                <DockPanel Margin="16,0" VerticalAlignment="Center" LastChildFill="False">
+                    <Button x:Name="BtnOk" DockPanel.Dock="Right" Style="{StaticResource PrimaryBtn}" Click="OnOkClick" IsEnabled="False" IsDefault="True">
+                        <TextBlock x:Name="TxtOkLabel" Text="Confirm"/>
+                    </Button>
+                    <Button DockPanel.Dock="Right" Content="Cancel" Style="{StaticResource SecBtn}" Margin="0,0,8,0" Click="OnCancelClick" IsCancel="True"/>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,196 @@
+@model ContentListViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = Model.Title;
+    var selectedTrack = Model.SelectedTrack ?? "";
+    var videos = Model.Items.Where(x => x.ContentType is "Video" or "Course").ToList();
+    var guides = Model.Items.Where(x => x.ContentType is not ("Video" or "Course")).ToList();
+    var featured = Model.Items.Where(x => x.IsFeatured).Take(3).ToList();
+    if (featured.Count == 0) featured = Model.Items.Take(3).ToList();
+    var total = Model.Items.Count;
+}
+
+<header class="learning-hero">
+    <div class="portal-container learning-hero__inner">
+        <div>
+            <span class="portal-eyebrow">@Model.Eyebrow</span>
+            <h1>@Model.Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Description)) { <p>@Model.Description</p> }
+        </div>
+        <aside class="learning-hero__summary" aria-label="Learning library summary">
+            <span><strong>@total</strong>Resources</span>
+            <span><strong>@videos.Count</strong>Videos</span>
+            <span><strong>@guides.Count</strong>Guides</span>
+        </aside>
+    </div>
+</header>
+
+<main class="learning-library">
+    <div class="portal-container">
+        <nav class="learning-track-grid" aria-label="Learning tracks">
+            <a asp-action="Learning" asp-route-type="@Model.SelectedType" class="learning-track-card @(string.IsNullOrWhiteSpace(selectedTrack) ? "is-active" : null)">
+                <span>All</span>
+                <strong>All IT learning</strong>
+                <small>Cybersecurity, technical references, and support guidance.</small>
+            </a>
+            @foreach (var track in Model.Tracks)
+            {
+                <a asp-action="Learning" asp-route-track="@track.Value" asp-route-type="@Model.SelectedType" class="learning-track-card @(string.Equals(selectedTrack, track.Value, StringComparison.OrdinalIgnoreCase) ? "is-active" : null)">
+                    <span>@track.Label.Replace("IT ", "")</span>
+                    <strong>@track.Label</strong>
+                    <small>@track.Description</small>
+                </a>
+            }
+        </nav>
+
+        @if (Model.AvailableTypes.Count > 1)
+        {
+            <nav class="learning-type-filter" aria-label="Filter learning resources by type">
+                <a asp-action="Learning" asp-route-track="@Model.SelectedTrack" class="@(string.IsNullOrWhiteSpace(Model.SelectedType) ? "is-active" : null)">All formats</a>
+                @foreach (var type in Model.AvailableTypes)
+                {
+                    <a asp-action="Learning" asp-route-track="@Model.SelectedTrack" asp-route-type="@type" class="@(string.Equals(type, Model.SelectedType, StringComparison.OrdinalIgnoreCase) ? "is-active" : null)">@type</a>
+                }
+            </nav>
+        }
+
+        <div class="learning-discovery" role="search">
+            <label for="learningSearch">Search this learning library</label>
+            <div>
+                <input id="learningSearch" type="search" autocomplete="off" placeholder="Search lessons, guides, and topics" />
+                <span id="learningSearchStatus" role="status" aria-live="polite"></span>
+            </div>
+        </div>
+        <section class="learning-continue" id="learningContinue" hidden aria-labelledby="learningContinueTitle">
+            <span class="portal-eyebrow">Continue learning</span>
+            <h2 id="learningContinueTitle">Pick up where you left off</h2>
+            <a id="learningContinueLink" href="#"></a>
+        </section>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No learning resources found</h2><p>This track will show published videos, guides, and references when available.</p><a asp-action="Learning">Browse all learning</a></div>
+        }
+        else
+        {
+            @if (featured.Count > 0)
+            {
+                <section class="learning-featured" aria-labelledby="featuredLearningHeading">
+                    <div class="learning-section-heading">
+                        <div><span class="portal-eyebrow">Start here</span><h2 id="featuredLearningHeading">Featured learning</h2></div>
+                    </div>
+                    <div class="learning-featured-grid">
+                        @foreach (var item in featured)
+                        {
+                            var isVideo = item.ContentType is "Video" or "Course";
+                            var mediaStyle = isVideo && !string.IsNullOrWhiteSpace(item.ThumbnailUrl) ? $"background-image:url('{item.ThumbnailUrl}')" : null;
+                            PortalCourseProgress? courseProgress = null;
+                            var hasProgress = isVideo && Model.ProgressByContentId.TryGetValue(item.ContentId, out courseProgress);
+                            <a class="learning-feature-card @(isVideo ? null : "learning-feature-card--text")" asp-action="ContentDetails" asp-route-slug="@item.Slug">
+                                @if (isVideo)
+                                {
+                                    <span class="learning-card-media @(string.IsNullOrWhiteSpace(item.ThumbnailUrl) ? "is-placeholder" : null)" style="@mediaStyle"><span class="learning-play" aria-hidden="true">▶</span></span>
+                                }
+                                <span class="learning-card-body"><small>@item.ContentType · @item.CategoryName</small><strong>@item.Title</strong><span>@item.Summary</span><em>@(hasProgress && courseProgress?.IsCompleted == true ? "Review" : hasProgress && (courseProgress?.ProgressPercent ?? 0) > 0 ? "Continue" : item.ContentType == "Course" ? "Start course" : "Watch lesson") <span aria-hidden="true">→</span></em></span>
+@if (courseProgress is { IsCompleted: true })
+                                {
+                                    <span class="course-badge">Completed</span>
+                                }
+                                else if (courseProgress is { ProgressPercent: > 0 })
+                                {
+                                    <span class="course-card-progress" title="Watched @courseProgress.ProgressPercent%"><span style="width:@courseProgress.ProgressPercent%"></span></span>
+                                    <span class="course-card-pill">@courseProgress.ProgressPercent%</span>
+                                }
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (videos.Count > 0)
+            {
+                <section class="learning-section" aria-labelledby="videoLessonsHeading">
+                    <div class="learning-section-heading">
+                        <div><span class="portal-eyebrow">Video lessons</span><h2 id="videoLessonsHeading">Watch and learn</h2></div>
+                    </div>
+                    <div class="learning-video-grid">
+                        @foreach (var item in videos)
+                        {
+                            var mediaStyle = string.IsNullOrWhiteSpace(item.ThumbnailUrl) ? null : $"background-image:url('{item.ThumbnailUrl}')";
+                            PortalCourseProgress? courseProgress = null;
+                            var hasProgress = Model.ProgressByContentId.TryGetValue(item.ContentId, out courseProgress);
+                            <a class="learning-video-card" asp-action="ContentDetails" asp-route-slug="@item.Slug">
+                                <span class="learning-card-media @(string.IsNullOrWhiteSpace(item.ThumbnailUrl) ? "is-placeholder" : null)" style="@mediaStyle"><span class="learning-play" aria-hidden="true">▶</span></span>
+                                <span class="learning-card-body"><small>@item.CategoryName</small><strong>@item.Title</strong><span>@item.Summary</span><em>@(hasProgress && courseProgress?.IsCompleted == true ? "Review" : hasProgress && (courseProgress?.ProgressPercent ?? 0) > 0 ? "Continue" : item.ContentType == "Course" ? "Start course" : "Watch lesson") <span aria-hidden="true">→</span></em></span>
+@if (courseProgress is { IsCompleted: true })
+                                {
+                                    <span class="course-badge">Completed</span>
+                                }
+                                else if (courseProgress is { ProgressPercent: > 0 })
+                                {
+                                    <span class="course-card-progress" title="Watched @courseProgress.ProgressPercent%"><span style="width:@courseProgress.ProgressPercent%"></span></span>
+                                    <span class="course-card-pill">@courseProgress.ProgressPercent%</span>
+                                }
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (guides.Count > 0)
+            {
+                <section class="learning-section" aria-labelledby="referenceHeading">
+                    <div class="learning-section-heading">
+                        <div><span class="portal-eyebrow">References</span><h2 id="referenceHeading">Guides and resources</h2></div>
+                    </div>
+                    <div class="learning-resource-list">
+                        @foreach (var item in guides)
+                        {
+                            <a class="learning-resource-row" asp-action="ContentDetails" asp-route-slug="@item.Slug">
+                                <span>@item.ContentType</span>
+                                <strong>@item.Title</strong>
+                                <small>@item.CategoryName</small>
+                                <em>Open <span aria-hidden="true">→</span></em>
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
+        }
+    </div>
+</main>
+
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const search = document.getElementById('learningSearch');
+        const status = document.getElementById('learningSearchStatus');
+        const resources = Array.from(document.querySelectorAll('.learning-feature-card, .learning-video-card, .learning-resource-row'));
+        const continuePanel = document.getElementById('learningContinue');
+        const continueLink = document.getElementById('learningContinueLink');
+
+        function applySearch() {
+            const term = (search?.value || '').trim().toLowerCase();
+            let matches = 0;
+            resources.forEach(function (resource) {
+                const show = !term || resource.textContent.toLowerCase().includes(term);
+                resource.hidden = !show;
+                if (show) matches++;
+            });
+            if (status) status.textContent = term ? `${matches} learning resource${matches === 1 ? '' : 's'} found.` : '';
+        }
+
+        search?.addEventListener('input', applySearch);
+
+        try {
+            const saved = JSON.parse(window.localStorage.getItem('yakult.portal.lastLearning') || 'null');
+            if (saved?.href && saved?.title && continuePanel && continueLink) {
+                continueLink.href = saved.href;
+                continueLink.textContent = `Continue: ${saved.title}`;
+                continuePanel.hidden = false;
+            }
+        } catch (_) { }
+    });
+</script>
+}

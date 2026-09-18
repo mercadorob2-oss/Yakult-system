@@ -1,0 +1,81 @@
+@model List<Inventory.RequestPortal.Models.CartridgeItemViewDto>
+@{
+    ViewData["Title"] = "View Cartridges";
+    string search = ViewBag.SearchText ?? "";
+    bool includeInactive = ViewBag.IncludeInactive ?? false;
+}
+
+@await Html.PartialAsync("_CartridgeManagementNav")
+
+<div class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            style="font-size:1.4rem; text-decoration:none;" title="Menu">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <h1>View Cartridges</h1>
+        <p class="subtitle mb-0">Individual physical cartridge items (read-only)</p>
+    </div>
+</div>
+
+<div class="content-padded">
+    <div class="d-flex align-items-stretch gap-2 flex-wrap mb-3">
+        <form method="get" asp-action="Items" class="d-flex gap-2 flex-wrap" style="flex:1 1 480px;">
+            <div class="input-group input-group-sm" style="max-width:340px;">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" value="@search" class="form-control"
+                       placeholder="Search by name, serial, model, vendor, condition...">
+            </div>
+            <div class="form-check form-switch d-flex align-items-center">
+                <input type="checkbox" name="includeInactive" value="true" class="form-check-input" id="chkIncludeInactive"
+                       @(includeInactive ? "checked" : "") onchange="this.form.submit()">
+                <label class="form-check-label ms-1" for="chkIncludeInactive">Show inactive</label>
+            </div>
+            <button type="submit" class="btn btn-outline-primary btn-sm">Search</button>
+        </form>
+        <div class="ms-auto">
+            <span class="badge text-bg-secondary">@ViewBag.TotalRecords total</span>
+            <span class="badge text-bg-success">@ViewBag.TotalActive active</span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle bg-white border">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Serial Number</th>
+                    <th>Model</th>
+                    <th>Condition</th>
+                    <th>Latest Status</th>
+                    <th class="text-end">Repairs</th>
+                    <th>Vendor</th>
+                    <th class="text-end">Stock</th>
+                    <th class="text-center">Active</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="9" class="text-center text-muted py-4">No cartridges found.</td></tr>
+                }
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@(item.SerialNumber ?? "—")</td>
+                        <td>@(item.ModelNumber ?? "—")</td>
+                        <td>@(item.ConditionName ?? "—")</td>
+                        <td>@(item.LatestStatus ?? "—")</td>
+                        <td class="text-end">@item.RepairCount</td>
+                        <td>@(item.VendorName ?? "—")</td>
+                        <td class="text-end">@item.StockOnHand</td>
+                        <td class="text-center">
+                            @if (item.Active) { <i class="bi bi-check-circle-fill text-success"></i> } else { <i class="bi bi-dash-circle text-muted"></i> }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

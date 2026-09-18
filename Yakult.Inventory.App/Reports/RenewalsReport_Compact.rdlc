@@ -1,0 +1,1749 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report MustUnderstand="df"
+        xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition"
+        xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner"
+        xmlns:df="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition/defaultfontfamily">
+  <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
+  <AutoRefresh>0</AutoRefresh>
+
+  <DataSources>
+    <DataSource Name="DataSource1">
+      <ConnectionProperties>
+        <DataProvider>System.Data.DataSet</DataProvider>
+        <ConnectString />
+      </ConnectionProperties>
+      <rd:DataSourceID>a1b2c3d4-e5f6-4a7b-8c9d-000000000001</rd:DataSourceID>
+    </DataSource>
+    <DataSource Name="SignatoryDS">
+      <ConnectionProperties>
+        <DataProvider>System.Data.DataSet</DataProvider>
+        <ConnectString />
+      </ConnectionProperties>
+      <rd:DataSourceID>a1b2c3d4-e5f6-4a7b-8c9d-000000000004</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+
+  <DataSets>
+    <DataSet Name="RenewalsData">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <CommandText>
+SELECT
+  [Year], MonthNumber, MonthName,
+  SetId, SetCode, SetType, RenewalOfSetId, ChainPositionLabel, DocumentDate,
+  DocumentNumber, CompanyName, SiteName,
+  ExpiryStatus, SetLevelStatus,
+  StartDate, EndDate, DaysUntilExpiry,
+  TotalAmountDue, Subtotal, VatAmount, WhtAmount, DiscountAmount, ItemNo,
+  SetItemId, ItemName, ItemDescription, ModelNumber, SerialNumber, ItemType, Category,
+  Quantity, UnitPrice, ItemAmount,
+  LineStartDate, LineEndDate, ItemRenewalStatus
+FROM dbo.vw_Report_RenewalsWithItems
+ORDER BY [Year] ASC, MonthNumber ASC, SetId ASC, ItemNo ASC
+        </CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Year">              <DataField>Year</DataField>              <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="MonthNumber">       <DataField>MonthNumber</DataField>       <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="MonthName">         <DataField>MonthName</DataField>         <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="SetId">             <DataField>SetId</DataField>             <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="SetCode">           <DataField>SetCode</DataField>           <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="SetType">           <DataField>SetType</DataField>           <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="RenewalOfSetId">    <DataField>RenewalOfSetId</DataField>    <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="ChainPositionLabel"><DataField>ChainPositionLabel</DataField><rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="DocumentDate">      <DataField>DocumentDate</DataField>      <rd:TypeName>System.DateTime</rd:TypeName> </Field>
+        <Field Name="DocumentNumber">    <DataField>DocumentNumber</DataField>    <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="CompanyName">       <DataField>CompanyName</DataField>       <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="SiteName">          <DataField>SiteName</DataField>          <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="ExpiryStatus">      <DataField>ExpiryStatus</DataField>      <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="SetLevelStatus">    <DataField>SetLevelStatus</DataField>    <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="StartDate">         <DataField>StartDate</DataField>         <rd:TypeName>System.DateTime</rd:TypeName> </Field>
+        <Field Name="EndDate">           <DataField>EndDate</DataField>           <rd:TypeName>System.DateTime</rd:TypeName> </Field>
+        <Field Name="DaysUntilExpiry">   <DataField>DaysUntilExpiry</DataField>   <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="TotalAmountDue">    <DataField>TotalAmountDue</DataField>    <rd:TypeName>System.Decimal</rd:TypeName>  </Field>
+        <Field Name="Subtotal">         <DataField>Subtotal</DataField>          <rd:TypeName>System.Decimal</rd:TypeName>  </Field>
+        <Field Name="VatAmount">        <DataField>VatAmount</DataField>         <rd:TypeName>System.Decimal</rd:TypeName>  </Field>
+        <Field Name="WhtAmount">        <DataField>WhtAmount</DataField>         <rd:TypeName>System.Decimal</rd:TypeName>  </Field>
+        <Field Name="DiscountAmount">   <DataField>DiscountAmount</DataField>    <rd:TypeName>System.Decimal</rd:TypeName>  </Field>
+        <Field Name="ItemNo">            <DataField>ItemNo</DataField>            <rd:TypeName>System.Int64</rd:TypeName>    </Field>
+        <Field Name="SetItemId">         <DataField>SetItemId</DataField>         <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="ItemName">          <DataField>ItemName</DataField>          <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="ItemDescription">   <DataField>ItemDescription</DataField>   <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="ModelNumber">       <DataField>ModelNumber</DataField>       <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="SerialNumber">      <DataField>SerialNumber</DataField>      <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="ItemType">          <DataField>ItemType</DataField>          <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="Category">          <DataField>Category</DataField>          <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="Quantity">          <DataField>Quantity</DataField>          <rd:TypeName>System.Decimal</rd:TypeName>  </Field>
+        <Field Name="UnitPrice">         <DataField>UnitPrice</DataField>         <rd:TypeName>System.Decimal</rd:TypeName>  </Field>
+        <Field Name="ItemAmount">        <DataField>ItemAmount</DataField>        <rd:TypeName>System.Decimal</rd:TypeName>  </Field>
+        <Field Name="LineStartDate">     <DataField>LineStartDate</DataField>     <rd:TypeName>System.DateTime</rd:TypeName> </Field>
+        <Field Name="LineEndDate">       <DataField>LineEndDate</DataField>       <rd:TypeName>System.DateTime</rd:TypeName> </Field>
+        <Field Name="ItemRenewalStatus"> <DataField>ItemRenewalStatus</DataField> <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="ChainSortKey">      <DataField>ChainSortKey</DataField>      <rd:TypeName>System.Int64</rd:TypeName>    </Field>
+              <Field Name="SubTypeGroupId">    <DataField>SubTypeGroupId</DataField>    <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="SubType">           <DataField>SubType</DataField>           <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="GroupReferenceCode"><DataField>GroupReferenceCode</DataField><rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="GroupBeginDate">    <DataField>GroupBeginDate</DataField>    <rd:TypeName>System.DateTime</rd:TypeName> </Field>
+        <Field Name="GroupEndDate">      <DataField>GroupEndDate</DataField>      <rd:TypeName>System.DateTime</rd:TypeName> </Field>
+        <Field Name="GroupSubtotal">     <DataField>GroupSubtotal</DataField>     <rd:TypeName>System.Decimal</rd:TypeName>  </Field>
+        <Field Name="ParentTagGroupId">  <DataField>ParentTagGroupId</DataField>  <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+
+        <Field Name="ParentTagLabel">    <DataField>ParentTagLabel</DataField>    <rd:TypeName>System.String</rd:TypeName>   </Field>
+
+</Fields>
+    </DataSet>
+    <DataSet Name="SignatoryData">
+      <Query>
+        <DataSourceName>SignatoryDS</DataSourceName>
+        <CommandText>/* Provided at runtime via ReportDataSource */</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="PairIndex"><DataField>PairIndex</DataField><rd:TypeName>System.Int32</rd:TypeName></Field>
+        <Field Name="LeftName"><DataField>LeftName</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="LeftTitle"><DataField>LeftTitle</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="RightName"><DataField>RightName</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="RightTitle"><DataField>RightTitle</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="LeftPrefix"><DataField>LeftPrefix</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+        <Field Name="RightPrefix"><DataField>RightPrefix</DataField><rd:TypeName>System.String</rd:TypeName></Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+
+  <ReportParameters>
+    <ReportParameter Name="ShowRowNum">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Row Number</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowSetCode">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Set Code</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowType">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Show Type</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowDocNum">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Show Document Number</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowCompany">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Company</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowSite">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Show Site</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowSetStatus">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Show Set Status</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowItemName">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Item Name</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowDescription">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Show Description</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowModel">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Show Model</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowSerial">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Show Serial Number</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowQty">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Show Quantity</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowStartDate">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Show Start Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowExpiryDate">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show End Date</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowItemStatus">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Item Status</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowAmount">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Amount</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowSubtotal">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Subtotal Row</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowVat">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show VAT Row</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowWht">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show WHT Row</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowDiscount">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Discount Row</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowTotalAmount">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Total Amount Row</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ShowChainLabels">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Chain Position Labels</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="ChainOrderDescending">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>false</Value></Values></DefaultValue>
+      <Prompt>Chain Order Descending</Prompt>
+    </ReportParameter>
+      <ReportParameter Name="ShowSubTypeGroups">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Sub-Type Group Rows</Prompt>
+    </ReportParameter>
+      <ReportParameter Name="ShowParentTagGroups">
+      <DataType>Boolean</DataType>
+      <DefaultValue><Values><Value>true</Value></Values></DefaultValue>
+      <Prompt>Show Parent Tag Group Rows</Prompt>
+    </ReportParameter>
+</ReportParameters>
+
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+
+          <Textbox Name="ReportTitle">
+            <CanGrow>true</CanGrow>
+            <Paragraphs><Paragraph><TextRuns><TextRun>
+              <Value>Renewals Report</Value>
+              <Style><FontFamily>Segoe UI</FontFamily><FontSize>14pt</FontSize><FontWeight>Bold</FontWeight></Style>
+            </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+            <Top>0mm</Top><Left>0mm</Left><Height>8mm</Height><Width>190mm</Width>
+            <Style><Border><Style>None</Style></Border></Style>
+          </Textbox>
+
+          <!--
+            ════════════════════════════════════════════════════════════════
+            FLAT REPORT — 15 columns, 4 TablixRows, NO SetGroup.
+            One row per SetItem. Set-level fields shown once via ItemNo = 1.
+
+            TablixRowHierarchy — 4 leaves = 4 TablixRows:
+              Leaf 1  static in YearGroup    → year banner     (CornflowerBlue)
+              Leaf 2  static in MonthGroup   → month banner    (LightGreen)
+              Leaf 3  static in MonthGroup   → column headers  (once per month)
+              Leaf 4  Details in MonthGroup  → one row per item
+            ════════════════════════════════════════════════════════════════
+
+            16 columns — all-16 = exactly 190mm (portrait-safe, no overflow ever).
+            Priority widths: Site(30) > ItemName(39) > Model(17) > DocNum(14) > …
+            Minimum widths: Qty(5) | StartDate(11) | ExpiryDate(11) | Amount(7+7)
+            Non-default cols compressed: Row#(5) SetCode(8) Type(6) Company(10) SetStatus(6) Serial(8) ItemStatus(6)
+            Default 8 visible: DocNum+Site+ItemName+Model+Qty+StartDate+ExpiryDate+Amount = 141mm (74%).
+          -->
+          <Tablix Name="Tablix1">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>##COLW_0##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_1##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_2##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_3##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_4##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_5##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_6##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_7##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_8##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_9##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_10##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_11##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_12##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_13##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_14##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_15##</Width></TablixColumn>
+                <TablixColumn><Width>##COLW_16##</Width></TablixColumn>
+              </TablixColumns>
+
+              <TablixRows>
+
+                <!-- ROW 1 — year banner -->
+                <TablixRow>
+                  <Height>6mm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="YearBanner">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs><Paragraph><TextRuns><TextRun>
+                            <Value>=Fields!Year.Value</Value>
+                            <Style><FontWeight>Bold</FontWeight><FontSize>9pt</FontSize><Color>White</Color></Style>
+                          </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                          <Style>
+                            <Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                            <BackgroundColor>CornflowerBlue</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>4pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>17</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 2 — month banner -->
+                <TablixRow>
+                  <Height>6mm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="MonthBanner">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs><Paragraph><TextRuns><TextRun>
+                            <Value>=Fields!MonthName.Value</Value>
+                            <Style><FontWeight>Bold</FontWeight><FontSize>8.5pt</FontSize></Style>
+                          </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                          <Style>
+                            <Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                            <BackgroundColor>LightGreen</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>4pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>17</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 3 — Old/Renewed set label (once per Set) -->
+                <TablixRow>
+                  <Height>5mm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="SetBanner">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs><Paragraph><TextRuns><TextRun>
+                            <Value>=Fields!ChainPositionLabel.Value</Value>
+                            <Style><FontWeight>Bold</FontWeight><FontSize>6.5pt</FontSize><Color>#4A5568</Color></Style>
+                          </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                          <Style>
+                            <Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                            <BackgroundColor>#F0F0F0</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>4pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                            <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>17</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 3b — column headers (once per set) -->
+                <TablixRow>
+                  <Height>6mm</Height>
+                  <TablixCells>
+
+                    <TablixCell><CellContents><Textbox Name="H_Num">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>#</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_SetCode">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Set Code</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_Type">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Type</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_DocNum">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Doc Num</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_Company">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Company</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_Site">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Site</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_SetStatus">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Set Status</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_ItemName">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Item Description</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_Description">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Description</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_Model">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Model</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_Serial">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Serial #</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_Qty">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Qty</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_LineStart">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Start Date</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_LineEnd">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>End Date</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_ItemStatus">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Item Status</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="H_Amount">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Amount</Value>
+                        <Style><FontWeight>ExtraBold</FontWeight><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>3pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>2</ColSpan></CellContents></TablixCell>
+                    <TablixCell />
+
+                  </TablixCells>
+                </TablixRow>
+
+                                <!-- SUB-TYPE GROUP LINE - reference code, coverage dates and subtotal, each in its
+                     own real column (no ColSpan) so it lines up with the item rows. -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells><TablixCell><CellContents><Textbox Name="D_ItemNo_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_SetCode_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Type_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_DocNum_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Company_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Site_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_SetStatus_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_ItemName_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=UCase(First(Fields!SubType.Value, "SubTypeGroup")) + IIF(First(Fields!GroupReferenceCode.Value, "SubTypeGroup") = "", "", "   |   " + First(Fields!GroupReferenceCode.Value, "SubTypeGroup"))</Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Description_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Model_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Serial_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Qty_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_LineStart_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(IsNothing(First(Fields!GroupBeginDate.Value, "SubTypeGroup")), "", Format(First(Fields!GroupBeginDate.Value, "SubTypeGroup"), "yyyy-MM-dd"))</Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_LineEnd_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(IsNothing(First(Fields!GroupEndDate.Value, "SubTypeGroup")), "", Format(First(Fields!GroupEndDate.Value, "SubTypeGroup"), "yyyy-MM-dd"))</Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_ItemStatus_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Amount_SubTypeLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(First(Fields!GroupSubtotal.Value, "SubTypeGroup"), "#,##0.00")</Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#FBE2C4</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>3pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>2</ColSpan></CellContents></TablixCell><TablixCell /></TablixCells>
+                </TablixRow>
+
+<!-- PARENT TAG GROUP LINE - label only, no reference code / dates / subtotal
+
+     (Parent Tag has no financial semantics of its own). -->
+
+<TablixRow>
+                  <Height>8mm</Height>
+                  <TablixCells><TablixCell><CellContents><Textbox Name="D_ItemNo_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_SetCode_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Type_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_DocNum_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Company_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Site_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_SetStatus_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_ItemName_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=First(Fields!ParentTagLabel.Value, "ParentTagGroup")</Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Description_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Model_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Serial_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Qty_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_LineStart_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_LineEnd_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_ItemStatus_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell><TablixCell><CellContents><Textbox Name="D_Amount_ParentTagLine">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value></Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#F8F3DC</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>3pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>2</ColSpan></CellContents></TablixCell><TablixCell /></TablixCells>
+                </TablixRow>
+
+                
+
+<!-- ROW 4 — detail row (one per SetItem) -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+
+                    <!-- Item # -->
+                    <TablixCell><CellContents><Textbox Name="D_ItemNo">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!ItemNo.Value</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <!-- Set-level fields: shown only on first item of each set -->
+                    <TablixCell><CellContents><Textbox Name="D_SetCode">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(Fields!ItemNo.Value = 1, Fields!SetCode.Value, "")</Value>
+                        <Style><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_Type">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(Fields!ItemNo.Value = 1, Fields!SetType.Value, "")</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_DocNum">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(Fields!ItemNo.Value = 1, Fields!DocumentNumber.Value, "")</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_Company">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(Fields!ItemNo.Value = 1, Fields!CompanyName.Value, "")</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_Site">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(Fields!ItemNo.Value = 1, Fields!SiteName.Value, "")</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_SetStatus">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(Fields!ItemNo.Value = 1, Fields!SetLevelStatus.Value, "")</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <!-- Item-level fields: shown on every row -->
+                    <TablixCell><CellContents><Textbox Name="D_ItemName">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!ItemName.Value</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_Description">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!ItemDescription.Value</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_Model">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!ModelNumber.Value</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_Serial">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!SerialNumber.Value</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_Qty">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(Fields!Quantity.Value, "0.##")</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_LineStart">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(IsNothing(Fields!LineStartDate.Value), "—", FORMAT(Fields!LineStartDate.Value, "yyyy-MM-dd"))</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_LineEnd">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(IsNothing(Fields!LineEndDate.Value), "—", FORMAT(Fields!LineEndDate.Value, "yyyy-MM-dd"))</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_ItemStatus">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!ItemRenewalStatus.Value</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="D_Amount">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(Fields!ItemAmount.Value, "#,##0.00")</Value>
+                        <Style><FontSize>6.5pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>3pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>2</ColSpan></CellContents></TablixCell>
+                    <TablixCell />
+
+                  </TablixCells>
+                </TablixRow>
+
+                                
+
+<!-- ROW 5 — Subtotal -->
+                <TablixRow>
+                  <Height>5mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="SummaryLbl_Subtotal">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Subtotal</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>15</ColSpan></CellContents></TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell />
+                    <TablixCell><CellContents><Textbox Name="SummaryVal_Subtotal">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(Fields!Subtotal.Value, "#,##0.00")</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>3pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>2</ColSpan></CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 6 — VAT -->
+                <TablixRow>
+                  <Height>5mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="SummaryLbl_Vat">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>VAT</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>15</ColSpan></CellContents></TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell />
+                    <TablixCell><CellContents><Textbox Name="SummaryVal_Vat">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(Fields!VatAmount.Value, "#,##0.00")</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>3pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>2</ColSpan></CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 7 — WHT -->
+                <TablixRow>
+                  <Height>5mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="SummaryLbl_Wht">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>WHT</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>15</ColSpan></CellContents></TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell />
+                    <TablixCell><CellContents><Textbox Name="SummaryVal_Wht">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(Fields!WhtAmount.Value, "#,##0.00")</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>3pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>2</ColSpan></CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 8 — Discount -->
+                <TablixRow>
+                  <Height>5mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="SummaryLbl_Discount">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Discount</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>15</ColSpan></CellContents></TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell />
+                    <TablixCell><CellContents><Textbox Name="SummaryVal_Discount">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(Fields!DiscountAmount.Value, "#,##0.00")</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>3pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>2</ColSpan></CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 9 — Total Amount -->
+                <TablixRow>
+                  <Height>5mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="SummaryLbl_Total">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>Total Amount</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#D9E1F2</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>3pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>15</ColSpan></CellContents></TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell />
+                    <TablixCell><CellContents><Textbox Name="SummaryVal_Total">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(Fields!TotalAmountDue.Value, "#,##0.00")</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>LightGrey</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#D9E1F2</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>3pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox><ColSpan>2</ColSpan></CellContents></TablixCell>
+                    <TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 10 — empty row between sets -->
+                <TablixRow>
+                  <Height>3mm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="SetSpacer">
+                          <CanGrow>true</CanGrow>
+                          <Paragraphs><Paragraph><TextRuns><TextRun>
+                            <Value></Value>
+                          </TextRun></TextRuns></Paragraph></Paragraphs>
+                          <Style><Border><Style>None</Style></Border></Style>
+                        </Textbox>
+                        <ColSpan>17</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+              </TablixRows>
+            </TablixBody>
+
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowRowNum.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowSetCode.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowType.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowDocNum.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowCompany.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowSite.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowSetStatus.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowItemName.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowDescription.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowModel.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowSerial.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowQty.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowStartDate.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowExpiryDate.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowItemStatus.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowAmount.Value = false</Hidden></Visibility></TablixMember>
+                <TablixMember><Visibility><Hidden>=Parameters!ShowAmount.Value = false</Hidden></Visibility></TablixMember>
+              </TablixMembers>
+            </TablixColumnHierarchy>
+
+            <TablixRowHierarchy>
+              <TablixMembers>
+
+                <!-- YearGroup -->
+                <TablixMember>
+                  <Group Name="YearGroup">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!Year.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression><Value>=Min(Fields!ChainSortKey.Value)</Value></SortExpression>
+                  </SortExpressions>
+                  <TablixMembers>
+
+                    <!-- Leaf 1: year banner -->
+                    <TablixMember><KeepWithGroup>After</KeepWithGroup></TablixMember>
+
+                    <!-- MonthGroup -->
+                    <TablixMember>
+                      <Group Name="MonthGroup">
+                        <GroupExpressions>
+                          <GroupExpression>=Fields!MonthNumber.Value</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <SortExpressions>
+                        <SortExpression><Value>=Min(Fields!ChainSortKey.Value)</Value></SortExpression>
+                      </SortExpressions>
+                      <TablixMembers>
+
+                        <!-- Leaf 2: month banner -->
+                        <TablixMember><KeepWithGroup>After</KeepWithGroup></TablixMember>
+
+                        <!-- SetGroup — one group per set, with empty spacer footer -->
+                        <TablixMember>
+                          <Group Name="SetGroup">
+                            <GroupExpressions>
+                              <GroupExpression>=Fields!SetId.Value</GroupExpression>
+                            </GroupExpressions>
+                          </Group>
+                          <SortExpressions>
+                            <SortExpression>
+                              <Value>=Min(Fields!ChainSortKey.Value)</Value>
+                            </SortExpression>
+                          </SortExpressions>
+                          <TablixMembers>
+                            <!-- Chain position label (Original / Renewal #N), once per Set -->
+                            <TablixMember><KeepWithGroup>After</KeepWithGroup><Visibility><Hidden>=Parameters!ShowChainLabels.Value = false</Hidden></Visibility></TablixMember>
+                            <!-- Column headers (once per Set) -->
+                            <TablixMember><KeepWithGroup>After</KeepWithGroup></TablixMember>
+                            <!-- Details — one row per SetItem -->
+                            <!-- Sub-Type Group (Contract / Subscription / License / Services):
+                                 one banner row plus a Begin/End date row before the items, one subtotal row after. -->
+                            <TablixMember>
+                              <Group Name="SubTypeGroup">
+                                <GroupExpressions>
+                                  <GroupExpression>=Fields!SubTypeGroupId.Value</GroupExpression>
+                                </GroupExpressions>
+                              </Group>
+                              <SortExpressions>
+                                <SortExpression><Value>=Min(IIF(Fields!SubTypeGroupId.Value = 0, 2147483647, Fields!SubTypeGroupId.Value))</Value></SortExpression>
+                              </SortExpressions>
+                              <TablixMembers>
+                                <TablixMember><KeepWithGroup>After</KeepWithGroup><Visibility><Hidden>=Parameters!ShowSubTypeGroups.Value = false OR First(Fields!SubType.Value, "SubTypeGroup") = ""</Hidden></Visibility></TablixMember>
+                                <TablixMember>
+
+  <Group Name="ParentTagGroup">
+
+    <GroupExpressions>
+
+      <GroupExpression>=Fields!ParentTagGroupId.Value</GroupExpression>
+
+    </GroupExpressions>
+
+  </Group>
+
+  <SortExpressions>
+
+    <SortExpression><Value>=Min(IIF(Fields!ParentTagGroupId.Value = 0, 2147483647, Fields!ParentTagGroupId.Value))</Value></SortExpression>
+
+  </SortExpressions>
+
+  <TablixMembers>
+
+    <TablixMember><KeepWithGroup>After</KeepWithGroup><Visibility><Hidden>=Parameters!ShowParentTagGroups.Value = false OR First(Fields!ParentTagLabel.Value, "ParentTagGroup") = ""</Hidden></Visibility></TablixMember>
+
+    <TablixMember>
+                              <Group Name="Details" />
+                              <SortExpressions>
+                                <SortExpression><Value>=Fields!ItemNo.Value</Value></SortExpression>
+                              </SortExpressions>
+                            </TablixMember>
+
+  </TablixMembers>
+
+</TablixMember>
+                              </TablixMembers>
+                            </TablixMember>
+                            <!-- Summary footer rows -->
+                            <TablixMember><KeepWithGroup>Before</KeepWithGroup><Visibility><Hidden>=Parameters!ShowSubtotal.Value = false</Hidden></Visibility></TablixMember>
+                            <TablixMember><KeepWithGroup>Before</KeepWithGroup><Visibility><Hidden>=Parameters!ShowVat.Value = false</Hidden></Visibility></TablixMember>
+                            <TablixMember><KeepWithGroup>Before</KeepWithGroup><Visibility><Hidden>=Parameters!ShowWht.Value = false</Hidden></Visibility></TablixMember>
+                            <TablixMember><KeepWithGroup>Before</KeepWithGroup><Visibility><Hidden>=Parameters!ShowDiscount.Value = false</Hidden></Visibility></TablixMember>
+                            <TablixMember><KeepWithGroup>Before</KeepWithGroup><Visibility><Hidden>=Parameters!ShowTotalAmount.Value = false</Hidden></Visibility></TablixMember>
+                            <!-- Empty spacer row after each set -->
+                            <TablixMember />
+                          </TablixMembers>
+                        </TablixMember>
+
+                      </TablixMembers>
+                    </TablixMember>
+
+                  </TablixMembers>
+                </TablixMember>
+
+              </TablixMembers>
+            </TablixRowHierarchy>
+
+            <DataSetName>RenewalsData</DataSetName>
+            <Top>10mm</Top><Left>0mm</Left>
+            <Height>31mm</Height><Width>190mm</Width>
+            <Style><Border><Style>None</Style></Border></Style>
+          </Tablix>
+
+        </ReportItems>
+        <Height>115mm</Height>
+        <Style><Border><Style>None</Style></Border></Style>
+      </Body>
+
+      <Width>190mm</Width>
+      <Page>
+        <PageHeader>
+          <Height>13mm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="phCompany_RR1">
+              <CanGrow>true</CanGrow>
+              <Visibility><Hidden>=Globals!PageNumber &gt; 1</Hidden></Visibility>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>YAKULT PHILIPPINES INC.</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>13pt</FontSize><FontWeight>Bold</FontWeight><Color>#000000</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>1mm</Top><Left>0mm</Left><Height>7mm</Height><Width>140mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="phDate_RR1">
+              <CanGrow>true</CanGrow>
+              <Visibility><Hidden>=Globals!PageNumber &gt; 1</Hidden></Visibility>
+              <Paragraphs><Paragraph><TextRuns>
+                <TextRun>
+                  <Value>Date: </Value>
+                  <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight><Color>#000000</Color></Style>
+                </TextRun>
+                <TextRun>
+                  <Value>=FORMAT(Globals!ExecutionTime, "MMMM dd, yyyy")</Value>
+                  <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><Color>#000000</Color></Style>
+                </TextRun>
+              </TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>1mm</Top><Left>140mm</Left><Height>7mm</Height><Width>50mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="phDept_RR1">
+              <CanGrow>true</CanGrow>
+              <Visibility><Hidden>=Globals!PageNumber &gt; 1</Hidden></Visibility>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>Information Technology Department</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>SemiBold</FontWeight><FontStyle>Italic</FontStyle><Color>#000000</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>8mm</Top><Left>0mm</Left><Height>5mm</Height><Width>190mm</Width>
+              <ZIndex>2</ZIndex>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+          </ReportItems>
+          <Style />
+        </PageHeader>
+        <PageFooter>
+          <Height>8mm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="PageNumber_Data">
+              <CanGrow>true</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>=Globals!PageNumber &amp; " of " &amp; Globals!TotalPages</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>Gray</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>1mm</Top><Left>110mm</Left><Height>5mm</Height><Width>80mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="ReportFooter_Data">
+              <CanGrow>true</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>="Renewals Report  |  " &amp; FORMAT(Globals!ExecutionTime, "MM/dd/yyyy")</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>Gray</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>1mm</Top><Left>0mm</Left><Height>5mm</Height><Width>200mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+          </ReportItems>
+          <Style><Border><Style>None</Style></Border></Style>
+        </PageFooter>
+        <PageHeight>29.7cm</PageHeight>
+        <PageWidth>21cm</PageWidth>
+        <LeftMargin>1cm</LeftMargin><RightMargin>1cm</RightMargin>
+        <TopMargin>1cm</TopMargin><BottomMargin>1cm</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+
+    <ReportSection>
+      <Body>
+        <ReportItems>
+
+          <!-- ══ SIGNATORY SECTION ══ -->
+          <Textbox Name="lblNotedBy_RR">
+            <CanGrow>true</CanGrow>
+            <Paragraphs><Paragraph><TextRuns><TextRun>
+              <Value>Noted By</Value>
+              <Style><FontFamily>Segoe UI</FontFamily><FontSize>6.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#000000</Color></Style>
+            </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+            <Top>0mm</Top><Left>0mm</Left><Height>7mm</Height><Width>190mm</Width>
+            <Style><Border><Style>None</Style></Border></Style>
+          </Textbox>
+          <Tablix Name="tblSignatory">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn><Width>75mm</Width></TablixColumn>
+                <TablixColumn><Width>40mm</Width></TablixColumn>
+                <TablixColumn><Width>75mm</Width></TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>22mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="RR_Sig_SpaceL">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value /></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border>
+                        <PaddingLeft>15pt</PaddingLeft><PaddingRight>15pt</PaddingRight></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="RR_Sig_SpaceGap">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value /></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="RR_Sig_SpaceR">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value /></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>6mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="RR_Sig_NameL">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=UCase(IIF(Fields!LeftPrefix.Value = "", Fields!LeftName.Value, Fields!LeftPrefix.Value &amp; " " &amp; Fields!LeftName.Value))</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>#1e293b</Color></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border>
+                        <TopBorder><Color>#1e293b</Color><Style>Solid</Style><Width>0.5pt</Width></TopBorder>
+                        <VerticalAlign>Middle</VerticalAlign></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="RR_Sig_NameGap">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value /></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="RR_Sig_NameR">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=UCase(IIF(Fields!RightPrefix.Value = "", Fields!RightName.Value, Fields!RightPrefix.Value &amp; " " &amp; Fields!RightName.Value))</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8.5pt</FontSize><FontWeight>Bold</FontWeight><Color>=IIF(Fields!RightName.Value = "", "White", "#1e293b")</Color></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border>
+                        <TopBorder><Color>=IIF(Fields!RightName.Value = "", "White", "#1e293b")</Color><Style>Solid</Style><Width>0.5pt</Width></TopBorder>
+                        <VerticalAlign>Middle</VerticalAlign></Style>
+                    </Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+                <TablixRow>
+                  <Height>6mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="RR_Sig_TitleL">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=StrConv(Fields!LeftTitle.Value, 3)</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>#64748b</Color></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingBottom>4pt</PaddingBottom><VerticalAlign>Middle</VerticalAlign></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="RR_Sig_TitleGap">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value /></TextRun></TextRuns></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border></Style>
+                    </Textbox></CellContents></TablixCell>
+                    <TablixCell><CellContents><Textbox Name="RR_Sig_TitleR">
+                      <CanGrow>true</CanGrow>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=StrConv(Fields!RightTitle.Value, 3)</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>=IIF(Fields!RightName.Value = "", "White", "#64748b")</Color></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Style>None</Style></Border><PaddingBottom>4pt</PaddingBottom><VerticalAlign>Middle</VerticalAlign></Style>
+                    </Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy><TablixMembers><TablixMember /><TablixMember /><TablixMember /></TablixMembers></TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="SignatoryGroup">
+                    <GroupExpressions><GroupExpression>=Fields!PairIndex.Value</GroupExpression></GroupExpressions>
+                  </Group>
+                  <TablixMembers>
+                    <TablixMember /><TablixMember /><TablixMember />
+                  </TablixMembers>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>SignatoryData</DataSetName>
+            <Top>7mm</Top><Left>0mm</Left>
+            <Height>58mm</Height><Width>190mm</Width>
+            <Style><Border><Style>None</Style></Border></Style>
+          </Tablix>
+
+        </ReportItems>
+        <Height>77mm</Height>
+        <Style><Border><Style>None</Style></Border></Style>
+      </Body>
+
+      <Width>190mm</Width>
+      <Page>
+        <PageHeader>
+          <Height>13mm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="phCompany_RR2">
+              <CanGrow>true</CanGrow>
+              <Visibility><Hidden>true</Hidden></Visibility>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>YAKULT PHILIPPINES INC.</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>13pt</FontSize><FontWeight>Bold</FontWeight><Color>#1b3a6b</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>1mm</Top><Left>0mm</Left><Height>7mm</Height><Width>417mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="phDept_RR2">
+              <CanGrow>true</CanGrow>
+              <Visibility><Hidden>true</Hidden></Visibility>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>Information Technology Department</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>SemiBold</FontWeight><FontStyle>Italic</FontStyle><Color>#1b3a6b</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>8mm</Top><Left>0mm</Left><Height>5mm</Height><Width>190mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+          </ReportItems>
+          <Style />
+        </PageHeader>
+        <PageFooter>
+          <Height>8mm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="PageNumber">
+              <CanGrow>true</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>=Globals!PageNumber &amp; " of " &amp; Globals!TotalPages</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>Gray</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>1mm</Top><Left>110mm</Left><Height>5mm</Height><Width>80mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="ReportFooter">
+              <CanGrow>true</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>="Renewals Report  |  " &amp; FORMAT(Globals!ExecutionTime, "MM/dd/yyyy")</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>Gray</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>1mm</Top><Left>0mm</Left><Height>5mm</Height><Width>200mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+          </ReportItems>
+          <Style><Border><Style>None</Style></Border></Style>
+        </PageFooter>
+        <PageHeight>29.7cm</PageHeight>
+        <PageWidth>21cm</PageWidth>
+        <LeftMargin>1cm</LeftMargin><RightMargin>1cm</RightMargin>
+        <TopMargin>1cm</TopMargin><BottomMargin>1cm</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+</Report>

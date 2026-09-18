@@ -1,0 +1,87 @@
+<Window x:Class="Yakult.Inventory.App.WPF.Admin.EmailManagement.Views.EmailLinkedRecordsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Linked Records"
+        Width="680" Height="560" MinWidth="560" MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        Background="White"
+        FontFamily="Segoe UI"
+        ResizeMode="CanResizeWithGrip">
+
+    <Window.Resources>
+        <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Admin/EmailManagement/Styles/EmailConfigStyles.xaml"/>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock x:Name="LblHeader" TextWrapping="Wrap" FontSize="13"/>
+            <TextBlock x:Name="LblSub" Margin="0,4,0,0" FontSize="11" Foreground="#5A6A7A" TextWrapping="Wrap"
+                       Text="Clear these references with &#8220;Unlink All&#8221; to allow a permanent delete, or choose &#8220;Deactivate Instead&#8221; to keep the record but mark it inactive."/>
+        </StackPanel>
+
+        <!-- Linked records list -->
+        <DataGrid Grid.Row="1" x:Name="RefGrid"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  HeadersVisibility="Column"
+                  RowHeaderWidth="0"
+                  GridLinesVisibility="Horizontal"
+                  HorizontalGridLinesBrush="#EEF1F4"
+                  BorderBrush="#CDD5DE"
+                  BorderThickness="1"
+                  FontSize="12"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Type"      Binding="{Binding Category}"    Width="170"/>
+                <DataGridTextColumn Header="Record"    Binding="{Binding Description}" Width="*"/>
+                <DataGridTextColumn Header="On Unlink" Binding="{Binding OnUnlink}"    Width="240">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextWrapping" Value="Wrap"/>
+                            <Setter Property="Foreground" Value="#5A6A7A"/>
+                            <Setter Property="Padding" Value="0,3"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- SMTP deletion opt-in -->
+        <Border Grid.Row="2" x:Name="SmtpWarnBox" Margin="0,10,0,0" Padding="10,8"
+                Background="#FDECEA" BorderBrush="#F5B7B1" BorderThickness="1" CornerRadius="4"
+                Visibility="Collapsed">
+            <StackPanel>
+                <CheckBox x:Name="ChkDeleteSmtp" FontSize="12" Foreground="#922B21"
+                          Content="Also DELETE the linked SMTP profile(s) shown above"/>
+                <TextBlock Margin="20,3,0,0" FontSize="11" Foreground="#922B21" TextWrapping="Wrap"
+                           Text="An SMTP profile requires a From-address, so its link cannot just be cleared. If left unchecked, the profile stays and the email still cannot be deleted."/>
+            </StackPanel>
+        </Border>
+
+        <!-- Actions -->
+        <Grid Grid.Row="3" Margin="0,14,0,0">
+            <TextBlock x:Name="LblStatus" VerticalAlignment="Center" FontSize="11" Foreground="#5A6A7A"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="BtnUnlink" Content="Unlink All" Width="110" Height="32"
+                        Background="#E67E22" Style="{StaticResource ActionButton}" Click="BtnUnlink_Click"/>
+                <Button x:Name="BtnDelete" Content="Delete Email" Width="120" Height="32"
+                        Background="#C0392B" Style="{StaticResource ActionButton}" Click="BtnDelete_Click"/>
+                <Button x:Name="BtnDeactivate" Content="Deactivate Instead" Width="150" Height="32"
+                        Background="#EEF3FA" Foreground="#5A6A7A" Style="{StaticResource ActionButton}" Click="BtnDeactivate_Click"/>
+                <Button x:Name="BtnClose" Content="Close" Width="90" Height="32"
+                        Background="#EEF3FA" Foreground="#5A6A7A" Style="{StaticResource ActionButton}"
+                        IsCancel="True" Click="BtnClose_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

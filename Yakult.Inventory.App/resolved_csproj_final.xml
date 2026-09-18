@@ -1,0 +1,1921 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="15.0">
+  <Import Project="..\packages\Microsoft.SqlServer.Types.160.1000.6\build\net462\Microsoft.SqlServer.Types.props" Condition="Exists('..\packages\Microsoft.SqlServer.Types.160.1000.6\build\net462\Microsoft.SqlServer.Types.props')" />
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{9C526A20-03D2-EFAB-09E0-F4CC37F38B20}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Yakult.Inventory.App</RootNamespace>
+    <AssemblyName>Yakult.Inventory.App</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
+    <RuntimeIdentifiers>win;win-x86;win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>yakult_icon_desktop.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Azure.Core, Version=1.47.1.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
+      <HintPath>..\packages\Azure.Core.1.47.1\lib\net472\Azure.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Azure.Identity, Version=1.14.2.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
+      <HintPath>..\packages\Azure.Identity.1.14.2\lib\netstandard2.0\Azure.Identity.dll</HintPath>
+    </Reference>
+    <Reference Include="Dapper, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Dapper.2.1.66\lib\net461\Dapper.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=9.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.9.0.1\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.Cryptography, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.Cryptography.8.0.0\lib\net462\Microsoft.Bcl.Cryptography.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Data.SqlClient, Version=6.0.0.0, Culture=neutral, PublicKeyToken=23ec7fc2d6eaa4a5, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Data.SqlClient.6.1.2\lib\net462\Microsoft.Data.SqlClient.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Caching.Abstractions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Caching.Abstractions.8.0.0\lib\net462\Microsoft.Extensions.Caching.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Caching.Memory, Version=8.0.0.1, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Caching.Memory.8.0.1\lib\net462\Microsoft.Extensions.Caching.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection, Version=8.0.0.1, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.8.0.1\lib\net462\Microsoft.Extensions.DependencyInjection.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=8.0.0.2, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.8.0.2\lib\net462\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging, Version=8.0.0.1, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Logging.8.0.1\lib\net462\Microsoft.Extensions.Logging.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Logging.Abstractions, Version=8.0.0.3, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Logging.Abstractions.8.0.3\lib\net462\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Options, Version=8.0.0.2, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Options.8.0.2\lib\net462\Microsoft.Extensions.Options.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Extensions.Primitives, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.Primitives.8.0.0\lib\net462\Microsoft.Extensions.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Identity.Client, Version=4.73.1.0, Culture=neutral, PublicKeyToken=0a613f4dd989e8ae, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Identity.Client.4.73.1\lib\net472\Microsoft.Identity.Client.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Identity.Client.Extensions.Msal, Version=4.73.1.0, Culture=neutral, PublicKeyToken=0a613f4dd989e8ae, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Identity.Client.Extensions.Msal.4.73.1\lib\netstandard2.0\Microsoft.Identity.Client.Extensions.Msal.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Abstractions, Version=7.7.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Abstractions.7.7.1\lib\net472\Microsoft.IdentityModel.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.JsonWebTokens, Version=7.7.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.JsonWebTokens.7.7.1\lib\net472\Microsoft.IdentityModel.JsonWebTokens.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Logging, Version=7.7.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Logging.7.7.1\lib\net472\Microsoft.IdentityModel.Logging.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Protocols, Version=7.7.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Protocols.7.7.1\lib\net472\Microsoft.IdentityModel.Protocols.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect, Version=7.7.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Protocols.OpenIdConnect.7.7.1\lib\net472\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Tokens, Version=7.7.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Tokens.7.7.1\lib\net472\Microsoft.IdentityModel.Tokens.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ReportViewer.Common, Version=15.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ReportingServices.ReportViewerControl.Winforms.150.1652.0\lib\net40\Microsoft.ReportViewer.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ReportViewer.DataVisualization, Version=15.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ReportingServices.ReportViewerControl.Winforms.150.1652.0\lib\net40\Microsoft.ReportViewer.DataVisualization.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ReportViewer.Design, Version=15.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ReportingServices.ReportViewerControl.Winforms.150.1652.0\lib\net40\Microsoft.ReportViewer.Design.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ReportViewer.ProcessingObjectModel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ReportingServices.ReportViewerControl.Winforms.150.1652.0\lib\net40\Microsoft.ReportViewer.ProcessingObjectModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ReportViewer.WinForms, Version=15.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.ReportingServices.ReportViewerControl.Winforms.150.1652.0\lib\net40\Microsoft.ReportViewer.WinForms.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.SqlServer.Types, Version=16.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.SqlServer.Types.160.1000.6\lib\net462\Microsoft.SqlServer.Types.dll</HintPath>
+    </Reference>
+    <Reference Include="PdfSharp, Version=1.50.5147.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\PDFsharp.1.50.5147\lib\net20\PdfSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="PdfSharp.Charting, Version=1.50.5147.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
+      <HintPath>..\packages\PDFsharp.1.50.5147\lib\net20\PdfSharp.Charting.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="QRCoder, Version=1.7.0.0, Culture=neutral, PublicKeyToken=c4ed5b9ae8358a28, processorArchitecture=MSIL">
+      <HintPath>..\packages\QRCoder.1.7.0\lib\net40\QRCoder.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="ReaLTaiizor, Version=3.8.1.4, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ReaLTaiizor.3.8.1.4\lib\net48\ReaLTaiizor.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ClientModel, Version=1.5.1.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ClientModel.1.5.1\lib\netstandard2.0\System.ClientModel.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Configuration.ConfigurationManager, Version=9.0.0.10, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Configuration.ConfigurationManager.9.0.10\lib\net462\System.Configuration.ConfigurationManager.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data.Common, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Data.Common.4.3.0\lib\net451\System.Data.Common.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Diagnostics.DiagnosticSource, Version=8.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Diagnostics.DiagnosticSource.8.0.1\lib\net462\System.Diagnostics.DiagnosticSource.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.IdentityModel.Tokens.Jwt, Version=7.7.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IdentityModel.Tokens.Jwt.7.7.1\lib\net472\System.IdentityModel.Tokens.Jwt.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.FileSystem.AccessControl, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IO.FileSystem.AccessControl.5.0.0\lib\net461\System.IO.FileSystem.AccessControl.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory.Data, Version=8.0.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.Data.8.0.1\lib\net462\System.Memory.Data.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security" />
+    <Reference Include="System.Security.AccessControl, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.AccessControl.5.0.0\lib\net461\System.Security.AccessControl.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.Pkcs, Version=8.0.0.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.Pkcs.8.0.1\lib\net462\System.Security.Cryptography.Pkcs.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Cryptography.ProtectedData, Version=4.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.ProtectedData.4.5.0\lib\net461\System.Security.Cryptography.ProtectedData.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.Principal.Windows, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Principal.Windows.5.0.0\lib\net461\System.Security.Principal.Windows.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.8.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json, Version=8.0.0.6, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.8.0.6\lib\net462\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="ExcelDataReader">
+      <HintPath>..\packages\ExcelDataReader.3.6.0\lib\net45\ExcelDataReader.dll</HintPath>
+    </Reference>
+    <Reference Include="ExcelDataReader.DataSet">
+      <HintPath>..\packages\ExcelDataReader.DataSet.3.6.0\lib\netstandard2.0\ExcelDataReader.DataSet.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encoding.CodePages">
+      <HintPath>..\packages\System.Text.Encoding.CodePages.4.7.1\lib\net461\System.Text.Encoding.CodePages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="WindowsFormsIntegration" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Runtime.WindowsRuntime" />
+    <Reference Include="Windows">
+      <HintPath>C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.26100.0\Windows.winmd</HintPath>
+    </Reference>
+    <Reference Include="ClosedXML">
+      <HintPath>..\packages\ClosedXML.0.97.0\lib\netstandard2.0\ClosedXML.dll</HintPath>
+    </Reference>
+    <Reference Include="DocumentFormat.OpenXml">
+      <HintPath>..\packages\DocumentFormat.OpenXml.2.16.0\lib\net46\DocumentFormat.OpenXml.dll</HintPath>
+    </Reference>
+    <Reference Include="ExcelNumberFormat">
+      <HintPath>..\packages\ExcelNumberFormat.1.1.0\lib\net20\ExcelNumberFormat.dll</HintPath>
+    </Reference>
+    <Reference Include="XLParser">
+      <HintPath>..\packages\XLParser.1.5.2\lib\net461\XLParser.dll</HintPath>
+    </Reference>
+    <Reference Include="Irony">
+      <HintPath>..\packages\Irony.NetCore.1.0.11\lib\net461\Irony.dll</HintPath>
+    </Reference>
+    <Reference Include="System.IO.Packaging">
+      <HintPath>..\packages\System.IO.Packaging.4.7.0\lib\net46\System.IO.Packaging.dll</HintPath>
+    </Reference>
+    <Reference Include="SixLabors.Fonts">
+      <HintPath>..\packages\SixLabors.Fonts.1.0.0\lib\netstandard2.0\SixLabors.Fonts.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Components\DynamicSectionControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\BranchEntry.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\BranchEntry.Designer.cs">
+      <DependentUpon>BranchEntry.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\DepartmentEntry.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\DepartmentEntry.Designer.cs">
+      <DependentUpon>DepartmentEntry.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Core\AppConfig.cs" />
+    <Compile Include="Core\DatabaseConfig.cs" />
+    <Compile Include="Core\EntryTypes.cs" />
+    <Compile Include="Core\ItemTypes.cs" />
+    <Compile Include="Core\AppTime.cs" />
+    <Compile Include="Core\Logger.cs" />
+    <Compile Include="Data\UserRepository.cs" />
+    <Compile Include="Dialogs\CombinedColumnSelectionDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ReportColumnSelectionDialog.cs" />
+    <Compile Include="Dialogs\SignatoryPickerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CartridgeManagement\CartridgeManagementWpfHost.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CartridgeManagement\SendNotificationsWpfHost.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CartridgeManagement\PartiallyFulfilledWpfHost.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CartridgeManagement\UnfulfilledExchangesWpfHost.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Helpers\CallMonitoringSla.cs" />
+    <Compile Include="Helpers\TaskHelper.cs" />
+    <Compile Include="Helpers\DataGridViewSafety.cs" />
+    <Compile Include="Helpers\InvoiceReportPdfGenerator.cs" />
+    <Compile Include="Helpers\InvoiceSheetRdlHelper.cs" />
+    <Compile Include="Helpers\ModernUiHelper.cs" />
+    <Compile Include="Helpers\ReceiptSetPdfGenerator.cs" />
+    <Compile Include="Helpers\ReportLauncher.cs" />
+    <Compile Include="Helpers\RequestPdfGenerator.cs" />
+    <Compile Include="Helpers\UserActivityPdfGenerator.cs" />
+    <Compile Include="Helpers\SetInvoicePdfGenerator.cs" />
+    <Compile Include="Helpers\SetPdfGenerator.cs" />
+    <Compile Include="Helpers\SplitContainerUtil.cs" />
+    <Compile Include="Models\CartridgeApprovalDto.cs" />
+    <Compile Include="Models\CartridgeAuthorizationModel.cs" />
+    <Compile Include="Models\NotificationCreateDto.cs" />
+    <Compile Include="Models\NotificationDto.cs" />
+    <Compile Include="Models\ReportListItem.cs" />
+    <Compile Include="WPF\CartridgeManagement\Infrastructure\ViewModelBase.cs" />
+    <Compile Include="WPF\CartridgeManagement\Infrastructure\RelayCommand.cs" />
+    <Compile Include="WPF\CartridgeManagement\Converters\Converters.cs" />
+    <Compile Include="WPF\CartridgeManagement\Controls\IntegerSpinner.cs" />
+    <Compile Include="WPF\CartridgeManagement\ViewModels\NonRefillableEmptyCartridgesViewModel.cs" />
+    <Compile Include="WPF\CartridgeManagement\ViewModels\VendorCartridgeRefillViewModel.cs" />
+    <Compile Include="WPF\CartridgeManagement\Views\NonRefillableEmptyCartridgesView.xaml.cs">
+      <DependentUpon>NonRefillableEmptyCartridgesView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WPF\CartridgeManagement\Views\VendorCartridgeRefillView.xaml.cs">
+      <DependentUpon>VendorCartridgeRefillView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\CartridgeManagement\Dialogs\CreateBatchDialog.xaml.cs">
+      <DependentUpon>CreateBatchDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\CartridgeManagement\Dialogs\EditBatchWindow.xaml.cs">
+      <DependentUpon>EditBatchWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\CartridgeManagement\Dialogs\TransferBatchDialog.xaml.cs">
+      <DependentUpon>TransferBatchDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\CartridgeManagement\Dialogs\TransferCartridgesWpfDialog.xaml.cs">
+      <DependentUpon>TransferCartridgesWpfDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\CartridgeManagement\Dialogs\AssignReturnsDialog.xaml.cs">
+      <DependentUpon>AssignReturnsDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\CartridgeManagement\Dialogs\OutboundBatchAssignmentWpfDialog.xaml.cs">
+      <DependentUpon>OutboundBatchAssignmentWpfDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\SendNotifications\ViewModels\NotificationRowViewModel.cs" />
+    <Compile Include="Wpf\SendNotifications\ViewModels\SendNotificationsViewModel.cs" />
+    <Compile Include="Wpf\SendNotifications\Views\SendNotificationsView.xaml.cs">
+      <DependentUpon>SendNotificationsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Archive\ViewModels\ArchiveRecordDto.cs" />
+    <Compile Include="Wpf\Archive\ViewModels\EntityFieldDto.cs" />
+    <Compile Include="Wpf\Archive\ViewModels\SetItemRowDto.cs" />
+    <Compile Include="Wpf\Archive\ViewModels\ArchivePageViewModel.cs" />
+    <Compile Include="Wpf\Archive\ViewModels\ArchiveDetailsViewModel.cs" />
+    <Compile Include="Wpf\Archive\Views\ArchivePageView.xaml.cs">
+      <DependentUpon>ArchivePageView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Archive\Views\ArchiveDetailsWindow.xaml.cs">
+      <DependentUpon>ArchiveDetailsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="WPF\CartridgeManagement\ViewModels\MultiModelRowViewModel.cs" />
+    <Compile Include="WPF\CartridgeManagement\ViewModels\SessionGroupViewModel.cs" />
+    <Compile Include="WPF\CartridgeManagement\ViewModels\ExchangePanelViewModel.cs" />
+    <Compile Include="WPF\CartridgeManagement\ViewModels\CartridgeManagementViewModel.cs" />
+    <Compile Include="Wpf\CartridgeManagement\ViewModels\PfExchangeRowViewModel.cs" />
+    <Compile Include="Wpf\CartridgeManagement\ViewModels\PfSessionGroupViewModel.cs" />
+    <Compile Include="Wpf\CartridgeManagement\ViewModels\FulfillRowStateViewModel.cs" />
+    <Compile Include="Wpf\CartridgeManagement\ViewModels\PartiallyFulfilledViewModel.cs" />
+    <Compile Include="Wpf\CartridgeManagement\ViewModels\UnfulfilledExchangesViewModel.cs" />
+    <Compile Include="WPF\CartridgeManagement\Views\CartridgeManagementView.xaml.cs">
+      <DependentUpon>CartridgeManagementView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Search\Converters\SearchConverters.cs" />
+    <Compile Include="Wpf\Search\ViewModels\SearchCardViewModel.cs" />
+    <Compile Include="Wpf\Search\ViewModels\SearchViewModel.cs" />
+    <Compile Include="Wpf\Search\Views\SearchView.xaml.cs">
+      <DependentUpon>SearchView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\RequestPortal\NewRequest\ViewModels\RequestItemRowViewModel.cs" />
+    <Compile Include="Wpf\RequestPortal\NewRequest\ViewModels\NewRequestViewModel.cs" />
+    <Compile Include="Wpf\RequestPortal\NewRequest\Views\NewRequestView.xaml.cs">
+      <DependentUpon>NewRequestView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\RequestPortal\AssistedRequest\ViewModels\AssistedRequestViewModel.cs" />
+    <Compile Include="Wpf\RequestPortal\AssistedRequest\Views\AssistedRequestView.xaml.cs">
+      <DependentUpon>AssistedRequestView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\RequestPortal\RequestHistory\ViewModels\RequestHistoryViewModel.cs" />
+    <Compile Include="Wpf\RequestPortal\RequestHistory\Views\RequestHistoryView.xaml.cs">
+      <DependentUpon>RequestHistoryView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\RequestPortal\NotificationBellControl.xaml.cs">
+      <DependentUpon>NotificationBellControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Notifications\NotificationSettingsWindow.xaml.cs">
+      <DependentUpon>NotificationSettingsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\RequestPortal\AuthorizationHistory\ViewModels\AuthorizationHistoryViewModel.cs" />
+    <Compile Include="Wpf\RequestPortal\AuthorizationHistory\Views\AuthorizationHistoryView.xaml.cs">
+      <DependentUpon>AuthorizationHistoryView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\RequestPortal\AuthorizeRequest\ViewModels\AuthorizeRequestViewModel.cs" />
+    <Compile Include="Wpf\RequestPortal\AuthorizeRequest\Views\AuthorizeRequestView.xaml.cs">
+      <DependentUpon>AuthorizeRequestView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Renewal\LinkRenewal\ViewModels\CandidateSetViewModel.cs" />
+    <Compile Include="Wpf\Renewal\LinkRenewal\ViewModels\SetItemComparisonRow.cs" />
+    <Compile Include="Wpf\Renewal\LinkRenewal\ViewModels\LinkRenewalViewModel.cs" />
+    <Compile Include="Wpf\Renewal\LinkRenewal\Views\LinkRenewalWindow.xaml.cs">
+      <DependentUpon>LinkRenewalWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\RenewalChainNodeViewModel.cs" />
+    <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\InvoiceItemRowViewModel.cs" />
+    <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\RenewalHistoryRowViewModel.cs" />
+    <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\RenewalDetailViewModel.cs" />
+    <Compile Include="Wpf\Renewal\RenewalDetail\Views\RenewalDetailWindow.xaml.cs">
+      <DependentUpon>RenewalDetailWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Repositories\CartridgeApprovalRepository.cs" />
+    <Compile Include="Repositories\CartridgeAuthorizationRepository.cs" />
+    <Compile Include="Repositories\NotificationRepository.cs" />
+    <Compile Include="Repositories\UserNotificationSettingRepository.cs" />
+    <Compile Include="Repositories\ReportsRepository.cs" />
+    <Compile Include="Services\CartridgeApprovalService.cs" />
+    <Compile Include="Services\AuthorizationService.cs" />
+    <Compile Include="Yakult_Inventory_System_DEVDataSet.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Yakult_Inventory_System_DEVDataSet.xsd</DependentUpon>
+    </Compile>
+    <Content Include="UserManual\IMAGES\AD BRANCH PAGE.png" />
+    <Content Include="UserManual\IMAGES\ADD  REQUEST PAGE.png" />
+    <Content Include="UserManual\IMAGES\ADD COMPANY PAGE.png" />
+    <Content Include="UserManual\IMAGES\ADD DEPARTMENT PAGE.png" />
+    <Content Include="UserManual\IMAGES\ADD EMPLOYEE PAGE.png" />
+    <Content Include="UserManual\IMAGES\ADD ITEM PAGE.png" />
+    <Content Include="UserManual\IMAGES\ADD SOFTWARE_SERVICE SET.png" />
+    <Content Include="UserManual\IMAGES\ADD VENDOR PAGE.png" />
+    <Content Include="UserManual\IMAGES\ADD_RECEIPT_PAGE.png" />
+    <Content Include="UserManual\IMAGES\DASHBOARD PAGE.png" />
+    <Content Include="UserManual\IMAGES\INVOICE REPORT.png" />
+    <Content Include="UserManual\IMAGES\LOGIN PAGE.png" />
+    <Content Include="UserManual\IMAGES\NOTIFICATION CENTER.png" />
+    <Content Include="UserManual\IMAGES\REGISTER PAGE.png" />
+    <Content Include="UserManual\IMAGES\RENEWAL DETAILS.png" />
+    <Content Include="UserManual\IMAGES\REQUEST_PAGE_NEW.png" />
+    <Content Include="UserManual\IMAGES\SET_DETAILS.png" />
+    <Content Include="UserManual\IMAGES\VIEW ARCHIVE.png" />
+    <Content Include="UserManual\IMAGES\VIEW AUDIT TRAIL.png" />
+    <Content Include="UserManual\IMAGES\VIEW UPDATES.png" />
+    <Content Include="UserManual\index.html" />
+    <Content Include="UserManual\script.js" />
+    <Content Include="UserManual\styles.css" />
+    <Content Include="yakult_icon.ico" />
+    <Content Include="yakult_icon_desktop.ico" />
+    <None Include="Form1.cs">
+      <SubType>Form</SubType>
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </None>
+    <None Include="Form1.Designer.cs">
+      <DependentUpon>Form1.cs</DependentUpon>
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </None>
+    <Compile Include="Forms\Admin\AdminPortalForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Admin\UserActivityInsightsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CartridgeManagement\CartridgeManagementForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CartridgeManagement\CartridgeManagementPortalForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CartridgeManagement\NonRefillableWpfHost.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CartridgeManagement\VendorCartridgeRefillWpfHost.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Dashboard\DashboardDrillDownDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Dashboard\DashboardHome.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoringDashboard.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\BorrowItemsDashboard.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\BorrowItems\ReturnBorrowDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\BorrowItems\BorrowUiTheme.cs" />
+    <Compile Include="Forms\BorrowItems\ConfirmBorrowDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\BorrowItems\BorrowDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\BorrowItems\ConfirmReturnDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\BorrowItems\AddExternalAndBorrowDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\EmailNotificationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\DepartmentSmtpProfileDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\SmtpProfileLinkDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\DepartmentSmtpProfileLinkDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\BranchSmtpProfileLinkDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\SmtpProfileDialogUi.cs" />
+    <Compile Include="Forms\CallMonitoring\CallMonitoringReportsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\ItcmSchedulerManager.cs" />
+    <Compile Include="Forms\CallMonitoring\SchedulerDatabaseConfigDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\CallMonitoringProfilesForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\EmployeeProfileDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\EmployeeReplacementItemsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\AutoEscalationAssigneeDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\EscalationOverrideForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\MarkAsResolutionDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\TicketDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\TicketSummaryDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\DashboardDrillDownForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\EmailLogDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\EmailTemplatePreviewDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\ConfirmTicketCreationDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\TicketPickerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\CallMonitoringDisplayModeControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\Hybrid\WpfCallMonitoringHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\Hybrid\WpfTicketManagementHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\Hybrid\WpfDisplayModeHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\Hybrid\WpfCallMonitoringProfilesHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\Hybrid\WpfReportsHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\Hybrid\WpfEmailNotificationHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\TicketManagementControl.Presentation.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\TicketManagementControl.StatusWorkflow.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\TicketManagementControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\CallMonitoringIcons.cs" />
+    <Compile Include="Forms\CallMonitoring\ToastNotification.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\NotificationDrawerControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\CallMonitoring\TicketWorkflow.cs" />
+    <Compile Include="Models\CallMonitoring\CallAssignmentEligibilityItem.cs" />
+    <Compile Include="Wpf\CallMonitoring\ICallMonitoringNavigator.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfCallMonitoringShell.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfNotificationDrawer.cs" />
+    <Compile Include="Wpf\Portal\WpfMainDashboardShell.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfCallMonitoringWorkspace.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfTicketManagementWorkspace.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfDisplayModeWorkspace.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfCallMonitoringProfilesWorkspace.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfAssigneeEligibilityDialog.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfCallMonitoringReportsWorkspace.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfEmailNotificationWorkspace.cs" />
+    <Compile Include="Wpf\BorrowItems\WpfBorrowWorkspace.cs" />
+    <Compile Include="Wpf\BorrowItems\WpfBorrowBoardWorkspace.cs" />
+    <Compile Include="Wpf\BorrowItems\WpfBorrowBoardHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wpf\BorrowItems\WpfBorrowHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Wpf\BorrowItems\WpfBorrowTransactionWorkspace.cs" />
+    <Compile Include="Wpf\BorrowItems\WpfBorrowDetailsDialog.cs" />
+    <Compile Include="Wpf\BorrowItems\WpfBorrowTransactionHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Portal\MainDashboardForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Notifications\NotificationSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Notifications\NotificationSettingsForm.Designer.cs">
+      <DependentUpon>NotificationSettingsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\SystemSettings\EmailTemplateEditorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SystemSettings\SendTestEmailDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SystemSettings\SystemEmailSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SystemSettings\SystemSmtpProfileDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Helpers\AesEncryptionHelper.cs" />
+    <Compile Include="Helpers\InventoryException.cs" />
+    <Compile Include="Helpers\InventoryHelper.cs" />
+    <Compile Include="Helpers\PasswordHelper.cs" />
+    <Compile Include="Helpers\SecretProtector.cs" />
+    <Compile Include="Helpers\RenewalTestingHelper.cs" />
+    <Compile Include="Helpers\RenewalReportPdfGenerator.cs" />
+    <Compile Include="Helpers\ReportHelper.cs" />
+    <Compile Include="Helpers\ItemPdfGenerator.cs" />
+    <Compile Include="Helpers\TabularPdfGenerator.cs" />
+    <Compile Include="Helpers\SetQRGenerator.cs" />
+    <Compile Include="Helpers\ListPageStateHelper.cs" />
+    <Compile Include="Helpers\UiTheme.cs" />
+    <Compile Include="Helpers\UiFactory.cs" />
+    <Compile Include="Helpers\DefaultListPageTemplate.cs" />
+    <Compile Include="Helpers\ColumnFilterPopup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Helpers\DateRangeFilterPopup.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Models\CartridgeModelDto.cs" />
+    <Compile Include="Models\DamagedEmptyCartridgeDto.cs" />
+    <Compile Include="Models\OutboundBatchDto.cs" />
+    <Compile Include="Models\NonRefillableEmptyDto.cs" />
+    <Compile Include="Models\NonRefillableGroupedDto.cs" />
+    <Compile Include="Models\ClosedEmptyCartridgeDto.cs" />
+    <Compile Include="Models\UnassignedReturnDto.cs" />
+    <Compile Include="Models\UserActivityFilter.cs" />
+    <Compile Include="Models\UserActivityLogDto.cs" />
+    <Compile Include="Models\CartridgeMovementDto.cs" />
+    <Compile Include="Models\CartridgeReturnForRefillDto.cs" />
+    <Compile Include="Models\EmailAddressDto.cs" />
+    <Compile Include="Models\EmailTemplateDto.cs" />
+    <Compile Include="Models\EmployeeEmailDto.cs" />
+    <Compile Include="Models\EmptyCartridgesByVendorDto.cs" />
+    <Compile Include="Models\LookupItem.cs" />
+    <Compile Include="Models\AssetDto.cs" />
+    <Compile Include="Models\BorrowItems\BorrowEmployeeLookup.cs" />
+    <Compile Include="Models\BorrowItems\BorrowItemLookup.cs" />
+    <Compile Include="Models\BorrowItems\BorrowLogPage.cs" />
+    <Compile Include="Models\BorrowItems\BorrowLogRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallDashboardMetrics.cs" />
+    <Compile Include="Models\CallMonitoring\CallEmailSettingsItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallEmailTemplateItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallTicketNotificationData.cs" />
+    <Compile Include="Models\CallMonitoring\CallDepartmentSmtpProfileItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallEmailLogItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallEscalationSettingsItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallIssueTypePoint.cs" />
+    <Compile Include="Models\CallMonitoring\CallNotificationRulesItem.cs" />
+    <Compile Include="Models\CallMonitoring\SmtpSenderConfig.cs" />
+    <Compile Include="Models\CallMonitoring\CallSmtpProfileItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallDepartmentSmtpProfileRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallDepartmentNotificationRecipientItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallBranchSmtpProfileRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallBranchNotificationRecipientItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallTicketEscalationOverrideItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallTicketHistoryItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallTicketListItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallTicketNoteItem.cs" />
+    <Compile Include="Models\CallMonitoring\CallTicketVolumePoint.cs" />
+    <Compile Include="Models\CallMonitoring\CallResolutionReportRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallSlaComplianceReportRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallSolvedSummaryReportRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallEmployeeProfileLookup.cs" />
+    <Compile Include="Models\CallMonitoring\CallEmployeeOrgInfo.cs" />
+    <Compile Include="Models\CallMonitoring\CallEmployeeReplacementItemRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallTechProfileSummary.cs" />
+    <Compile Include="Models\CallMonitoring\CallTechHandledTicketRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallTechOpenTicketRow.cs" />
+    <Compile Include="Models\Inventory.cs" />
+    <Compile Include="Models\InventoryAuditLog.cs" />
+    <Compile Include="Models\InventoryCreateDto.cs" />
+    <Compile Include="Models\ItemAuditTrailDto.cs" />
+    <Compile Include="Models\MovementType.cs" />
+    <Compile Include="Models\DisposedSoldItemDto.cs" />
+    <Compile Include="Models\RenewalDto.cs" />
+    <Compile Include="Models\SetItemRenewalDto.cs" />
+    <Compile Include="Models\ItemCatalogDto.cs" />
+    <Compile Include="Models\RenewalDetailDto.cs" />
+    <Compile Include="Models\ConditionDto.cs" />
+    <Compile Include="Models\ServiceSetModels.cs" />
+    <Compile Include="Models\SetImageDto.cs" />
+    <Compile Include="Models\AuditEntry.cs" />
+    <Compile Include="Models\SystemEmailLogDto.cs" />
+    <Compile Include="Models\SystemSmtpProfileDto.cs" />
+    <Compile Include="Models\UnfulfilledCartridgeExchangeDto.cs" />
+    <Compile Include="Models\VendorBatchAuditTrailDto.cs" />
+    <Compile Include="Models\VendorCartridgeBatchDto.cs" />
+    <Compile Include="Models\RefillTransactionDto.cs" />
+    <Compile Include="Models\RefillEligibilityResult.cs" />
+    <Compile Include="Models\ViewModels\BranchViewModel.cs" />
+    <Compile Include="Models\ViewModels\CartridgeModelAvailabilityViewModel.cs" />
+    <Compile Include="Models\ViewModels\CartridgeRequestItemViewModel.cs" />
+    <Compile Include="Models\ViewModels\CartridgeRequestViewModel.cs" />
+    <Compile Include="Models\ViewModels\CompanyViewModel.cs" />
+    <Compile Include="Models\ViewModels\DepartmentViewModel.cs" />
+    <Compile Include="Models\ViewModels\EmployeeViewModel.cs" />
+    <Compile Include="Models\ViewModels\PortalRequestStatusViewModel.cs" />
+    <Compile Include="Models\ViewModels\RequestSubmissionSnapshotViewModel.cs" />
+    <Compile Include="Pages\Admin\Email-Management\EmailLogsPage.cs" />
+    <Compile Include="Pages\CartridgeManagement\CartridgesForRefillPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Branch\AddBranchDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Branch\AddBranchDialog.Designer.cs">
+      <DependentUpon>AddBranchDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddCompanyPage.cs" />
+    <Compile Include="Pages\AddCompanyPage.Designer.cs">
+      <DependentUpon>AddCompanyPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddDepartmentDialog.cs" />
+    <Compile Include="Pages\AddDepartmentDialog.Designer.cs">
+      <DependentUpon>AddDepartmentDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddDepartmentPage.cs" />
+    <Compile Include="Pages\AddDepartmentPage.Designer.cs">
+      <DependentUpon>AddDepartmentPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddBranchPage.cs" />
+    <Compile Include="Pages\AddBranchPage.Designer.cs">
+      <DependentUpon>AddBranchPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddBranchPage_New.cs" />
+    <Compile Include="Pages\AddBranchPage_New.Designer.cs">
+      <DependentUpon>AddBranchPage_New.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddDepartmentPage_New.cs" />
+    <Compile Include="Pages\AddDepartmentPage_New.Designer.cs">
+      <DependentUpon>AddDepartmentPage_New.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddEmployeePage.cs" />
+    <Compile Include="Pages\AddEmployeePage.Designer.cs">
+      <DependentUpon>AddEmployeePage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddInventoryDialog.cs" />
+    <Compile Include="Pages\AddInventoryDialog.Designer.cs">
+      <DependentUpon>AddInventoryDialog.cs</DependentUpon>
+    </Compile>
+    <None Include="Pages\AddItemDialog.cs">
+      <SubType>Form</SubType>
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </None>
+    <None Include="Pages\AddItemDialog.Designer.cs">
+      <DependentUpon>AddItemDialog.cs</DependentUpon>
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </None>
+    <Compile Include="Pages\AddItemPage.cs" />
+    <Compile Include="Pages\AddItemPage.Designer.cs">
+      <DependentUpon>AddItemPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddRequestPage.cs" />
+    <Compile Include="Pages\AddRequestPage.Designer.cs">
+      <DependentUpon>AddRequestPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddVendorDialog.cs" />
+    <Compile Include="Pages\BatchAddRequestDialog.cs" />
+    <Compile Include="Pages\BatchAddRequestDialog.Designer.cs">
+      <DependentUpon>BatchAddRequestDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\BranchEmailBindingPage.cs" />
+    <Compile Include="Pages\CartridgeReturnDialog.cs" />
+    <Compile Include="Pages\CartridgeReturnDialog.Designer.cs">
+      <DependentUpon>CartridgeReturnDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Cartridge\DamagedEmptyCartridgesPage.cs" />
+    <Compile Include="Pages\ChangePasswordDialog.cs" />
+    <Compile Include="Pages\ChangePasswordDialog.Designer.cs">
+      <DependentUpon>ChangePasswordDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\CompanyDialog.cs" />
+    <Compile Include="Pages\CompanyDialog.Designer.cs">
+      <DependentUpon>CompanyDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\DatabaseSetupForm.cs" />
+    <Compile Include="Pages\DepartmentDialog.cs" />
+    <Compile Include="Pages\DepartmentDialog.Designer.cs">
+      <DependentUpon>DepartmentDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\EditInventoryDialog.cs" />
+    <Compile Include="Pages\EditInventoryDialog.Designer.cs">
+      <DependentUpon>EditInventoryDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\EditItemDialog.cs" />
+    <Compile Include="Pages\EditItemDialog.Designer.cs">
+      <DependentUpon>EditItemDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ArchiveDetailsDialog.cs" />
+    <Compile Include="Pages\EmployeeEmailBindingPage.cs" />
+    <Compile Include="Pages\ItemArchiveDetailsDialog.cs" />
+    <Compile Include="Pages\ItemArchiveDetailsDialog.Designer.cs">
+      <DependentUpon>ItemArchiveDetailsDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\EditVendorDialog.cs" />
+    <Compile Include="Pages\EmployeeDialog.cs" />
+    <Compile Include="Pages\EmployeeDialog.Designer.cs">
+      <DependentUpon>EmployeeDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\QuickAddCategoryDialog.cs" />
+    <Compile Include="Pages\QuickAddCategoryDialog.Designer.cs">
+      <DependentUpon>QuickAddCategoryDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\QuickAddEmployeeDialog.cs" />
+    <Compile Include="Pages\QuickAddEmployeeDialog.Designer.cs">
+      <DependentUpon>QuickAddEmployeeDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\QuickAddVendorDialog.cs" />
+    <Compile Include="Pages\QuickAddVendorDialog.Designer.cs">
+      <DependentUpon>QuickAddVendorDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Request-Portal\RequestDetailDialog.cs" />
+    <Compile Include="Pages\RequesterPortalForm.cs" />
+    <Compile Include="Pages\ResetPasswordDialog.cs" />
+    <Compile Include="Pages\ResetPasswordDialog.Designer.cs">
+      <DependentUpon>ResetPasswordDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\RoleManagementPage.cs" />
+    <Compile Include="Pages\SoftwareServiceSetDialog.cs" />
+    <Compile Include="Pages\SoftwareServiceSetDialog.Designer.cs">
+      <DependentUpon>SoftwareServiceSetDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\VendorCartridgeRefillPage.cs" />
+    <Compile Include="Pages\VendorCartridgeRefillPage.Designer.cs">
+      <DependentUpon>VendorCartridgeRefillPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewArchivePage.cs" />
+    <Compile Include="Pages\ViewArchivePage.Designer.cs">
+      <DependentUpon>ViewArchivePage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewBranchPage.cs" />
+    <Compile Include="Pages\ViewBranchPage.Designer.cs">
+      <DependentUpon>ViewBranchPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewBrandNewCartridgesPage.cs" />
+    <Compile Include="Pages\ViewBrandNewCartridgesPage.Designer.cs">
+      <DependentUpon>ViewBrandNewCartridgesPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewCartridgeRequestsPage.cs" />
+    <Compile Include="Pages\ViewCartridgeRequestsPage.Designer.cs">
+      <DependentUpon>ViewCartridgeRequestsPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewCartridgeSetPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\ViewCartridgesForRefillPage.cs" />
+    <Compile Include="Pages\ViewCartridgesForRefillPage.Designer.cs">
+      <DependentUpon>ViewCartridgesForRefillPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewCartridgeTrackingPage.cs" />
+    <Compile Include="Pages\ViewCartridgeTrackingPage.Designer.cs">
+      <DependentUpon>ViewCartridgeTrackingPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewCategoryPage.cs" />
+    <Compile Include="Pages\ViewCategoryPage.Designer.cs">
+      <DependentUpon>ViewCategoryPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewCompanyPage.cs" />
+    <Compile Include="Pages\ViewCompanyPage.Designer.cs">
+      <DependentUpon>ViewCompanyPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewDepartmentPage.cs" />
+    <Compile Include="Pages\ViewDepartmentPage.Designer.cs">
+      <DependentUpon>ViewDepartmentPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewEmployeePage.cs" />
+    <Compile Include="Pages\ViewEmployeePage.Designer.cs" />
+    <Compile Include="Pages\EmployeeManagementPage.cs" />
+    <Compile Include="Pages\EmployeeManagementPage.Designer.cs">
+      <DependentUpon>EmployeeManagementPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\UserAccountManagementPage.cs" />
+    <Compile Include="Pages\UserAccountManagementPage.Designer.cs">
+      <DependentUpon>UserAccountManagementPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewFixedAssetsPage.cs" />
+    <Compile Include="Pages\ViewFixedAssetsPage.Designer.cs">
+      <DependentUpon>ViewFixedAssetsPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewInventoryPage.cs" />
+    <Compile Include="Pages\ViewInventoryPage.Designer.cs">
+      <DependentUpon>ViewInventoryPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Invoice\ViewInvoiceDetailPage.cs" />
+    <Compile Include="Pages\Invoice\ViewInvoiceDetailPage.Designer.cs">
+      <DependentUpon>ViewInvoiceDetailPage.cs</DependentUpon>
+    </Compile>
+    <None Include="Pages\ViewInvoicePage.cs">
+      <SubType>Form</SubType>
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </None>
+    <None Include="Pages\ViewInvoicePage.Designer.cs">
+      <DependentUpon>ViewInvoicePage.cs</DependentUpon>
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </None>
+    <Compile Include="Pages\ViewInvoiceReportPage.cs" />
+    <Compile Include="Pages\ViewItemsPage.cs" />
+    <Compile Include="Pages\ViewItemsPage.Designer.cs">
+      <DependentUpon>ViewItemsPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewRenewalPage.cs" />
+    <Compile Include="Pages\ViewRenewalPage.Designer.cs">
+      <DependentUpon>ViewRenewalPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewRenewalDetailPage.cs" />
+    <Compile Include="Pages\ViewRenewalDetailPage.Designer.cs">
+      <DependentUpon>ViewRenewalDetailPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Request\ViewRequestsPage.cs" />
+    <Compile Include="Pages\Request\ViewRequestsPage.Designer.cs">
+      <DependentUpon>ViewRequestsPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Request\EditRequestDialog.cs" />
+    <Compile Include="Pages\Request\EditRequestDialog.Designer.cs">
+      <DependentUpon>EditRequestDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\Branch\EditBranchDialog.cs" />
+    <Compile Include="Pages\Branch\EditBranchDialog.Designer.cs">
+      <DependentUpon>EditBranchDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewSetPage.cs" />
+    <Compile Include="Pages\ViewSetPage.Designer.cs">
+      <DependentUpon>ViewSetPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\ViewCartridgeSetPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\ViewCartridgeSetPage.Designer.cs">
+      <DependentUpon>ViewCartridgeSetPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\AddSetPage.cs" />
+    <Compile Include="Pages\AddSetPage.Designer.cs">
+      <DependentUpon>AddSetPage.cs</DependentUpon>
+    </Compile>
+    <None Include="Pages\InvoiceImportDialog.cs">
+      <SubType>Form</SubType>
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </None>
+    <None Include="Pages\InvoiceImportDialog.Designer.cs">
+      <DependentUpon>InvoiceImportDialog.cs</DependentUpon>
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </None>
+    <Compile Include="Pages\SimpleCropForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\ReceiptSetViewerDialog.cs" />
+    <Compile Include="Pages\SelectSetDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\AttachReceiptSetDialog.cs" />
+    <Compile Include="Pages\ViewReceiptsPage.cs" />
+    <Compile Include="Pages\ViewSetDetailPage.cs" />
+    <Compile Include="Pages\ViewSetDetailPage.Designer.cs">
+      <DependentUpon>ViewSetDetailPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\DocumentImagesDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\ImageViewerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Dtos.cs" />
+    <Compile Include="Forms\Dashboard\DashboardModels.cs" />
+    <Compile Include="Forms\Dashboard\DashboardService.cs" />
+    <Compile Include="Forms\Dashboard\DashboardView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Reports\ReportDetailsForm.cs" />
+    <Compile Include="Forms\Reports\ReportsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Reports\ReportsForm.Designer.cs">
+      <DependentUpon>ReportsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Repositories\ArchiveRepository.cs" />
+    <Compile Include="Repositories\BaseRepositoryHelper.cs" />
+    <Compile Include="Repositories\BranchRepository.cs" />
+    <Compile Include="Repositories\CartridgeManagementRepository.cs" />
+    <Compile Include="Repositories\SystemSettingRepository.cs" />
+    <Compile Include="Repositories\UserActivityRepository.cs" />
+    <Compile Include="Repositories\HolidayRepository.cs" />
+    <Compile Include="Repositories\CartridgeModelRepository.cs" />
+    <Compile Include="Repositories\CartridgeRepository.cs" />
+    <Compile Include="Repositories\CartridgeRefillRepository.cs" />
+    <Compile Include="Repositories\CategoryRepository.cs" />
+    <Compile Include="Repositories\CompanyRepository.cs" />
+    <Compile Include="Repositories\DepartmentRepository.cs" />
+    <Compile Include="Repositories\EmailRepository.cs" />
+    <Compile Include="Repositories\EmployeeRepository.cs" />
+    <Compile Include="Repositories\BorrowItemsRepository.cs" />
+    <Compile Include="Repositories\InventoryRepository.cs" />
+    <Compile Include="Repositories\InvoiceRepository.cs" />
+    <Compile Include="Repositories\ItemRepository.cs" />
+    <Compile Include="Repositories\ItemAuditTrailWriter.cs" />
+    <Compile Include="Repositories\RenewalRepository.cs" />
+    <Compile Include="Repositories\RequestRepository.cs" />
+    <Compile Include="Repositories\RoleRepository.cs" />
+    <Compile Include="Repositories\ServiceSetRepository.cs" />
+    <Compile Include="Repositories\CallSchemaGate.cs" />
+    <Compile Include="Repositories\ICallMonitoringRepository.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.EmailNotifications.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.SmtpProfiles.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.Tickets.Core.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.Tickets.Workflow.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.Lookups.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.Reports.DashboardAndTech.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.Reports.Analytics.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.Reports.SolvedSummary.cs" />
+    <Compile Include="Repositories\SetRepository.cs" />
+    <Compile Include="Repositories\SetItemUpdateRepository.cs" />
+    <Compile Include="Repositories\ItemMovementAuditRepository.cs" />
+    <Compile Include="Repositories\ItemAuditTrailRepository.cs" />
+    <Compile Include="Repositories\AuditRepository.cs" />
+    <Compile Include="Repositories\ReceiptSetRepository.cs" />
+    <Compile Include="Repositories\ItemRepairHistoryRepository.cs" />
+    <Compile Include="Repositories\ItemLifecycleDecisionRepository.cs" />
+    <Compile Include="Repositories\DisposedSoldReportRepository.cs" />
+    <Compile Include="Repositories\ItemConditionRepository.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Repositories\SetRepositoryEmailHelpers.cs" />
+    <Compile Include="Repositories\UnfulfilledCartridgeExchangeRepository.cs" />
+    <Compile Include="Repositories\VendorRepository.cs" />
+    <Compile Include="Repositories\AssetRepository.cs" />
+    <Compile Include="Security\PermissionResolver.cs" />
+    <Compile Include="Services\ActivityLogger.cs" />
+    <Compile Include="Services\UserActivityInsightsService.cs" />
+    <Compile Include="Services\CartridgeExchangeService.cs" />
+    <Compile Include="Services\CartridgeRefillService.cs" />
+    <Compile Include="Services\EmailReceiptService.cs" />
+    <Compile Include="Services\InventoryService.cs" />
+    <Compile Include="Services\CallEmailNotificationService.cs" />
+    <Compile Include="Services\ISmtpService.cs" />
+    <Compile Include="Services\PortalNotificationService.cs" />
+    <Compile Include="Services\QRDataService.cs" />
+    <Compile Include="Services\DesktopNotificationPoller.cs" />
+    <Compile Include="Services\WindowsToastService.cs" />
+    <Compile Include="Services\RequesterPortalService.cs" />
+    <Compile Include="Services\SmtpService.cs" />
+    <Compile Include="Services\SystemEmailNotificationService.cs" />
+    <Compile Include="Session\AppSession.cs" />
+    <Compile Include="Session\SessionContext.cs" />
+    <Content Include="Gemini_Generated_Image_8erywn8erywn8ery.ico" />
+    <Content Include="Images\yakult_icon.ico" />
+    <Content Include="Images\yds image.png" />
+    <Content Include="Images\yakult_Name.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="YAKULT DATABASE - WITH UNIFIED ARCHIVE DATABASE.txt" />
+    <Page Include="WPF\CartridgeManagement\Controls\IntegerSpinner.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="WPF\CartridgeManagement\Views\CartridgeManagementView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="WPF\CartridgeManagement\Views\NonRefillableEmptyCartridgesView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="WPF\CartridgeManagement\Views\VendorCartridgeRefillView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\CartridgeManagement\Dialogs\CreateBatchDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\CartridgeManagement\Dialogs\EditBatchWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\CartridgeManagement\Dialogs\TransferBatchDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\CartridgeManagement\Dialogs\TransferCartridgesWpfDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\CartridgeManagement\Dialogs\AssignReturnsDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\CartridgeManagement\Dialogs\OutboundBatchAssignmentWpfDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\CartridgeManagement\Views\PartiallyFulfilledView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\CartridgeManagement\Views\FulfillExchangeDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\CartridgeManagement\Views\UnfulfilledExchangesView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\SendNotifications\Views\SendNotificationsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Archive\Views\ArchivePageView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Archive\Views\ArchiveDetailsWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\RequestPortal\NewRequest\Views\NewRequestView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\RequestPortal\RequestPortalStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\RequestPortal\AssistedRequest\Views\AssistedRequestView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\RequestPortal\RequestHistory\Views\RequestHistoryView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Notifications\NotificationSettingsWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\RequestPortal\NotificationBellControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\RequestPortal\AuthorizationHistory\Views\AuthorizationHistoryView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\RequestPortal\AuthorizeRequest\Views\AuthorizeRequestView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Renewal\LinkRenewal\Views\LinkRenewalWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Renewal\RenewalDetail\Views\RenewalDetailWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\SendNotifications\Views\SendNotificationsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Pages\Item\BatchAddItemDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Archive\Views\ArchivePageView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Archive\Views\ArchiveDetailsWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <EmbeddedResource Include="Controls\DepartmentEntry.resx">
+      <DependentUpon>DepartmentEntry.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\Reports\ReportsForm.resx">
+      <DependentUpon>ReportsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="app.manifest" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Content Include="Images\Yakult-background.png" />
+    <Content Include="Reports\InvoiceReport.rdl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\InvoiceReport_Wide.rdl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\InvoiceReport_Compact.rdl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\SetsReport.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\RenewalsReport.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\RenewalsReport_Wide.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\RenewalsReport_Normal.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\RenewalsReport_Compact.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\RenewalsGroupedReport.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\RenewalsGroupedReport_Wide.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\RenewalsGroupedReport_Normal.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\RenewalsGroupedReport_Compact.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\WarrantyReport.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Reports\CartridgeDisposeSold.rdlc">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Include="UserManual\README.md" />
+    <None Include="Yakult_Inventory_System_DEVDataSet.xsc">
+      <DependentUpon>Yakult_Inventory_System_DEVDataSet.xsd</DependentUpon>
+    </None>
+    <None Include="Yakult_Inventory_System_DEVDataSet.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>Yakult_Inventory_System_DEVDataSet.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Yakult_Inventory_System_DEVDataSet.xss">
+      <DependentUpon>Yakult_Inventory_System_DEVDataSet.xsd</DependentUpon>
+    </None>
+    <Compile Include="Wpf\CallMonitoring\WpfThemeResources.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\Microsoft.CodeAnalysis.NetAnalyzers.10.0.100\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll" />
+    <Analyzer Include="..\packages\Microsoft.CodeAnalysis.NetAnalyzers.10.0.100\analyzers\dotnet\cs\Microsoft.CodeAnalysis.NetAnalyzers.resources.dll" />
+    <Analyzer Include="..\packages\Microsoft.CodeAnalysis.NetAnalyzers.10.0.100\analyzers\dotnet\Microsoft.CodeAnalysis.NetAnalyzers.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.8">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.8 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Resources.Extensions">
+      <HintPath>..\packages\System.Resources.Extensions.8.0.0\lib\net462\System.Resources.Extensions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Pages\Admin\Account-Management\AccountPermissionsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Email-Management\EmailLogsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Branch\AddBranchDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Branch\AddBranchDialog.Designer.cs" />
+    <Compile Include="Pages\Branch\EditBranchDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Branch\EditBranchDialog.Designer.cs" />
+    <Compile Include="Pages\Cartridge\DamagedEmptyCartridgesPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\DocumentImagesDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Dtos.cs" />
+    <Compile Include="Pages\ImageViewerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Invoice\ViewInvoiceDetailPage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Invoice\ViewInvoiceDetailPage.Designer.cs" />
+    <Compile Include="Pages\Request\EditRequestDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Request\EditRequestDialog.Designer.cs" />
+    <Compile Include="Pages\Request\ViewRequestsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Request\ViewRequestsPage.Designer.cs" />
+    <Compile Include="Pages\Request-Portal\RequestDetailDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\SelectSetDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Set\SetDispatchNotificationPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\SimpleCropForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\SupervisorApprovalPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\User\LoginPage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\User\LoginPage.Designer.cs" />
+    <Compile Include="Pages\User\MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\User\MainForm.Designer.cs" />
+    <Compile Include="Pages\User\RegisterPage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\User\RegisterPage.Designer.cs" />
+    <Compile Include="Pages\Branch\BulkAssignBranchDeptDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\BranchAssignment\ViewBranchAssignmentPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\BranchAssignment\AddBranchAssignmentDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\ApprovalPendingPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\AuthorizationMonitorPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\DisposedSoldReportPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\User\MyAccountPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\UserActivity\UserActivityPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Account-Management\EmployeeManagementPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Account-Management\EmployeeManagementPage.Designer.cs" />
+    <Compile Include="Pages\Admin\Account-Management\ResetPasswordDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Account-Management\ResetPasswordDialog.Designer.cs" />
+    <Compile Include="Pages\Admin\Account-Management\RoleManagementPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Account-Management\UserAccountManagementPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Account-Management\UserAccountManagementPage.Designer.cs" />
+    <Compile Include="Pages\Admin\Reference-Data\BranchAcronymPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Reference-Data\DepartmentAcronymPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Reference-Data\HolidayManagementPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Reference-Data\MasterDataUpdatePage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Account-Management\DepartmentAccountsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Account-Management\DepartmentAccountsPage.Designer.cs" />
+    <Compile Include="Pages\Admin\Account-Management\UserPositionsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Account-Management\UserPositionsPage.Designer.cs" />
+    <Compile Include="Pages\Admin\Security\PortalAccessPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Security\UserPortalAccessPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\DBConn\DatabaseSetupForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Email-Management\BranchEmailBindingPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Email-Management\EmployeeEmailBindingPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\Email-Management\SmtpTogglePage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Archive\ArchiveDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Archive\ItemArchiveDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Archive\ItemArchiveDetailsDialog.Designer.cs" />
+    <Compile Include="Pages\Archive\ViewArchivePage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Archive\ViewArchivePage.Designer.cs" />
+    <Compile Include="Pages\Branch\AddBranchPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Branch\AddBranchPage.Designer.cs" />
+    <Compile Include="Pages\Branch\AddBranchPage_New.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Branch\AddBranchPage_New.Designer.cs" />
+    <Compile Include="Pages\Branch\ViewBranchPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Branch\ViewBranchPage.Designer.cs" />
+    <Compile Include="Pages\BulkAddMasterDataPage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\BulkAddMasterDataPagecs.cs" />
+    <Compile Include="Pages\Cartridge\CartridgeReturnDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\CartridgeReturnDialog.Designer.cs" />
+    <Compile Include="Pages\Cartridge\CreateBatchDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\EditCartridgeModelDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\PartiallyFulfilledCartridgePage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\UnfulfilledCartridgeExchangesPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\VendorCartridgeRefillPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\VendorCartridgeRefillPage.Designer.cs" />
+    <Compile Include="Pages\Cartridge\ViewBrandNewCartridgesPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\ViewBrandNewCartridgesPage.Designer.cs" />
+    <Compile Include="Pages\Cartridge\ViewCartridgeModelsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\ViewCartridgeRequestsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\ViewCartridgeRequestsPage.Designer.cs" />
+    <Compile Include="Pages\Cartridge\ViewCartridgeSetPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\ViewCartridgeSetPage.Designer.cs" />
+    <Compile Include="Pages\Cartridge\ViewCartridgesForRefillPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\ViewCartridgesForRefillPage.Designer.cs" />
+    <Compile Include="Pages\Cartridge\ViewCartridgeTrackingPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\ViewCartridgeTrackingPage.Designer.cs" />
+    <Compile Include="Pages\Cartridge\ViewCartridgesPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\EditBatchDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\TransferCartridgesDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\ManualBatchAssignmentDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\NonRefillableCartridgesPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\DisposedSoldReportFilterDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\OutboundBatchAssignmentDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\OutboundBatchesPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\ClosedCartridgesPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\CartridgeFulfillmentNotificationPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Cartridge\ConfirmReceiverDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <EmbeddedResource Include="Pages\Cartridge\**\*.resx" />
+    <Compile Include="Pages\Category\QuickAddCategoryDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Category\QuickAddCategoryDialog.Designer.cs" />
+    <Compile Include="Pages\Category\ViewCategoryPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Category\ViewCategoryPage.Designer.cs" />
+    <Compile Include="Pages\Company\AddCompanyPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Company\AddCompanyPage.Designer.cs" />
+    <Compile Include="Pages\Company\CompanyDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Company\CompanyDialog.Designer.cs" />
+    <Compile Include="Pages\Company\ViewCompanyPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Company\ViewCompanyPage.Designer.cs" />
+    <Compile Include="Pages\Department\AddDepartmentDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Department\AddDepartmentDialog.Designer.cs" />
+    <Compile Include="Pages\Department\AddDepartmentPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Department\AddDepartmentPage.Designer.cs" />
+    <Compile Include="Pages\Department\AddDepartmentPage_New.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Department\AddDepartmentPage_New.Designer.cs" />
+    <Compile Include="Pages\Department\DepartmentDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Department\DepartmentDialog.Designer.cs" />
+    <Compile Include="Pages\Department\ViewDepartmentPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Department\ViewDepartmentPage.Designer.cs" />
+    <Compile Include="Pages\Employee\AddEmployeePage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Employee\AddEmployeePage.Designer.cs" />
+    <Compile Include="Pages\Employee\EmployeeDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Employee\EmployeeDialog.Designer.cs" />
+    <Compile Include="Pages\Employee\QuickAddEmployeeDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Employee\QuickAddEmployeeDialog.Designer.cs" />
+    <Compile Include="Pages\Employee\ViewEmployeePage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Employee\ViewEmployeePage.Designer.cs" />
+    <Compile Include="Pages\Employee\EmployeeExcelImportPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportCartridgeDisposedSold.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportCartridgeDisposedSoldPreviewDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportInvoice.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportInvoicePreviewDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportRenewal.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportRenewalsGrouped.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportSets.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportSetsPreviewDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportRenewalPreviewDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ExportRenewalsGroupedPreviewDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\ReportPickerPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\CombinedReportPreviewDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\CombinedReportSettingsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Export\CombinedRdlcPreviewWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Asset\AddEditAssetDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Asset\ViewAssetPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Fixed-Asset\ViewFixedAssetsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Fixed-Asset\ViewFixedAssetsPage.Designer.cs" />
+    <Compile Include="Pages\Inventory\AddInventoryDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Inventory\AddInventoryDialog.Designer.cs" />
+    <Compile Include="Pages\Inventory\EditInventoryDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Inventory\EditInventoryDialog.Designer.cs" />
+    <Compile Include="Pages\Inventory\ViewInventoryPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Inventory\ViewInventoryPage.Designer.cs" />
+    <Compile Include="Pages\Invoice\InvoiceImportDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Invoice\InvoiceImportDialog.Designer.cs" />
+    <Compile Include="Pages\Invoice\AddInvoiceItemDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Invoice\DeleteInvoiceLineDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Invoice\InvoiceSheetForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Invoice\ViewInvoiceReportPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Item-Audit\ItemMovementAuditDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Item-Audit\ItemMovementAuditInsightsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Item-Audit\ViewItemMovementAuditPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Item-Audit\ViewItemMovementAuditPage.State.cs">
+      <DependentUpon>ViewItemMovementAuditPage.cs</DependentUpon>
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Item\AddItemPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Item\AddItemPage.Designer.cs" />
+    <Compile Include="Pages\Item\BatchAddItemDialog.xaml.cs">
+      <DependentUpon>BatchAddItemDialog.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Pages\Item\BatchAddItemDialog.Designer.cs" />
+    <Compile Include="Pages\Item\MobileSerialsPreviewDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Item\EditItemDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Item\EditItemDialog.Designer.cs" />
+    <Compile Include="Pages\Item\ViewItemsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Item\ViewItemsPage.Designer.cs" />
+    <Compile Include="Pages\Item\ViewRepairedItemsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Item\ViewRepairedItemsPage.State.cs">
+      <DependentUpon>ViewRepairedItemsPage.cs</DependentUpon>
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\MarkAsProcessedDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Receipt\AttachReceiptSetDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Receipt\ReceiptSetViewerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Receipt\ViewReceiptsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Renewal\AddRenewalDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Renewal\RenewalReportFilterDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Renewal\RenewalReportOptionsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Renewal\SetItemRenewalDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Renewal\ViewRenewalDetailPage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Renewal\ViewRenewalDetailPage.Designer.cs" />
+    <Compile Include="Pages\Renewal\ViewRenewalPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Renewal\ViewRenewalPage.Designer.cs" />
+    <Compile Include="Pages\Renewal\ViewRenewalGroupPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Renewal\ViewRenewalGroupPage.Designer.cs" />
+    <Compile Include="Pages\Request-Portal\AuthorizationHistoryPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Request-Portal\AuthorizationDetailDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Request-Portal\NotificationDropdownForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Request-Portal\RequesterPortalForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Request\AddRequestPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Request\AddRequestPage.Designer.cs" />
+    <Compile Include="Pages\Request\BatchAddRequestDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Request\BatchAddRequestDialog.Designer.cs" />
+    <Compile Include="Pages\Set\AddSetPage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Set\AddSetPage.Designer.cs" />
+    <Compile Include="Pages\Set\SetItemUpdateDetailsDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Set\ViewSetDetailPage.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Set\ViewSetDetailPage.Designer.cs" />
+    <Compile Include="Pages\Set\ViewSetPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Set\ViewSetPage.Designer.cs" />
+    <Compile Include="Pages\Software\SoftwareItemPickerDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Software\SoftwareServiceSetDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Software\SoftwareServiceSetDialog.Designer.cs" />
+    <Compile Include="Pages\Update\ViewUpdatesPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Update\ViewUpdatesPage.State.cs">
+      <DependentUpon>ViewUpdatesPage.cs</DependentUpon>
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\User\ChangePasswordDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\User\ChangePasswordDialog.Designer.cs" />
+    <Compile Include="Pages\Vendor\AddVendorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Vendor\EditVendorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Vendor\QuickAddVendorDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Vendor\QuickAddVendorDialog.Designer.cs" />
+    <Compile Include="Pages\Vendor\ViewVendorsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\Warranty\ViewWarrantyPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Pages\ReportViewerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\ReportViewerForm.Designer.cs">
+      <DependentUpon>ReportViewerForm.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="Pages\**\*.resx" Exclude="Pages\InvoiceImportDialog.resx" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets" Condition="Exists('..\packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.SqlServer.Types.160.1000.6\build\net462\Microsoft.SqlServer.Types.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.SqlServer.Types.160.1000.6\build\net462\Microsoft.SqlServer.Types.props'))" />
+  </Target>
+  <ItemGroup>
+    <Compile Include="Forms\CallMonitoring\SmtpTestDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Wpf\CallMonitoring\WpfCallMonitoringDiagnosticsWorkspace.cs" />
+    <Compile Include="Forms\CallMonitoring\Hybrid\WpfDiagnosticsHostControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+</Project>

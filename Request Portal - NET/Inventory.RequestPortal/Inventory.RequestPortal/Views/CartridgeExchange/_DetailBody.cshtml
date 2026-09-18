@@ -1,0 +1,54 @@
+@model Inventory.RequestPortal.Models.FulfilledCartridgeDetailDto
+@*
+    Body of the Fulfilled Cartridge detail view — no page chrome.
+    Rendered both as a full page (Detail.cshtml) and inside the History page's
+    popup modal (fetched from CartridgeExchange/DetailPartial).
+*@
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4"><strong>Requester</strong><div>@Model.RequesterName</div></div>
+            <div class="col-md-4"><strong>Company</strong><div>@Model.CompanyName</div></div>
+            <div class="col-md-4"><strong>Branch</strong><div>@Model.BranchName</div></div>
+            <div class="col-md-4"><strong>Department</strong><div>@Model.DepartmentName</div></div>
+            <div class="col-md-4"><strong>Received By</strong><div>@Model.ReceivedByName</div></div>
+            <div class="col-md-4"><strong>Total Issued</strong><div>@Model.TotalIssuedQty</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h6 class="mb-3">Model Lines</h6>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Cartridge Model</th>
+                        <th class="text-end">Requested Qty</th>
+                        <th class="text-end">Good Empty</th>
+                        <th class="text-end">Damaged Empty</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Models.Count == 0)
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-3">No model lines found for this set.</td></tr>
+                    }
+                    @foreach (var line in Model.Models)
+                    {
+                        <tr>
+                            <td>@line.CartridgeModel</td>
+                            <td class="text-end">@line.RequestedQty</td>
+                            <td class="text-end">@line.GoodEmptyQty</td>
+                            <td class="text-end">@line.DamagedEmptyQty</td>
+                            <td>@line.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

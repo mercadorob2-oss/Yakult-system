@@ -1,0 +1,127 @@
+@model EmployeeResourceDetailsViewModel
+@{
+    Layout = "_PublicLayout";
+    var item = Model.Item;
+    ViewData["Title"] = item.Title;
+}
+
+<header class="employee-resource-detail-hero">
+    <div class="portal-container employee-resource-detail-hero__inner">
+        <nav class="employee-resource-breadcrumb" aria-label="Breadcrumb">
+            <a asp-controller="Public" asp-action="Index">Home</a>
+            <span aria-hidden="true">/</span>
+            <a asp-route="EmployeeResourcesIndex">Employee Resources</a>
+            <span aria-hidden="true">/</span>
+            <span>@item.Category</span>
+        </nav>
+        <div class="employee-resource-detail-labels">
+            <span class="employee-resource-badge">@item.ResourceType</span>
+            <span class="employee-resource-status employee-resource-status--published">@item.Status</span>
+            @if (item.IsDemoData)
+            {
+                <span class="dummy-data-badge">DUMMY DATA</span>
+            }
+        </div>
+        <h1>@item.Title</h1>
+        <p>@item.Summary</p>
+        <div class="employee-resource-detail-meta" aria-label="Resource summary">
+            <span>Owned by <strong>@item.OwnerDepartment</strong></span>
+            <span>Version <strong>@item.Version</strong></span>
+            <span>Updated <strong>@item.LastUpdatedUtc.ToLocalTime().ToString("MMMM d, yyyy")</strong></span>
+        </div>
+    </div>
+</header>
+
+<main class="portal-container employee-resource-detail-page">
+    <div class="employee-resource-detail-layout">
+        <article class="employee-resource-detail-content">
+            <section aria-labelledby="resourceOverviewHeading">
+                <span class="portal-eyebrow">Resource overview</span>
+                <h2 id="resourceOverviewHeading">Use this resource as your starting point</h2>
+                <p>@item.Overview</p>
+            </section>
+
+            @if (item.Highlights.Count > 0)
+            {
+                <section class="employee-resource-highlights" aria-labelledby="resourceHighlightsHeading">
+                    <span class="portal-eyebrow">At a glance</span>
+                    <h2 id="resourceHighlightsHeading">What it covers</h2>
+                    <ul>
+                        @foreach (var highlight in item.Highlights)
+                        {
+                            <li>@highlight</li>
+                        }
+                    </ul>
+                </section>
+            }
+
+            <section class="employee-resource-attachments" aria-labelledby="resourceAttachmentsHeading">
+                <div class="employee-resource-section-heading">
+                    <div>
+                        <span class="portal-eyebrow">Files and references</span>
+                        <h2 id="resourceAttachmentsHeading">Attachments</h2>
+                    </div>
+                    <span>@item.Attachments.Count file@(item.Attachments.Count == 1 ? "" : "s")</span>
+                </div>
+                <div class="employee-resource-attachment-list">
+                    @foreach (var attachment in item.Attachments)
+                    {
+                        <article class="employee-resource-attachment">
+                            <span class="employee-resource-attachment__icon" aria-hidden="true">@attachment.Format</span>
+                            <div class="employee-resource-attachment__body">
+                                <strong>@attachment.FileName</strong>
+                                <span>@attachment.Format · @attachment.SizeLabel</span>
+                                @if (!string.IsNullOrWhiteSpace(attachment.Description))
+                                {
+                                    <small>@attachment.Description</small>
+                                }
+                                @if (attachment.IsDemoOnly)
+                                {
+                                    <span class="dummy-data-badge dummy-data-badge--compact">DUMMY DATA</span>
+                                }
+                            </div>
+                            @if (attachment.IsDemoOnly)
+                            {
+                                <button class="employee-resource-attachment__action" type="button" disabled title="File storage will be connected after the database migration">Demo only</button>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(attachment.DownloadUrl))
+                            {
+                                <a class="employee-resource-attachment__action" href="@attachment.DownloadUrl" target="_blank" rel="noopener noreferrer">Download <span aria-hidden="true">↓</span></a>
+                            }
+                        </article>
+                    }
+                </div>
+            </section>
+        </article>
+
+        <aside class="employee-resource-detail-sidebar">
+            <section class="employee-resource-metadata" aria-labelledby="resourceMetadataHeading">
+                <span class="portal-eyebrow">Resource details</span>
+                <h2 id="resourceMetadataHeading">Reference information</h2>
+                <dl>
+                    <dt>Department</dt>
+                    <dd>@item.Category</dd>
+                    <dt>Owner</dt>
+                    <dd>@item.OwnerDepartment</dd>
+                    <dt>Type</dt>
+                    <dd>@item.ResourceType</dd>
+                    <dt>Version</dt>
+                    <dd>@item.Version</dd>
+                    <dt>Last updated</dt>
+                    <dd>@item.LastUpdatedUtc.ToLocalTime().ToString("MMM d, yyyy")</dd>
+                    @if (item.ReviewDateUtc.HasValue)
+                    {
+                        <dt>Review date</dt>
+                        <dd>@item.ReviewDateUtc.Value.ToLocalTime().ToString("MMM d, yyyy")</dd>
+                    }
+                </dl>
+            </section>
+            <section class="employee-resource-safety-note" aria-label="Resource safety notice">
+                <strong>Before sharing information</strong>
+                <p>Use approved confidential channels for personal, medical, payroll, or banking information.</p>
+            </section>
+        </aside>
+    </div>
+
+    <a class="employee-resource-back-link" asp-route="EmployeeResourcesIndex">← Back to Employee Resources</a>
+</main>

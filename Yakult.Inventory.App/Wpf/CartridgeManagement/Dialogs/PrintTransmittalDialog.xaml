@@ -1,0 +1,161 @@
+<Window x:Class="Yakult.Inventory.App.WPF.CartridgeManagement.Dialogs.PrintTransmittalDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Print Transmittal Form"
+        Width="820" Height="720"
+        MinWidth="600" MinHeight="500"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="False"
+        ResizeMode="CanResizeWithGrip"
+        Background="#F0F2F6">
+    <Window.Resources>
+        <Style x:Key="ActionBtn" TargetType="Button">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="Padding" Value="18,0"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style x:Key="PageSizeOption" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="PageSize"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#444"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,14,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style x:Key="CopyOption" TargetType="CheckBox">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#444"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,14,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Header -->
+            <RowDefinition Height="Auto"/>
+            <!-- Preview -->
+            <RowDefinition Height="*"/>
+            <!-- Footer buttons -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ── Header ──────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Background="White"
+                BorderBrush="#DDE1E8" BorderThickness="0,0,0,1"
+                Padding="20,14">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Row="0" Grid.Column="0">
+                    <TextBlock Text="Print Transmittal Form"
+                               FontFamily="Segoe UI" FontSize="16" FontWeight="SemiBold"
+                               Foreground="#1A2340"/>
+                    <TextBlock x:Name="_descriptionText"
+                               Text="Review the transmittal form below."
+                               FontFamily="Segoe UI" FontSize="11.5" Foreground="#5A6380"
+                               Margin="0,5,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Page size:" VerticalAlignment="Center"
+                               FontFamily="Segoe UI" FontSize="12" Foreground="#5A6380"
+                               Margin="0,0,10,0"/>
+                    <RadioButton x:Name="_letterRadio" Content="Letter" Tag="Letter"
+                                 Style="{StaticResource PageSizeOption}"
+                                 Checked="OnPageSizeChanged"/>
+                    <RadioButton x:Name="_legalRadio" Content="Legal" Tag="Legal"
+                                 Style="{StaticResource PageSizeOption}"
+                                 IsChecked="True" Checked="OnPageSizeChanged"/>
+                    <RadioButton x:Name="_a4Radio" Content="A4" Tag="A4"
+                                 Style="{StaticResource PageSizeOption}" Margin="0"
+                                 Checked="OnPageSizeChanged"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                            Orientation="Horizontal" Margin="0,12,0,0">
+                    <TextBlock Text="Copies to print:" VerticalAlignment="Center"
+                               FontFamily="Segoe UI" FontSize="12" Foreground="#5A6380"
+                               Margin="0,0,10,0"/>
+                    <CheckBox x:Name="_gatepassCheck" Content="Gatepass"
+                              Style="{StaticResource CopyOption}" IsChecked="True"
+                              Checked="OnCopySelectionChanged" Unchecked="OnCopySelectionChanged"/>
+                    <CheckBox x:Name="_transmittalCheck" Content="Transmittal"
+                              Style="{StaticResource CopyOption}" IsChecked="True"
+                              Checked="OnCopySelectionChanged" Unchecked="OnCopySelectionChanged"/>
+                    <CheckBox x:Name="_fileCheck" Content="File" Margin="0"
+                              Style="{StaticResource CopyOption}" IsChecked="True"
+                              Checked="OnCopySelectionChanged" Unchecked="OnCopySelectionChanged"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── Print Preview — one column per copy that will actually print ──── -->
+        <Border Grid.Row="1" Margin="16" Background="#F0F2F6"
+                BorderBrush="#DDE1E8" BorderThickness="1"
+                Effect="{x:Null}">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="_previewPanel" Orientation="Horizontal" Margin="12"/>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ── Footer ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="2" Background="White"
+                BorderBrush="#DDE1E8" BorderThickness="0,1,0,0"
+                Padding="20,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Button Style="{StaticResource ActionBtn}"
+                            Content="Go Back"
+                            Background="White" Foreground="#444"
+                            BorderBrush="#CCC"
+                            Click="OnGoBack"/>
+                    <!-- TEMPORARY diagnostic entry point — prints CalibrationPrintService's
+                         ruler/grid page through the same pipeline as the real transmittal
+                         print, so a physical ruler can verify where WPF/the driver actually
+                         place content. Remove once the print-pipeline discrepancy is fixed. -->
+                    <Button Style="{StaticResource ActionBtn}"
+                            Content="🛠 Calibration Print (diagnostic)"
+                            Background="#FFF4D6" Foreground="#7A5B00"
+                            BorderBrush="#E0C879"
+                            Margin="10,0,0,0"
+                            Click="OnCalibrationPrint"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Style="{StaticResource ActionBtn}"
+                            Content="Skip for Now"
+                            Background="White" Foreground="#444"
+                            BorderBrush="#CCC"
+                            Margin="0,0,10,0"
+                            Click="OnSkip"/>
+                    <Button x:Name="_printButton"
+                            Style="{StaticResource ActionBtn}"
+                            Content="Print"
+                            Background="#4E9AFC" Foreground="White"
+                            BorderBrush="#3D86E0"
+                            Click="OnPrint"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
