@@ -96,7 +96,11 @@
 
                 <div id="employeeTargetSection">
                 <div id="empFilterRow" class="row mb-2">
-                    <label class="col-sm-12 col-md-3 col-form-label fw-semibold text-muted" style="font-size:.85rem;">Filter by:</label>
+                    <div class="col-sm-12 col-md-3 d-flex justify-content-between align-items-center">
+                        <label class="col-form-label fw-semibold text-muted mb-0" style="font-size:.85rem;">Filter by:</label>
+                        <button type="button" id="empFilterClearBtn" class="btn btn-outline-secondary btn-sm" title="Clear filters and employee selection"
+                                style="width:26px; height:26px; padding:0; line-height:1;">×</button>
+                    </div>
                     <div class="col-sm-12 col-md-9">
                         <div class="row g-2">
                             <div class="col-12 col-sm">
@@ -125,13 +129,6 @@
                                     <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
                                     <input type="hidden" id="empFilterDeptHidden" />
                                 </div>
-                            </div>
-                            <div class="col-auto d-flex flex-column">
-                                <small class="d-block mb-1" style="visibility:hidden;">x</small>
-                                <button type="button" id="empFilterClearBtn"
-                                        class="btn btn-outline-secondary flex-fill"
-                                        title="Clear filters"
-                                        style="width:38px; padding:0; line-height:1;">×</button>
                             </div>
                         </div>
                     </div>
@@ -349,7 +346,11 @@
                 @* ── Received By (PICKUP only) ──────────────────────────────────── *@
                 <div id="receivedByRow">
                     <div id="rbFilterRow" class="row mb-2">
-                        <label class="col-sm-12 col-md-3 col-form-label fw-semibold text-muted" style="font-size:.85rem;">Filter by:</label>
+                        <div class="col-sm-12 col-md-3 d-flex justify-content-between align-items-center">
+                            <label class="col-form-label fw-semibold text-muted mb-0" style="font-size:.85rem;">Filter by:</label>
+                            <button type="button" id="rbFilterClearBtn" class="btn btn-outline-secondary btn-sm" title="Clear filters"
+                                    style="width:26px; height:26px; padding:0; line-height:1;">×</button>
+                        </div>
                         <div class="col-sm-12 col-md-9">
                             <div class="row g-2">
                                 <div class="col-12 col-sm">
@@ -379,13 +380,6 @@
                                         <input type="hidden" id="rbFilterDeptHidden" />
                                     </div>
                                 </div>
-                                <div class="col-auto d-flex flex-column">
-                                    <small class="d-block mb-1" style="visibility:hidden;">x</small>
-                                    <button type="button" id="rbFilterClearBtn"
-                                            class="btn btn-outline-secondary"
-                                            title="Clear filters"
-                                            style="width:38px; height:31px; padding:0; line-height:1;">×</button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -395,6 +389,7 @@
                             To Be Received By: <span class="text-danger">*</span>
                         </label>
                         <div class="col-sm-12 col-md-9">
+                            <small class="text-muted fw-semibold d-block mb-1">Employee</small>
                             <div class="position-relative" id="receivedByWrapper">
                                 <input type="text" id="receivedByInput" class="form-control pe-4"
                                        placeholder="— Search employee —" autocomplete="off" />
@@ -543,6 +538,11 @@
 </div>
 
 @section Scripts {
+@* Wrapped in #pageScripts so the AJAX tab-switcher in site.js can locate, re-inject, and
+   re-execute this page's scripts/styles when it fetches this view over AJAX — everything in
+   this Razor section renders at the very end of <body> (see _Layout.cshtml), well outside
+   .content-padded, so it needs its own marker to be found and swapped independently. *@
+<div id="pageScripts" style="display:none">
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script src="~/js/tours/it-assisted-request.js" asp-append-version="true"></script>
 
@@ -572,7 +572,14 @@
     </style>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    // Wrapped in an IIFE (instead of a document.addEventListener('DOMContentLoaded', ...)
+    // handler) so this script works both on a normal full page load AND when re-injected
+    // by the AJAX tab-switcher in site.js — DOMContentLoaded only ever fires once per
+    // document, so a handler added after that would simply never run on a re-injected
+    // script. The IIFE also keeps `const`/`let` declarations scoped locally instead of at
+    // script-global scope, so re-running this block on a later tab visit doesn't throw
+    // "Identifier has already been declared".
+    (function () {
 
         // ── Employee data ────────────────────────────────────────────────────────
         const allEmployees = [
@@ -688,16 +695,19 @@
         }
 
         // ── Employee filter pickers ───────────────────────────────────────────────
-        let empCurrentBranches = [];
-        let empCurrentDepts    = [];
+        // Branch/Department start as the full lists (browsable on their own) and only
+        // narrow to the selected company's once one is picked — they don't require a
+        // company to be chosen first.
+        let empCurrentBranches = allBranches;
+        let empCurrentDepts    = allDepts;
 
         const empCompanyPicker = createFilterPicker(
             document.getElementById('empFilterCompany'),
             document.getElementById('empFilterCompanyHidden'),
             () => allCompanies,
             function(item) {
-                empCurrentBranches = item ? allBranches.filter(b => b.comId === item.id) : [];
-                empCurrentDepts    = item ? allDepts.filter(d => d.comId === item.id)    : [];
+                empCurrentBranches = item ? allBranches.filter(b => b.comId === item.id) : allBranches;
+                empCurrentDepts    = item ? allDepts.filter(d => d.comId === item.id)    : allDepts;
                 empBranchPicker.clear();
                 empDeptPicker.clear();
                 clearEmpInfo();
@@ -1070,8 +1080,11 @@
         window.addEventListener('resize', positionEmpDropdown);
 
         // ── Received By filter pickers ────────────────────────────────────────────
-        let rbCurrentBranches = [];
-        let rbCurrentDepts    = [];
+        // Branch/Department start as the full lists (browsable on their own) and only
+        // narrow to the selected company's once one is picked — they don't require a
+        // company to be chosen first.
+        let rbCurrentBranches = allBranches;
+        let rbCurrentDepts    = allDepts;
         // True while we're populating the 3 filter pickers FROM a directly-picked person —
         // suppresses the normal "changing a filter clears the chosen person" behaviour.
         let rbAutofilling = false;
@@ -1081,8 +1094,8 @@
             document.getElementById('rbFilterCompanyHidden'),
             () => allCompanies,
             function(item) {
-                rbCurrentBranches = item ? allBranches.filter(b => b.comId === item.id) : [];
-                rbCurrentDepts    = item ? allDepts.filter(d => d.comId === item.id)    : [];
+                rbCurrentBranches = item ? allBranches.filter(b => b.comId === item.id) : allBranches;
+                rbCurrentDepts    = item ? allDepts.filter(d => d.comId === item.id)    : allDepts;
                 rbBranchPicker.clear();
                 rbDeptPicker.clear();
                 if (!rbAutofilling) { receivedByInput.value = ''; receivedByHidden.value = ''; syncRbPreview(); }
@@ -1198,7 +1211,7 @@
                 receivedByHidden.value = exact.id;
                 rbAutofillFilters(exact);
             }
-            setTimeout(syncRbPreview, 160);
+            syncRbPreview();
         });
 
         receivedByInput.addEventListener('keydown', function(e) {
@@ -1355,14 +1368,14 @@
             const goodDisplay = isCartridge ? good : '—';
             const damagedDisplay = isCartridge ? damaged : '—';
             row.innerHTML = `
-                <td>${category}<input type="hidden" name="RequestItems[0].Category" value="${category}" /></td>
-                <td>${modelNumber || '—'}
+                <td data-label="Category">${category}<input type="hidden" name="RequestItems[0].Category" value="${category}" /></td>
+                <td data-label="Model">${modelNumber || '—'}
                     <input type="hidden" name="RequestItems[0].CartridgeModel" value="${modelNumber}" />
                     <input type="hidden" name="RequestItems[0].ModelKey" value="${modelKey}" />
                 </td>
-                <td>${qty}<input type="hidden" name="RequestItems[0].Quantity" value="${qty}" /></td>
-                <td>${goodDisplay}<input type="hidden" name="RequestItems[0].GoodEmptyQty" value="${good}" /></td>
-                <td>${damagedDisplay}<input type="hidden" name="RequestItems[0].DamagedEmptyQty" value="${damaged}" /></td>
+                <td data-label="Qty">${qty}<input type="hidden" name="RequestItems[0].Quantity" value="${qty}" /></td>
+                <td data-label="Good">${goodDisplay}<input type="hidden" name="RequestItems[0].GoodEmptyQty" value="${good}" /></td>
+                <td data-label="Damaged">${damagedDisplay}<input type="hidden" name="RequestItems[0].DamagedEmptyQty" value="${damaged}" /></td>
                 <td><button type="button" class="btn btn-outline-danger btn-sm remove-row">Remove</button></td>`;
             row.querySelector('.remove-row').addEventListener('click', function() {
                 row.remove();
@@ -1523,6 +1536,7 @@
             itRemarksInput.value     = '';
             updateRemarksUI();
         });
-    });
+    })();
     </script>
+</div>
 }

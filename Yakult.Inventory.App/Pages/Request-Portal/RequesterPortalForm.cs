@@ -63,6 +63,12 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
         private bool   _portalMenuOpen;
         private const int PortalMenuWidth = 280;
 
+        // Side-menu nav rows that track "current page" (Home / Authorize / Submit / History) —
+        // updated by RefreshSideMenuActiveState() so the active one gets a highlight, matching
+        // the Request Portal (web)'s offcanvas nav active-link style.
+        private readonly List<(Panel Accent, Label Icon, Label Text, Panel Row, Func<bool> IsActive)> _sideMenuNavItems
+            = new List<(Panel, Label, Label, Panel, Func<bool>)>();
+
         /// <summary>True when the user clicked Logout from the side menu.</summary>
         public bool LogoutRequested { get; private set; }
 
@@ -235,117 +241,192 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             _portalSideMenu.BringToFront();
         }
 
+        // Colors shared by every side-menu row so the icon/label column and the
+        // active/hover states line up consistently across all items.
+        private static readonly Color SideMenuFg          = Color.FromArgb(60, 60, 60);
+        private static readonly Color SideMenuHoverBg     = Color.FromArgb(240, 240, 240);
+        private static readonly Color SideMenuActiveBg    = Color.FromArgb(235, 244, 255);
+        private static readonly Color SideMenuActiveFg    = Color.FromArgb(41, 121, 255);
+        private static readonly Color SideMenuActiveAccent = Color.FromArgb(78, 154, 252);
+
+        /// <summary>
+        /// Builds one side-menu row as [4px accent bar][fixed-width icon column][label], so
+        /// every row's label lines up regardless of how wide its emoji glyph renders (unlike
+        /// the previous single-string "🏠  Home" Button.Text approach, where each emoji's own
+        /// width shifted the label that followed it out of alignment with the other rows).
+        /// Pass <paramref name="isActive"/> for rows that represent a "current page" (Home,
+        /// Authorize, Submit, History) — RefreshSideMenuActiveState() re-evaluates it after
+        /// every navigation and paints the blue accent bar + tint, matching the web Request
+        /// Portal's offcanvas nav active-link style. Rows without one (Back to Portal,
+        /// Notification Settings, Logout) are plain actions and only get the hover tint.
+        /// </summary>
+        private Panel CreateSideMenuItem(string icon, string label, Action onClick,
+            Func<bool> isActive = null, Color? bgColor = null, Color? fgColor = null, Color? hoverBgColor = null)
+        {
+            const int rowH = 50;
+            Color baseBg  = bgColor  ?? Color.White;
+            Color baseFg  = fgColor  ?? SideMenuFg;
+            Color hoverBg = hoverBgColor ?? (isActive != null ? SideMenuActiveBg : SideMenuHoverBg);
+
+            var row = new Panel { Height = rowH, Dock = DockStyle.Top, BackColor = baseBg, Cursor = Cursors.Hand };
+
+            var accent = new Panel { Dock = DockStyle.Left, Width = 4, BackColor = Color.Transparent };
+
+            var iconLbl = new Label
+            {
+                Text      = icon,
+                Dock      = DockStyle.Left,
+                Width     = 40,
+                Font      = new Font("Segoe UI Emoji", 11F),
+                ForeColor = baseFg,
+                BackColor = baseBg,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Cursor    = Cursors.Hand
+            };
+
+            var textLbl = new Label
+            {
+                Text        = label,
+                Dock        = DockStyle.Fill,
+                Font        = new Font("Segoe UI", 10F),
+                ForeColor   = baseFg,
+                BackColor   = baseBg,
+                TextAlign   = ContentAlignment.MiddleLeft,
+                Cursor      = Cursors.Hand,
+                // Without this, a Label wraps text too wide for its column onto a second
+                // line instead of truncating — the active row's bold font pushed
+                // "Authorize Cartridge Requests" onto two lines, and with the row's fixed
+                // 50px height only the first line ("Authorize Cartridge") rendered, looking
+                // like the text was floating off-center rather than vertically centered.
+                AutoEllipsis = true
+            };
+
+            row.Controls.Add(textLbl);
+            row.Controls.Add(iconLbl);
+            row.Controls.Add(accent);
+
+            EventHandler doClick = (s, e) => onClick();
+            row.Click += doClick; iconLbl.Click += doClick; textLbl.Click += doClick;
+
+            EventHandler onEnter = (s, e) => { row.BackColor = iconLbl.BackColor = textLbl.BackColor = hoverBg; };
+            EventHandler onLeave = isActive != null
+                ? (s, e) => RefreshSideMenuActiveState()
+                : (EventHandler)((s, e) => { row.BackColor = iconLbl.BackColor = textLbl.BackColor = baseBg; });
+            row.MouseEnter += onEnter; iconLbl.MouseEnter += onEnter; textLbl.MouseEnter += onEnter;
+            row.MouseLeave += onLeave; iconLbl.MouseLeave += onLeave; textLbl.MouseLeave += onLeave;
+
+            if (isActive != null)
+                _sideMenuNavItems.Add((accent, iconLbl, textLbl, row, isActive));
+
+            return row;
+        }
+
+        /// <summary>Re-evaluates each tracked nav row's IsActive predicate and repaints its
+        /// accent bar / background / text style. Call after any navigation that changes which
+        /// area (Landing / Approver / Request-Submit / Request-History) is on screen.</summary>
+        private void RefreshSideMenuActiveState()
+        {
+            foreach (var item in _sideMenuNavItems)
+            {
+                bool active = item.IsActive();
+                Color bg = active ? SideMenuActiveBg : Color.White;
+                Color fg = active ? SideMenuActiveFg : SideMenuFg;
+
+                item.Accent.BackColor = active ? SideMenuActiveAccent : Color.Transparent;
+                item.Row.BackColor    = bg;
+                item.Icon.BackColor   = bg;
+                item.Icon.ForeColor   = fg;
+                item.Text.BackColor   = bg;
+                item.Text.ForeColor   = fg;
+                item.Text.Font        = new Font("Segoe UI", 10F, active ? FontStyle.Bold : FontStyle.Regular);
+            }
+        }
+
         private void PopulatePortalSideMenu()
         {
             // Controls added in BOTTOM-TO-TOP visual order (DockStyle.Top — last added = top).
-            const int btnH = 50;
 
             // ── LOGOUT (bottom) ───────────────────────────────────────────────
-            var btnLogout = new Button
-            {
-                Text      = "🚪  Logout",
-                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
-                Height    = btnH,
-                Dock      = DockStyle.Top,
-                BackColor = Color.FromArgb(220, 53, 69),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor    = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(10, 0, 0, 0)
-            };
-            btnLogout.FlatAppearance.BorderSize         = 0;
-            btnLogout.FlatAppearance.MouseOverBackColor = Color.FromArgb(176, 0, 32);
-            btnLogout.Click += (s, e) =>
-            {
-                TogglePortalMenu();
-                LogoutRequested = true;
-                this.Close();
-            };
-            _portalSideMenu.Controls.Add(btnLogout);
+            _portalSideMenu.Controls.Add(CreateSideMenuItem(
+                "🚪", "Logout",
+                () => { TogglePortalMenu(); LogoutRequested = true; this.Close(); },
+                bgColor: Color.FromArgb(220, 53, 69), fgColor: Color.White, hoverBgColor: Color.FromArgb(176, 0, 32)));
 
             _portalSideMenu.Controls.Add(new Panel { Height = 8, Dock = DockStyle.Top, BackColor = Color.White });
 
             // ── NOTIFICATION SETTINGS ─────────────────────────────────────────
-            var btnNotifSettings = new Button
-            {
-                Text      = "🔔  Notification Settings",
-                Font      = new Font("Segoe UI", 10F),
-                Height    = btnH,
-                Dock      = DockStyle.Top,
-                BackColor = Color.White,
-                ForeColor = Color.FromArgb(60, 60, 60),
-                FlatStyle = FlatStyle.Flat,
-                Cursor    = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(10, 0, 0, 0)
-            };
-            btnNotifSettings.FlatAppearance.BorderSize         = 0;
-            btnNotifSettings.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 240, 240);
-            btnNotifSettings.Click += (s, e) =>
-            {
-                TogglePortalMenu();
-                var win = new NotificationSettingsWindow();
-                win.SettingsSaved += () => BeginInvoke(new Action(RefreshNotificationBadge));
-                win.ShowDialog();
-            };
-            _portalSideMenu.Controls.Add(btnNotifSettings);
+            _portalSideMenu.Controls.Add(CreateSideMenuItem(
+                "🔔", "Notification Settings",
+                () =>
+                {
+                    TogglePortalMenu();
+                    var win = new NotificationSettingsWindow();
+                    win.SettingsSaved += () => BeginInvoke(new Action(RefreshNotificationBadge));
+                    win.ShowDialog();
+                }));
 
             // ── BACK TO PORTAL (Yakult Internal Systems) ──────────────────────
-            var btnBackToSystem = new Button
-            {
-                Text      = "↩  Back to Portal",
-                Font      = new Font("Segoe UI", 10F),
-                Height    = btnH,
-                Dock      = DockStyle.Top,
-                BackColor = Color.White,
-                ForeColor = Color.FromArgb(60, 60, 60),
-                FlatStyle = FlatStyle.Flat,
-                Cursor    = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(10, 0, 0, 0)
-            };
-            btnBackToSystem.FlatAppearance.BorderSize         = 0;
-            btnBackToSystem.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 240, 240);
-            btnBackToSystem.Click += (s, e) =>
-            {
-                TogglePortalMenu();
-                var dashboard = Application.OpenForms["MainDashboardForm"];
-                this.Close();
-                if (dashboard != null && !dashboard.IsDisposed)
+            _portalSideMenu.Controls.Add(CreateSideMenuItem(
+                "↩", "Back to Portal",
+                () =>
                 {
-                    if (dashboard.WindowState == FormWindowState.Minimized)
-                        dashboard.WindowState = FormWindowState.Normal;
-                    dashboard.BringToFront();
-                }
-            };
-            _portalSideMenu.Controls.Add(btnBackToSystem);
+                    TogglePortalMenu();
+                    var dashboard = Application.OpenForms["MainDashboardForm"];
+                    this.Close();
+                    if (dashboard != null && !dashboard.IsDisposed)
+                    {
+                        if (dashboard.WindowState == FormWindowState.Minimized)
+                            dashboard.WindowState = FormWindowState.Normal;
+                        dashboard.BringToFront();
+                    }
+                }));
+
+            // ── QUICK NAV (approver mode only — mirrors the landing page's three
+            //    module cards) ────────────────────────────────────────────────
+            // Approvers can navigate from Home to any of Authorize/Submit/History,
+            // but once inside one of those areas the side menu previously only
+            // offered Home (back to the landing cards), Back to Portal, Notification
+            // Settings and Logout — no direct jump to the other two areas.
+            if (AppSession.IsApprover)
+            {
+                _portalSideMenu.Controls.Add(CreateSideMenuItem(
+                    "🕓", "Authorization History",
+                    () =>
+                    {
+                        TogglePortalMenu();
+                        ShowRequestArea();
+                        if (tabControl != null && tabAuthHistory != null)
+                            tabControl.SelectedTab = tabAuthHistory;
+                    },
+                    isActive: () => _pnlRequestArea != null && _pnlRequestArea.Visible
+                                 && tabControl != null && tabControl.SelectedTab == tabAuthHistory));
+
+                _portalSideMenu.Controls.Add(CreateSideMenuItem(
+                    "📋", "Submit a Request",
+                    () => { TogglePortalMenu(); ShowRequestArea(); },
+                    isActive: () => _pnlRequestArea != null && _pnlRequestArea.Visible
+                                 && (tabControl == null || tabControl.SelectedTab != tabAuthHistory)));
+
+                _portalSideMenu.Controls.Add(CreateSideMenuItem(
+                    "✏", "Authorize Request",
+                    () => { TogglePortalMenu(); ShowApproverArea(); },
+                    isActive: () => _pnlApproverArea != null && _pnlApproverArea.Visible));
+            }
 
             // ── HOME ──────────────────────────────────────────────────────────
-            var btnHome = new Button
-            {
-                Text      = "🏠  Home",
-                Font      = new Font("Segoe UI", 10F),
-                Height    = btnH,
-                Dock      = DockStyle.Top,
-                BackColor = Color.White,
-                ForeColor = Color.FromArgb(60, 60, 60),
-                FlatStyle = FlatStyle.Flat,
-                Cursor    = Cursors.Hand,
-                TextAlign = ContentAlignment.MiddleLeft,
-                Padding   = new Padding(10, 0, 0, 0)
-            };
-            btnHome.FlatAppearance.BorderSize         = 0;
-            btnHome.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 240, 240);
-            btnHome.Click += (s, e) =>
-            {
-                TogglePortalMenu();
-                if (AppSession.IsApprover && _pnlLanding != null)
-                    ShowLanding();
-                else if (tabControl != null && tabNewRequest != null)
-                    tabControl.SelectedTab = tabNewRequest;
-            };
-            _portalSideMenu.Controls.Add(btnHome);
+            _portalSideMenu.Controls.Add(CreateSideMenuItem(
+                "🏠", "Home",
+                () =>
+                {
+                    TogglePortalMenu();
+                    if (AppSession.IsApprover && _pnlLanding != null)
+                        ShowLanding();
+                    else if (tabControl != null && tabNewRequest != null)
+                        tabControl.SelectedTab = tabNewRequest;
+                },
+                isActive: () => AppSession.IsApprover
+                    ? (_pnlLanding != null && _pnlLanding.Visible)
+                    : (tabControl != null && tabControl.SelectedTab == tabNewRequest)));
 
             // ── SEPARATOR ─────────────────────────────────────────────────────
             _portalSideMenu.Controls.Add(new Panel
@@ -372,6 +453,8 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             _portalSideMenu.Controls.Add(lblMenuHeader);
 
             _portalSideMenu.Controls.Add(new Panel { Height = 16, Dock = DockStyle.Top, BackColor = Color.White });
+
+            RefreshSideMenuActiveState();
         }
 
         private void TogglePortalMenu()
@@ -635,6 +718,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 var selected = tabControl.SelectedTab;
                 if (selected == tabNewRequest || selected == tabAssistedRequest)
                     RefreshCartridgeModelDropdowns();
+                RefreshSideMenuActiveState();
             };
 
             if (AppSession.IsApprover)
@@ -3755,6 +3839,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             _pnlRequestArea.Visible  = false;
             _pnlLanding.Visible      = true;
             _pnlLanding.BringToFront();
+            RefreshSideMenuActiveState();
         }
 
         private void ShowApproverArea()
@@ -3763,6 +3848,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             _pnlRequestArea.Visible  = false;
             _pnlApproverArea.Visible = true;
             _pnlApproverArea.BringToFront();
+            RefreshSideMenuActiveState();
         }
 
         private void ShowRequestArea()
@@ -3771,6 +3857,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             _pnlApproverArea.Visible = false;
             _pnlRequestArea.Visible  = true;
             _pnlRequestArea.BringToFront();
+            RefreshSideMenuActiveState();
         }
 
         // ──────────────────────────────────────────────────────────────────────

@@ -161,6 +161,11 @@
 </div>
 
 @section Scripts {
+@* Wrapped in #pageScripts so the AJAX tab-switcher in site.js can locate, re-inject, and
+   re-execute this page's scripts/styles when it fetches this view over AJAX — everything in
+   this Razor section renders at the very end of <body> (see _Layout.cshtml), well outside
+   .content-padded, so it needs its own marker to be found and swapped independently. *@
+<div id="pageScripts" style="display:none">
 <style>
     .status-pending { color: #e08a00; }
     .history-row:hover { background:#f8fafc; }
@@ -205,7 +210,14 @@
 </style>
 <script src="~/js/tours/user-my-requests.js" asp-append-version="true"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+// Wrapped in an IIFE (instead of a document.addEventListener('DOMContentLoaded', ...)
+// handler) so this script works both on a normal full page load AND when re-injected
+// by the AJAX tab-switcher in site.js — DOMContentLoaded only ever fires once per
+// document, so a handler added after that would simply never run on a re-injected
+// script. The IIFE also keeps `const`/`let` declarations scoped locally instead of at
+// script-global scope, so re-running this block on a later tab visit doesn't throw
+// "Identifier has already been declared".
+(function () {
     const PAGE_SIZE = 10;
     const container = document.getElementById('requestHistoryContainer');
     const modalEl   = document.getElementById('requestDetailModal');
@@ -410,6 +422,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     initHistoryUI(true);
-});
+})();
 </script>
+</div>
 }

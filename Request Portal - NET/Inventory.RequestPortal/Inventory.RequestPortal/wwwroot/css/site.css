@@ -113,6 +113,10 @@ body {
 }
 
 /* Navigation Tabs - RED THEME */
+.nav-tabs-container {
+  position: relative;
+}
+
 .nav-tabs-container .nav-tabs {
   border-bottom: none;
   overflow-x: auto;
@@ -124,6 +128,22 @@ body {
 
 .nav-tabs-container .nav-tabs::-webkit-scrollbar {
   display: none;
+}
+
+/* On narrow screens the tab row can overflow (e.g. "IT Assisted Request" gets
+   cut off) and the hidden scrollbar above gives no hint it's scrollable. This
+   fade cues that there's more to scroll to. Only shown when site.js detects the
+   tabs actually overflow (.is-scrollable) — otherwise (e.g. a single "History"
+   tab) it painted an unexplained white patch over the container's right edge. */
+.nav-tabs-container.is-scrollable::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 28px;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0), #fff 85%);
+  pointer-events: none;
 }
 
 .nav-tabs-container .nav-link {
@@ -484,10 +504,17 @@ body {
   }
 
   /* Form controls - Better touch targets */
-  .form-control,
-  .form-select {
+  .form-control {
     font-size: 1rem;
     padding: 0.75rem;
+  }
+
+  /* Same touch-target bump, but keep extra right padding on selects so the
+     text doesn't run under Bootstrap's dropdown caret icon (it stays fixed
+     at "right 0.75rem center" regardless of this padding). */
+  .form-select {
+    font-size: 1rem;
+    padding: 0.75rem 2.25rem 0.75rem 0.75rem;
   }
 
   /* Radio buttons - Better spacing */
@@ -536,8 +563,12 @@ body {
     white-space: nowrap;
   }
 
-  /* Validation messages */
-  .text-danger {
+  /* Validation messages — scoped to actual asp-validation-for spans (which get
+     a data-valmsg-for attribute) and the manual error banners (.small), so the
+     inline required-field asterisks (<span class="text-danger">*</span>) don't
+     get forced onto their own line and break "Label * :" across three lines. */
+  .text-danger[data-valmsg-for],
+  .text-danger.small {
     font-size: 0.8rem;
     display: block;
     margin-top: 0.25rem;
@@ -690,12 +721,15 @@ body {
 }
 
 /* =========================================
-   CARTRIDGE TABLE - STACKED CARD LAYOUT (< 768px)
+   CARTRIDGE TABLE - COMPACT ITEM CARD (< 768px)
    Applies to portrait phones and most landscape phones.
-   Each row becomes a labelled card; columns reflow vertically.
+   Each row (Category/Model/Qty/Good/Damaged/Remove td's) becomes one item
+   card: Category tag + Model name as the header line, Qty/Good/Damaged as
+   a 3-up stat strip below, and a small round Remove icon top-right —
+   instead of dumping all 5 fields into equal-weight stacked rows.
    ========================================= */
 @media (max-width: 767.98px) {
-  /* Hide column headers — labels come from data-label ::before */
+  /* Hide column headers — desktop-only; the card layout carries its own labels */
   .cartridge-table thead {
     display: none;
   }
@@ -707,71 +741,117 @@ body {
     width: 100%;
   }
 
-  /* Each row is a card */
+  /* Each row is a card, laid out as a 2-row grid:
+     "category model  model  remove"
+     "qty      good   damaged remove" */
   .cartridge-table tr.cartridge-row {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    grid-template-areas:
+      "category model model remove"
+      "qty good damaged remove";
+    align-items: center;
+    column-gap: 0.5rem;
+    row-gap: 0.65rem;
     border: 1px solid #dee2e6;
-    border-radius: 6px;
+    border-radius: 8px;
     margin-bottom: 0.875rem;
-    padding: 0.25rem 0.5rem;
+    padding: 0.75rem 0.75rem 0.85rem;
     background-color: #fff;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
 
-  /* Each cell: stack label above content */
   .cartridge-table tr.cartridge-row > td {
-    display: flex;
-    flex-direction: column;
+    display: block;
     border: none;
-    border-bottom: 1px solid #f3f4f6;
-    padding: 0.5rem 0.35rem;
-    width: 100%;
+    padding: 0;
     box-sizing: border-box;
   }
 
-  .cartridge-table tr.cartridge-row > td:last-child {
-    border-bottom: none;
-  }
-
-  /* Field label from data-label attribute */
-  .cartridge-table tr.cartridge-row > td[data-label]::before {
-    content: attr(data-label);
-    display: block;
-    font-size: 0.7rem;
+  /* Category: small muted tag above the model name */
+  .cartridge-table tr.cartridge-row > td[data-label="Category"] {
+    grid-area: category;
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #6c757d;
-    margin-bottom: 0.3rem;
   }
 
-  /* All inputs and selects fill full cell width */
-  .cartridge-table tr.cartridge-row > td .form-control,
-  .cartridge-table tr.cartridge-row > td .form-select {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
+  /* Model: the card's real heading — no data-label prefix needed, it reads
+     naturally next to the Category tag right above it. */
+  .cartridge-table tr.cartridge-row > td[data-label="Model"] {
+    grid-area: model;
+    grid-column: 2 / 4;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #212529;
   }
 
-  /* qty-input-wrapper: override inline-block to block for flex column layout */
-  .cartridge-table tr.cartridge-row > td .qty-input-wrapper {
+  .cartridge-table tr.cartridge-row > td[data-label="Category"]::before,
+  .cartridge-table tr.cartridge-row > td[data-label="Model"]::before {
+    content: none;
+  }
+
+  /* Qty / Good / Damaged: a 3-up stat strip, each with its label under the value */
+  .cartridge-table tr.cartridge-row > td[data-label="Qty"],
+  .cartridge-table tr.cartridge-row > td[data-label="Good"],
+  .cartridge-table tr.cartridge-row > td[data-label="Damaged"] {
+    text-align: center;
+    background: #f8fafc;
+    border-radius: 6px;
+    padding: 0.4rem 0.25rem 0.3rem;
+  }
+
+  .cartridge-table tr.cartridge-row > td[data-label="Qty"]    { grid-area: qty; }
+  .cartridge-table tr.cartridge-row > td[data-label="Good"]   { grid-area: good; }
+  .cartridge-table tr.cartridge-row > td[data-label="Damaged"] { grid-area: damaged; }
+
+  .cartridge-table tr.cartridge-row > td[data-label="Qty"]::before,
+  .cartridge-table tr.cartridge-row > td[data-label="Good"]::before,
+  .cartridge-table tr.cartridge-row > td[data-label="Damaged"]::before {
+    content: attr(data-label);
     display: block;
-    width: 100%;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6c757d;
+    margin-bottom: 0.15rem;
   }
 
-  /* Good / Damaged inputs: keep side-by-side, fill available width equally */
-  .cartridge-table tr.cartridge-row > td .d-flex {
-    width: 100%;
+  .cartridge-table tr.cartridge-row > td[data-label="Qty"],
+  .cartridge-table tr.cartridge-row > td[data-label="Good"],
+  .cartridge-table tr.cartridge-row > td[data-label="Damaged"] {
+    font-size: 0.95rem;
+    font-weight: 600;
   }
 
-  .cartridge-table tr.cartridge-row > td .d-flex > div {
-    flex: 1;
-    min-width: 0;
+  /* Remove: small round icon button, spans both rows on the right edge. Its
+     text ("Remove") stays for the accessible name / screen readers — only
+     hidden visually — and a plain × glyph takes its place. */
+  .cartridge-table tr.cartridge-row > td:last-child {
+    grid-area: remove;
+    align-self: start;
   }
 
-  /* Remove button: full width for touch usability */
   .cartridge-table .remove-row {
-    width: 100%;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0;
+    line-height: 1;
+    position: relative;
+  }
+
+  .cartridge-table .remove-row::before {
+    content: "\00d7";
+    font-size: 1.1rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 
   /* Add another model button: full width at this breakpoint */

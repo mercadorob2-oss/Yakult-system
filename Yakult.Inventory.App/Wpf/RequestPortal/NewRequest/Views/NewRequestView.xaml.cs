@@ -14,6 +14,17 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.NewRequest.Views
             ViewModel   = viewModel;
             DataContext = viewModel;
             Loaded += async (s, e) => await viewModel.LoadDataAsync();
+
+            // The validation error banner lives at the very top of the scrollable form, but
+            // SubmitAsync() can fail validation while the user is scrolled down (e.g. still in
+            // the Fulfillment section). Without this, the banner appears off-screen and
+            // submitting looks like it silently did nothing — see the identical fix in
+            // AssistedRequestView.
+            viewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(NewRequestViewModel.HasValidationError) && viewModel.HasValidationError)
+                    FormScrollViewer.ScrollToTop();
+            };
         }
 
         public NewRequestView() : this(new NewRequestViewModel()) { }

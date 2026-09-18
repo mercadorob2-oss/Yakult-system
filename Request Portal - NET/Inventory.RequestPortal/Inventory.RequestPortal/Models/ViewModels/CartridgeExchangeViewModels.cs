@@ -123,7 +123,7 @@ namespace Inventory.RequestPortal.Models.ViewModels
     public class CartridgeTransmittalViewModel
     {
         private static readonly HashSet<string> KnownNormalizedModels =
-            new(StringComparer.OrdinalIgnoreCase) { "LX300", "LX310" };
+            new(StringComparer.OrdinalIgnoreCase) { "LQ2190", "LX310" };
 
         public string To { get; set; } = string.Empty;
         public string Date { get; set; } = string.Empty;
@@ -141,7 +141,7 @@ namespace Inventory.RequestPortal.Models.ViewModels
         public bool IsFileCopy { get; set; }
 
         public bool IsCartridgeRibbon { get; } = true;
-        public bool IsLx300 { get; set; }
+        public bool IsLq2190 { get; set; }
         public bool IsLx310 { get; set; }
         public bool IsOtherModel { get; set; }
         public string OtherModelName { get; set; } = string.Empty;
@@ -164,14 +164,14 @@ namespace Inventory.RequestPortal.Models.ViewModels
         private static string NormalizeModel(string? raw) =>
             System.Text.RegularExpressions.Regex.Replace(raw ?? "", @"[\s\-_.]", "").ToUpperInvariant();
 
-        private static (bool isLx300, bool isLx310, bool isOther, string otherName) DetectModel(string? rawModel)
+        private static (bool isLq2190, bool isLx310, bool isOther, string otherName) DetectModel(string? rawModel)
         {
             string normalized = NormalizeModel(rawModel);
-            bool isLx300 = normalized.Contains("LX300");
+            bool isLq2190 = normalized.Contains("LQ2190");
             bool isLx310 = normalized.Contains("LX310");
-            bool isKnown = isLx300 || isLx310;
+            bool isKnown = isLq2190 || isLx310;
             bool isOther = !isKnown && !string.IsNullOrWhiteSpace(normalized);
-            return (isLx300, isLx310, isOther, isOther ? rawModel?.Trim() ?? "" : "");
+            return (isLq2190, isLx310, isOther, isOther ? rawModel?.Trim() ?? "" : "");
         }
 
         private static (bool isYPI, bool isYMC) DetectCompany(string? companyName)
@@ -195,13 +195,13 @@ namespace Inventory.RequestPortal.Models.ViewModels
             var anchor = list.FirstOrDefault();
             if (anchor == null) return new CartridgeTransmittalViewModel();
 
-            bool anyLx300 = false, anyLx310 = false, anyOther = false;
+            bool anyLq2190 = false, anyLx310 = false, anyOther = false;
             var otherNames = new List<string>();
 
             foreach (var req in list)
             {
-                var (isLx300, isLx310, isOther, otherName) = DetectModel(req.DisplayModel);
-                anyLx300 |= isLx300;
+                var (isLq2190, isLx310, isOther, otherName) = DetectModel(req.DisplayModel);
+                anyLq2190 |= isLq2190;
                 anyLx310 |= isLx310;
                 if (isOther && !otherNames.Contains(otherName, StringComparer.OrdinalIgnoreCase))
                     otherNames.Add(otherName);
@@ -222,7 +222,7 @@ namespace Inventory.RequestPortal.Models.ViewModels
                 ReceivedBy = anchor.ReceivedByName ?? anchor.EmployeeName ?? "",
                 IsYakultPhilippines = isYPI,
                 IsYakultMarketing = isYMC,
-                IsLx300 = anyLx300,
+                IsLq2190 = anyLq2190,
                 IsLx310 = anyLx310,
                 IsOtherModel = anyOther,
                 OtherModelName = string.Join(", ", otherNames),
@@ -242,13 +242,13 @@ namespace Inventory.RequestPortal.Models.ViewModels
                 .Where(m => !string.IsNullOrWhiteSpace(m))
                 .ToList();
 
-            bool anyLx300 = false, anyLx310 = false, anyOther = false;
+            bool anyLq2190 = false, anyLx310 = false, anyOther = false;
             var otherNames = new List<string>();
 
             foreach (var modelName in modelNames)
             {
-                var (isLx300, isLx310, isOther, otherName) = DetectModel(modelName);
-                anyLx300 |= isLx300;
+                var (isLq2190, isLx310, isOther, otherName) = DetectModel(modelName);
+                anyLq2190 |= isLq2190;
                 anyLx310 |= isLx310;
                 if (isOther && !otherNames.Contains(otherName, StringComparer.OrdinalIgnoreCase))
                     otherNames.Add(otherName);
@@ -268,7 +268,7 @@ namespace Inventory.RequestPortal.Models.ViewModels
                 ReceivedBy = row.ReceivedByName,
                 IsYakultPhilippines = isYPI,
                 IsYakultMarketing = isYMC,
-                IsLx300 = anyLx300,
+                IsLq2190 = anyLq2190,
                 IsLx310 = anyLx310,
                 IsOtherModel = anyOther,
                 OtherModelName = string.Join(", ", otherNames),

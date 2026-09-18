@@ -3,11 +3,12 @@
     Layout = null;
     ViewData["Title"] = "Cartridge Transmittal";
 
-    // Mirrors TransmittalPrintService.Print() exactly: 3 copies (Gatepass, Transmittal, File),
-    // arranged as 2 physical pages — Page 1 has Gatepass (top) + Transmittal (bottom) separated
-    // by a cut line at the exact page vertical midpoint, Page 2 has File alone. Same
-    // Clone()-per-copy-type pattern desktop uses (CreateHalfView / ApplyCopyTypeFlags) so exactly
-    // one checkbox is ever checked per copy.
+    // Mirrors PrintTransmittalDialog/TransmittalPrintService.BuildPages: 3 possible copies
+    // (Gatepass, Transmittal, File — Gatepass and Transmittal on by default, File off), paired
+    // 2-per-page in that fixed order by the client-side rebuildPages() below whenever the
+    // "Copies to print" checkboxes change. Same Clone()-per-copy-type pattern desktop uses
+    // (CreateHalfView / ApplyCopyTypeFlags) so exactly one checkbox is ever checked per copy —
+    // all 3 are still rendered server-side into <template> tags; JS only picks which to show.
     var gatepassCopy = Model.Clone();
     gatepassCopy.IsGatepassCopy = true; gatepassCopy.IsTransmittalCopy = false; gatepassCopy.IsFileCopy = false;
 
@@ -30,6 +31,8 @@
         .transmittal-toolbar { padding: 16px 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
         .tr-pagesize-group { display: flex; align-items: center; gap: 12px; font-size: 13px; }
         .tr-pagesize-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; margin: 0; }
+        .tr-copies-group { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+        .tr-copies-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; margin: 0; }
 
         /* Page containers are set to the SELECTED paper size's exact pixel dimensions via JS —
            WPF's 96-DPI device-independent units map 1:1 to CSS px, so these are the same numbers
@@ -47,8 +50,8 @@
            how TransmittalPrintService.ToPageContent shifts the whole composed pageVisual within a
            FixedPage of unchanged size via FixedPage.SetTop(pageVisual, -verticalOffset). A CSS
            transform on this element also makes it the containing block for its absolutely
-           positioned children (per spec), so trGatepassCopy/trCutLine/etc. keep positioning
-           against this box exactly as before — only the whole rendered layer shifts. */
+           positioned children (per spec), so each page's .tr-copy/.tr-cut-line elements keep
+           positioning against this box exactly as before — only the whole rendered layer shifts. */
         .tr-page-inner { position: relative; width: 100%; height: 100%; }
 
         /* Each copy is absolutely positioned within its page, exactly like
@@ -95,6 +98,7 @@
 
         @@media print {
             .transmittal-toolbar { display: none; }
+            #trNoCopiesMessage { display: none; }
             body { background: #fff; }
             .tr-page-label { display: none; }
             .tr-page {
@@ -125,6 +129,16 @@
         <button type="button" class="btn btn-danger" onclick="window.print()"><i class="bi bi-printer"></i> Print</button>
         <a class="btn btn-outline-secondary" asp-controller="CartridgeExchange" asp-action="Index">Done</a>
     </div>
+    @* Mirrors PrintTransmittalDialog's "Copies to print" checkboxes — Gatepass and Transmittal
+       checked by default, File off. Pages are re-paired dynamically (2 copies per page, in this
+       fixed Gatepass/Transmittal/File order) exactly like TransmittalPrintService.BuildPages, so
+       toggling a box re-flows which copies land on which page instead of just hiding one. *@
+    <div class="tr-copies-group">
+        <strong>Copies to print:</strong>
+        <label><input type="checkbox" id="trCopyGatepass" checked /> Gatepass</label>
+        <label><input type="checkbox" id="trCopyTransmittal" checked /> Transmittal</label>
+        <label><input type="checkbox" id="trCopyFile" /> File</label>
+    </div>
     <div class="tr-pagesize-group">
         <strong>Page size:</strong>
         <label><input type="radio" name="trPageSize" value="Letter" /> Letter</label>
@@ -133,28 +147,16 @@
     </div>
 </div>
 
-@* ── Page 1: Gatepass copy (top) + Transmittal copy (bottom), cut line between ── *@
-<div>
-    <div class="tr-page-label">Page 1 — Gatepass + Transmittal</div>
-    <div class="tr-page" id="trPage1">
-        <div class="tr-page-inner">
-            <div class="tr-copy" id="trGatepassCopy">@await Html.PartialAsync("_TransmittalCopy", gatepassCopy)</div>
-            <div class="tr-cut-line" id="trCutLine"></div>
-            <div class="tr-copy" id="trTransmittalCopy">@await Html.PartialAsync("_TransmittalCopy", transmittalCopy)</div>
-        </div>
-    </div>
-</div>
+<div id="trNoCopiesMessage" class="text-center text-muted py-5" hidden>Select at least one copy to print.</div>
 
-@* ── Page 2: File copy alone ── *@
-<div>
-    <div class="tr-page-label">Page 2 — File</div>
-    <div class="tr-page" id="trPage2">
-        <div class="tr-page-inner">
-            <div class="tr-copy" id="trFileCopy">@await Html.PartialAsync("_TransmittalCopy", fileCopy)</div>
-            <div class="tr-cut-line" id="trCutLine2"></div>
-        </div>
-    </div>
-</div>
+@* ── Copy content is authored once per type here; JS relocates these nodes into whichever
+     page/slot the current checkbox selection calls for (see buildPages() below) — mirrors
+     TransmittalPrintService.BuildPages pairing selected copies 2-per-page in this fixed order. ── *@
+<template id="trCopyGatepassTpl">@await Html.PartialAsync("_TransmittalCopy", gatepassCopy)</template>
+<template id="trCopyTransmittalTpl">@await Html.PartialAsync("_TransmittalCopy", transmittalCopy)</template>
+<template id="trCopyFileTpl">@await Html.PartialAsync("_TransmittalCopy", fileCopy)</template>
+
+<div id="trPagesContainer"></div>
 
 <script>
     // Exact match to TransmittalPrintService.GetPageDimensions — WPF's 96-DPI units are the
@@ -167,33 +169,87 @@
     };
     var PAGE_MARGIN = 48; // TransmittalPrintService.PageMargin — 0.5in at 96 DPI
 
-    function applyPageSize(sizeKey) {
+    // Copy order/labels always follow TransmittalPrintService.CopyType's fixed order
+    // (Gatepass, Transmittal, File) — GetSelectedCopies on desktop preserves this same order
+    // regardless of which checkboxes are ticked, so pairing 2-per-page here matches BuildPages.
+    var COPY_TYPES = [
+        { key: 'gatepass',    checkboxId: 'trCopyGatepass',    templateId: 'trCopyGatepassTpl',    label: 'GATEPASS' },
+        { key: 'transmittal', checkboxId: 'trCopyTransmittal', templateId: 'trCopyTransmittalTpl', label: 'TRANSMITTAL' },
+        { key: 'file',        checkboxId: 'trCopyFile',        templateId: 'trCopyFileTpl',        label: 'FILE' }
+    ];
+
+    var pagesContainer   = document.getElementById('trPagesContainer');
+    var noCopiesMessage  = document.getElementById('trNoCopiesMessage');
+    var printButton      = document.querySelector('.transmittal-toolbar .btn-danger');
+
+    function getSelectedCopies() {
+        return COPY_TYPES.filter(function (c) { return document.getElementById(c.checkboxId).checked; });
+    }
+
+    // Rebuilds #trPagesContainer from scratch — one <div class="tr-page"> per pair of selected
+    // copies, exactly like TransmittalPrintService.BuildPages(vm, selected, pageSize) pairs
+    // copies[i]/copies[i+1] onto pages two at a time. Re-run whenever a copy checkbox or the
+    // page-size radio changes, since both affect layout.
+    function rebuildPages() {
+        var selected = getSelectedCopies();
+        pagesContainer.innerHTML = '';
+        printButton.disabled = selected.length === 0;
+        noCopiesMessage.hidden = selected.length > 0;
+        if (selected.length === 0) return;
+
+        var sizeKey = document.querySelector('input[name="trPageSize"]:checked').value;
         var size = PAGE_SIZES[sizeKey] || PAGE_SIZES.Legal;
         var w = size.w, h = size.h;
         var contentWidth = w - (2 * PAGE_MARGIN);
         var midpointY = h / 2.0;
 
-        ['trPage1', 'trPage2'].forEach(function (id) {
-            var el = document.getElementById(id);
-            el.style.width = w + 'px';
-            el.style.height = h + 'px';
-        });
+        for (var i = 0; i < selected.length; i += 2) {
+            var top = selected[i];
+            var bottom = (i + 1 < selected.length) ? selected[i + 1] : null;
+            var pageNumber = (i / 2) + 1;
+            var label = 'PAGE ' + pageNumber + ' — ' + top.label + (bottom ? ' + ' + bottom.label : '');
 
-        // Page 1: Gatepass pinned PageMargin from the page top; cut line at the exact page
-        // midpoint; Transmittal pinned PageMargin below the cut line — same geometry as
-        // TransmittalPrintService.CreateHalfView/CreateCutLine, independent of either copy's
-        // actual content height.
-        positionCopy('trGatepassCopy', PAGE_MARGIN, contentWidth);
-        positionCutLine('trCutLine', midpointY, contentWidth);
-        positionCopy('trTransmittalCopy', midpointY + PAGE_MARGIN, contentWidth);
+            var labelEl = document.createElement('div');
+            labelEl.className = 'tr-page-label';
+            labelEl.textContent = label;
 
-        // Page 2: File pinned PageMargin from the page top (bottom half left blank, matching
-        // desktop's BuildPageVisual(vm, CopyType.File, null, ...) call with no bottom copy) — but
-        // BuildPageVisual adds the cut line unconditionally, BEFORE its `if (bottom.HasValue)`
-        // check, so the dashed guide still renders at the page midpoint here too even with
-        // nothing printed below it.
-        positionCopy('trFileCopy', PAGE_MARGIN, contentWidth);
-        positionCutLine('trCutLine2', midpointY, contentWidth);
+            var pageEl = document.createElement('div');
+            pageEl.className = 'tr-page';
+            pageEl.style.width = w + 'px';
+            pageEl.style.height = h + 'px';
+
+            var innerEl = document.createElement('div');
+            innerEl.className = 'tr-page-inner';
+
+            var topCopyEl = document.createElement('div');
+            topCopyEl.className = 'tr-copy';
+            topCopyEl.innerHTML = document.getElementById(top.templateId).innerHTML;
+            positionCopy(topCopyEl, PAGE_MARGIN, contentWidth);
+            innerEl.appendChild(topCopyEl);
+
+            // BuildPageVisual adds the cut line unconditionally, before its `if (bottom.HasValue)`
+            // check, so the dashed guide still renders at the page midpoint even for a single
+            // lone copy (e.g. File alone) with nothing printed below it — same here.
+            var cutLineEl = document.createElement('div');
+            cutLineEl.className = 'tr-cut-line';
+            positionCutLine(cutLineEl, midpointY, contentWidth);
+            innerEl.appendChild(cutLineEl);
+
+            if (bottom) {
+                var bottomCopyEl = document.createElement('div');
+                bottomCopyEl.className = 'tr-copy';
+                bottomCopyEl.innerHTML = document.getElementById(bottom.templateId).innerHTML;
+                positionCopy(bottomCopyEl, midpointY + PAGE_MARGIN, contentWidth);
+                innerEl.appendChild(bottomCopyEl);
+            }
+
+            pageEl.appendChild(innerEl);
+
+            var wrapperEl = document.createElement('div');
+            wrapperEl.appendChild(labelEl);
+            wrapperEl.appendChild(pageEl);
+            pagesContainer.appendChild(wrapperEl);
+        }
 
         // Drive the actual printed sheet size — without this, the browser prints whatever the
         // OS/printer default paper size is regardless of what's shown on screen.
@@ -206,25 +262,26 @@
         styleTag.textContent = '@@page { size: ' + size.cssSize + '; margin: 0; }';
     }
 
-    function positionCopy(id, top, contentWidth) {
-        var el = document.getElementById(id);
+    function positionCopy(el, top, contentWidth) {
         el.style.top = top + 'px';
         el.style.left = PAGE_MARGIN + 'px';
         el.style.width = contentWidth + 'px';
     }
 
-    function positionCutLine(id, top, contentWidth) {
-        var el = document.getElementById(id);
+    function positionCutLine(el, top, contentWidth) {
         el.style.left = PAGE_MARGIN + 'px';
         el.style.width = contentWidth + 'px';
         el.style.top = top + 'px';
     }
 
     document.querySelectorAll('input[name="trPageSize"]').forEach(function (radio) {
-        radio.addEventListener('change', function () { applyPageSize(radio.value); });
+        radio.addEventListener('change', rebuildPages);
+    });
+    COPY_TYPES.forEach(function (c) {
+        document.getElementById(c.checkboxId).addEventListener('change', rebuildPages);
     });
 
-    applyPageSize(document.querySelector('input[name="trPageSize"]:checked').value);
+    rebuildPages();
 </script>
 
 </body>

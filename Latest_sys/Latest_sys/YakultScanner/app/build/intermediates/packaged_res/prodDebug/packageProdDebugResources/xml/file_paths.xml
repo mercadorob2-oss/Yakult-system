@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+    Expose app-scoped storage via FileProvider.
+    - API 29+: PDF is saved to public Downloads via MediaStore (no storage permission needed).
+    - API 28 and below: PDF is saved to app-scoped external "Download/" (no WRITE_EXTERNAL_STORAGE needed).
+    -->
+    <external-files-path
+        name="app_downloads"
+        path="Download/" />
+    <files-path
+        name="internal_files"
+        path="." />
+</paths>

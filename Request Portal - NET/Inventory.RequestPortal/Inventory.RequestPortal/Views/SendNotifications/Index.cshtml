@@ -1,0 +1,321 @@
+@model Inventory.RequestPortal.Models.ViewModels.SendNotificationsWorkspaceViewModel
+@{
+    ViewData["Title"] = "Send Notifications";
+    ViewData["HideFooter"] = true;
+    var refreshRoute = new Dictionary<string, string>
+    {
+        ["search"] = Model.SearchText ?? "",
+        ["status"] = Model.StatusFilter ?? "All",
+        ["from"] = Model.DateFrom?.ToString("yyyy-MM-dd") ?? "",
+        ["to"] = Model.DateTo?.ToString("yyyy-MM-dd") ?? "",
+        ["id"] = Model.SelectedSetId?.ToString() ?? ""
+    };
+}
+<link rel="stylesheet" href="~/css/send-notifications.css" asp-append-version="true" />
+@await Html.PartialAsync("_CartridgeManagementNav")
+
+<header class="portal-header d-flex align-items-center gap-3">
+    <button class="btn btn-link text-white p-0 lh-1" data-bs-toggle="offcanvas" data-bs-target="#navSidebar"
+            aria-label="Open cartridge management menu"><i class="bi bi-list fs-4"></i></button>
+    <div>
+        <h1>Send notifications</h1>
+        <p class="subtitle mb-0">Keep requesters informed about their cartridges</p>
+    </div>
+</header>
+
+<div class="sn-page">
+    <div class="sn-summary" aria-label="Cartridge set summary">
+        <div><strong class="sn-pending">@Model.PendingCount</strong><span>Pending sets</span></div>
+        <div><strong>@Model.UpdatedTodayCount</strong><span>Created today</span></div>
+        <div><strong>@Model.FulfilledCount</strong><span>Fulfilled sets</span></div>
+        <span class="sn-period">Latest 300 sets · Last 90 days</span>
+    </div>
+
+    <form method="get" asp-action="Index" class="sn-toolbar">
+        <div class="sn-search">
+            <label for="snSearchBox" class="visually-hidden">Search set, requester, company or branch</label>
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search" name="search" id="snSearchBox" class="form-control" autocomplete="off"
+                   value="@Model.SearchText" placeholder="Search set, requester, company or branch" />
+        </div>
+        <label for="snStatus" class="visually-hidden">Fulfillment status</label>
+        <select name="status" id="snStatus" class="form-select">
+            @foreach (var opt in Inventory.RequestPortal.Models.ViewModels.SendNotificationsWorkspaceViewModel.StatusOptions)
+            {
+                <option value="@opt" selected="@(opt == Model.StatusFilter ? "selected" : null)">@(opt == "All" ? "All statuses" : opt)</option>
+            }
+        </select>
+        <button type="submit" class="sn-button">Search</button>
+        <details class="sn-date-filter" open="@(Model.DateFrom.HasValue || Model.DateTo.HasValue)">
+            <summary><i class="bi bi-calendar3" aria-hidden="true"></i> Date range</summary>
+            <div class="sn-dates">
+                <label for="snFrom">Created from<input type="date" name="from" id="snFrom" class="form-control" value="@(Model.DateFrom?.ToString("yyyy-MM-dd"))" /></label>
+                <label for="snTo">Created to<input type="date" name="to" id="snTo" class="form-control" value="@(Model.DateTo?.ToString("yyyy-MM-dd"))" /></label>
+                <button type="submit" class="sn-button">Apply dates</button>
+            </div>
+        </details>
+        <a class="sn-clear" asp-action="Index">Clear</a>
+        <a class="sn-button sn-refresh" asp-action="Index" asp-all-route-data="@refreshRoute" aria-label="Refresh results">
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i><span>Refresh</span>
+        </a>
+    </form>
+
+    @Html.AntiForgeryToken()
+    <div class="sn-workspace">
+        <section class="sn-list-col" aria-labelledby="snListTitle">
+            <div class="sn-list-heading">
+                <div><h2 id="snListTitle" tabindex="-1">Cartridge sets <span>@Model.Rows.Count</span></h2><p>Select a set to prepare its notification.</p></div>
+                <label class="sn-sort">Sort
+                    <select id="snSort" class="form-select" aria-label="Sort cartridge sets">
+                        <option value="newest">Newest first</option><option value="oldest">Oldest first</option>
+                        <option value="requester">Requester</option><option value="status">Status</option>
+                    </select>
+                </label>
+            </div>
+            <div class="sn-column-head" aria-hidden="true"><span>Set / created</span><span>Requester / location</span><span>Fulfillment</span></div>
+            <div id="snRows" class="sn-rows">
+                @foreach (var row in Model.Rows)
+                {
+                    <div class="sn-row @(row.SetId == Model.SelectedSetId ? "is-selected" : "")"
+                       tabindex="0" role="group" aria-label="@row.SetCode"
+                       data-url="@Url.Action("Index", new { id = row.SetId, search = Model.SearchText, status = Model.StatusFilter, from = Model.DateFrom?.ToString("yyyy-MM-dd"), to = Model.DateTo?.ToString("yyyy-MM-dd") })"
+                       data-row-id="@row.SetId" data-created="@row.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss")"
+                       data-requester="@row.RequesterName" data-status="@row.FriendlyStatus"
+                       data-receiver="@row.ReceivedByName" aria-controls="snPanelBody"
+                       aria-current="@(row.SetId == Model.SelectedSetId ? "true" : "false")">
+                        <span class="sn-row-set"><strong>@row.SetCode</strong><small>@row.DateDisplay</small></span>
+                        <span class="sn-row-person"><strong>@(string.IsNullOrWhiteSpace(row.RequesterName) ? "No linked requester" : row.RequesterName)</strong>
+                            <small>@row.CompanyName <span class="sn-location">@row.BranchDept</span></small></span>
+                        <span class="sn-row-state"><span class="sn-status-badge" data-status="@row.FriendlyStatus">@row.FriendlyStatus</span>
+                            <small>@row.DistributionMethod</small></span>
+                        <button type="button" class="sn-button sn-open" aria-label="Open notification for @row.SetCode" aria-haspopup="dialog">Open <i class="bi bi-arrow-up-right" aria-hidden="true"></i></button>
+                    </div>
+                }
+            </div>
+            @if (Model.Rows.Count == 0)
+            {
+                <div class="sn-empty-panel"><i class="bi bi-search"></i><h3>No matching sets</h3><p>Try another search or clear your filters.</p><a asp-action="Index" class="sn-button">Clear filters</a></div>
+            }
+            <nav class="sn-pagination" aria-label="Cartridge set pages" hidden>
+                <span id="snPageInfo" role="status"></span>
+                <div><button type="button" class="sn-button" id="snPrev" aria-label="Previous page"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" class="sn-button" id="snNext" aria-label="Next page"><i class="bi bi-chevron-right"></i></button></div>
+            </nav>
+        </section>
+
+        <section class="sn-panel-col" aria-labelledby="snPanelTitle">
+            <div class="sn-panel-head"><h2 id="snPanelTitle" tabindex="-1"><i class="bi bi-envelope" aria-hidden="true"></i> Prepare notification</h2>
+                <button type="button" class="sn-back sn-button" id="snBack">Close</button></div>
+            <div id="snLoadStatus" class="sn-load-status" role="status" hidden></div>
+            <div id="snPanelBody">@await Html.PartialAsync("_DetailPanel", Model.SelectedDetail)</div>
+        </section>
+    </div>
+    <dialog id="snMobileDialog" class="sn-mobile-dialog" aria-labelledby="snPanelTitle"></dialog>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    var panelBody = document.getElementById('snPanelBody');
+    var rowsHost = document.getElementById('snRows');
+    var rows = Array.from(rowsHost.querySelectorAll('.sn-row'));
+    var page = 0, pageSize = 8;
+    var selected = rows.findIndex(function (row) { return row.classList.contains('is-selected'); });
+    if (selected >= 0) page = Math.floor(selected / pageSize);
+    function renderPage() {
+        rows.forEach(function (row, i) { row.hidden = i < page * pageSize || i >= (page + 1) * pageSize; });
+        document.getElementById('snPageInfo').textContent = rows.length ? (page * pageSize + 1) + '–' + Math.min((page + 1) * pageSize, rows.length) + ' of ' + rows.length + ' sets' : 'No sets';
+        document.getElementById('snPrev').disabled = page === 0;
+        document.getElementById('snNext').disabled = (page + 1) * pageSize >= rows.length;
+    }
+    document.querySelector('.sn-pagination').hidden = rows.length === 0;
+    document.getElementById('snPrev').onclick = function () { page--; renderPage(); };
+    document.getElementById('snNext').onclick = function () { page++; renderPage(); };
+    document.getElementById('snSort').onchange = function () {
+        var sort = this.value;
+        rows.sort(function (a, b) {
+            var key = sort === 'newest' || sort === 'oldest' ? 'created' : sort;
+            return a.dataset[key].localeCompare(b.dataset[key]) * (sort === 'newest' ? -1 : 1);
+        });
+        rows.forEach(function (row) { rowsHost.appendChild(row); });
+        page = 0; renderPage();
+    };
+    renderPage();
+    var mobile = window.matchMedia('(max-width: 1100px)');
+    var dialog = document.getElementById('snMobileDialog');
+    var panel = document.querySelector('.sn-panel-col');
+    var panelHome = panel.parentNode;
+    var opener;
+    var previousOverflow;
+    function closePanel() { if (dialog.open) dialog.close(); }
+    dialog.addEventListener('close', function () {
+        document.body.style.overflow = previousOverflow || '';
+        if (mobile.matches && opener && opener.isConnected) opener.focus({ preventScroll: true });
+    });
+    function adaptPanel() {
+        closePanel();
+        if (mobile.matches) dialog.appendChild(panel);
+        else panelHome.appendChild(panel);
+        rows.forEach(function (row) { row.tabIndex = mobile.matches ? -1 : 0; });
+    }
+    mobile.addEventListener('change', adaptPanel);
+    adaptPanel();
+    function openPanel(button) {
+        opener = button;
+        previousOverflow = document.body.style.overflow;
+        dialog.showModal();
+        document.body.style.overflow = 'hidden';
+        dialog.scrollTop = 0;
+        document.getElementById('snBack').focus({ preventScroll: true });
+    }
+    dialog.addEventListener('click', function (event) {
+        if (event.target === dialog) {
+            var bounds = dialog.getBoundingClientRect();
+            if (event.clientX < bounds.left || event.clientX > bounds.right ||
+                event.clientY < bounds.top || event.clientY > bounds.bottom) closePanel();
+        }
+    });
+    var pending;
+    var loadStatus = document.getElementById('snLoadStatus');
+    function loadPanel(setId) {
+        if (pending) pending.abort();
+        pending = new AbortController();
+        loadStatus.hidden = false;
+        loadStatus.textContent = 'Loading notification details…';
+        panelBody.setAttribute('aria-busy', 'true');
+        panelBody.inert = true;
+        fetch('@Url.Action("Panel", "SendNotifications")/' + setId, {
+            signal: pending.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (resp) {
+            if (!resp.ok || resp.redirected) throw new Error('Load failed');
+            return resp.text();
+        }).then(function (html) {
+            panelBody.innerHTML = html;
+            window.snInitPanel();
+            rows.forEach(function (row) {
+                var active = row.dataset.rowId === setId;
+                row.classList.toggle('is-selected', active);
+                row.setAttribute('aria-current', active ? 'true' : 'false');
+            });
+            var selectedRow = rows.find(function (row) { return row.dataset.rowId === setId; });
+            var url = new URL(selectedRow.dataset.url, window.location.origin);
+            document.querySelector('.sn-refresh').href = url.href;
+            history.replaceState({ snSetId: setId }, '', url);
+            loadStatus.hidden = true;
+            panelBody.removeAttribute('aria-busy');
+            panelBody.inert = false;
+        }).catch(function (error) {
+            if (error.name === 'AbortError') return;
+            panelBody.removeAttribute('aria-busy');
+            panelBody.inert = false;
+            loadStatus.textContent = 'Could not load this set. Select it again to retry.';
+        });
+    }
+    rowsHost.addEventListener('click', function (event) {
+        var row = event.target.closest('.sn-row');
+        if (!row) return;
+        if (mobile.matches) {
+            var button = event.target.closest('.sn-open');
+            if (!button) return;
+            openPanel(button);
+        }
+        loadPanel(row.dataset.rowId);
+    });
+    rowsHost.addEventListener('keydown', function (event) {
+        if (mobile.matches || event.target.closest('button')) return;
+        var row = event.target.closest('.sn-row');
+        if (row && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            loadPanel(row.dataset.rowId);
+        }
+    });
+    document.getElementById('snBack').onclick = closePanel;
+            window.snInitPanel = function () {
+                var detail = document.querySelector('.sn-detail');
+                if (!detail || detail.dataset.initialized) return;
+                detail.dataset.initialized = 'true';
+
+                var setId = detail.getAttribute('data-set-id');
+                var notesBox = detail.querySelector('#snNotes');
+                var statusEl = detail.querySelector('#snStatusMessage');
+                var sendingEl = detail.querySelector('#snSendingIndicator');
+                var sendBtn = detail.querySelector('#snSendBtn');
+                var previewBtn = detail.querySelector('#snPreviewBtn');
+                var saveBtn = detail.querySelector('#snSaveReceiverBtn');
+                var token = document.querySelector('input[name="__RequestVerificationToken"]');
+                var tokenValue = token ? token.value : '';
+
+                function setStatus(message, success) {
+                    if (!statusEl) return;
+                    statusEl.textContent = message || '';
+                    statusEl.style.color = success ? '#1E9E5E' : '#C0392B';
+                    statusEl.style.display = message ? '' : 'none';
+                }
+
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', function () {
+                        var select = detail.querySelector('#snReceiverSelect');
+                        var empId = select ? select.value : '0';
+                        var body = new URLSearchParams();
+                        body.set('setId', setId);
+                        body.set('empId', empId);
+                        body.set('__RequestVerificationToken', tokenValue);
+
+                        saveBtn.disabled = true;
+                        fetch('@Url.Action("SaveReceiver", "SendNotifications")', { method: 'POST', body: body })
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                saveBtn.disabled = false;
+                                if (data.success) {
+                                    var disp = detail.querySelector('#snReceivedByDisplay');
+                                    if (disp) { disp.textContent = data.receivedByName; disp.classList.remove('sn-not-set'); }
+                                    setStatus('Receiver saved.', true);
+                                    var row = document.querySelector('[data-row-id="' + setId + '"]');
+                                    if (row) row.dataset.receiver = data.receivedByName || '';
+                                } else {
+                                    setStatus(data.message || 'Could not save receiver.', false);
+                                }
+                            })
+                            .catch(function () { saveBtn.disabled = false; setStatus('Could not save receiver.', false); });
+                    });
+                }
+
+                if (previewBtn) {
+                    previewBtn.addEventListener('click', function () {
+                        var notes = encodeURIComponent(notesBox ? notesBox.value : '');
+                        window.open('@Url.Action("Preview", "SendNotifications")?setId=' + setId + '&notes=' + notes, '_blank', 'noopener');
+                    });
+                }
+
+                if (sendBtn) {
+                    sendBtn.addEventListener('click', function () {
+                        var body = new URLSearchParams();
+                        body.set('setId', setId);
+                        body.set('notes', notesBox ? notesBox.value : '');
+                        body.set('__RequestVerificationToken', tokenValue);
+
+                        sendBtn.disabled = true;
+                        if (sendingEl) sendingEl.hidden = false;
+                        setStatus('', true);
+
+                        fetch('@Url.Action("Send", "SendNotifications")', { method: 'POST', body: body })
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                sendBtn.disabled = false;
+                                if (sendingEl) sendingEl.hidden = true;
+                                setStatus(data.message, data.success);
+                            })
+                            .catch(function () {
+                                sendBtn.disabled = false;
+                                if (sendingEl) sendingEl.hidden = true;
+                                setStatus('Send failed.', false);
+                            });
+                    });
+                }
+            };
+
+
+    window.snInitPanel();
+})();
+</script>
+}

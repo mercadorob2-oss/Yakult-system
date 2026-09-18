@@ -1,0 +1,13 @@
+#Sat Aug 08 08:34:36 PST 2026
+base.0=C\:\\Users\\russel.mercado\\source\\repos\\Yakult-System-for-Merging\\Latest_sys\\YakultScanner\\app\\build\\intermediates\\dex\\devDebugAndroidTest\\mergeExtDexDevDebugAndroidTest\\classes.dex
+base.1=C\:\\Users\\russel.mercado\\source\\repos\\Yakult-System-for-Merging\\Latest_sys\\YakultScanner\\app\\build\\intermediates\\dex\\devDebugAndroidTest\\mergeProjectDexDevDebugAndroidTest\\0\\classes.dex
+base.2=C\:\\Users\\russel.mercado\\source\\repos\\Yakult-System-for-Merging\\Latest_sys\\YakultScanner\\app\\build\\intermediates\\dex\\devDebugAndroidTest\\mergeProjectDexDevDebugAndroidTest\\15\\classes.dex
+base.3=C\:\\Users\\russel.mercado\\source\\repos\\Yakult-System-for-Merging\\Latest_sys\\YakultScanner\\app\\build\\intermediates\\dex\\devDebugAndroidTest\\mergeProjectDexDevDebugAndroidTest\\6\\classes.dex
+path.0=classes.dex
+path.1=0/classes.dex
+path.2=15/classes.dex
+path.3=6/classes.dex
+renamed.0=classes.dex
+renamed.1=classes2.dex
+renamed.2=classes3.dex
+renamed.3=classes4.dex

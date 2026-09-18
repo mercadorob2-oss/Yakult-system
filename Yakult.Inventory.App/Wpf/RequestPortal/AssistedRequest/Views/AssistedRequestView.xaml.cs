@@ -30,6 +30,17 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.AssistedRequest.Views
             ViewModel   = vm;
             DataContext = vm;
             Loaded     += async (s, e) => await vm.LoadDataAsync();
+
+            // The validation error banner lives at the very top of the scrollable form
+            // (above every section), but SubmitAsync() can fail validation while the user is
+            // scrolled down filling in a later section (e.g. Destination & Fulfillment). Without
+            // this, the banner appears off-screen and submitting looks like it silently did
+            // nothing. Scroll back to top whenever a validation error is (re)shown.
+            vm.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(AssistedRequestViewModel.HasValidationError) && vm.HasValidationError)
+                    tourScrollViewer.ScrollToTop();
+            };
         }
 
         public AssistedRequestView() : this(new AssistedRequestViewModel()) { }
@@ -46,6 +57,7 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.AssistedRequest.Views
             if (_suppressDropDown) return;
             if (sender is ComboBox cb && DataContext is AssistedRequestViewModel vm)
             {
+                if (TextMatchesSelectedItem(cb)) return;
                 vm.EmployeeSearchText = cb.Text;
                 SetDropDownOpenPreservingCaret(cb, !string.IsNullOrEmpty(cb.Text));
             }
@@ -56,6 +68,7 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.AssistedRequest.Views
             if (_suppressDropDown) return;
             if (sender is ComboBox cb && DataContext is AssistedRequestViewModel vm)
             {
+                if (TextMatchesSelectedItem(cb)) return;
                 vm.ReceivedBySearchText = cb.Text;
                 SetDropDownOpenPreservingCaret(cb, !string.IsNullOrEmpty(cb.Text));
             }
@@ -66,9 +79,27 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.AssistedRequest.Views
             if (_suppressDropDown) return;
             if (sender is ComboBox cb && DataContext is AssistedRequestViewModel vm)
             {
+                if (TextMatchesSelectedItem(cb)) return;
                 vm.ApproverSearchText = cb.Text;
                 SetDropDownOpenPreservingCaret(cb, !string.IsNullOrEmpty(cb.Text));
             }
+        }
+
+        // Clicking an item in the drop-down sets ComboBox.SelectedItem, which (because these
+        // ComboBoxes are IsEditable) also assigns ComboBox.Text to its DisplayName — and THAT
+        // assignment raises the very same TextChanged event this method guards. If the handler
+        // went on to re-run the ViewModel's search-text setter, it would call Refresh() on the
+        // filtered ICollectionView, which raises a Reset notification; WPF's Selector clears
+        // SelectedItem on any Reset. Net effect without this guard: clicking a suggestion
+        // immediately un-selects itself, so SelectedEmployee/SelectedReceivedBy/SelectedApprover
+        // silently stays null even though the ComboBox visibly shows the picked name — which is
+        // exactly what let requests submit (or, worse, get silently blocked) with no receiver
+        // recorded. Skip the refresh when the text already matches the just-selected item.
+        private static bool TextMatchesSelectedItem(ComboBox cb)
+        {
+            if (cb.SelectedItem == null) return false;
+            string displayName = cb.SelectedItem.GetType().GetProperty("DisplayName")?.GetValue(cb.SelectedItem) as string;
+            return displayName != null && displayName == cb.Text;
         }
 
         // Opening/closing the drop-down re-templates the ComboBox's internal editable

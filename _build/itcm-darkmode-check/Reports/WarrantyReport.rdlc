@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WarrantyReport.rdlc
+  ══════════════════════════════════════════════════════════════════════
+  Hierarchy:   Year  →  Month  →  Detail
+  Date anchor: WarrantyEndDate  (so records appear under the year/month
+               in which their warranty expires — most actionable view).
+  Source view: vw_Report_Warranty
+  ══════════════════════════════════════════════════════════════════════
+-->
+<Report MustUnderstand="df"
+        xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition"
+        xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner"
+        xmlns:df="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition/defaultfontfamily">
+  <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
+  <AutoRefresh>0</AutoRefresh>
+
+  <DataSources>
+    <DataSource Name="DataSource1">
+      <rd:SecurityType>DataBase</rd:SecurityType>
+      <ConnectionProperties>
+        <DataProvider>SQL</DataProvider>
+        <ConnectString>Data Source=192.168.12.9,1433;Initial Catalog=YIMS;Encrypt=False;TrustServerCertificate=True</ConnectString>
+        <Prompt>Specify a user name and password for data source DataSource1:</Prompt>
+      </ConnectionProperties>
+    </DataSource>
+  </DataSources>
+
+  <DataSets>
+    <DataSet Name="WarrantyData">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <CommandText>
+SELECT
+  [Year], MonthNumber, MonthName,
+  ItemId, ItemName, ItemType,
+  SerialNumber, ModelNumber, VendorName,
+  SetCode,
+  WarrantyStartDate, WarrantyEndDate, WarrantyYears,
+  DaysRemaining, WarrantyStatus
+FROM dbo.vw_Report_Warranty
+ORDER BY [Year] ASC, MonthNumber ASC, WarrantyEndDate ASC
+        </CommandText>
+      </Query>
+      <Fields>
+        <Field Name="Year">             <DataField>Year</DataField>             <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="MonthNumber">      <DataField>MonthNumber</DataField>      <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="MonthName">        <DataField>MonthName</DataField>        <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="ItemId">           <DataField>ItemId</DataField>           <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="ItemName">         <DataField>ItemName</DataField>         <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="ItemType">         <DataField>ItemType</DataField>         <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="SerialNumber">     <DataField>SerialNumber</DataField>     <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="ModelNumber">      <DataField>ModelNumber</DataField>      <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="VendorName">       <DataField>VendorName</DataField>       <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="SetCode">          <DataField>SetCode</DataField>          <rd:TypeName>System.String</rd:TypeName>   </Field>
+        <Field Name="WarrantyStartDate"><DataField>WarrantyStartDate</DataField><rd:TypeName>System.DateTime</rd:TypeName> </Field>
+        <Field Name="WarrantyEndDate">  <DataField>WarrantyEndDate</DataField>  <rd:TypeName>System.DateTime</rd:TypeName> </Field>
+        <Field Name="WarrantyYears">    <DataField>WarrantyYears</DataField>    <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="DaysRemaining">    <DataField>DaysRemaining</DataField>    <rd:TypeName>System.Int32</rd:TypeName>    </Field>
+        <Field Name="WarrantyStatus">   <DataField>WarrantyStatus</DataField>   <rd:TypeName>System.String</rd:TypeName>   </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+
+          <Textbox Name="ReportTitle">
+            <CanGrow>true</CanGrow>
+            <Paragraphs><Paragraph><TextRuns><TextRun>
+              <Value>Warranty Report</Value>
+              <Style><FontFamily>Segoe UI</FontFamily><FontSize>14pt</FontSize><FontWeight>Bold</FontWeight></Style>
+            </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+            <Top>0mm</Top><Left>0mm</Left><Height>8mm</Height><Width>320mm</Width>
+            <Style><Border><Style>None</Style></Border><PaddingBottom>2pt</PaddingBottom></Style>
+          </Textbox>
+
+          <Tablix Name="Tablix1">
+            <TablixBody>
+              <!--
+                Column widths (9 cols, total ~310 mm)
+                Col 0: Item Name       65mm
+                Col 1: Type            28mm
+                Col 2: Serial #        38mm
+                Col 3: Model #         38mm
+                Col 4: Set Code        28mm
+                Col 5: Warranty Start  26mm
+                Col 6: Warranty End    26mm
+                Col 7: Days Remaining  25mm
+                Col 8: Status          30mm
+                                      ────
+                                      304mm
+              -->
+              <TablixColumns>
+                <TablixColumn><Width>65mm</Width></TablixColumn>
+                <TablixColumn><Width>28mm</Width></TablixColumn>
+                <TablixColumn><Width>38mm</Width></TablixColumn>
+                <TablixColumn><Width>38mm</Width></TablixColumn>
+                <TablixColumn><Width>28mm</Width></TablixColumn>
+                <TablixColumn><Width>26mm</Width></TablixColumn>
+                <TablixColumn><Width>26mm</Width></TablixColumn>
+                <TablixColumn><Width>25mm</Width></TablixColumn>
+                <TablixColumn><Width>30mm</Width></TablixColumn>
+              </TablixColumns>
+
+              <TablixRows>
+
+                <!-- ROW 0: Year Banner -->
+                <TablixRow>
+                  <Height>6mm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="YearBanner">
+                          <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                          <Paragraphs><Paragraph><TextRuns><TextRun>
+                            <Value>="Year: " &amp; Fields!Year.Value</Value>
+                            <Style><FontFamily>Segoe UI</FontFamily><FontSize>10pt</FontSize><FontWeight>Bold</FontWeight><Color>White</Color></Style>
+                          </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                          <Style>
+                            <Border><Color>#AAAAAA</Color><Style>Solid</Style></Border>
+                            <BackgroundColor>CornflowerBlue</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>4pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>9</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 1: Column Headers -->
+                <TablixRow>
+                  <Height>7mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="HdrItemName">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Item Name</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#CCCCCC</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="HdrType">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Type</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#CCCCCC</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="HdrSerial">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Serial #</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#CCCCCC</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="HdrModel">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Model #</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#CCCCCC</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="HdrSetCode">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Set Code</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#CCCCCC</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="HdrWStart">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Warranty Start</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#CCCCCC</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="HdrWEnd">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Warranty End</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#CCCCCC</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="HdrDays">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Days Left</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#CCCCCC</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="HdrStatus">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun><Value>Status</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#CCCCCC</Color><Style>Solid</Style></Border>
+                        <BackgroundColor>#E8EAED</BackgroundColor><VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 2: Month Banner -->
+                <TablixRow>
+                  <Height>6mm</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Textbox Name="MonthBanner">
+                          <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                          <Paragraphs><Paragraph><TextRuns><TextRun>
+                            <Value>=Fields!MonthName.Value</Value>
+                            <Style><FontFamily>Segoe UI</FontFamily><FontSize>9pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                          </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                          <Style>
+                            <Border><Color>#AAAAAA</Color><Style>Solid</Style></Border>
+                            <BackgroundColor>LightGreen</BackgroundColor>
+                            <VerticalAlign>Middle</VerticalAlign>
+                            <PaddingLeft>4pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                            <PaddingTop>2pt</PaddingTop><PaddingBottom>2pt</PaddingBottom>
+                          </Style>
+                        </Textbox>
+                        <ColSpan>9</ColSpan>
+                      </CellContents>
+                    </TablixCell>
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                    <TablixCell /><TablixCell /><TablixCell /><TablixCell />
+                  </TablixCells>
+                </TablixRow>
+
+                <!-- ROW 3: Detail Row -->
+                <TablixRow>
+                  <Height>6mm</Height>
+                  <TablixCells>
+                    <TablixCell><CellContents><Textbox Name="DtlItemName">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!ItemName.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><FontWeight>Bold</FontWeight></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#DDDDDD</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="DtlType">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!ItemType.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#DDDDDD</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="DtlSerial">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!SerialNumber.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#DDDDDD</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="DtlModel">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!ModelNumber.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#DDDDDD</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="DtlSetCode">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!SetCode.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#DDDDDD</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="DtlWStart">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(Fields!WarrantyStartDate.Value, "yyyy-MM-dd")</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#DDDDDD</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="DtlWEnd">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=FORMAT(Fields!WarrantyEndDate.Value, "yyyy-MM-dd")</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#DDDDDD</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="DtlDays">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=IIF(IsNothing(Fields!DaysRemaining.Value), "—", CStr(Fields!DaysRemaining.Value))</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#DDDDDD</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>4pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+
+                    <TablixCell><CellContents><Textbox Name="DtlStatus">
+                      <CanGrow>true</CanGrow><KeepTogether>true</KeepTogether>
+                      <Paragraphs><Paragraph><TextRuns><TextRun>
+                        <Value>=Fields!WarrantyStatus.Value</Value>
+                        <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize></Style>
+                      </TextRun></TextRuns><Style><TextAlign>Center</TextAlign></Style></Paragraph></Paragraphs>
+                      <Style><Border><Color>#DDDDDD</Color><Style>Solid</Style></Border>
+                        <VerticalAlign>Middle</VerticalAlign>
+                        <PaddingLeft>2pt</PaddingLeft><PaddingRight>2pt</PaddingRight>
+                        <PaddingTop>1pt</PaddingTop><PaddingBottom>1pt</PaddingBottom></Style>
+                    </Textbox></CellContents></TablixCell>
+                  </TablixCells>
+                </TablixRow>
+
+              </TablixRows>
+            </TablixBody>
+
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember /><TablixMember /><TablixMember /><TablixMember />
+                <TablixMember /><TablixMember /><TablixMember /><TablixMember />
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="YearGroup">
+                    <GroupExpressions>
+                      <GroupExpression>=Fields!Year.Value</GroupExpression>
+                    </GroupExpressions>
+                  </Group>
+                  <SortExpressions>
+                    <SortExpression><Value>=Fields!Year.Value</Value></SortExpression>
+                  </SortExpressions>
+                  <TablixMembers>
+                    <!-- Leaf 1 — Year banner row -->
+                    <TablixMember><KeepWithGroup>After</KeepWithGroup></TablixMember>
+                    <!-- Leaf 2 — Column-header row -->
+                    <TablixMember>
+                      <KeepWithGroup>After</KeepWithGroup>
+                    </TablixMember>
+                    <TablixMember>
+                      <Group Name="MonthGroup">
+                        <GroupExpressions>
+                          <GroupExpression>=Fields!MonthNumber.Value</GroupExpression>
+                        </GroupExpressions>
+                      </Group>
+                      <SortExpressions>
+                        <SortExpression><Value>=Fields!MonthNumber.Value</Value></SortExpression>
+                      </SortExpressions>
+                      <TablixMembers>
+                        <!-- Leaf 3 — Month banner row -->
+                        <TablixMember><KeepWithGroup>After</KeepWithGroup></TablixMember>
+                        <!-- Leaf 4 — Detail rows -->
+                        <TablixMember><Group Name="Details" /></TablixMember>
+                      </TablixMembers>
+                    </TablixMember>
+                  </TablixMembers>
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+
+            <DataSetName>WarrantyData</DataSetName>
+            <Top>10mm</Top><Left>0mm</Left>
+            <Height>31mm</Height><Width>304mm</Width>
+            <Style><Border><Style>None</Style></Border></Style>
+          </Tablix>
+
+        </ReportItems>
+        <Height>50mm</Height>
+        <Style><Border><Style>None</Style></Border></Style>
+      </Body>
+
+      <Width>34cm</Width>
+      <Page>
+        <PageFooter>
+          <Height>8mm</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <ReportItems>
+            <Textbox Name="PageNumber">
+              <CanGrow>true</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>=Globals!PageNumber &amp; " of " &amp; Globals!TotalPages</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>Gray</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Right</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>1mm</Top><Left>240mm</Left><Height>5mm</Height><Width>60mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+            <Textbox Name="ReportFooter">
+              <CanGrow>true</CanGrow>
+              <Paragraphs><Paragraph><TextRuns><TextRun>
+                <Value>="Warranty Report  |  Generated: " &amp; FORMAT(Globals!ExecutionTime, "yyyy-MM-dd HH:mm")</Value>
+                <Style><FontFamily>Segoe UI</FontFamily><FontSize>8pt</FontSize><Color>Gray</Color></Style>
+              </TextRun></TextRuns><Style><TextAlign>Left</TextAlign></Style></Paragraph></Paragraphs>
+              <Top>1mm</Top><Left>0mm</Left><Height>5mm</Height><Width>200mm</Width>
+              <Style><Border><Style>None</Style></Border></Style>
+            </Textbox>
+          </ReportItems>
+          <Style><Border><Style>None</Style></Border></Style>
+        </PageFooter>
+        <PageHeight>21cm</PageHeight>
+        <PageWidth>36cm</PageWidth>
+        <LeftMargin>1cm</LeftMargin><RightMargin>1cm</RightMargin>
+        <TopMargin>1cm</TopMargin><BottomMargin>1cm</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+</Report>

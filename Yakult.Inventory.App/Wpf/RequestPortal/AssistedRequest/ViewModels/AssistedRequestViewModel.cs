@@ -851,6 +851,16 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.AssistedRequest.ViewModels
                 return;
             }
 
+            // Mirrors NewRequestViewModel.SubmitAsync's guard — without this, a PICKUP request
+            // whose "Received By" ComboBox was typed into but never actually clicked/committed
+            // (SelectedReceivedBy stays null) silently saves with ReceivedById = NULL instead of
+            // blocking submission.
+            if (IsPickup && _selectedReceivedBy == null)
+            {
+                ValidationError = "Please select who will receive the cartridges (Received By).";
+                return;
+            }
+
             int destCompanyId    = _selectedCompany?.ComId    ?? _selectedEmployee?.ComId    ?? 0;
             int destBranchId     = _selectedBranch?.BranchId  ?? _selectedEmployee?.BranchId ?? 0;
             int destDepartmentId = _selectedDepartment?.DeptId ?? _selectedEmployee?.DeptId   ?? 0;

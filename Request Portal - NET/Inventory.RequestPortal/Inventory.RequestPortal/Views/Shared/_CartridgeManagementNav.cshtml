@@ -5,6 +5,7 @@
     bool inMasterData  = currentController.Equals("CartridgeMasterData", StringComparison.OrdinalIgnoreCase);
     bool inFulfillment = currentController.Equals("CartridgeExchange", StringComparison.OrdinalIgnoreCase)
                       || currentController.Equals("CartridgeFulfillment", StringComparison.OrdinalIgnoreCase);
+    bool inSendNotifications = currentController.Equals("SendNotifications", StringComparison.OrdinalIgnoreCase);
 
     string SubLinkClass(string controller, string action)
         => currentController.Equals(controller, StringComparison.OrdinalIgnoreCase) && currentAction.Equals(action, StringComparison.OrdinalIgnoreCase)
@@ -31,9 +32,10 @@
     .cmenu-header { background:#fff; color:var(--yakult-red); border-bottom:3px solid var(--yakult-red); padding:0 1rem; height:var(--header-height); overflow:hidden; box-sizing:border-box; font-weight:700; font-size:.85rem; letter-spacing:.04em; text-transform:uppercase; }
     .cmenu-header .btn-close { font-size:.8rem; }
 
-    .cmenu-link { display:block; padding:.75rem 1rem; text-decoration:none; color:var(--text-strong); border-bottom:1px solid var(--border-muted); font-size:.92rem; background:#fff; }
+    .cmenu-link { display:block; padding:.75rem 1rem; text-decoration:none; color:var(--text-strong); border-bottom:1px solid var(--border-muted); border-left:4px solid transparent; font-size:.92rem; background:#fff; }
     .cmenu-link:hover { background:var(--yakult-blue-light); }
     .cmenu-link.disabled { color:#aab0b8; pointer-events:none; background:#fff; }
+    .cmenu-link.active { color:var(--yakult-blue-hover); font-weight:700; border-left-color:var(--yakult-blue); background:var(--yakult-blue-light); }
 
     .cmenu-group { border-bottom:1px solid var(--border-muted); }
 
@@ -65,7 +67,7 @@
     </div>
     <div class="offcanvas-body p-0 d-flex flex-column">
 
-        <span class="cmenu-link disabled" title="Not yet available in the web portal">Send Notifications</span>
+        <a class="cmenu-link @(inSendNotifications ? "active" : "")" asp-controller="SendNotifications" asp-action="Index">Send Notifications</a>
 
         <div class="cmenu-group">
             <button class="@GroupHeaderClass(inMasterData) @(inMasterData ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#grpMasterData">

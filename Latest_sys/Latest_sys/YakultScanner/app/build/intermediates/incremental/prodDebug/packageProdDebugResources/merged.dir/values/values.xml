@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="com_google_android_gms_fonts_certs">
+        <item>MIIEQzCCAyugAwIBAgIJAMLgh0ZkSjCNMA0GCSqGSIb3DQEBBAUAMHQxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtHb29nbGUgSW5jLjEQMA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMHQW5kcm9pZDAeFw0wODA0MTUyMzM2NTZaFw0zNTA5MDIyMzM2NTZaMHQxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtHb29nbGUgSW5jLjEQMA4GA1UECxMHQW5kcm9pZDEQMA4GA1UEAxMHQW5kcm9pZDCCASAwDQYJKoZIhvcNAQEBBQADggENADCCAQgCggEBAKyNjO+VRc11GexH6i9M41X+lE2D0uKiojA6m2+fI0h0U16+Fh/OOS1+k68tB3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3D7h3B+K49+O/d3q3</item>
+    </string-array>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <string name="add_photo_button">Add Photo</string>
+    <string name="amount_label">Amount</string>
+    <string name="app_name">YakultScanner</string>
+    <string name="attach_photo_title">Attach Photo to Set</string>
+    <string name="back">Back</string>
+    <string name="batch_entry_subtitle">Add multiple items at once</string>
+    <string name="batch_entry_title">Batch Entry</string>
+    <string name="branch_label">Branch:</string>
+    <string name="cancel">Cancel</string>
+    <string name="category_label">Category *</string>
+    <string name="condition_label">Condition *</string>
+    <string name="created_by_label">Created By:</string>
+    <string name="created_label">Created:</string>
+    <string name="date_purchased_label">Date Purchased</string>
+    <string name="department_label">Department:</string>
+    <string name="description_label">Description</string>
+    <string name="dispatch_details_title">Dispatch Details</string>
+    <string name="employee_label">Employee:</string>
+    <string name="end_date_label">End Date</string>
+    <string name="enter_serial_placeholder">Enter serial number</string>
+    <string name="handler_sig_label">Handler\'s Signature</string>
+    <string name="image_upload_failed">Failed to upload image</string>
+    <string name="image_upload_success">Image uploaded successfully!</string>
+    <string name="item_details_header">Item Details</string>
+    <string name="item_name_label">Item name *</string>
+    <string name="items_header_count">ITEMS IN THIS SET (%1$d)</string>
+    <string name="legend_repair">Legend: R = item has repair history</string>
+    <string name="mobile_user_label">Mobile User:</string>
+    <string name="model_number_label">Model number *</string>
+    <string name="ok">OK</string>
+    <string name="pending_edits_label">Updated by mobile (not uploaded yet)</string>
+    <string name="purchase_details_header">Purchase Details</string>
+    <string name="ready_to_add_serials">Ready to add serials...</string>
+    <string name="released_label">Released:</string>
+    <string name="remarks_label">Remarks</string>
+    <string name="report_issue_button">Report Issue / Update Status</string>
+    <string name="report_issue_swipe_card_hint">Swipe left to report an issue</string>
+    <string name="report_issue_swipe_hint">Swipe left on an item to report an issue or update its status.</string>
+    <string name="requester_sig_label">Requester / Employee signature</string>
+    <string name="save_items_button_text">Save Items (%1$d)</string>
+    <string name="save_to_system">SAVE TO SYSTEM</string>
+    <string name="scan_document_button">Scan Document(s)</string>
+    <string name="select_image_source_title">Select Image Source</string>
+    <string name="select_option">Select option</string>
+    <string name="select_photo_button">Select Photo from Gallery</string>
+    <string name="serial_numbers_header">Serial Numbers *</string>
+    <string name="set_code_label">Set Code:</string>
+    <string name="set_info_header">SET INFORMATION</string>
+    <string name="start_date_label">Start Date</string>
+    <string name="take_picture_button">Take Picture</string>
+    <string name="type_label">Type *</string>
+    <string name="unit_label">Unit</string>
+    <string name="upload_image_button">Upload Image</string>
+    <string name="upload_photo_hint">Upload photos to attach to this set\'s documentation</string>
+    <string name="vendor_label">Vendor</string>
+    <string name="warranty_label">Warranty (Years)</string>
+    <style name="Theme.YakultScanner" parent="Theme.Material3.DayNight.NoActionBar">
+        
+    </style>
+</resources>

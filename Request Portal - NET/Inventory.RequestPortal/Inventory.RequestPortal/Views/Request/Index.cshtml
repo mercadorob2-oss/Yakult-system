@@ -428,44 +428,42 @@
                 </label>
                 <div class="col-sm-12 col-md-9">
                     @* Org filters *@
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted fw-semibold" style="font-size:.85rem;">Filter by:</small>
+                        <button type="button" id="rbFilterClear" class="btn btn-outline-secondary btn-sm" title="Clear filters"
+                                style="width:26px; height:26px; padding:0; line-height:1;">×</button>
+                    </div>
                     <div id="rbFilterRow" class="row g-2 mb-2">
                         <div class="col-12 col-sm">
                             <small class="text-muted fw-semibold d-block mb-1" style="text-transform:uppercase; letter-spacing:.4px;">Company</small>
-                            <select id="rbFilterCompany" class="form-select form-select-sm">
-                                <option value="">All Companies</option>
-                                @foreach (var c in Model.Employees.Select(e => new { e.ComId, e.CompanyName }).Where(x => x.ComId > 0 && !string.IsNullOrEmpty(x.CompanyName)).DistinctBy(x => x.ComId).OrderBy(x => x.CompanyName))
-                                {
-                                    <option value="@c.ComId">@c.CompanyName</option>
-                                }
-                            </select>
+                            <div class="position-relative">
+                                <input type="text" id="rbFilterCompany" class="form-control form-control-sm pe-4"
+                                       placeholder="All Companies" autocomplete="off" />
+                                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
+                                <input type="hidden" id="rbFilterCompanyHidden" />
+                            </div>
                         </div>
                         <div class="col-12 col-sm">
                             <small class="text-muted fw-semibold d-block mb-1" style="text-transform:uppercase; letter-spacing:.4px;">Branch</small>
-                            <select id="rbFilterBranch" class="form-select form-select-sm">
-                                <option value="">All Branches</option>
-                                @foreach (var b in Model.Employees.Select(e => new { e.BranchId, e.BranchName }).Where(x => x.BranchId > 0 && !string.IsNullOrEmpty(x.BranchName)).DistinctBy(x => x.BranchId).OrderBy(x => x.BranchName))
-                                {
-                                    <option value="@b.BranchId">@b.BranchName</option>
-                                }
-                            </select>
+                            <div class="position-relative">
+                                <input type="text" id="rbFilterBranch" class="form-control form-control-sm pe-4"
+                                       placeholder="All Branches" autocomplete="off" />
+                                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
+                                <input type="hidden" id="rbFilterBranchHidden" />
+                            </div>
                         </div>
                         <div class="col-12 col-sm">
                             <small class="text-muted fw-semibold d-block mb-1" style="text-transform:uppercase; letter-spacing:.4px;">Department</small>
-                            <select id="rbFilterDept" class="form-select form-select-sm">
-                                <option value="">All Departments</option>
-                                @foreach (var d in Model.Employees.Select(e => new { e.DeptId, e.DepartmentName }).Where(x => x.DeptId > 0 && !string.IsNullOrEmpty(x.DepartmentName)).DistinctBy(x => x.DeptId).OrderBy(x => x.DepartmentName))
-                                {
-                                    <option value="@d.DeptId">@d.DepartmentName</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-auto d-flex flex-column">
-                            <small class="d-block mb-1" style="visibility:hidden;">x</small>
-                            <button type="button" id="rbFilterClear" class="btn btn-outline-secondary flex-fill" title="Clear filters"
-                                    style="width:38px; padding:0; line-height:1;">×</button>
+                            <div class="position-relative">
+                                <input type="text" id="rbFilterDept" class="form-control form-control-sm pe-4"
+                                       placeholder="All Departments" autocomplete="off" />
+                                <span style="position:absolute; right:8px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d; font-size:.75rem;">&#9660;</span>
+                                <input type="hidden" id="rbFilterDeptHidden" />
+                            </div>
                         </div>
                     </div>
                     @* Name search *@
+                    <small class="text-muted fw-semibold d-block mb-1" style="text-transform:uppercase; letter-spacing:.4px;">Employee</small>
                     <div class="position-relative" id="receivedByWrapper">
                         <input type="text" id="receivedByInput" class="form-control"
                                placeholder="Search by name (type any part)…" autocomplete="off" />
@@ -522,6 +520,11 @@
 </div>
 
 @section Scripts {
+@* Wrapped in #pageScripts so the AJAX tab-switcher in site.js can locate, re-inject, and
+   re-execute this page's scripts/styles when it fetches this view over AJAX — everything in
+   this Razor section renders at the very end of <body> (see _Layout.cshtml), well outside
+   .content-padded, so it needs its own marker to be found and swapped independently. *@
+<div id="pageScripts" style="display:none">
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     @if (ViewBag.IsApprover == true)
     {
@@ -558,13 +561,20 @@
     </style>
 
     <script>
+    // Wrapped in an IIFE (instead of a document.addEventListener('DOMContentLoaded', ...)
+    // handler) so this script works both on a normal full page load AND when re-injected
+    // by the AJAX tab-switcher in site.js — DOMContentLoaded only ever fires once per
+    // document, so a handler added after that would simply never run on a re-injected
+    // script. The IIFE also keeps `const`/`let` declarations scoped locally instead of at
+    // script-global scope, so re-running this block on a later tab visit doesn't throw
+    // "Identifier has already been declared".
+    (function () {
         // Existing items, re-hydrated into the Requested Items list when the page is
         // redisplayed after a validation error (server-side ModelState round-trip).
         const initialRequestItems = @Html.Raw(Json.Serialize((Model.RequestItems ?? new List<Inventory.RequestPortal.Models.ViewModels.CartridgeRequestItemViewModel>())
             .Where(x => x != null && !string.IsNullOrWhiteSpace(x.CartridgeModel))
             .Select(x => new { category = x.Category, modelKey = x.ModelKey, cartridgeModel = x.CartridgeModel, quantity = x.Quantity, good = x.GoodEmptyQty, damaged = x.DamagedEmptyQty })));
 
-        document.addEventListener('DOMContentLoaded', function () {
             // ── Received By searchable combobox (PICKUP only) ────────────────────────
             const receivedByRow   = document.getElementById('receivedByRow');
             const receivedByInput = document.getElementById('receivedByInput');
@@ -599,18 +609,171 @@
                 }
             ];
 
-            const rbFilterCompanyEl = document.getElementById('rbFilterCompany');
-            const rbFilterBranchEl  = document.getElementById('rbFilterBranch');
-            const rbFilterDeptEl    = document.getElementById('rbFilterDept');
-            const rbFilterClearBtn  = document.getElementById('rbFilterClear');
+            const allCompanies = [
+                @foreach (var c in Model.Companies)
+                {
+                    @:{ id: @c.ComId, name: '@Html.Raw(c.Name.Replace("\\", "\\\\").Replace("'", "\\'"))' },
+                }
+            ];
+
+            const allBranches = [
+                @foreach (var b in Model.Branches)
+                {
+                    @:{ id: @b.BranchId, name: '@Html.Raw(b.Name.Replace("\\", "\\\\").Replace("'", "\\'"))', comId: @b.ComId },
+                }
+            ];
+
+            const allDepts = [
+                @foreach (var d in Model.Departments)
+                {
+                    @:{ id: @d.DeptId, name: '@Html.Raw(d.Name.Replace("\\", "\\\\").Replace("'", "\\'"))', comId: @d.ComId },
+                }
+            ];
+
+            // Generic searchable text-input + JS-rendered dropdown, replacing what used to be a
+            // native <select> for Company/Branch/Department — a native select's popup can't be
+            // styled or height-capped, so on narrow/short viewports its option list can overflow
+            // past the visible screen. This renders its own height-capped, positioned list instead.
+            function createFilterPicker(inputEl, hiddenEl, getItems, onPick) {
+                const dropdown = document.createElement('ul');
+                dropdown.className = 'list-unstyled mb-0 border rounded bg-white shadow-sm';
+                dropdown.style.cssText = 'position:fixed; z-index:9999; max-height:200px; overflow-y:auto; display:none; padding:0; margin:0;';
+                document.body.appendChild(dropdown);
+
+                function position() {
+                    const rect = inputEl.getBoundingClientRect();
+                    dropdown.style.top   = rect.bottom + 'px';
+                    dropdown.style.left  = rect.left   + 'px';
+                    dropdown.style.width = rect.width  + 'px';
+                }
+
+                function pick(item) {
+                    inputEl.value  = item ? item.name : '';
+                    hiddenEl.value = item ? item.id   : '';
+                    dropdown.style.display = 'none';
+                    onPick(item);
+                }
+
+                function render(items) {
+                    dropdown.innerHTML = '';
+                    if (hiddenEl.value || inputEl.value.trim()) {
+                        const clearLi = document.createElement('li');
+                        clearLi.textContent = '— Clear filter —';
+                        clearLi.style.cssText = 'padding:7px 12px; cursor:pointer; font-size:0.85rem; color:#6c757d; font-style:italic; border-bottom:1px solid #eee;';
+                        clearLi.addEventListener('mousedown', function(e) { e.preventDefault(); pick(null); });
+                        clearLi.addEventListener('mouseenter', function() { clearLi.style.background = '#f8f9fa'; });
+                        clearLi.addEventListener('mouseleave', function() { clearLi.style.background = ''; });
+                        dropdown.appendChild(clearLi);
+                    }
+                    items.slice(0, 60).forEach(function(item) {
+                        const li = document.createElement('li');
+                        li.textContent = item.name;
+                        li.style.cssText = 'padding:8px 12px; cursor:pointer; font-size:0.88rem;';
+                        li.addEventListener('mousedown', function(e) { e.preventDefault(); pick(item); });
+                        li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
+                        li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                        dropdown.appendChild(li);
+                    });
+                    if (dropdown.children.length > 0) { position(); dropdown.style.display = 'block'; }
+                    else { dropdown.style.display = 'none'; }
+                }
+
+                inputEl.addEventListener('input', function() {
+                    hiddenEl.value = '';
+                    const q = this.value.trim().toLowerCase();
+                    const matches = q ? getItems().filter(i => i.name.toLowerCase().includes(q)) : getItems();
+                    render(matches);
+                });
+
+                inputEl.addEventListener('focus', function() {
+                    const q = this.value.trim().toLowerCase();
+                    const matches = q ? getItems().filter(i => i.name.toLowerCase().includes(q)) : getItems();
+                    render(matches);
+                });
+
+                inputEl.addEventListener('blur', function() {
+                    setTimeout(function() { dropdown.style.display = 'none'; }, 150);
+                    if (!hiddenEl.value) {
+                        const q = inputEl.value.trim().toLowerCase();
+                        if (!q) { onPick(null); return; }
+                        const exact = getItems().find(i => i.name.toLowerCase() === q);
+                        if (exact) { hiddenEl.value = exact.id; onPick(exact); }
+                        else { inputEl.value = ''; onPick(null); }
+                    }
+                });
+
+                inputEl.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') dropdown.style.display = 'none';
+                });
+
+                window.addEventListener('scroll', position, true);
+                window.addEventListener('resize', position);
+
+                return {
+                    clear: function() { pick(null); },
+                    getValue: function() { return parseInt(hiddenEl.value) || 0; },
+                    pickItem: function(item) { pick(item || null); }
+                };
+            }
+
             const rbSelectedChip    = document.getElementById('rbSelectedChip');
             const rbSelectedName    = document.getElementById('rbSelectedName');
 
+            // True while the 3 filter pickers are being populated FROM a directly-picked
+            // person — suppresses the normal "changing a filter clears the chosen person".
+            let rbAutofilling = false;
+            // Branch/Department start as the full lists (browsable on their own) and only
+            // narrow to the selected company's once one is picked — they don't require a
+            // company to be chosen first.
+            let rbCurrentBranches = allBranches;
+            let rbCurrentDepts    = allDepts;
+
+            const rbCompanyPicker = createFilterPicker(
+                document.getElementById('rbFilterCompany'),
+                document.getElementById('rbFilterCompanyHidden'),
+                () => allCompanies,
+                function(item) {
+                    rbCurrentBranches = item ? allBranches.filter(b => b.comId === item.id) : allBranches;
+                    rbCurrentDepts    = item ? allDepts.filter(d => d.comId === item.id)    : allDepts;
+                    rbBranchPicker.clear();
+                    rbDeptPicker.clear();
+                    if (!rbAutofilling) { clearRbSelection(); renderReceivedByDropdown(getFilteredEmployees()); }
+                }
+            );
+
+            const rbBranchPicker = createFilterPicker(
+                document.getElementById('rbFilterBranch'),
+                document.getElementById('rbFilterBranchHidden'),
+                () => rbCurrentBranches,
+                function() { if (!rbAutofilling) { clearRbSelection(); renderReceivedByDropdown(getFilteredEmployees()); } }
+            );
+
+            const rbDeptPicker = createFilterPicker(
+                document.getElementById('rbFilterDept'),
+                document.getElementById('rbFilterDeptHidden'),
+                () => rbCurrentDepts,
+                function() { if (!rbAutofilling) { clearRbSelection(); renderReceivedByDropdown(getFilteredEmployees()); } }
+            );
+
+            // Fill Company / Branch / Department from a directly-selected person so the
+            // filter row reflects who was picked (instead of staying on "All …").
+            function rbAutofillFilters(emp) {
+                if (!emp) return;
+                rbAutofilling = true;
+                try {
+                    rbCompanyPicker.pickItem(allCompanies.find(c => c.id === emp.comId));
+                    rbBranchPicker.pickItem(allBranches.find(b => b.id === emp.branchId));
+                    rbDeptPicker.pickItem(allDepts.find(d => d.id === emp.deptId));
+                } finally {
+                    rbAutofilling = false;
+                }
+            }
+
             function getActiveFilters() {
                 return {
-                    comId:    parseInt(rbFilterCompanyEl?.value) || 0,
-                    branchId: parseInt(rbFilterBranchEl?.value)  || 0,
-                    deptId:   parseInt(rbFilterDeptEl?.value)    || 0,
+                    comId:    rbCompanyPicker.getValue(),
+                    branchId: rbBranchPicker.getValue(),
+                    deptId:   rbDeptPicker.getValue(),
                     q:        receivedByInput ? receivedByInput.value.trim() : ''
                 };
             }
@@ -638,10 +801,14 @@
                 if (rbSelectedChip)   rbSelectedChip.style.display = '';
                 receivedByDropdown.style.display = 'none';
 
-                // Sync filter dropdowns to the selected employee's org (no .dispatchEvent — avoids clearing selection)
-                if (rbFilterCompanyEl) rbFilterCompanyEl.value = emp.comId || '';
-                if (rbFilterBranchEl)  rbFilterBranchEl.value  = emp.branchId || '';
-                if (rbFilterDeptEl)    rbFilterDeptEl.value    = emp.deptId || '';
+                // Sync the filter pickers to the selected employee's org (rbAutofilling
+                // suppresses their onPick, which would otherwise clear this selection).
+                rbAutofillFilters(emp);
+
+                // Setting .value programmatically fires no 'input' event, so without this the
+                // preview box below only picked up the name on blur (after an artificial 160ms
+                // delay) — update it immediately so the name shows as soon as it's picked.
+                syncReceivedByPreview();
             }
 
             function clearRbSelection() {
@@ -669,6 +836,10 @@
             }
 
             // Dismiss floating dropdown when clicking outside the filter controls
+            const rbFilterCompanyEl = document.getElementById('rbFilterCompany');
+            const rbFilterBranchEl  = document.getElementById('rbFilterBranch');
+            const rbFilterDeptEl    = document.getElementById('rbFilterDept');
+            const rbFilterClearBtn  = document.getElementById('rbFilterClear');
             document.addEventListener('mousedown', function(e) {
                 const insideFilter = (rbFilterCompanyEl && rbFilterCompanyEl.contains(e.target)) ||
                                      (rbFilterBranchEl  && rbFilterBranchEl.contains(e.target))  ||
@@ -679,20 +850,10 @@
                 if (!insideFilter) receivedByDropdown.style.display = 'none';
             });
 
-            [rbFilterCompanyEl, rbFilterBranchEl, rbFilterDeptEl].forEach(function(el) {
-                if (!el) return;
-                el.addEventListener('change', function() {
-                    clearRbSelection();
-                    setTimeout(function() { renderReceivedByDropdown(getFilteredEmployees()); }, 0);
-                });
-            });
-
             if (rbFilterClearBtn) {
                 rbFilterClearBtn.addEventListener('click', function() {
-                    if (rbFilterCompanyEl) rbFilterCompanyEl.value = '';
-                    if (rbFilterBranchEl)  rbFilterBranchEl.value  = '';
-                    if (rbFilterDeptEl)    rbFilterDeptEl.value    = '';
-                    if (receivedByInput)   receivedByInput.value   = '';
+                    rbCompanyPicker.clear();
+                    if (receivedByInput) receivedByInput.value = '';
                     clearRbSelection();
                     receivedByDropdown.style.display = 'none';
                 });
@@ -755,7 +916,7 @@
             }
             if (receivedByInput) {
                 receivedByInput.addEventListener('input', syncReceivedByPreview);
-                receivedByInput.addEventListener('blur',  function() { setTimeout(syncReceivedByPreview, 160); });
+                receivedByInput.addEventListener('blur',  syncReceivedByPreview);
             }
 
             if (methodPickup)   methodPickup.addEventListener('change',   updateDistributionPreview);
@@ -1042,14 +1203,14 @@
                 const goodDisplay = isCartridge ? good : '—';
                 const damagedDisplay = isCartridge ? damaged : '—';
                 row.innerHTML = `
-                    <td>${category}<input type="hidden" name="RequestItems[0].Category" value="${category}" /></td>
-                    <td>${modelNumber || '—'}
+                    <td data-label="Category">${category}<input type="hidden" name="RequestItems[0].Category" value="${category}" /></td>
+                    <td data-label="Model">${modelNumber || '—'}
                         <input type="hidden" name="RequestItems[0].CartridgeModel" value="${modelNumber}" />
                         <input type="hidden" name="RequestItems[0].ModelKey" value="${modelKey}" />
                     </td>
-                    <td>${qty}<input type="hidden" name="RequestItems[0].Quantity" value="${qty}" /></td>
-                    <td>${goodDisplay}<input type="hidden" name="RequestItems[0].GoodEmptyQty" value="${good}" /></td>
-                    <td>${damagedDisplay}<input type="hidden" name="RequestItems[0].DamagedEmptyQty" value="${damaged}" /></td>
+                    <td data-label="Qty">${qty}<input type="hidden" name="RequestItems[0].Quantity" value="${qty}" /></td>
+                    <td data-label="Good">${goodDisplay}<input type="hidden" name="RequestItems[0].GoodEmptyQty" value="${good}" /></td>
+                    <td data-label="Damaged">${damagedDisplay}<input type="hidden" name="RequestItems[0].DamagedEmptyQty" value="${damaged}" /></td>
                     <td><button type="button" class="btn btn-outline-danger btn-sm remove-row">Remove</button></td>`;
                 row.querySelector('.remove-row').addEventListener('click', function () {
                     row.remove();
@@ -1220,6 +1381,7 @@
                     }
                 });
             }
-        });
+    })();
     </script>
+</div>
 }

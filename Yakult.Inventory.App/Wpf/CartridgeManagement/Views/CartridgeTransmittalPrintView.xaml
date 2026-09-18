@@ -98,8 +98,8 @@
                     <CheckBox IsChecked="{Binding IsCartridgeRibbon, Mode=OneWay}"
                               IsHitTestVisible="False" VerticalAlignment="Center"/>
                     <TextBlock Text="  CARTRIDGE RIBBON" VerticalAlignment="Center"/>
-                    <TextBlock Text="          LX300 " VerticalAlignment="Center"/>
-                    <CheckBox IsChecked="{Binding IsLx300, Mode=OneWay}"
+                    <TextBlock Text="          LQ2190 " VerticalAlignment="Center"/>
+                    <CheckBox IsChecked="{Binding IsLq2190, Mode=OneWay}"
                               IsHitTestVisible="False" VerticalAlignment="Center"/>
                     <TextBlock Text="          LX310 " VerticalAlignment="Center"/>
                     <CheckBox IsChecked="{Binding IsLx310, Mode=OneWay}"

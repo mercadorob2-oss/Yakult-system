@@ -94,6 +94,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        justify-content: center;
         padding: 28px 24px 24px;
     }
 
@@ -212,6 +213,8 @@
         .module-card { width: calc(50% - 7px); min-height: 0; }
         .module-card .card-desc { max-width: 100%; }
         .module-card .watermark { font-size: 60px; }
+        .dashboard-header { padding: 18px 20px; }
+        .dashboard-header .brand small { white-space: nowrap; }
     }
 
     @@media (max-width: 575.98px) {
@@ -220,6 +223,10 @@
         .module-card { width: 100%; min-height: 0; }
         .module-card .card-desc { max-width: 100%; }
         .module-card .watermark { font-size: 60px; }
+        .dashboard-header { padding: 14px 16px; gap: 6px; }
+        .dashboard-header .brand { font-size: 1.15rem; }
+        .dashboard-header .brand small { font-size: .72rem; white-space: nowrap; }
+        .dashboard-header .header-actions .text-muted { display: none; }
     }
 </style>
 

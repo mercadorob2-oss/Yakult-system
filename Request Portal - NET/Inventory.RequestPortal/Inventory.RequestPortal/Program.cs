@@ -102,6 +102,8 @@ builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
 builder.Services.AddScoped<IRequesterPortalService, RequesterPortalService>();
 builder.Services.AddScoped<ICartridgeApprovalWebRepository, CartridgeApprovalWebRepository>();
 builder.Services.AddScoped<ICartridgeAuthorizationWebRepository, CartridgeAuthorizationWebRepository>();
+builder.Services.AddScoped<ICartridgeEmailService, CartridgeEmailService>();
+builder.Services.AddScoped<ISendNotificationsRepository, SendNotificationsRepository>();
 
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();

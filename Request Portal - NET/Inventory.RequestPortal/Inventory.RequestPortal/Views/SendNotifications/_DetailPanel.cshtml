@@ -1,0 +1,78 @@
+@model Inventory.RequestPortal.Models.ViewModels.SendNotificationDetailViewModel
+@* Rendered both by Index.cshtml (full page, ?id=) and by the Panel AJAX action (row click) —
+   mirrors desktop's SendNotificationsView.xaml detail card: header + status badge, requester/
+   company/branch-dept/distribution/received-by fields, the receiver combo (PICKUP only), a
+   Notes textarea, and Preview email / Send notification actions. *@
+
+@if (Model == null)
+{
+    <div class="sn-empty-panel">
+        <i class="bi bi-envelope-paper fs-1 d-block mb-2"></i>
+        <h3>Start with a cartridge set</h3><p>Select a set from the list to review its details, add a note and preview the email.</p>
+    </div>
+}
+else
+{
+    var row = Model.Row;
+
+    <div class="sn-detail" data-set-id="@row.SetId" data-is-pickup="@(row.IsPickup ? "1" : "0")">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+                <div class="sn-section-label">Selected set</div>
+                <div class="sn-set-code">@row.SetCode</div>
+            </div>
+            <span class="sn-status-badge" data-status="@row.FriendlyStatus">@row.FriendlyStatus</span>
+        </div>
+
+        <hr class="sn-divider" />
+
+        <div class="sn-facts"><div class="sn-field"><div class="sn-section-label">Requester</div><div class="sn-val">@(string.IsNullOrWhiteSpace(row.RequesterName) ? "—" : row.RequesterName)</div></div>
+        <div class="sn-field"><div class="sn-section-label">Company</div><div class="sn-val">@(string.IsNullOrWhiteSpace(row.CompanyName) ? "—" : row.CompanyName)</div></div>
+        <div class="sn-field"><div class="sn-section-label">Distribution</div><div class="sn-val fw-semibold">@row.DistributionMethod</div></div>
+        <div class="sn-field sn-wide"><div class="sn-section-label">Branch / department</div><div class="sn-val">@row.BranchDept</div></div>
+        <div class="sn-field">
+            <div class="sn-section-label">Received by</div>
+            <div class="sn-val @(string.IsNullOrWhiteSpace(row.ReceivedByName) ? "sn-not-set" : "")" id="snReceivedByDisplay">@row.ReceivedByDisplay</div>
+        </div>
+
+        </div>
+
+        @if (row.IsPickup)
+        {
+            <div class="sn-receiver-box">
+                <label for="snReceiverSelect" class="sn-section-label mb-1">Update receiver</label>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="snReceiverSelect">
+                        @foreach (var opt in Model.ReceiverOptions)
+                        {
+                            <option value="@opt.EmpId" selected="@(opt.EmpId == row.ReceivedById ? "selected" : null)">@opt.Label</option>
+                        }
+                    </select>
+                    <button type="button" class="sn-button flex-shrink-0" id="snSaveReceiverBtn">Save</button>
+                </div>
+                <div class="text-muted mt-1" style="font-size:.72rem;">Select who physically collects the cartridges.</div>
+            </div>
+        }
+
+        <hr class="sn-divider" />
+
+        <label for="snNotes" class="sn-section-label mb-1">Note to requester <span class="sn-optional">(optional)</span></label>
+        <textarea class="form-control form-control-sm" id="snNotes" rows="3" placeholder="Add a note to include in the email..."></textarea>
+
+        <hr class="sn-divider" />
+
+        <button type="button" class="sn-button w-100 mb-2" id="snPreviewBtn">
+            <i class="bi bi-eye"></i> Preview email
+        </button>
+        <button type="button" class="sn-button sn-send w-100" id="snSendBtn">
+            <i class="bi bi-envelope"></i> Send notification
+        </button>
+
+        <div class="mt-2" id="snSendingIndicator" role="status" hidden>
+            <i class="bi bi-arrow-repeat"></i> Sending&hellip;
+        </div>
+
+        <div class="mt-2 fw-semibold" id="snStatusMessage" role="status" aria-live="polite" style="display:none;"></div>
+    </div>
+
+}

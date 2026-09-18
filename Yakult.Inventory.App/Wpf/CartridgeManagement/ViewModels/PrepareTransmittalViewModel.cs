@@ -135,10 +135,10 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
 
             CartridgeModelLabel = transmittal.IsOtherModel
                 ? $"Cartridge Ribbon ({transmittal.OtherModelName})"
-                : transmittal.IsLx300 && transmittal.IsLx310
-                    ? "Cartridge Ribbon (LX300 / LX310)"
-                    : transmittal.IsLx300
-                        ? "Cartridge Ribbon (LX300)"
+                : transmittal.IsLq2190 && transmittal.IsLx310
+                    ? "Cartridge Ribbon (LQ2190 / LX310)"
+                    : transmittal.IsLq2190
+                        ? "Cartridge Ribbon (LQ2190)"
                         : transmittal.IsLx310
                             ? "Cartridge Ribbon (LX310)"
                             : "Cartridge Ribbon";

@@ -137,6 +137,17 @@
         .rf-remarks-strip .lbl { font-size: 9px; font-weight: 600; color: #7a8a9a; letter-spacing: .03em; margin-bottom: 3px; }
 
         .rf-pagination { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+
+        /* On narrow screens, the toolbar's Search/Filter/Sort controls wrap onto
+           several lines inside .rf-toolbar-left, but .rf-toolbar-card itself never wrapped —
+           so Refresh (margin-left:auto, nowrap) got squeezed against the right edge instead
+           of dropping to its own line, and could render partially off-screen. */
+        @@media (max-width: 767.98px) {
+            .rf-toolbar-card { flex-wrap: wrap; }
+            .rf-toolbar-left { width: 100%; }
+            .rf-search { width: 100%; }
+            .rf-toolbar-card .rf-refresh { margin-left: 0; width: 100%; justify-content: center; }
+        }
     </style>
 
     <div class="rf-toolbar-card">

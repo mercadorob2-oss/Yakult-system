@@ -117,6 +117,17 @@
 
         .ue-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
         .ue-pagination .btn { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
+
+        /* On narrow screens, the toolbar's Search/Filter/Sort/Status controls wrap onto
+           several lines inside .ue-toolbar-left, but .ue-toolbar-card itself never wrapped —
+           so Refresh (margin-left:auto, nowrap) got squeezed against the right edge instead
+           of dropping to its own line, and could render partially off-screen. */
+        @@media (max-width: 767.98px) {
+            .ue-toolbar-card { flex-wrap: wrap; }
+            .ue-toolbar-left { width: 100%; }
+            .ue-search { width: 100%; }
+            .ue-toolbar-card .ue-refresh { margin-left: 0; width: 100%; justify-content: center; }
+        }
     </style>
 
     <div class="ue-toolbar-card">

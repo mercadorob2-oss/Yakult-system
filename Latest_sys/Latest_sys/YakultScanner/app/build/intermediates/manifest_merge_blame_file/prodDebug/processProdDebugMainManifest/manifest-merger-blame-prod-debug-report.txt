@@ -1,0 +1,524 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<!-- This is a comment added by Gemini -->
+3<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+4    package="com.example.yakultscanner"
+5    android:versionCode="1"
+6    android:versionName="1.0" >
+7
+8    <uses-sdk
+9        android:minSdkVersion="24"
+10        android:targetSdkVersion="34" />
+11
+12    <!-- Permissions for Camera and Network -->
+13    <uses-permission android:name="android.permission.CAMERA" />
+13-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:7:5-65
+13-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:7:22-62
+14    <uses-permission android:name="android.permission.INTERNET" />
+14-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:8:5-67
+14-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:8:22-64
+15    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+15-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:9:5-79
+15-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:9:22-76
+16
+17    <uses-feature android:name="android.hardware.camera.any" />
+17-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:10:5-64
+17-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:10:19-61
+18
+19    <uses-permission android:name="android.permission.WAKE_LOCK" />
+19-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:23:5-68
+19-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:23:22-65
+20    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+20-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:25:5-81
+20-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:25:22-78
+21    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+21-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:26:5-77
+21-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:26:22-74
+22
+23    <permission
+23-->[androidx.core:core:1.13.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7545266abf38e521e4a2d2f7c96b7786\workspace\transformed\core-1.13.1\AndroidManifest.xml:22:5-24:47
+24        android:name="com.example.yakultscanner.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+24-->[androidx.core:core:1.13.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7545266abf38e521e4a2d2f7c96b7786\workspace\transformed\core-1.13.1\AndroidManifest.xml:23:9-81
+25        android:protectionLevel="signature" />
+25-->[androidx.core:core:1.13.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7545266abf38e521e4a2d2f7c96b7786\workspace\transformed\core-1.13.1\AndroidManifest.xml:24:9-44
+26
+27    <uses-permission android:name="com.example.yakultscanner.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+27-->[androidx.core:core:1.13.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7545266abf38e521e4a2d2f7c96b7786\workspace\transformed\core-1.13.1\AndroidManifest.xml:26:5-97
+27-->[androidx.core:core:1.13.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7545266abf38e521e4a2d2f7c96b7786\workspace\transformed\core-1.13.1\AndroidManifest.xml:26:22-94
+28
+29    <application
+29-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:12:5-55:19
+30        android:name="com.example.yakultscanner.YakultScannerApp"
+30-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:13:9-41
+31        android:allowBackup="true"
+31-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:14:9-35
+32        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+32-->[androidx.core:core:1.13.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7545266abf38e521e4a2d2f7c96b7786\workspace\transformed\core-1.13.1\AndroidManifest.xml:28:18-86
+33        android:dataExtractionRules="@xml/data_extraction_rules"
+33-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:15:9-65
+34        android:debuggable="true"
+35        android:extractNativeLibs="false"
+36        android:fullBackupContent="@xml/backup_rules"
+36-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:16:9-54
+37        android:icon="@mipmap/ic_launcher"
+37-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:17:9-43
+38        android:label="@string/app_name"
+38-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:18:9-41
+39        android:roundIcon="@mipmap/ic_launcher_round"
+39-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:19:9-54
+40        android:supportsRtl="true"
+40-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:20:9-35
+41        android:theme="@style/Theme.YakultScanner"
+41-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:22:9-51
+42        android:usesCleartextTraffic="true" >
+42-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:21:9-44
+43        <activity
+43-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:24:9-33:20
+44            android:name="com.example.yakultscanner.MainActivity"
+44-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:25:13-41
+45            android:exported="true"
+45-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:26:13-36
+46            android:label="@string/app_name"
+46-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:27:13-45
+47            android:theme="@style/Theme.YakultScanner" >
+47-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:28:13-55
+48            <intent-filter>
+48-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:29:13-32:29
+49                <action android:name="android.intent.action.MAIN" />
+49-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:30:17-69
+49-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:30:25-66
+50
+51                <category android:name="android.intent.category.LAUNCHER" />
+51-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:31:17-77
+51-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:31:27-74
+52            </intent-filter>
+53        </activity>
+54
+55        <receiver
+55-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:35:9-42:20
+56            android:name="com.example.yakultscanner.HoneywellScanReceiver"
+56-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:36:13-50
+57            android:exported="true" >
+57-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:37:13-36
+58            <intent-filter>
+58-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:38:13-41:29
+59                <action android:name="com.honeywell.decode.intent.action.DECODE_DATA" />
+59-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:39:17-89
+59-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:39:25-86
+60                <action android:name="com.example.yakultscanner.SCAN" />
+60-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:40:17-73
+60-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:40:25-70
+61            </intent-filter>
+62        </receiver>
+63
+64        <!-- FileProvider for sharing files securely (required for Android 7.0+) -->
+65        <provider
+66            android:name="androidx.core.content.FileProvider"
+66-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:46:13-62
+67            android:authorities="com.example.yakultscanner.fileprovider"
+67-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:47:13-64
+68            android:exported="false"
+68-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:48:13-37
+69            android:grantUriPermissions="true" >
+69-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:49:13-47
+70            <meta-data
+70-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:50:13-52:54
+71                android:name="android.support.FILE_PROVIDER_PATHS"
+71-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:51:17-67
+72                android:resource="@xml/file_paths" />
+72-->C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Latest_sys\YakultScanner\app\src\main\AndroidManifest.xml:52:17-51
+73        </provider>
+74
+75        <service
+75-->[androidx.camera:camera-camera2:1.4.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\cc08fd402f4784d7b3cb79bff7516137\workspace\transformed\camera-camera2-1.4.2\AndroidManifest.xml:24:9-33:19
+76            android:name="androidx.camera.core.impl.MetadataHolderService"
+76-->[androidx.camera:camera-camera2:1.4.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\cc08fd402f4784d7b3cb79bff7516137\workspace\transformed\camera-camera2-1.4.2\AndroidManifest.xml:25:13-75
+77            android:enabled="false"
+77-->[androidx.camera:camera-camera2:1.4.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\cc08fd402f4784d7b3cb79bff7516137\workspace\transformed\camera-camera2-1.4.2\AndroidManifest.xml:26:13-36
+78            android:exported="false" >
+78-->[androidx.camera:camera-camera2:1.4.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\cc08fd402f4784d7b3cb79bff7516137\workspace\transformed\camera-camera2-1.4.2\AndroidManifest.xml:27:13-37
+79            <meta-data
+79-->[androidx.camera:camera-camera2:1.4.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\cc08fd402f4784d7b3cb79bff7516137\workspace\transformed\camera-camera2-1.4.2\AndroidManifest.xml:30:13-32:89
+80                android:name="androidx.camera.core.impl.MetadataHolderService.DEFAULT_CONFIG_PROVIDER"
+80-->[androidx.camera:camera-camera2:1.4.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\cc08fd402f4784d7b3cb79bff7516137\workspace\transformed\camera-camera2-1.4.2\AndroidManifest.xml:31:17-103
+81                android:value="androidx.camera.camera2.Camera2Config$DefaultProvider" />
+81-->[androidx.camera:camera-camera2:1.4.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\cc08fd402f4784d7b3cb79bff7516137\workspace\transformed\camera-camera2-1.4.2\AndroidManifest.xml:32:17-86
+82        </service>
+83        <!--
+84        This activity is an invisible delegate activity to start scanner activity
+85        and receive result, so it's unnecessary to support screen orientation and
+86        we can avoid any side effect from activity recreation in any case.
+87        -->
+88        <activity
+88-->[com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\b42597b5a32ffdd955d94fc1c6917908\workspace\transformed\play-services-mlkit-document-scanner-16.0.0-beta1\AndroidManifest.xml:15:9-21:20
+89            android:name="com.google.mlkit.vision.documentscanner.internal.GmsDocumentScanningDelegateActivity"
+89-->[com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\b42597b5a32ffdd955d94fc1c6917908\workspace\transformed\play-services-mlkit-document-scanner-16.0.0-beta1\AndroidManifest.xml:16:13-112
+90            android:exported="false"
+90-->[com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\b42597b5a32ffdd955d94fc1c6917908\workspace\transformed\play-services-mlkit-document-scanner-16.0.0-beta1\AndroidManifest.xml:17:13-37
+91            android:screenOrientation="portrait"
+91-->[com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\b42597b5a32ffdd955d94fc1c6917908\workspace\transformed\play-services-mlkit-document-scanner-16.0.0-beta1\AndroidManifest.xml:18:13-49
+92            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" >
+92-->[com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\b42597b5a32ffdd955d94fc1c6917908\workspace\transformed\play-services-mlkit-document-scanner-16.0.0-beta1\AndroidManifest.xml:19:13-77
+93        </activity>
+94
+95        <service
+95-->[com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e5cd8ade77a611e51e4a8c0091954445\workspace\transformed\play-services-mlkit-barcode-scanning-18.3.1\AndroidManifest.xml:9:9-15:19
+96            android:name="com.google.mlkit.common.internal.MlKitComponentDiscoveryService"
+96-->[com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e5cd8ade77a611e51e4a8c0091954445\workspace\transformed\play-services-mlkit-barcode-scanning-18.3.1\AndroidManifest.xml:10:13-91
+97            android:directBootAware="true"
+97-->[com.google.mlkit:common:18.11.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\53fe58f556e68380b8347322dd168506\workspace\transformed\common-18.11.0\AndroidManifest.xml:17:13-43
+98            android:exported="false" >
+98-->[com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e5cd8ade77a611e51e4a8c0091954445\workspace\transformed\play-services-mlkit-barcode-scanning-18.3.1\AndroidManifest.xml:11:13-37
+99            <meta-data
+99-->[com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e5cd8ade77a611e51e4a8c0091954445\workspace\transformed\play-services-mlkit-barcode-scanning-18.3.1\AndroidManifest.xml:12:13-14:85
+100                android:name="com.google.firebase.components:com.google.mlkit.vision.barcode.internal.BarcodeRegistrar"
+100-->[com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e5cd8ade77a611e51e4a8c0091954445\workspace\transformed\play-services-mlkit-barcode-scanning-18.3.1\AndroidManifest.xml:13:17-120
+101                android:value="com.google.firebase.components.ComponentRegistrar" />
+101-->[com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e5cd8ade77a611e51e4a8c0091954445\workspace\transformed\play-services-mlkit-barcode-scanning-18.3.1\AndroidManifest.xml:14:17-82
+102            <meta-data
+102-->[com.google.mlkit:vision-common:17.3.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\ab299ee596d67cbac90698d0f85f9bce\workspace\transformed\vision-common-17.3.0\AndroidManifest.xml:12:13-14:85
+103                android:name="com.google.firebase.components:com.google.mlkit.vision.common.internal.VisionCommonRegistrar"
+103-->[com.google.mlkit:vision-common:17.3.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\ab299ee596d67cbac90698d0f85f9bce\workspace\transformed\vision-common-17.3.0\AndroidManifest.xml:13:17-124
+104                android:value="com.google.firebase.components.ComponentRegistrar" />
+104-->[com.google.mlkit:vision-common:17.3.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\ab299ee596d67cbac90698d0f85f9bce\workspace\transformed\vision-common-17.3.0\AndroidManifest.xml:14:17-82
+105            <meta-data
+105-->[com.google.mlkit:common:18.11.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\53fe58f556e68380b8347322dd168506\workspace\transformed\common-18.11.0\AndroidManifest.xml:20:13-22:85
+106                android:name="com.google.firebase.components:com.google.mlkit.common.internal.CommonComponentRegistrar"
+106-->[com.google.mlkit:common:18.11.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\53fe58f556e68380b8347322dd168506\workspace\transformed\common-18.11.0\AndroidManifest.xml:21:17-120
+107                android:value="com.google.firebase.components.ComponentRegistrar" />
+107-->[com.google.mlkit:common:18.11.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\53fe58f556e68380b8347322dd168506\workspace\transformed\common-18.11.0\AndroidManifest.xml:22:17-82
+108        </service>
+109
+110        <provider
+110-->[com.google.mlkit:common:18.11.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\53fe58f556e68380b8347322dd168506\workspace\transformed\common-18.11.0\AndroidManifest.xml:9:9-13:38
+111            android:name="com.google.mlkit.common.internal.MlKitInitProvider"
+111-->[com.google.mlkit:common:18.11.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\53fe58f556e68380b8347322dd168506\workspace\transformed\common-18.11.0\AndroidManifest.xml:10:13-78
+112            android:authorities="com.example.yakultscanner.mlkitinitprovider"
+112-->[com.google.mlkit:common:18.11.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\53fe58f556e68380b8347322dd168506\workspace\transformed\common-18.11.0\AndroidManifest.xml:11:13-69
+113            android:exported="false"
+113-->[com.google.mlkit:common:18.11.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\53fe58f556e68380b8347322dd168506\workspace\transformed\common-18.11.0\AndroidManifest.xml:12:13-37
+114            android:initOrder="99" />
+114-->[com.google.mlkit:common:18.11.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\53fe58f556e68380b8347322dd168506\workspace\transformed\common-18.11.0\AndroidManifest.xml:13:13-35
+115        <provider
+115-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:29:9-37:20
+116            android:name="androidx.startup.InitializationProvider"
+116-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:30:13-67
+117            android:authorities="com.example.yakultscanner.androidx-startup"
+117-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:31:13-68
+118            android:exported="false" >
+118-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:32:13-37
+119            <meta-data
+119-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:34:13-36:52
+120                android:name="androidx.work.WorkManagerInitializer"
+120-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:35:17-68
+121                android:value="androidx.startup" />
+121-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:36:17-49
+122            <meta-data
+122-->[androidx.emoji2:emoji2:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\41fbc2cf77b50e49c009c666cfe8bd5d\workspace\transformed\emoji2-1.4.0\AndroidManifest.xml:29:13-31:52
+123                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+123-->[androidx.emoji2:emoji2:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\41fbc2cf77b50e49c009c666cfe8bd5d\workspace\transformed\emoji2-1.4.0\AndroidManifest.xml:30:17-75
+124                android:value="androidx.startup" />
+124-->[androidx.emoji2:emoji2:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\41fbc2cf77b50e49c009c666cfe8bd5d\workspace\transformed\emoji2-1.4.0\AndroidManifest.xml:31:17-49
+125            <meta-data
+125-->[androidx.lifecycle:lifecycle-process:2.9.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\702ecb7b069de31f0f35daaafa69c9fb\workspace\transformed\lifecycle-process-2.9.1\AndroidManifest.xml:29:13-31:52
+126                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+126-->[androidx.lifecycle:lifecycle-process:2.9.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\702ecb7b069de31f0f35daaafa69c9fb\workspace\transformed\lifecycle-process-2.9.1\AndroidManifest.xml:30:17-78
+127                android:value="androidx.startup" />
+127-->[androidx.lifecycle:lifecycle-process:2.9.1] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\702ecb7b069de31f0f35daaafa69c9fb\workspace\transformed\lifecycle-process-2.9.1\AndroidManifest.xml:31:17-49
+128            <meta-data
+128-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:29:13-31:52
+129                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+129-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:30:17-85
+130                android:value="androidx.startup" />
+130-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:31:17-49
+131        </provider>
+132
+133        <service
+133-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:39:9-45:35
+134            android:name="androidx.work.impl.background.systemalarm.SystemAlarmService"
+134-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:40:13-88
+135            android:directBootAware="false"
+135-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:41:13-44
+136            android:enabled="@bool/enable_system_alarm_service_default"
+136-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:42:13-72
+137            android:exported="false" />
+137-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:43:13-37
+138        <service
+138-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:46:9-52:35
+139            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+139-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:47:13-84
+140            android:directBootAware="false"
+140-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:48:13-44
+141            android:enabled="@bool/enable_system_job_service_default"
+141-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:49:13-70
+142            android:exported="true"
+142-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:50:13-36
+143            android:permission="android.permission.BIND_JOB_SERVICE" />
+143-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:51:13-69
+144        <service
+144-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:53:9-59:35
+145            android:name="androidx.work.impl.foreground.SystemForegroundService"
+145-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:54:13-81
+146            android:directBootAware="false"
+146-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:55:13-44
+147            android:enabled="@bool/enable_system_foreground_service_default"
+147-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:56:13-77
+148            android:exported="false" />
+148-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:57:13-37
+149
+150        <receiver
+150-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:61:9-66:35
+151            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+151-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:62:13-88
+152            android:directBootAware="false"
+152-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:63:13-44
+153            android:enabled="true"
+153-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:64:13-35
+154            android:exported="false" />
+154-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:65:13-37
+155        <receiver
+155-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:67:9-77:20
+156            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy"
+156-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:68:13-106
+157            android:directBootAware="false"
+157-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:69:13-44
+158            android:enabled="false"
+158-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:70:13-36
+159            android:exported="false" >
+159-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:71:13-37
+160            <intent-filter>
+160-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:73:13-76:29
+161                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+161-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:74:17-87
+161-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:74:25-84
+162                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+162-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:75:17-90
+162-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:75:25-87
+163            </intent-filter>
+164        </receiver>
+165        <receiver
+165-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:78:9-88:20
+166            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy"
+166-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:79:13-104
+167            android:directBootAware="false"
+167-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:80:13-44
+168            android:enabled="false"
+168-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:81:13-36
+169            android:exported="false" >
+169-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:82:13-37
+170            <intent-filter>
+170-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:84:13-87:29
+171                <action android:name="android.intent.action.BATTERY_OKAY" />
+171-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:85:17-77
+171-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:85:25-74
+172                <action android:name="android.intent.action.BATTERY_LOW" />
+172-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:86:17-76
+172-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:86:25-73
+173            </intent-filter>
+174        </receiver>
+175        <receiver
+175-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:89:9-99:20
+176            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy"
+176-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:90:13-104
+177            android:directBootAware="false"
+177-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:91:13-44
+178            android:enabled="false"
+178-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:92:13-36
+179            android:exported="false" >
+179-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:93:13-37
+180            <intent-filter>
+180-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:95:13-98:29
+181                <action android:name="android.intent.action.DEVICE_STORAGE_LOW" />
+181-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:96:17-83
+181-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:96:25-80
+182                <action android:name="android.intent.action.DEVICE_STORAGE_OK" />
+182-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:97:17-82
+182-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:97:25-79
+183            </intent-filter>
+184        </receiver>
+185        <receiver
+185-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:100:9-109:20
+186            android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy"
+186-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:101:13-103
+187            android:directBootAware="false"
+187-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:102:13-44
+188            android:enabled="false"
+188-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:103:13-36
+189            android:exported="false" >
+189-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:104:13-37
+190            <intent-filter>
+190-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:106:13-108:29
+191                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+191-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:107:17-79
+191-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:107:25-76
+192            </intent-filter>
+193        </receiver>
+194        <receiver
+194-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:110:9-121:20
+195            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+195-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:111:13-88
+196            android:directBootAware="false"
+196-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:112:13-44
+197            android:enabled="false"
+197-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:113:13-36
+198            android:exported="false" >
+198-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:114:13-37
+199            <intent-filter>
+199-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:116:13-120:29
+200                <action android:name="android.intent.action.BOOT_COMPLETED" />
+200-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:117:17-79
+200-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:117:25-76
+201                <action android:name="android.intent.action.TIME_SET" />
+201-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:118:17-73
+201-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:118:25-70
+202                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+202-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:119:17-81
+202-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:119:25-78
+203            </intent-filter>
+204        </receiver>
+205        <receiver
+205-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:122:9-131:20
+206            android:name="androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver"
+206-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:123:13-99
+207            android:directBootAware="false"
+207-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:124:13-44
+208            android:enabled="@bool/enable_system_alarm_service_default"
+208-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:125:13-72
+209            android:exported="false" >
+209-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:126:13-37
+210            <intent-filter>
+210-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:128:13-130:29
+211                <action android:name="androidx.work.impl.background.systemalarm.UpdateProxies" />
+211-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:129:17-98
+211-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:129:25-95
+212            </intent-filter>
+213        </receiver>
+214        <receiver
+214-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:132:9-142:20
+215            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+215-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:133:13-78
+216            android:directBootAware="false"
+216-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:134:13-44
+217            android:enabled="true"
+217-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:135:13-35
+218            android:exported="true"
+218-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:136:13-36
+219            android:permission="android.permission.DUMP" >
+219-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:137:13-57
+220            <intent-filter>
+220-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:139:13-141:29
+221                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS" />
+221-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:140:17-88
+221-->[androidx.work:work-runtime:2.9.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7efab9a57b70a8ad3aa52c3fd1a23729\workspace\transformed\work-runtime-2.9.0\AndroidManifest.xml:140:25-85
+222            </intent-filter>
+223        </receiver>
+224
+225        <activity
+225-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\b4c69338a914fabe00bb43e2109ccfbd\workspace\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:9-173
+226            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+226-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\b4c69338a914fabe00bb43e2109ccfbd\workspace\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:19-85
+227            android:exported="false"
+227-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\b4c69338a914fabe00bb43e2109ccfbd\workspace\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:146-170
+228            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+228-->[com.google.android.gms:play-services-base:18.5.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\b4c69338a914fabe00bb43e2109ccfbd\workspace\transformed\play-services-base-18.5.0\AndroidManifest.xml:5:86-145
+229
+230        <meta-data
+230-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\0594a5dcaad2e06d89033536bacaadf9\workspace\transformed\play-services-basement-18.4.0\AndroidManifest.xml:6:9-122
+231            android:name="com.google.android.gms.version"
+231-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\0594a5dcaad2e06d89033536bacaadf9\workspace\transformed\play-services-basement-18.4.0\AndroidManifest.xml:6:20-65
+232            android:value="@integer/google_play_services_version" />
+232-->[com.google.android.gms:play-services-basement:18.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\0594a5dcaad2e06d89033536bacaadf9\workspace\transformed\play-services-basement-18.4.0\AndroidManifest.xml:6:66-119
+233
+234        <activity
+234-->[androidx.compose.ui:ui-test-manifest:1.8.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\981f22ab73d0210f4a7269c0a5f53664\workspace\transformed\ui-test-manifest-1.8.2\AndroidManifest.xml:23:9-26:79
+235            android:name="androidx.activity.ComponentActivity"
+235-->[androidx.compose.ui:ui-test-manifest:1.8.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\981f22ab73d0210f4a7269c0a5f53664\workspace\transformed\ui-test-manifest-1.8.2\AndroidManifest.xml:24:13-63
+236            android:exported="true"
+236-->[androidx.compose.ui:ui-test-manifest:1.8.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\981f22ab73d0210f4a7269c0a5f53664\workspace\transformed\ui-test-manifest-1.8.2\AndroidManifest.xml:25:13-36
+237            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+237-->[androidx.compose.ui:ui-test-manifest:1.8.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\981f22ab73d0210f4a7269c0a5f53664\workspace\transformed\ui-test-manifest-1.8.2\AndroidManifest.xml:26:13-76
+238        <activity
+238-->[androidx.compose.ui:ui-tooling-android:1.8.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d2cb3d9495fca52cf994c5a5b27b4af7\workspace\transformed\ui-tooling-release\AndroidManifest.xml:23:9-25:39
+239            android:name="androidx.compose.ui.tooling.PreviewActivity"
+239-->[androidx.compose.ui:ui-tooling-android:1.8.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d2cb3d9495fca52cf994c5a5b27b4af7\workspace\transformed\ui-tooling-release\AndroidManifest.xml:24:13-71
+240            android:exported="true" />
+240-->[androidx.compose.ui:ui-tooling-android:1.8.2] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d2cb3d9495fca52cf994c5a5b27b4af7\workspace\transformed\ui-tooling-release\AndroidManifest.xml:25:13-36
+241
+242        <service
+242-->[androidx.room:room-runtime-android:2.8.4] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\eeaf1572a6e1a6b9f8dc5c71cb51cbaa\workspace\transformed\room-runtime\AndroidManifest.xml:24:9-28:63
+243            android:name="androidx.room.MultiInstanceInvalidationService"
+243-->[androidx.room:room-runtime-android:2.8.4] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\eeaf1572a6e1a6b9f8dc5c71cb51cbaa\workspace\transformed\room-runtime\AndroidManifest.xml:25:13-74
+244            android:directBootAware="true"
+244-->[androidx.room:room-runtime-android:2.8.4] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\eeaf1572a6e1a6b9f8dc5c71cb51cbaa\workspace\transformed\room-runtime\AndroidManifest.xml:26:13-43
+245            android:exported="false" />
+245-->[androidx.room:room-runtime-android:2.8.4] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\eeaf1572a6e1a6b9f8dc5c71cb51cbaa\workspace\transformed\room-runtime\AndroidManifest.xml:27:13-37
+246
+247        <receiver
+247-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:34:9-52:20
+248            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+248-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:35:13-76
+249            android:directBootAware="false"
+249-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:36:13-44
+250            android:enabled="true"
+250-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:37:13-35
+251            android:exported="true"
+251-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:38:13-36
+252            android:permission="android.permission.DUMP" >
+252-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:39:13-57
+253            <intent-filter>
+253-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:40:13-42:29
+254                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+254-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:17-91
+254-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:25-88
+255            </intent-filter>
+256            <intent-filter>
+256-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:43:13-45:29
+257                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+257-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:17-85
+257-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:25-82
+258            </intent-filter>
+259            <intent-filter>
+259-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:46:13-48:29
+260                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+260-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:17-88
+260-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:25-85
+261            </intent-filter>
+262            <intent-filter>
+262-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:49:13-51:29
+263                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+263-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:17-95
+263-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\d164cf1d5a2e431c1235cbd6d711de9d\workspace\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:25-92
+264            </intent-filter>
+265        </receiver>
+266
+267        <service
+267-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e741826b26101f90c8c04031e110bf2a\workspace\transformed\transport-backend-cct-2.3.3\AndroidManifest.xml:29:9-35:19
+268            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+268-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e741826b26101f90c8c04031e110bf2a\workspace\transformed\transport-backend-cct-2.3.3\AndroidManifest.xml:30:13-103
+269            android:exported="false" >
+269-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e741826b26101f90c8c04031e110bf2a\workspace\transformed\transport-backend-cct-2.3.3\AndroidManifest.xml:31:13-37
+270            <meta-data
+270-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e741826b26101f90c8c04031e110bf2a\workspace\transformed\transport-backend-cct-2.3.3\AndroidManifest.xml:32:13-34:39
+271                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+271-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e741826b26101f90c8c04031e110bf2a\workspace\transformed\transport-backend-cct-2.3.3\AndroidManifest.xml:33:17-94
+272                android:value="cct" />
+272-->[com.google.android.datatransport:transport-backend-cct:2.3.3] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\e741826b26101f90c8c04031e110bf2a\workspace\transformed\transport-backend-cct-2.3.3\AndroidManifest.xml:34:17-36
+273        </service>
+274        <service
+274-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7194f1821d0980b64d1b297d85b69474\workspace\transformed\transport-runtime-2.2.6\AndroidManifest.xml:26:9-30:19
+275            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+275-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7194f1821d0980b64d1b297d85b69474\workspace\transformed\transport-runtime-2.2.6\AndroidManifest.xml:27:13-117
+276            android:exported="false"
+276-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7194f1821d0980b64d1b297d85b69474\workspace\transformed\transport-runtime-2.2.6\AndroidManifest.xml:28:13-37
+277            android:permission="android.permission.BIND_JOB_SERVICE" >
+277-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7194f1821d0980b64d1b297d85b69474\workspace\transformed\transport-runtime-2.2.6\AndroidManifest.xml:29:13-69
+278        </service>
+279
+280        <receiver
+280-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7194f1821d0980b64d1b297d85b69474\workspace\transformed\transport-runtime-2.2.6\AndroidManifest.xml:32:9-34:40
+281            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+281-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7194f1821d0980b64d1b297d85b69474\workspace\transformed\transport-runtime-2.2.6\AndroidManifest.xml:33:13-132
+282            android:exported="false" />
+282-->[com.google.android.datatransport:transport-runtime:2.2.6] C:\Users\russel.mercado\.gradle\caches\9.2.1\transforms\7194f1821d0980b64d1b297d85b69474\workspace\transformed\transport-runtime-2.2.6\AndroidManifest.xml:34:13-37
+283    </application>
+284
+285</manifest>

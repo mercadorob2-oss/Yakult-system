@@ -210,10 +210,20 @@ namespace Inventory.RequestPortal.Controllers
                 ModelState.Remove("Request.DestinationDepartmentId");
             }
 
-            // ReceivedById is only required for PICKUP; skip validation for DELIVERY
+            // ReceivedById is only required for PICKUP; skip validation for DELIVERY.
+            // CartridgeRequestViewModel.ReceivedById has no [Required] attribute (it's an int?
+            // with no server-side annotation), so without this explicit check a PICKUP request
+            // whose "Received By" combo was typed into but never actually clicked/committed
+            // (the hidden field stays empty) silently saves with ReceivedById = NULL instead of
+            // failing validation — exactly what let ReqId 1488 through with no receiver recorded.
             if (model.Request?.DistributionMethod == "DELIVERY")
             {
                 ModelState.Remove("Request.ReceivedById");
+            }
+            else if (model.Request?.DistributionMethod == "PICKUP" &&
+                     (!model.Request.ReceivedById.HasValue || model.Request.ReceivedById.Value <= 0))
+            {
+                ModelState.AddModelError("Request.ReceivedById", "Please select who will receive the cartridges (Received By).");
             }
 
             if (!ModelState.IsValid)
@@ -771,8 +781,18 @@ namespace Inventory.RequestPortal.Controllers
             ModelState.Remove("Request.DestinationBranchId");
             ModelState.Remove("Request.DestinationDepartmentId");
 
+            // See the same check in Create() above — ReceivedById has no [Required] attribute,
+            // so this explicit guard is what actually stops a PICKUP request from silently
+            // saving with no receiver when the combo's selection never committed.
             if (model.Request?.DistributionMethod == "DELIVERY")
+            {
                 ModelState.Remove("Request.ReceivedById");
+            }
+            else if (model.Request?.DistributionMethod == "PICKUP" &&
+                     (!model.Request.ReceivedById.HasValue || model.Request.ReceivedById.Value <= 0))
+            {
+                ModelState.AddModelError("Request.ReceivedById", "Please select who will receive the cartridges (Received By).");
+            }
 
             if (!ModelState.IsValid)
             {

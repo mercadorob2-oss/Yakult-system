@@ -496,7 +496,8 @@
         </Border>
 
         <!-- SCROLLABLE FORM -->
-        <ScrollViewer Grid.Row="1"
+        <ScrollViewer x:Name="FormScrollViewer"
+                      Grid.Row="1"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       PanningMode="VerticalFirst">
