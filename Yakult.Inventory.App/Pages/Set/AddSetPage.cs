@@ -10,9 +10,9 @@ namespace Yakult.Inventory.App.Pages.Set
     public partial class AddSetPage : Form
     {
         private Panel bodyPanel, footerPanel;
-        private Label lblDispatchDate, lblStatus, lblRemarks, lblCreatedBy, lblTitle;
+        private Label lblDispatchDate, lblStatus, lblRemarks, lblCreatedBy, lblTitle, lblDistributor;
         private DateTimePicker dtpDispatchDate;
-        private ComboBox cboStatus;
+        private ComboBox cboStatus, cboDistributor;
         private TextBox txtRemarks, txtCreatedBy;
         private CheckBox chkSetDispatchDate;
         private Button btnSave, btnCancel;
@@ -241,6 +241,12 @@ namespace Yakult.Inventory.App.Pages.Set
             lblRemarks = new Label { Text = "Remarks" };
             txtRemarks = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical };
 
+            // Independent sales distributor (dbo.Distributor) — optional, defaults to none.
+            // A dept-level distributor request added to this Set propagates here automatically.
+            lblDistributor = new Label { Text = "Distributor" };
+            cboDistributor = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
+            LoadDistributors();
+
             AddRow(lblCreatedBy, txtCreatedBy);
             AddRow(lblDispatchDate, dispatchRow);
             if (_showStatus)
@@ -248,6 +254,7 @@ namespace Yakult.Inventory.App.Pages.Set
                 AddRow(lblStatus, cboStatus);
             }
             AddRow(lblRemarks, txtRemarks);
+            AddRow(lblDistributor, cboDistributor);
 
             bodyPanel.Controls.Add(formGrid);
             cardPanel.Controls.Add(bodyPanel);
@@ -318,6 +325,51 @@ namespace Yakult.Inventory.App.Pages.Set
             txtCreatedBy.Text = $"{AppSession.CurrentUserName} (ID: {AppSession.CurrentUserId})";
         }
 
+        private sealed class DistributorOption
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public override string ToString() => Name;
+        }
+
+        private void LoadDistributors()
+        {
+            var options = new System.Collections.Generic.List<DistributorOption>
+            {
+                new DistributorOption { Id = 0, Name = "(None)" }
+            };
+            try
+            {
+                var cs = Yakult.Inventory.App.Core.DatabaseConfig.ConnectionString;
+                if (!string.IsNullOrWhiteSpace(cs))
+                {
+                    using (var con = new System.Data.SqlClient.SqlConnection(cs))
+                    {
+                        con.Open();
+                        using (var cmd = new System.Data.SqlClient.SqlCommand(
+                            "IF OBJECT_ID('dbo.Distributor', 'U') IS NOT NULL SELECT DistributorId, Name FROM dbo.Distributor WHERE IsActive = 1 ORDER BY SortOrder, Name", con))
+                        using (var r = cmd.ExecuteReader())
+                        {
+                            while (r.Read())
+                                options.Add(new DistributorOption { Id = r.GetInt32(0), Name = r.GetString(1) });
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Distributor catalog unavailable — keep "(None)" only.
+            }
+            // NOTE: Items.Add (not DataSource) — this runs mid-BuildUi before the
+            // combo is parented, so there is no BindingContext yet for data binding
+            // and SelectedIndex = 0 would throw ArgumentOutOfRangeException.
+            cboDistributor.Items.Clear();
+            foreach (var option in options)
+                cboDistributor.Items.Add(option);
+            if (cboDistributor.Items.Count > 0)
+                cboDistributor.SelectedIndex = 0;
+        }
+
         private async void BtnSave_Click(object sender, EventArgs e)
         {
             try
@@ -336,12 +388,19 @@ namespace Yakult.Inventory.App.Pages.Set
                     ? (cboStatus?.SelectedItem?.ToString() ?? "Pending")
                     : "Pending";
 
+                // Optional dept-level distributor (independent of Company/Dept/Branch)
+                int? distributorId = null;
+                if (cboDistributor?.SelectedItem is DistributorOption selectedDistributor
+                    && selectedDistributor.Id > 0)
+                    distributorId = selectedDistributor.Id;
+
                 // Create the set
                 int newSetId = await _repository.CreateSetAsync(
                     AppSession.CurrentUserId, 
                     string.IsNullOrWhiteSpace(txtRemarks.Text) ? null : txtRemarks.Text.Trim(),
                     dispatchDate,
-                    status
+                    status,
+                    distributorId
                 );
 
                 Cursor = Cursors.Default;

@@ -231,17 +231,17 @@
             <Setter Property="Foreground"  Value="#C0392B"/>
         </Style>
 
-        <!-- DataGrid column header -->
+        <!-- DataGrid column header — flatter, less saturated header bar for a calmer look -->
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background"              Value="#3498DB"/>
-            <Setter Property="Foreground"              Value="White"/>
-            <Setter Property="FontWeight"              Value="Bold"/>
-            <Setter Property="FontSize"                Value="11"/>
-            <Setter Property="Padding"                 Value="8,0"/>
-            <Setter Property="Height"                  Value="36"/>
-            <Setter Property="BorderBrush"             Value="#5AAFE5"/>
-            <Setter Property="BorderThickness"         Value="0,0,1,0"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Background"              Value="#2C3E50"/>
+            <Setter Property="Foreground"               Value="White"/>
+            <Setter Property="FontWeight"               Value="SemiBold"/>
+            <Setter Property="FontSize"                 Value="11"/>
+            <Setter Property="Padding"                  Value="10,0"/>
+            <Setter Property="Height"                   Value="38"/>
+            <Setter Property="BorderBrush"               Value="#3D5166"/>
+            <Setter Property="BorderThickness"           Value="0,0,1,0"/>
+            <Setter Property="VerticalContentAlignment"  Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridColumnHeader">
@@ -256,34 +256,40 @@
             </Setter>
         </Style>
 
-        <!-- DataGrid row -->
+        <!-- DataGrid row — subtle neutral zebra striping instead of saturated blue/green bands,
+             with a thin hairline separator instead of a thick white gap between rows. -->
         <Style TargetType="DataGridRow">
-            <Setter Property="Background"    Value="#E3F2FD"/>
-            <Setter Property="BorderBrush"   Value="White"/>
-            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"      Value="#EEF1F5"/>
+            <Setter Property="BorderThickness"  Value="0,0,0,1"/>
             <Style.Triggers>
                 <Trigger Property="AlternationIndex" Value="1">
-                    <Setter Property="Background" Value="#E8F5E9"/>
+                    <Setter Property="Background" Value="#F7F9FB"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#EAF2FB"/>
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#2980B9"/>
+                    <Setter Property="Background" Value="#D6E9FA"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
-        <!-- DataGrid cell -->
+        <!-- DataGrid cell — hairline vertical separators, generous padding, selection uses a
+             tinted background with dark text instead of an inverted blue/white block. -->
         <Style TargetType="DataGridCell">
-            <Setter Property="BorderBrush"           Value="White"/>
-            <Setter Property="BorderThickness"       Value="0,0,2,0"/>
-            <Setter Property="FocusVisualStyle"      Value="{x:Null}"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="BorderBrush"                Value="#EEF1F5"/>
+            <Setter Property="BorderThickness"             Value="0,0,1,0"/>
+            <Setter Property="FocusVisualStyle"            Value="{x:Null}"/>
+            <Setter Property="Foreground"                  Value="#1A2333"/>
+            <Setter Property="VerticalContentAlignment"    Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridCell">
                         <Border Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                Padding="6,2">
+                                Padding="8,4">
                             <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                     </ControlTemplate>
@@ -291,11 +297,13 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="#1A2333"/>
                 </Trigger>
                 <Trigger Property="IsEditing" Value="True">
                     <Setter Property="BorderBrush" Value="#3498DB"/>
-                    <Setter Property="BorderThickness" Value="1"/>
+                    <Setter Property="BorderThickness" Value="1.4"/>
+                    <Setter Property="Background" Value="#F5FAFF"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -383,12 +391,22 @@
                               DropDownClosed="CmbOrg_DropDownClosed"/>
                     <TextBlock Text="Branch:" VerticalAlignment="Center" FontSize="11.5"
                                Foreground="#4A5A6A" Margin="0,0,6,0"/>
-                    <ComboBox x:Name="CmbBranch" Width="150" Margin="0,0,16,0"
+                    <ComboBox x:Name="CmbBranch" Width="150" Margin="0,0,12,0"
                               Style="{StaticResource FilterComboStyle}"
                               GotFocus="CmbOrg_GotFocus"
                               PreviewKeyDown="CmbOrg_PreviewKeyDown"
                               SelectionChanged="CmbOrg_SelectionChanged"
                               DropDownClosed="CmbOrg_DropDownClosed"/>
+                    <StackPanel x:Name="PnlDistributor" Orientation="Horizontal" Visibility="Collapsed">
+                        <TextBlock Text="Distributor:" VerticalAlignment="Center" FontSize="11.5"
+                                   Foreground="#4A5A6A" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="CmbDistributor" Width="170" Margin="0,0,16,0"
+                                  Style="{StaticResource FilterComboStyle}"
+                                  GotFocus="CmbOrg_GotFocus"
+                                  PreviewKeyDown="CmbOrg_PreviewKeyDown"
+                                  SelectionChanged="CmbOrg_SelectionChanged"
+                                  DropDownClosed="CmbOrg_DropDownClosed"/>
+                    </StackPanel>
                     <CheckBox x:Name="ChkNoEmployee" Content="No Employee (Dept. Level)"
                               VerticalAlignment="Center" FontSize="11.5" Foreground="#4A5A6A"
                               Checked="ChkNoEmployee_Changed" Unchecked="ChkNoEmployee_Changed"/>
@@ -440,7 +458,7 @@
 
                 <!-- DataGrid -->
                 <DataGrid Grid.Row="3" x:Name="DgvRequests"
-                          Margin="0,4,0,0"
+                          Margin="0,6,0,0"
                           Background="White"
                           BorderBrush="#DDE3EC" BorderThickness="1"
                           GridLinesVisibility="None"
@@ -453,8 +471,10 @@
                           CanUserResizeRows="False"
                           CanUserResizeColumns="True"
                           AutoGenerateColumns="False"
-                          RowHeight="40"
-                          ColumnHeaderHeight="36"
+                          RowHeight="42"
+                          ColumnHeaderHeight="38"
+                          RowBackground="White"
+                          AlternatingRowBackground="#F7F9FB"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           SelectionChanged="DgvRequests_SelectionChanged"
@@ -463,8 +483,27 @@
 
                     <DataGrid.Columns>
 
-                        <!-- SELECT checkbox -->
-                        <DataGridTemplateColumn Width="36" CanUserResize="False">
+                        <!-- SELECT checkbox — CellStyle overrides the global DataGridCell
+                             padding (8,4), which would otherwise eat 16px of this narrow
+                             column's width and visually clip the checkbox. -->
+                        <DataGridTemplateColumn Width="44" CanUserResize="False">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="DataGridCell">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="#EEF1F5"
+                                                        BorderThickness="0,0,1,0"
+                                                        Padding="0">
+                                                    <ContentPresenter HorizontalAlignment="Center"
+                                                                      VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </DataGridTemplateColumn.CellStyle>
                             <DataGridTemplateColumn.HeaderTemplate>
                                 <DataTemplate>
                                     <CheckBox x:Name="ChkSelectAll"
@@ -517,14 +556,45 @@
                             </DataGridTemplateColumn.CellTemplate>
                             <DataGridTemplateColumn.CellEditingTemplate>
                                 <DataTemplate>
-                                    <ComboBox ItemsSource="{Binding FilteredItems}"
-                                              SelectedItem="{Binding SelectedItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                              DisplayMemberPath="DisplayName"
-                                              FontSize="11.5"
-                                              IsEditable="True"
-                                              IsTextSearchEnabled="True"
-                                              TextSearch.TextPath="DisplayName"
-                                              BorderThickness="0" Background="Transparent"/>
+                                    <!-- Deliberately NOT an editable ComboBox: WPF couples a
+                                         ComboBox's Text, SelectedItem and ItemsSource, so
+                                         filtering the list while the user types makes the control
+                                         re-sync its text from the selection and wipe the typed
+                                         search term. This TextBox + Popup ListBox pattern (the
+                                         same one used for Employee search above) keeps the search
+                                         text fully independent of the list, shows all matching
+                                         options first, and only commits a choice when the user
+                                         clicks one or presses Enter. -->
+                                    <Grid>
+                                        <TextBox x:Name="TxtItemSearch"
+                                                 Text="{Binding ItemSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 FontSize="11.5"
+                                                 BorderThickness="0" Background="Transparent"
+                                                 VerticalContentAlignment="Center"
+                                                 Padding="4,0"
+                                                 Loaded="ItemSearchBox_Loaded"
+                                                 TextChanged="ItemSearchBox_TextChanged"
+                                                 PreviewKeyDown="ItemSearchBox_PreviewKeyDown"/>
+                                        <Popup x:Name="PopupItems"
+                                               PlacementTarget="{Binding ElementName=TxtItemSearch}"
+                                               Placement="Bottom"
+                                               StaysOpen="False"
+                                               AllowsTransparency="True"
+                                               MinWidth="460">
+                                            <Border Background="White" BorderBrush="#C8D2DC"
+                                                    BorderThickness="1" CornerRadius="0,0,4,4">
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.14"/>
+                                                </Border.Effect>
+                                                <ListBox x:Name="LstItems"
+                                                         ItemsSource="{Binding FilteredItems}"
+                                                         DisplayMemberPath="DisplayName"
+                                                         MaxHeight="260" BorderThickness="0"
+                                                         FontSize="11.5" Background="Transparent"
+                                                         PreviewMouseLeftButtonUp="LstItems_MouseLeftButtonUp"/>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellEditingTemplate>
                         </DataGridTemplateColumn>
@@ -548,6 +618,13 @@
                         <DataGridTextColumn Header="Unit Price" Width="88"
                                             Binding="{Binding UnitPrice, StringFormat=N2}"
                                             FontSize="11.5" IsReadOnly="True"/>
+
+                        <!-- REMARKS (per-row; previously only visible via the shared bottom
+                             Remarks box for whichever row was selected — now shown inline so
+                             every row's remarks are visible at a glance without clicking each row) -->
+                        <DataGridTextColumn Header="Remarks" Width="150"
+                                            Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
+                                            FontSize="11.5"/>
 
                         <!-- DATE REQUESTED -->
                         <DataGridTemplateColumn Header="Date Requested" Width="112">

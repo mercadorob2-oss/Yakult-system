@@ -61,7 +61,7 @@ namespace Yakult.Inventory.App.Repositories
         ///       (Hardware, Software/License, Service) elsewhere.
         /// </summary>
         public async Task<int> CreateSetAsync(int createdByUserId, string remarks = null,
-            DateTime? dispatchDate = null, string status = "Pending")
+            DateTime? dispatchDate = null, string status = "Pending", int? distributorId = null)
         {
             const string sql = @"
         INSERT INTO dbo.[Set] (CreatedBy, CreatedAt, QRToken, Remarks, DispatchDate, Status)
@@ -79,6 +79,28 @@ namespace Yakult.Inventory.App.Repositories
                 await con.OpenAsync();
                 var result = await cmd.ExecuteScalarAsync();
                 int newSetId = Convert.ToInt32(result);
+
+                // Dept-level distributor: applied only when the column exists in this
+                // database (older DBs predate Migration_Set_AddDistributorId).
+                // Dynamic SQL: static column refs fail compile-time binding on old DBs.
+                if (distributorId.HasValue && distributorId.Value > 0)
+                {
+                    const string sqlDistributor = @"
+                        IF COL_LENGTH('dbo.[Set]', 'DistributorId') IS NOT NULL
+                        BEGIN
+                            EXEC sp_executesql
+                                N'UPDATE dbo.[Set] SET DistributorId = @DistributorId WHERE SetId = @SetId;',
+                                N'@SetId INT, @DistributorId INT',
+                                @SetId = @SetId, @DistributorId = @DistributorId;
+                        END";
+                    using (var distCmd = new SqlCommand(sqlDistributor, con))
+                    {
+                        distCmd.Parameters.AddWithValue("@SetId", newSetId);
+                        distCmd.Parameters.AddWithValue("@DistributorId", distributorId.Value);
+                        await distCmd.ExecuteNonQueryAsync();
+                    }
+                }
+
                 ActivityLogger.Log(createdByUserId, ActivityLogger.Actions.Create,
                     "Set", newSetId,
                     $"Set #{newSetId} created");
@@ -820,7 +842,33 @@ WHERE SetId = @SetId";
         /// </summary>
         public async Task<SetDto> GetSetByIdAsync(int setId)
         {
-            const string sql = @"
+            // Distributor columns may not exist on DBs predating their migrations.
+            // Static SQL binds columns at compile time, so the fragments are dynamic.
+            bool hasSetDistributor;
+            bool hasRequestDistributorForSet;
+            using (var guardCon = new SqlConnection(GetConnectionString()))
+            {
+                await guardCon.OpenAsync();
+                using (var guardCmd = new SqlCommand(
+                    "SELECT CASE WHEN COL_LENGTH('dbo.[Set]', 'DistributorId') IS NULL THEN 0 ELSE 1 END, " +
+                    "CASE WHEN COL_LENGTH('dbo.Request', 'DistributorId') IS NULL THEN 0 ELSE 1 END",
+                    guardCon))
+                using (var guardReader = await guardCmd.ExecuteReaderAsync())
+                {
+                    await guardReader.ReadAsync();
+                    hasSetDistributor = guardReader.GetInt32(0) == 1;
+                    hasRequestDistributorForSet = guardReader.GetInt32(1) == 1;
+                }
+            }
+            string setDistributorSelect = hasSetDistributor
+                ? "s.DistributorId,\n                    dist.Name AS DistributorName,"
+                : "CAST(NULL AS INT) AS DistributorId,\n                    CAST(NULL AS NVARCHAR(200)) AS DistributorName,";
+            string setDistributorJoin = hasSetDistributor
+                ? "LEFT JOIN dbo.Distributor dist ON dist.DistributorId = s.DistributorId"
+                : string.Empty;
+            string setDistributorGroupBy = hasSetDistributor ? ",\n                          s.DistributorId, dist.Name" : string.Empty;
+
+            string sql = @"
                 SELECT
                     s.SetId,
                     s.SetCode,
@@ -839,6 +887,7 @@ WHERE SetId = @SetId";
                     s.StartDate,
                     s.EndDate,
                     c.Name AS Company,
+                    " + setDistributorSelect + @"
                     s.DispatchDate,
                     s.SetType,
                     s.Status,
@@ -860,12 +909,13 @@ WHERE SetId = @SetId";
                 LEFT JOIN dbo.[User] u ON s.CreatedBy = u.UserId
                 LEFT JOIN dbo.Request r ON s.SetId = r.SetId
                 LEFT JOIN dbo.Company c ON s.ComId = c.ComId
+                " + setDistributorJoin + @"
                 LEFT JOIN dbo.Employee recv_emp ON recv_emp.EmpId = s.ReceivedById
                 WHERE s.SetId = @SetId
                 GROUP BY s.SetId, s.SetCode, ISNULL(s.IsInvoice, 0), s.CreatedBy, u.Name, s.CreatedAt, s.DateRequested,
                          s.QRToken, s.QRImagePath, s.QRImageData, s.QRData, s.Remarks,
                          s.DocumentNumber, s.ReferenceNumber, s.StartDate, s.EndDate,
-                         c.Name,
+                         c.Name" + setDistributorGroupBy + @",
                          s.DispatchDate, s.SetType, s.Status,
                          s.Subtotal, s.VatAmount, s.DiscountAmount, s.WhtAmount, s.TotalAmountDue,
                          s.UpgradeReason, s.ComputerName, s.IPAddress, s.IssuedBrandNewQty, s.IssuedRefilledQty,
@@ -926,6 +976,12 @@ WHERE SetId = @SetId";
                             Company = reader.IsDBNull(reader.GetOrdinal("Company"))
                                 ? null
                                 : reader.GetString(reader.GetOrdinal("Company")),
+                            DistributorId = reader.IsDBNull(reader.GetOrdinal("DistributorId"))
+                                ? (int?)null
+                                : reader.GetInt32(reader.GetOrdinal("DistributorId")),
+                            DistributorName = reader.IsDBNull(reader.GetOrdinal("DistributorName"))
+                                ? null
+                                : reader.GetString(reader.GetOrdinal("DistributorName")),
                             DispatchDate = reader.IsDBNull(reader.GetOrdinal("DispatchDate"))
                                 ? (DateTime?)null
                                 : reader.GetDateTime(reader.GetOrdinal("DispatchDate")),
@@ -1695,6 +1751,30 @@ END";
                             WHERE s.SetId = @SetId AND s.ReqId IS NULL";
 
                         using (var cmd = new SqlCommand(sqlUpdateSet, con, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@ReqId", reqId);
+                            cmd.Parameters.AddWithValue("@SetId", setId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+
+                        // Dept-level distributor propagation: a dept-level request may
+                        // carry dbo.Request.DistributorId (independent sales distributor,
+                        // not under Company/Dept/Branch). Carry it onto the Set when the
+                        // Set has none yet. Dynamic SQL is required: T-SQL binds column
+                        // names at compile time, so a static UPDATE guarded by IF
+                        // COL_LENGTH would still throw "Invalid column name" on DBs
+                        // predating either migration.
+                        const string sqlPropagateDistributor = @"
+                            IF COL_LENGTH('dbo.Request', 'DistributorId') IS NOT NULL
+                            AND COL_LENGTH('dbo.[Set]', 'DistributorId') IS NOT NULL
+                            BEGIN
+                                EXEC sp_executesql
+                                    N'UPDATE s SET s.DistributorId = r.DistributorId FROM dbo.[Set] s INNER JOIN dbo.Request r ON r.ReqId = @ReqId WHERE s.SetId = @SetId AND s.DistributorId IS NULL AND r.DistributorId IS NOT NULL;',
+                                    N'@ReqId INT, @SetId INT',
+                                    @ReqId = @ReqId, @SetId = @SetId;
+                            END";
+
+                        using (var cmd = new SqlCommand(sqlPropagateDistributor, con, transaction))
                         {
                             cmd.Parameters.AddWithValue("@ReqId", reqId);
                             cmd.Parameters.AddWithValue("@SetId", setId);
@@ -2560,13 +2640,92 @@ END";
         }
 
         /// <summary>
+        /// Sets the independent sales distributor on a Set header and all of its
+        /// Requests. Null clears it. No-op on databases predating either
+        /// DistributorId migration. Dynamic SQL is required: static column refs
+        /// fail compile-time binding on old DBs.
+        /// </summary>
+        public async Task UpdateSetDistributorAsync(int setId, int? distributorId, int modifiedByUserId)
+        {
+            const string sql = @"
+                IF COL_LENGTH('dbo.[Set]', 'DistributorId') IS NOT NULL
+                BEGIN
+                    EXEC sp_executesql
+                        N'UPDATE dbo.[Set] SET DistributorId = @DistributorId WHERE SetId = @SetId;',
+                        N'@SetId INT, @DistributorId INT',
+                        @SetId = @SetId, @DistributorId = @DistributorId;
+                END
+                IF COL_LENGTH('dbo.[Set]', 'DistributorId') IS NOT NULL
+                AND COL_LENGTH('dbo.Request', 'DistributorId') IS NOT NULL
+                BEGIN
+                    EXEC sp_executesql
+                        N'UPDATE dbo.Request SET DistributorId = @DistributorId WHERE SetId = @SetId;',
+                        N'@SetId INT, @DistributorId INT',
+                        @SetId = @SetId, @DistributorId = @DistributorId;
+                END";
+
+            using (var con = new SqlConnection(GetConnectionString()))
+            using (var cmd = new SqlCommand(sql, con))
+            {
+                cmd.Parameters.AddWithValue("@SetId", setId);
+                cmd.Parameters.AddWithValue("@DistributorId", (object)distributorId ?? DBNull.Value);
+
+                await con.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            string distributorLabel = null;
+            if (distributorId.HasValue)
+            {
+                try
+                {
+                    using (var con = new SqlConnection(GetConnectionString()))
+                    using (var cmd = new SqlCommand(
+                        "IF OBJECT_ID('dbo.Distributor', 'U') IS NOT NULL SELECT Name FROM dbo.Distributor WHERE DistributorId = @DistributorId", con))
+                    {
+                        cmd.Parameters.AddWithValue("@DistributorId", distributorId.Value);
+                        await con.OpenAsync();
+                        var result = await cmd.ExecuteScalarAsync();
+                        distributorLabel = result == null || result == DBNull.Value ? null : Convert.ToString(result);
+                    }
+                }
+                catch
+                {
+                    // Distributor catalog unavailable; audit still records the id path below.
+                }
+            }
+
+            ActivityLogger.Log(modifiedByUserId, ActivityLogger.Actions.Update,
+                "Set", setId,
+                $"Set #{setId} distributor set to {distributorLabel ?? "(None)"}");
+        }
+
+        /// <summary>
         /// Gets all unassigned requests (SetId is NULL) for adding to sets
         /// </summary>
         public async Task<List<RequestDto>> GetUnassignedRequestsAsync()
         {
             var requests = new List<RequestDto>();
 
-            const string sql = @"
+            bool hasUnassignedDistributor;
+            using (var distCheckCon = new SqlConnection(GetConnectionString()))
+            {
+                await distCheckCon.OpenAsync();
+                using (var distCheckCmd = new SqlCommand(
+                    "SELECT CASE WHEN COL_LENGTH('dbo.Request', 'DistributorId') IS NULL THEN 0 ELSE 1 END",
+                    distCheckCon))
+                {
+                    hasUnassignedDistributor = Convert.ToInt32(await distCheckCmd.ExecuteScalarAsync()) == 1;
+                }
+            }
+            string unassignedDistributorSelect = hasUnassignedDistributor
+                ? "r.DistributorId,\n                    dist.Name AS DistributorName,"
+                : "CAST(NULL AS INT) AS DistributorId,\n                    CAST(NULL AS NVARCHAR(200)) AS DistributorName,";
+            string unassignedDistributorJoin = hasUnassignedDistributor
+                ? "LEFT  JOIN dbo.Distributor dist ON dist.DistributorId = r.DistributorId"
+                : string.Empty;
+
+            string sql = @"
                 SELECT
                     r.ReqId,
                     r.Description,
@@ -2579,6 +2738,7 @@ END";
                     r.ComId,
                     r.DeptId,
                     r.BranchId,
+                    " + unassignedDistributorSelect + @"
                     r.DateCreated,
                     r.DateRequested,
                     e.Name   AS EmployeeName,
@@ -2591,6 +2751,7 @@ END";
                 LEFT  JOIN dbo.Company  co ON r.ComId    = co.ComId
                 LEFT  JOIN dbo.Department d ON r.DeptId  = d.DeptId
                 LEFT  JOIN dbo.Branch   b  ON r.BranchId = b.BranchId
+                " + unassignedDistributorJoin + @"
                 WHERE r.SetId IS NULL
                   AND ISNULL(i.Category, '') <> 'Cartridge'
                 ORDER BY r.DateCreated DESC";
@@ -2607,8 +2768,12 @@ END";
                         string coName     = reader.IsDBNull(reader.GetOrdinal("CompanyName"))   ? null : reader.GetString(reader.GetOrdinal("CompanyName"));
                         string deptName   = reader.IsDBNull(reader.GetOrdinal("DepartmentName"))? null : reader.GetString(reader.GetOrdinal("DepartmentName"));
                         string branchName = reader.IsDBNull(reader.GetOrdinal("BranchName"))    ? null : reader.GetString(reader.GetOrdinal("BranchName"));
+                        int? distId       = reader.IsDBNull(reader.GetOrdinal("DistributorId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("DistributorId"));
+                        string distName   = reader.IsDBNull(reader.GetOrdinal("DistributorName")) ? null : reader.GetString(reader.GetOrdinal("DistributorName"));
 
-                        // For dept-level requests build a readable label e.g. "Company / Dept / Branch"
+                        // For dept-level requests build a readable label e.g. "Company / Dept / Branch".
+                        // An independent sales distributor (not under any Company/Dept/Branch)
+                        // is appended when present, e.g. "Company / Dept / Branch / LACTO-B".
                         string displayName = empName;
                         if (displayName == null)
                         {
@@ -2616,6 +2781,7 @@ END";
                             if (coName     != null) parts.Add(coName);
                             if (deptName   != null) parts.Add(deptName);
                             if (branchName != null) parts.Add(branchName);
+                            if (distName   != null) parts.Add(distName);
                             displayName = parts.Count > 0 ? string.Join(" / ", parts) : "(Dept. Level)";
                         }
 
@@ -2634,6 +2800,8 @@ END";
                             ComId        = reader.IsDBNull(reader.GetOrdinal("ComId"))    ? (int?)null : reader.GetInt32(reader.GetOrdinal("ComId")),
                             DeptId       = reader.IsDBNull(reader.GetOrdinal("DeptId"))   ? (int?)null : reader.GetInt32(reader.GetOrdinal("DeptId")),
                             BranchId     = reader.IsDBNull(reader.GetOrdinal("BranchId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("BranchId")),
+                            DistributorId  = distId,
+                            DistributorName = distName,
                             EmployeeName    = displayName,
                             CompanyName     = coName,
                             DepartmentName  = deptName,

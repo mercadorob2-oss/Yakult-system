@@ -161,10 +161,11 @@ namespace Yakult.Inventory.App.WPF.Admin.EmailManagement.Views
                 MessageBox.Show("Email address deleted permanently.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 await _vm.LoadAsync();
             }
-            catch (System.Data.SqlClient.SqlException ex) when (ex.Number == 547)
+            catch (System.Data.SqlClient.SqlException ex) when (Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.IsForeignKeyViolation(ex))
             {
                 MessageBox.Show(
-                    "This email address is still referenced by other records. Use \"Linked Records\" to review and unlink them, or deactivate it instead.",
+                    Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.BuildFriendlyMessage(ex, "email address", suggestArchive: false) +
+                    " Use \"Linked Records\" to review and unlink them, or deactivate it instead.",
                     "Cannot Delete", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             catch (Exception ex)

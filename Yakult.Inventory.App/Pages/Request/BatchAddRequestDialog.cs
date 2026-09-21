@@ -27,10 +27,11 @@ namespace Yakult.Inventory.App.Pages.Request
         private CheckBox _chkNoEmployee;
         private Panel _empRowPanel;
         private Panel _orgUnitPanel;
-        private ComboBox _cmbCompany, _cmbDepartment, _cmbBranch;
+        private ComboBox _cmbCompany, _cmbDepartment, _cmbBranch, _cmbDistributor;
         private readonly List<OrgItem> _companies = new List<OrgItem>();
         private readonly List<OrgItem> _departments = new List<OrgItem>();
         private readonly List<OrgItem> _branches = new List<OrgItem>();
+        private readonly List<OrgItem> _distributors = new List<OrgItem>();
 
         // Autocomplete support
         private ListBox _autocompleteList;
@@ -543,6 +544,17 @@ namespace Yakult.Inventory.App.Pages.Request
                 AutoCompleteMode = AutoCompleteMode.SuggestAppend,
                 AutoCompleteSource = AutoCompleteSource.ListItems,
                 Width = 220,
+                Margin = new Padding(0, 0, 12, 0)
+            };
+
+            // Independent sales distributor (dbo.Distributor) — not under any
+            // Company/Department/Branch. Shown for dept-level batches only.
+            _cmbDistributor = new ComboBox
+            {
+                DropDownStyle = ComboBoxStyle.DropDown,
+                AutoCompleteMode = AutoCompleteMode.SuggestAppend,
+                AutoCompleteSource = AutoCompleteSource.ListItems,
+                Width = 220,
                 Margin = new Padding(0, 0, 0, 0)
             };
 
@@ -572,6 +584,8 @@ namespace Yakult.Inventory.App.Pages.Request
             orgRow.Controls.Add(_cmbDepartment);
             orgRow.Controls.Add(MakeOrgLabel("Branch:"));
             orgRow.Controls.Add(_cmbBranch);
+            orgRow.Controls.Add(MakeOrgLabel("Distributor:"));
+            orgRow.Controls.Add(_cmbDistributor);
 
             _orgUnitPanel = new Panel
             {
@@ -1095,10 +1109,35 @@ namespace Yakult.Inventory.App.Pages.Request
 
                     _branches.Clear();
                     _branches.Add(new OrgItem { Id = 0, Name = "-- Any --" });
-                    using (var cmd = new SqlCommand("SELECT BranchId, Name FROM dbo.Branch WHERE Active = 1 ORDER BY Name", con))
+                    // Flag distributor-type branches with a suffix (same convention as
+                    // Call Monitoring ticket lists). Guarded for DBs predating the flag.
+                    using (var cmd = new SqlCommand(
+                        "SELECT BranchId, Name, CASE WHEN COL_LENGTH('dbo.Branch', 'IsDistributor') IS NULL THEN 0 ELSE ISNULL(IsDistributor, 0) END AS IsDistributor FROM dbo.Branch WHERE Active = 1 ORDER BY Name", con))
                     using (var r = cmd.ExecuteReader())
                         while (r.Read())
-                            _branches.Add(new OrgItem { Id = r.GetInt32(0), Name = r.GetString(1) });
+                        {
+                            string branchName = r.GetString(1);
+                            if (Convert.ToInt32(r.GetValue(2)) == 1)
+                                branchName += " (Distributor)";
+                            _branches.Add(new OrgItem { Id = r.GetInt32(0), Name = branchName });
+                        }
+
+                    // Independent sales distributors (dbo.Distributor). Missing table or
+                    // columns on older DBs simply leaves the "(None)" default.
+                    _distributors.Clear();
+                    _distributors.Add(new OrgItem { Id = 0, Name = "(None)" });
+                    try
+                    {
+                        using (var cmd = new SqlCommand(
+                            "IF OBJECT_ID('dbo.Distributor', 'U') IS NOT NULL SELECT DistributorId, Name FROM dbo.Distributor WHERE IsActive = 1 ORDER BY SortOrder, Name", con))
+                        using (var r = cmd.ExecuteReader())
+                            while (r.Read())
+                                _distributors.Add(new OrgItem { Id = r.GetInt32(0), Name = r.GetString(1) });
+                    }
+                    catch
+                    {
+                        // Distributor catalog unavailable — keep "(None)" only.
+                    }
                 }
             }
             catch (Exception ex)
@@ -1127,6 +1166,13 @@ namespace Yakult.Inventory.App.Pages.Request
                 _cmbBranch.DisplayMember = "Name";
                 _cmbBranch.SelectedIndex = 0;
             }
+            if (_cmbDistributor != null)
+            {
+                _cmbDistributor.DataSource = null;
+                _cmbDistributor.DataSource = _distributors;
+                _cmbDistributor.DisplayMember = "Name";
+                _cmbDistributor.SelectedIndex = 0;
+            }
         }
 
         private void ChkNoEmployee_CheckedChanged(object sender, EventArgs e)
@@ -1149,11 +1195,13 @@ namespace Yakult.Inventory.App.Pages.Request
                 _cmbCompany.BackColor = SystemColors.Window;
                 _cmbDepartment.BackColor = SystemColors.Window;
                 _cmbBranch.BackColor = SystemColors.Window;
+                if (_cmbDistributor != null)
+                    _cmbDistributor.BackColor = SystemColors.Window;
             }
 
             // Update the info banner text
             lblInfo.Text = noEmp
-                ? "Batch add requests. Select a Company (required), Department, and Branch for this batch, then fill each row and click Save."
+                ? "Batch add requests. Select a Company or a Distributor (at least one required), plus optional Department and Branch, then fill each row and click Save."
                 : "Batch add requests. Select an employee for this batch, then fill each row and click Save.";
         }
 
@@ -3188,22 +3236,20 @@ namespace Yakult.Inventory.App.Pages.Request
             // ── Resolve batch-level requester (employee OR org-unit) ─────────
             EmployeeItem batchEmp = null;
             int? batchComId = null, batchDeptId = null, batchBranchId = null;
+            int? batchDistributorId = null;
             string batchCompanyName = null, batchDeptName = null, batchBranchName = null;
+            string batchDistributorName = null;
 
             if (_chkNoEmployee != null && _chkNoEmployee.Checked)
             {
-                // Org-unit mode: Company required, Department and Branch optional
+                // Org-unit mode: Company OR Distributor required (distributors are
+                // independent of Company/Department/Branch). Dept/Branch optional.
                 var selCompany = _cmbCompany?.SelectedItem as OrgItem;
-                if (selCompany == null || selCompany.Id <= 0)
+                if (selCompany != null && selCompany.Id > 0)
                 {
-                    _cmbCompany.BackColor = InvalidCellColor;
-                    MessageBox.Show("Please select a Company for this batch.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    _cmbCompany?.Focus();
-                    return;
+                    batchComId = selCompany.Id;
+                    batchCompanyName = selCompany.Name;
                 }
-                _cmbCompany.BackColor = SystemColors.Window;
-                batchComId = selCompany.Id;
-                batchCompanyName = selCompany.Name;
 
                 var selDept = _cmbDepartment?.SelectedItem as OrgItem;
                 if (selDept != null && selDept.Id > 0)
@@ -3218,6 +3264,26 @@ namespace Yakult.Inventory.App.Pages.Request
                     batchBranchId = selBranch.Id;
                     batchBranchName = selBranch.Name;
                 }
+
+                var selDistributor = _cmbDistributor?.SelectedItem as OrgItem;
+                if (selDistributor != null && selDistributor.Id > 0)
+                {
+                    batchDistributorId = selDistributor.Id;
+                    batchDistributorName = selDistributor.Name;
+                }
+
+                if (!batchComId.HasValue && !batchDistributorId.HasValue)
+                {
+                    _cmbCompany.BackColor = InvalidCellColor;
+                    if (_cmbDistributor != null)
+                        _cmbDistributor.BackColor = InvalidCellColor;
+                    MessageBox.Show("Please select a Company or a Distributor for this batch.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    _cmbCompany?.Focus();
+                    return;
+                }
+                _cmbCompany.BackColor = SystemColors.Window;
+                if (_cmbDistributor != null)
+                    _cmbDistributor.BackColor = SystemColors.Window;
             }
             else
             {
@@ -3382,9 +3448,11 @@ namespace Yakult.Inventory.App.Pages.Request
                     ComId = batchComId,
                     DeptId = batchDeptId,
                     BranchId = batchBranchId,
+                    DistributorId = batchDistributorId,
                     CompanyName = batchCompanyName,
                     DepartmentName = batchDeptName,
                     BranchName = batchBranchName,
+                    DistributorName = batchDistributorName,
                     ItemId = item.Id.Value,
                     ItemName = item.Name,
                     Quantity = qty,

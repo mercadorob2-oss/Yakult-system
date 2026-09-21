@@ -338,16 +338,57 @@ namespace Yakult.Inventory.App.WPF.Request.ViewModels
                 try
                 {
                     int successCount = 0;
+                    int setsAlsoDeleted = 0;
                     foreach (var row in checkedRows)
                     {
+                        // Before deleting, check whether this Request is still linked to a Set.
+                        // Deleting it as-is would otherwise fail with SqlException 547
+                        // (FK_Set_Request). Ask the user what they want to do instead of
+                        // surfacing the raw SQL error.
+                        var linkedSet = await _repository.GetLinkedSetInfoAsync(row.ReqId);
+                        if (linkedSet.HasValue)
+                        {
+                            string setLabel = string.IsNullOrWhiteSpace(linkedSet.Value.SetCode)
+                                ? $"Set #{linkedSet.Value.SetId}"
+                                : linkedSet.Value.SetCode;
+
+                            string choice = ConfirmYesNoCancel?.Invoke(
+                                "Request Linked to a Set",
+                                $"Request #{row.ReqId} is still linked to {setLabel}.\n\n" +
+                                "Choose Yes to delete BOTH the Request and the Set (items in the Set will be returned to stock).\n" +
+                                "Choose No to skip this request and leave it and the Set untouched.\n" +
+                                "Choose Cancel to stop the whole delete operation.") ?? "Cancel";
+
+                            if (choice == "Cancel")
+                            {
+                                break;
+                            }
+                            if (choice == "No")
+                            {
+                                continue;
+                            }
+
+                            // choice == "Yes": delete both, restoring stock for the Set's items.
+                            bool bothDeleted = await _repository.DeleteRequestAndLinkedSetAndRestoreStock(row.ReqId, linkedSet.Value.SetId);
+                            if (bothDeleted)
+                            {
+                                successCount++;
+                                setsAlsoDeleted++;
+                            }
+                            continue;
+                        }
+
                         bool success = await _repository.DeleteRequestAndRestoreStock(row.ReqId);
                         if (success) successCount++;
                     }
 
                     if (successCount > 0)
                     {
+                        string setsNote = setsAlsoDeleted > 0
+                            ? $"\n✔ {setsAlsoDeleted} linked Set(s) also deleted and their items restored to stock"
+                            : string.Empty;
                         RequestInfo?.Invoke("Deleted Successfully",
-                            $"{successCount} request(s) permanently deleted!\n\n✔ Requests removed from database\n✔ Stock restored for deleted requests");
+                            $"{successCount} request(s) permanently deleted!\n\n✔ Requests removed from database\n✔ Stock restored for deleted requests{setsNote}");
                         LoadRequests();
                     }
                 }

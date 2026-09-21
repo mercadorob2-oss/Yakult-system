@@ -312,6 +312,10 @@ namespace Yakult.Inventory.App.Pages
         public int? DeptId { get; set; }
         public int? BranchId { get; set; }
 
+        // Independent sales distributor (dbo.Distributor) for dept-level requests.
+        // Not under Company/Department/Branch; stored on dbo.Request.DistributorId.
+        public int? DistributorId { get; set; }
+
         // Display names (for UI reference, not saved to DB)
         public string EmployeeName { get; set; }
         public string EmployeeNumber { get; set; }
@@ -319,6 +323,7 @@ namespace Yakult.Inventory.App.Pages
         public string CompanyName { get; set; }
         public string DepartmentName { get; set; }
         public string BranchName { get; set; }
+        public string DistributorName { get; set; }
         public string ItemName { get; set; }
 
         public string ModelNumber { get; set; }
@@ -389,6 +394,10 @@ namespace Yakult.Inventory.App.Pages
         public string UpgradeReason { get; set; }
         public int? DaysLeft { get; set; }
         public string Company { get; set; }
+        // Independent sales distributor on the Set header (dbo.Set.DistributorId).
+        // Not under Company/Department/Branch.
+        public int? DistributorId { get; set; }
+        public string DistributorName { get; set; }
         public string Site { get; set; }
         public string Status { get; set; }
 

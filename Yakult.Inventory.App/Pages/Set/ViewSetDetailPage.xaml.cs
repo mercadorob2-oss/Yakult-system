@@ -140,6 +140,7 @@ namespace Yakult.Inventory.App.Pages.Set
         private readonly List<OrgSetItem> _orgCompanies = new List<OrgSetItem>();
         private readonly List<OrgSetItem> _orgDepts     = new List<OrgSetItem>();
         private readonly List<OrgSetItem> _orgBranches  = new List<OrgSetItem>();
+        private readonly List<OrgSetItem> _orgDistributors = new List<OrgSetItem>();
 
         private List<SetRequestDisplayRow> _displayRows = new List<SetRequestDisplayRow>();
 
@@ -354,6 +355,7 @@ namespace Yakult.Inventory.App.Pages.Set
                         TxtCompany.Text        = employeeDetail.CompanyName    ?? "—";
                         TxtBranch.Text         = employeeDetail.BranchName     ?? "—";
                         TxtDepartment.Text     = employeeDetail.DepartmentName ?? "—";
+                        TxtDistributor.Text    = setDto.DistributorName        ?? "—";
 
                         if (employeeDetail.EmpId <= 0)
                         {
@@ -369,6 +371,7 @@ namespace Yakult.Inventory.App.Pages.Set
                     {
                         TxtEmployeeNumber.Text = "N/A";
                         TxtCompany.Text = TxtBranch.Text = TxtDepartment.Text = "N/A";
+                        TxtDistributor.Text = setDto.DistributorName ?? "—";
                         SwitchToEmployeeMode();
                     }
                 }
@@ -376,6 +379,7 @@ namespace Yakult.Inventory.App.Pages.Set
                 {
                     TxtEmployeeNumber.Text = "N/A";
                     TxtCompany.Text = TxtBranch.Text = TxtDepartment.Text = "N/A";
+                    TxtDistributor.Text = setDto.DistributorName ?? "—";
                 }
 
                 LoadReceivedByCombo(setDto.ReceivedById);
@@ -565,11 +569,34 @@ namespace Yakult.Inventory.App.Pages.Set
                             branches.Add(item);
                         }
                     CmbBranchEdit.ItemsSource = branches;
+
+                    // Independent sales distributors (dbo.Distributor). Missing table
+                    // on older DBs simply leaves the "(None)" default.
+                    _orgDistributors.Clear();
+                    var distributors = new List<OrgSetItem> { new OrgSetItem { Id = 0, Name = "(None)" } };
+                    try
+                    {
+                        using (var cmd = new SqlCommand(
+                            "IF OBJECT_ID('dbo.Distributor', 'U') IS NOT NULL SELECT DistributorId, Name FROM dbo.Distributor WHERE IsActive = 1 ORDER BY SortOrder, Name", con))
+                        using (var rdr = cmd.ExecuteReader())
+                            while (rdr.Read())
+                            {
+                                var item = new OrgSetItem { Id = rdr.GetInt32(0), Name = rdr.GetString(1) };
+                                _orgDistributors.Add(item);
+                                distributors.Add(item);
+                            }
+                    }
+                    catch
+                    {
+                        // Distributor catalog unavailable — keep "(None)" only.
+                    }
+                    CmbDistributorEdit.ItemsSource = distributors;
                 }
 
                 SelectOrgCombo(CmbCompanyEdit, TxtCompany.Text);
                 SelectOrgCombo(CmbDeptEdit,    TxtDepartment.Text);
                 SelectOrgCombo(CmbBranchEdit,  TxtBranch.Text);
+                SelectOrgCombo(CmbDistributorEdit, TxtDistributor.Text);
             }
             catch (Exception ex)
             {
@@ -607,6 +634,8 @@ namespace Yakult.Inventory.App.Pages.Set
             TxtDepartment.Visibility    = Visibility.Collapsed;
             CmbBranchEdit.Visibility    = Visibility.Visible;
             TxtBranch.Visibility        = Visibility.Collapsed;
+            CmbDistributorEdit.Visibility = Visibility.Visible;
+            TxtDistributor.Visibility     = Visibility.Collapsed;
 
             TxtEmployeeNumber.Text = "—";
         }
@@ -624,6 +653,8 @@ namespace Yakult.Inventory.App.Pages.Set
             TxtDepartment.Visibility    = Visibility.Visible;
             CmbBranchEdit.Visibility    = Visibility.Collapsed;
             TxtBranch.Visibility        = Visibility.Visible;
+            CmbDistributorEdit.Visibility = Visibility.Collapsed;
+            TxtDistributor.Visibility     = Visibility.Visible;
         }
 
         private async void BtnSwitchMode_Click(object sender, RoutedEventArgs e)
@@ -651,9 +682,14 @@ namespace Yakult.Inventory.App.Pages.Set
                 if (_isDeptLevel)
                 {
                     var comItem = CmbCompanyEdit.SelectedItem as OrgSetItem;
-                    if (comItem == null || comItem.Id <= 0)
+                    var distItem = CmbDistributorEdit.SelectedItem as OrgSetItem;
+                    int? saveDistributorId = (distItem != null && distItem.Id > 0) ? (int?)distItem.Id : null;
+
+                    // Distributors are independent of Company/Dept/Branch:
+                    // a distributor-only set needs no Company.
+                    if ((comItem == null || comItem.Id <= 0) && !saveDistributorId.HasValue)
                     {
-                        WinMsgBox.Show("Please select a Company.", "Validation Error",
+                        WinMsgBox.Show("Please select a Company or a Distributor.", "Validation Error",
                             MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
@@ -665,9 +701,10 @@ namespace Yakult.Inventory.App.Pages.Set
                     int? saveBranchId = (branchItem != null && branchItem.Id > 0) ? (int?)branchItem.Id : null;
 
                     var confirm = WinMsgBox.Show(
-                        $"Transfer set to dept. level:\n\n{comItem.Name}" +
+                        $"Transfer set to dept. level:\n\n{(comItem != null && comItem.Id > 0 ? comItem.Name : "(No Company)")}" +
                         (deptItem   != null && deptItem.Id   > 0 ? $"\n{deptItem.Name}"   : "") +
                         (branchItem != null && branchItem.Id > 0 ? $"\n{branchItem.Name}" : "") +
+                        (saveDistributorId.HasValue ? $"\nDistributor: {distItem.Name}" : "") +
                         (_isRequestBasedSet
                             ? "\n\nThis will clear the employee on all requests in this set.\n\nContinue?"
                             : "\n\nContinue?"),
@@ -678,10 +715,15 @@ namespace Yakult.Inventory.App.Pages.Set
                     BtnSaveTransfer.IsEnabled   = false;
                     BtnSaveTransfer.Content     = "Saving...";
 
-                    if (_isRequestBasedSet)
-                        await _repository.TransferSetOwnershipToDeptAsync(_setId, comItem.Id, saveDeptId, saveBranchId);
-                    else
-                        await _repository.UpdateSetLevelOrgUnitAsync(_setId, comItem.Id, saveDeptId, saveBranchId, AppSession.CurrentUserId);
+                    if (comItem != null && comItem.Id > 0)
+                    {
+                        if (_isRequestBasedSet)
+                            await _repository.TransferSetOwnershipToDeptAsync(_setId, comItem.Id, saveDeptId, saveBranchId);
+                        else
+                            await _repository.UpdateSetLevelOrgUnitAsync(_setId, comItem.Id, saveDeptId, saveBranchId, AppSession.CurrentUserId);
+                    }
+
+                    await _repository.UpdateSetDistributorAsync(_setId, saveDistributorId, AppSession.CurrentUserId);
 
                     _currentEmployeeId = 0;
                     WinMsgBox.Show("Set ownership transferred to dept. level.", "Success",

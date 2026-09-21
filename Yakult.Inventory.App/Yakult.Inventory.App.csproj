@@ -427,6 +427,7 @@
     <Compile Include="Helpers\TaskHelper.cs" />
     <Compile Include="Helpers\DataGridViewSafety.cs" />
     <Compile Include="Helpers\FieldVisitCompletionPdfGenerator.cs" />
+    <Compile Include="Helpers\ForeignKeyErrorHelper.cs" />
     <Compile Include="Helpers\InvoiceReportPdfGenerator.cs" />
     <Compile Include="Helpers\InvoiceSheetRdlHelper.cs" />
     <Compile Include="Helpers\ModernUiHelper.cs" />

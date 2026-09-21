@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Yakult.Inventory.App.Models;
+using Yakult.Inventory.App.Services;
 using Yakult.Inventory.App.Session;
 using Yakult.Inventory.App.Pages;
 using Yakult.Inventory.App.Core;
-using Yakult.Inventory.App.Services;
 
 namespace Yakult.Inventory.App.Repositories
 {
@@ -27,6 +27,39 @@ namespace Yakult.Inventory.App.Repositories
             return DatabaseConfig.ConnectionString;
         }
 
+        private static bool? _requestHasDistributorId;
+
+        /// <summary>
+        /// Whether dbo.Request.DistributorId exists in the connected database.
+        /// The Migration_Request_AddDistributorId migration may not be deployed
+        /// everywhere yet, so every distributor read/write stays conditional.
+        /// Requires an already-open connection.
+        /// </summary>
+        private bool HasRequestDistributorColumn(SqlConnection openConnection, SqlTransaction transaction = null)
+        {
+            if (_requestHasDistributorId.HasValue)
+                return _requestHasDistributorId.Value;
+            const string sql = "SELECT CASE WHEN COL_LENGTH('dbo.Request', 'DistributorId') IS NULL THEN 0 ELSE 1 END";
+            using (var cmd = new SqlCommand(sql, openConnection, transaction))
+            {
+                var result = cmd.ExecuteScalar();
+                _requestHasDistributorId = Convert.ToInt32(result) == 1;
+                return _requestHasDistributorId.Value;
+            }
+        }
+
+        private static int? GetNullableInt32(SqlDataReader reader, string columnName)
+        {
+            int ordinal = reader.GetOrdinal(columnName);
+            return reader.IsDBNull(ordinal) ? (int?)null : reader.GetInt32(ordinal);
+        }
+
+        private static string GetNullableString(SqlDataReader reader, string columnName)
+        {
+            int ordinal = reader.GetOrdinal(columnName);
+            return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
+        }
+
         public int AddRequest(Pages.RequestDto request)
         {
             using (var con = new SqlConnection(GetConnectionString()))
@@ -36,17 +69,23 @@ namespace Yakult.Inventory.App.Repositories
                 {
                     try
                     {
+                        // Distributor is optional and deployment-guarded: older DBs may
+                        // not have dbo.Request.DistributorId yet (see migration).
+                        bool hasDistributorColumn = HasRequestDistributorColumn(con, transaction);
+                        string distributorInsertColumn = hasDistributorColumn ? "\n                         DistributorId," : string.Empty;
+                        string distributorInsertValue = hasDistributorColumn ? "\n                         @DistributorId," : string.Empty;
+
                         // Step 1: Insert into Request table
-                        const string sqlRequest = @"
+                        string sqlRequest = @"
                     INSERT INTO dbo.Request
                         (DateRequested, Description, Remarks, Status, EntryType, Quantity, IssuedQty,
                          DateCreated, CreatedBy, DateModified, ModifiedBy, ItemId, EmpId,
-                         ComId, DeptId, BranchId,
+                         ComId, DeptId, BranchId," + distributorInsertColumn + @"
                          SubmissionSessionId, ConditionID, RequestSource, ReceivedById, WorkflowType)
                     VALUES
                         (@DateRequested, @Description, @Remarks, @Status, @EntryType, @Quantity, @IssuedQty,
                          @DateCreated, @CreatedBy, @DateModified, @ModifiedBy, @ItemId, @EmpId,
-                         @ComId, @DeptId, @BranchId,
+                         @ComId, @DeptId, @BranchId," + distributorInsertValue + @"
                          @SubmissionSessionId, @ConditionID, @RequestSource, @ReceivedById, @WorkflowType);
                     SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
@@ -69,6 +108,8 @@ namespace Yakult.Inventory.App.Repositories
                             cmd.Parameters.AddWithValue("@ComId", (object)request.ComId ?? DBNull.Value);
                             cmd.Parameters.AddWithValue("@DeptId", (object)request.DeptId ?? DBNull.Value);
                             cmd.Parameters.AddWithValue("@BranchId", (object)request.BranchId ?? DBNull.Value);
+                            if (hasDistributorColumn)
+                                cmd.Parameters.AddWithValue("@DistributorId", (object)request.DistributorId ?? DBNull.Value);
                             cmd.Parameters.AddWithValue("@SubmissionSessionId", (object)request.SubmissionSessionId ?? DBNull.Value);
                             cmd.Parameters.AddWithValue("@ConditionID", (object)request.ConditionID ?? DBNull.Value);
                             cmd.Parameters.AddWithValue("@RequestSource", (object)request.RequestSource ?? "PORTAL");
@@ -330,6 +371,19 @@ namespace Yakult.Inventory.App.Repositories
             if (!string.IsNullOrWhiteSpace(reqIdFilter))
                 whereClauses.Add("CAST(r.ReqId AS NVARCHAR(20)) LIKE @ReqId");
 
+            bool hasRequestDistributor;
+            using (var distCheckCon = new SqlConnection(GetConnectionString()))
+            {
+                distCheckCon.Open();
+                hasRequestDistributor = HasRequestDistributorColumn(distCheckCon);
+            }
+            string distributorSelectClause = hasRequestDistributor
+                ? "r.DistributorId,\n                    dist.Name AS DistributorName,"
+                : "CAST(NULL AS INT) AS DistributorId,\n                    CAST(NULL AS NVARCHAR(200)) AS DistributorName,";
+            string distributorJoinClause = hasRequestDistributor
+                ? "LEFT  JOIN dbo.Distributor dist ON dist.DistributorId = r.DistributorId"
+                : string.Empty;
+
             string sql = $@"
                 SELECT
                     r.ReqId,
@@ -346,6 +400,7 @@ namespace Yakult.Inventory.App.Repositories
                     r.ComId,
                     r.DeptId,
                     r.BranchId,
+                    {distributorSelectClause}
                     r.SetId,
                     r.ConditionID,
                     r.RequestSource,
@@ -379,6 +434,7 @@ namespace Yakult.Inventory.App.Repositories
                 LEFT  JOIN dbo.Company    rc ON rc.ComId    = r.ComId
                 LEFT  JOIN dbo.Department rd ON rd.DeptId   = r.DeptId
                 LEFT  JOIN dbo.Branch     rb ON rb.BranchId = r.BranchId
+                {distributorJoinClause}
                 LEFT  JOIN dbo.[Set]      st ON st.SetId    = r.SetId
                 LEFT  JOIN dbo.Condition  cnd ON cnd.ConditionID = r.ConditionID
                 LEFT  JOIN dbo.Employee  rcv ON rcv.EmpId   = r.ReceivedById
@@ -455,6 +511,8 @@ namespace Yakult.Inventory.App.Repositories
                             ComId = reader.IsDBNull(reader.GetOrdinal("ComId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ComId")),
                             DeptId = reader.IsDBNull(reader.GetOrdinal("DeptId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("DeptId")),
                             BranchId = reader.IsDBNull(reader.GetOrdinal("BranchId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("BranchId")),
+                            DistributorId = GetNullableInt32(reader, "DistributorId"),
+                            DistributorName = GetNullableString(reader, "DistributorName"),
                             ItemName = itemName,
                             ModelNumber = modelNumber,
                             Category = category,
@@ -561,7 +619,20 @@ namespace Yakult.Inventory.App.Repositories
             var requests = new List<Pages.RequestDto>();
             var pendingPortalResolutions = new List<PortalRequestResolution>();
 
-            const string sql = @"
+            bool hasCartridgeDistributor;
+            using (var distCheckCon = new SqlConnection(GetConnectionString()))
+            {
+                distCheckCon.Open();
+                hasCartridgeDistributor = HasRequestDistributorColumn(distCheckCon);
+            }
+            string cartridgeDistributorSelect = hasCartridgeDistributor
+                ? "r.DistributorId,\n                    dist.Name AS DistributorName,"
+                : "CAST(NULL AS INT) AS DistributorId,\n                    CAST(NULL AS NVARCHAR(200)) AS DistributorName,";
+            string cartridgeDistributorJoin = hasCartridgeDistributor
+                ? "LEFT  JOIN dbo.Distributor dist ON dist.DistributorId = r.DistributorId"
+                : string.Empty;
+
+            string sql = @"
                 SELECT
                     r.ReqId,
                     r.DateRequested,
@@ -577,6 +648,7 @@ namespace Yakult.Inventory.App.Repositories
                     r.ComId,
                     r.DeptId,
                     r.BranchId,
+                    " + cartridgeDistributorSelect + @"
                     i.Name AS ItemName,
                     i.ModelNumber,
                     i.Category,
@@ -597,6 +669,7 @@ namespace Yakult.Inventory.App.Repositories
                 LEFT  JOIN dbo.Company    rc ON rc.ComId    = r.ComId
                 LEFT  JOIN dbo.Department rd ON rd.DeptId   = r.DeptId
                 LEFT  JOIN dbo.Branch     rb ON rb.BranchId = r.BranchId
+                " + cartridgeDistributorJoin + @"
                 LEFT JOIN dbo.ArchiveStatus arch_req ON arch_req.EntityType = 'Request' AND arch_req.EntityId = r.ReqId AND arch_req.IsArchived = 1
                 LEFT JOIN dbo.ArchiveStatus arch_itm ON arch_itm.EntityType = 'Item'    AND arch_itm.EntityId = i.ItemId AND arch_itm.IsArchived = 1
                 LEFT JOIN dbo.ArchiveStatus arch_emp ON arch_emp.EntityType = 'Employee' AND arch_emp.EntityId = e.EmpId AND arch_emp.IsArchived = 1
@@ -655,6 +728,8 @@ namespace Yakult.Inventory.App.Repositories
                             ComId = reader.IsDBNull(reader.GetOrdinal("ComId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ComId")),
                             DeptId = reader.IsDBNull(reader.GetOrdinal("DeptId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("DeptId")),
                             BranchId = reader.IsDBNull(reader.GetOrdinal("BranchId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("BranchId")),
+                            DistributorId = GetNullableInt32(reader, "DistributorId"),
+                            DistributorName = GetNullableString(reader, "DistributorName"),
                             ItemName = itemName,
                             ModelNumber = modelNumber,
                             Category = category,
@@ -696,7 +771,20 @@ namespace Yakult.Inventory.App.Repositories
 
         public Pages.RequestDto GetRequestById(int reqId)
         {
-            const string sql = @"
+            bool hasByIdDistributor;
+            using (var distCheckCon = new SqlConnection(GetConnectionString()))
+            {
+                distCheckCon.Open();
+                hasByIdDistributor = HasRequestDistributorColumn(distCheckCon);
+            }
+            string byIdDistributorSelect = hasByIdDistributor
+                ? "r.DistributorId,\n                    dist.Name AS DistributorName,"
+                : "CAST(NULL AS INT) AS DistributorId,\n                    CAST(NULL AS NVARCHAR(200)) AS DistributorName,";
+            string byIdDistributorJoin = hasByIdDistributor
+                ? "LEFT  JOIN dbo.Distributor dist ON dist.DistributorId = r.DistributorId"
+                : string.Empty;
+
+            string sql = @"
                 SELECT
                     r.ReqId,
                     r.DateRequested,
@@ -712,6 +800,7 @@ namespace Yakult.Inventory.App.Repositories
                     r.ComId,
                     r.DeptId,
                     r.BranchId,
+                    " + byIdDistributorSelect + @"
                     r.ConditionID,
                     i.Name AS ItemName,
                     i.ModelNumber,
@@ -733,6 +822,7 @@ namespace Yakult.Inventory.App.Repositories
                 LEFT  JOIN dbo.Company    rc ON rc.ComId    = r.ComId
                 LEFT  JOIN dbo.Department rd ON rd.DeptId   = r.DeptId
                 LEFT  JOIN dbo.Branch     rb ON rb.BranchId = r.BranchId
+                " + byIdDistributorJoin + @"
                 WHERE r.ReqId = @ReqId";
 
             using (var con = new SqlConnection(GetConnectionString()))
@@ -761,6 +851,8 @@ namespace Yakult.Inventory.App.Repositories
                             ComId = reader.IsDBNull(reader.GetOrdinal("ComId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ComId")),
                             DeptId = reader.IsDBNull(reader.GetOrdinal("DeptId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("DeptId")),
                             BranchId = reader.IsDBNull(reader.GetOrdinal("BranchId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("BranchId")),
+                            DistributorId = GetNullableInt32(reader, "DistributorId"),
+                            DistributorName = GetNullableString(reader, "DistributorName"),
                             ConditionID = reader.IsDBNull(reader.GetOrdinal("ConditionID")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("ConditionID")),
                             ItemName = reader.GetString(reader.GetOrdinal("ItemName")),
                             ModelNumber = reader.IsDBNull(reader.GetOrdinal("ModelNumber")) ? null : reader.GetString(reader.GetOrdinal("ModelNumber")),
@@ -792,7 +884,16 @@ namespace Yakult.Inventory.App.Repositories
                 // Intentionally ignore. Update must still proceed.
             }
 
-            const string sql = @"
+            string distributorSetClause;
+            bool hasDistributorColumnUpdate;
+            using (var con = new SqlConnection(GetConnectionString()))
+            {
+                con.Open();
+                hasDistributorColumnUpdate = HasRequestDistributorColumn(con);
+                distributorSetClause = hasDistributorColumnUpdate ? "DistributorId = @DistributorId," : string.Empty;
+            }
+
+            string sql = @"
                 UPDATE dbo.Request
                 SET
                     DateRequested = @DateRequested,
@@ -808,6 +909,7 @@ namespace Yakult.Inventory.App.Repositories
                     ComId = @ComId,
                     DeptId = @DeptId,
                     BranchId = @BranchId,
+                    " + distributorSetClause + @"
                     ConditionID = @ConditionID
                 WHERE ReqId = @ReqId";
 
@@ -828,6 +930,8 @@ namespace Yakult.Inventory.App.Repositories
                 cmd.Parameters.AddWithValue("@ComId", (object)request.ComId ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@DeptId", (object)request.DeptId ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@BranchId", (object)request.BranchId ?? DBNull.Value);
+                if (hasDistributorColumnUpdate)
+                    cmd.Parameters.AddWithValue("@DistributorId", (object)request.DistributorId ?? DBNull.Value);
                 // ConditionID is optional - only applicable for hardware items with condition tracking
                 cmd.Parameters.AddWithValue("@ConditionID", (object)request.ConditionID ?? DBNull.Value);
 
@@ -1133,7 +1237,19 @@ namespace Yakult.Inventory.App.Repositories
                             cmd.Parameters.AddWithValue("@ReqId", reqId);
                             await cmd.ExecuteNonQueryAsync();
                         }
-                        
+
+                        // Step 3b: Clear Set.ReqId for any Set that still references this
+                        // request. Without this, deleting the Request throws SqlException
+                        // 547 ("DELETE statement conflicted with the REFERENCE constraint
+                        // FK_Set_Request") whenever a Set was created from/linked to this
+                        // Request. Mirrors the same step in usp_Request_Delete.sql.
+                        using (SqlCommand cmd = new SqlCommand(
+                            "UPDATE dbo.[Set] SET ReqId = NULL WHERE ReqId = @ReqId", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@ReqId", reqId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+
                         // Step 4: Delete the request
                         string deleteRequestQuery = "DELETE FROM dbo.Request WHERE ReqId = @ReqId";
                         using (SqlCommand cmd = new SqlCommand(deleteRequestQuery, conn, transaction))
@@ -1149,6 +1265,141 @@ namespace Yakult.Inventory.App.Repositories
                     {
                         transaction.Rollback();
                         throw new Exception($"Error deleting request and restoring stock: {ex.Message}", ex);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks whether this Request is linked to a Set, either as the Set's originating
+        /// request (dbo.Set.ReqId) or as one of the Set's fulfilled requests (dbo.Request.SetId).
+        /// Used before deleting a Request to decide whether to prompt the user with a
+        /// "delete just the request" vs. "delete the request and its linked Set" choice,
+        /// instead of letting the raw DELETE fail with SqlException 547 (FK_Set_Request).
+        /// </summary>
+        /// <returns>Null if no Set is linked; otherwise the linked Set's id and display code.</returns>
+        public async Task<(int SetId, string SetCode)?> GetLinkedSetInfoAsync(int reqId)
+        {
+            const string sql = @"
+                SELECT TOP 1 s.SetId, s.SetCode
+                FROM dbo.[Set] s
+                WHERE s.ReqId = @ReqId
+                UNION
+                SELECT TOP 1 s.SetId, s.SetCode
+                FROM dbo.Request r
+                INNER JOIN dbo.[Set] s ON r.SetId = s.SetId
+                WHERE r.ReqId = @ReqId";
+
+            using (SqlConnection conn = new SqlConnection(GetConnectionString()))
+            using (SqlCommand cmd = new SqlCommand(sql, conn))
+            {
+                cmd.Parameters.AddWithValue("@ReqId", reqId);
+                await conn.OpenAsync();
+                using (SqlDataReader reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        int linkedSetId = reader.GetInt32(0);
+                        string setCode = reader.IsDBNull(1) ? null : reader.GetString(1);
+                        return (linkedSetId, setCode);
+                    }
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Deletes the Request AND its linked Set (both the Set that originated this request
+        /// via Set.ReqId, and/or the Set this request was fulfilled into via Request.SetId) in
+        /// one atomic transaction, restoring stock for every inventory-affecting item in the
+        /// Set along the way. This is the "delete both, return the items" choice offered to
+        /// the user when a plain Request delete would otherwise fail with SqlException 547
+        /// (FK_Set_Request), because the Set still references the Request being deleted.
+        /// </summary>
+        public async Task<bool> DeleteRequestAndLinkedSetAndRestoreStock(int reqId, int linkedSetId)
+        {
+            using (SqlConnection conn = new SqlConnection(GetConnectionString()))
+            {
+                await conn.OpenAsync();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        // Step 1: Restore stock for every inventory-affecting item in the Set
+                        // (mirrors SetRepository.DeleteSetAndRestoreStock / usp_Set_Delete.sql).
+                        const string restoreStockSql = @"
+                            UPDATE i
+                            SET i.StockOnHand = i.StockOnHand + si.Quantity
+                            FROM dbo.Item i
+                            INNER JOIN dbo.SetItem si ON si.ItemId = i.ItemId
+                            WHERE si.SetId = @SetId AND i.AffectsInventory = 1";
+                        using (SqlCommand cmd = new SqlCommand(restoreStockSql, conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@SetId", linkedSetId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+
+                        // Step 2: Unlink any other requests still pointing at this Set
+                        // (Request.SetId), so deleting the Set doesn't orphan them.
+                        using (SqlCommand cmd = new SqlCommand(
+                            "UPDATE dbo.Request SET SetId = NULL WHERE SetId = @SetId", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@SetId", linkedSetId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+
+                        // Step 3: Clear Set.ReqId so the Request row can be deleted without
+                        // violating FK_Set_Request while the Set still exists momentarily.
+                        using (SqlCommand cmd = new SqlCommand(
+                            "UPDATE dbo.[Set] SET ReqId = NULL WHERE SetId = @SetId", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@SetId", linkedSetId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+
+                        // Step 4: Delete SetItem rows (children of Set), then the Set itself.
+                        using (SqlCommand cmd = new SqlCommand(
+                            "DELETE FROM dbo.SetItem WHERE SetId = @SetId", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@SetId", linkedSetId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                        using (SqlCommand cmd = new SqlCommand(
+                            "DELETE FROM dbo.Inventory WHERE SetId = @SetId", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@SetId", linkedSetId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                        using (SqlCommand cmd = new SqlCommand(
+                            "DELETE FROM dbo.[Set] WHERE SetId = @SetId", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@SetId", linkedSetId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+
+                        // Step 5: Delete Inventory rows tied to the Request, then the Request.
+                        using (SqlCommand cmd = new SqlCommand(
+                            "DELETE FROM dbo.Inventory WHERE ReqId = @ReqId", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@ReqId", reqId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                        using (SqlCommand cmd = new SqlCommand(
+                            "DELETE FROM dbo.Request WHERE ReqId = @ReqId", conn, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@ReqId", reqId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+
+                        transaction.Commit();
+                        ActivityLogger.Log(ActivityLogger.Actions.Delete, "Request", reqId,
+                            $"Request #{reqId} and linked Set #{linkedSetId} permanently deleted; stock restored");
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        throw new Exception($"Error deleting request and linked set: {ex.Message}", ex);
                     }
                 }
             }

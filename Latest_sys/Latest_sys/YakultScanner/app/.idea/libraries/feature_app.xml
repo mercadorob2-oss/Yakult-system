@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="feature-app">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/build/intermediates/merged_java_res/devDebugAndroidTest/mergeDevDebugAndroidTestJavaResource/feature-app.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

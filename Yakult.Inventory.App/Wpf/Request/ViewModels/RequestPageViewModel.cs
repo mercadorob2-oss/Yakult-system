@@ -89,6 +89,15 @@ namespace Yakult.Inventory.App.WPF.Request.ViewModels
         public event Action<string, string> RequestWarning;
         public event Action<string, string> RequestError;
         public Func<string, string, bool> ConfirmYesNo { get; set; }
+
+        /// <summary>
+        /// Three-way confirmation used when deleting a Request that is still linked to a Set
+        /// (e.g. the Set was created from this Request, or this Request was fulfilled into a
+        /// Set). Returns "Yes" (delete both Request and Set, restore stock), "No" (cancel this
+        /// item's deletion and leave both records untouched), or "Cancel" (abort the whole bulk
+        /// delete operation). Wired by the View to a WinForms MessageBox.Show(..., YesNoCancel).
+        /// </summary>
+        public Func<string, string, string> ConfirmYesNoCancel { get; set; }
         public Func<string, string> RequestSaveFilePath { get; set; }
 
         /// <summary>View opens BatchAddRequestDialog (already a WPF Window) and calls LoadRequests() on success.</summary>

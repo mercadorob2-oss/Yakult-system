@@ -537,8 +537,8 @@ namespace Yakult.Inventory.App.WPF.Vendor.ViewModels
                     catch (Exception ex)
                     {
                         failureCount++;
-                        string reason = ex.Message.Contains("REFERENCE constraint") || ex.Message.Contains("conflicted with")
-                            ? "Has related records (items, receipts, etc.)"
+                        string reason = Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.IsForeignKeyViolation(ex)
+                            ? Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.BuildShortReason(ex)
                             : ex.Message;
                         failedItems.Add($"• {vendor.VendorName} - {reason}");
                     }

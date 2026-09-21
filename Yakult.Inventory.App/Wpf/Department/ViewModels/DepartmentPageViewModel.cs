@@ -697,8 +697,8 @@ namespace Yakult.Inventory.App.WPF.Department.ViewModels
                 catch (Exception ex)
                 {
                     failureCount++;
-                    string reason = ex.Message.Contains("REFERENCE constraint") || ex.Message.Contains("conflicted with")
-                        ? "Has related records (employees, etc.)"
+                    string reason = Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.IsForeignKeyViolation(ex)
+                        ? Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.BuildShortReason(ex)
                         : ex.Message;
                     failedItems.Add($"• {dept.Name} - {reason}");
                 }

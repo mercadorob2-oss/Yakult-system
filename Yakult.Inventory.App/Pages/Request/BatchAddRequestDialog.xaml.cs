@@ -29,6 +29,7 @@ namespace Yakult.Inventory.App.Pages.Request
         private readonly List<OrgItem>       _companies   = new List<OrgItem>();
         private readonly List<OrgItem>       _departments = new List<OrgItem>();
         private readonly List<OrgItem>       _branches    = new List<OrgItem>();
+        private readonly List<OrgItem>       _distributors = new List<OrgItem>();
 
         // ── Grid rows ────────────────────────────────────────────────────────────
         private readonly ObservableCollection<RequestRowVm> _rows = new ObservableCollection<RequestRowVm>();
@@ -43,6 +44,7 @@ namespace Yakult.Inventory.App.Pages.Request
         private System.Windows.Data.ListCollectionView _companyView;
         private System.Windows.Data.ListCollectionView _deptView;
         private System.Windows.Data.ListCollectionView _branchView;
+        private System.Windows.Data.ListCollectionView _distributorView;
         private bool _suppressOrgFilter;
 
         // Cascade predicates — set when a parent filter changes; composed with text filter in FilterOrgCombo
@@ -96,6 +98,9 @@ namespace Yakult.Inventory.App.Pages.Request
             CmbBranch.AddHandler(tcEvent, new TextChangedEventHandler((s, _) =>
                 FilterOrgCombo(CmbBranch, _branchView,
                     (s as System.Windows.Controls.TextBox)?.Text ?? CmbBranch.Text)));
+            CmbDistributor.AddHandler(tcEvent, new TextChangedEventHandler((s, _) =>
+                FilterOrgCombo(CmbDistributor, _distributorView,
+                    (s as System.Windows.Controls.TextBox)?.Text ?? CmbDistributor.Text)));
         }
 
         public void Dispose() { }
@@ -201,6 +206,7 @@ namespace Yakult.Inventory.App.Pages.Request
             CloseOrgDropdownIfOutside(CmbCompany, source);
             CloseOrgDropdownIfOutside(CmbDepartment, source);
             CloseOrgDropdownIfOutside(CmbBranch, source);
+            CloseOrgDropdownIfOutside(CmbDistributor, source);
 
             if (PopupEmployee.IsOpen && !IsDescendant(GridEmployee, source))
                 PopupEmployee.IsOpen = false;
@@ -326,7 +332,8 @@ namespace Yakult.Inventory.App.Pages.Request
                                i.SerialNumber, i.ModelNumber, i.Amount,
                                CASE WHEN EXISTS (SELECT 1 FROM dbo.Request r WHERE r.ItemId = i.ItemId)
                                     THEN 0 ELSE 1 END AS IsAvailable,
-                               i.IsTrackedAsset, i.ConsumableModelId, cm.ModelNumber AS ConsumableModelName
+                               i.IsTrackedAsset, i.ConsumableModelId, cm.ModelNumber AS ConsumableModelName,
+                               i.Remarks
                         FROM dbo.Item i
                         LEFT JOIN dbo.ConsumableModel cm ON cm.ConsumableModelId = i.ConsumableModelId
                         WHERE i.Active = 1 ORDER BY i.Name";
@@ -347,7 +354,8 @@ namespace Yakult.Inventory.App.Pages.Request
                                 IsAvailable         = r.IsDBNull(8) ? true : r.GetInt32(8) == 1,
                                 IsTrackedAsset      = r.IsDBNull(9) ? false : r.GetBoolean(9),
                                 ConsumableModelId   = r.IsDBNull(10) ? (int?)null : r.GetInt32(10),
-                                ConsumableModelName = r.IsDBNull(11) ? null : r.GetString(11)
+                                ConsumableModelName = r.IsDBNull(11) ? null : r.GetString(11),
+                                Remarks             = r.IsDBNull(12) ? null : r.GetString(12)
                             });
                     }
                 }
@@ -383,9 +391,33 @@ namespace Yakult.Inventory.App.Pages.Request
 
                     _branches.Clear();
                     _branches.Add(new OrgItem { Id = 0, Name = "-- Any Branch --" });
-                    using (var cmd = new SqlCommand("SELECT BranchId, Name FROM dbo.Branch WHERE Active = 1 ORDER BY Name", con))
+                    using (var cmd = new SqlCommand(
+                        "SELECT BranchId, Name, CASE WHEN COL_LENGTH('dbo.Branch', 'IsDistributor') IS NULL THEN 0 ELSE ISNULL(IsDistributor, 0) END AS IsDistributor FROM dbo.Branch WHERE Active = 1 ORDER BY Name", con))
                     using (var r = cmd.ExecuteReader())
-                        while (r.Read()) _branches.Add(new OrgItem { Id = r.GetInt32(0), Name = r.GetString(1) });
+                        while (r.Read())
+                        {
+                            string branchName = r.GetString(1);
+                            if (Convert.ToInt32(r.GetValue(2)) == 1)
+                                branchName += " (Distributor)";
+                            _branches.Add(new OrgItem { Id = r.GetInt32(0), Name = branchName });
+                        }
+
+                    // Independent sales distributors (dbo.Distributor) for dept-level
+                    // batches. Missing table on older DBs leaves "(None)" only.
+                    _distributors.Clear();
+                    _distributors.Add(new OrgItem { Id = 0, Name = "(None)" });
+                    try
+                    {
+                        using (var cmd = new SqlCommand(
+                            "IF OBJECT_ID('dbo.Distributor', 'U') IS NOT NULL SELECT DistributorId, Name FROM dbo.Distributor WHERE IsActive = 1 ORDER BY SortOrder, Name", con))
+                        using (var r = cmd.ExecuteReader())
+                            while (r.Read())
+                                _distributors.Add(new OrgItem { Id = r.GetInt32(0), Name = r.GetString(1) });
+                    }
+                    catch
+                    {
+                        // Distributor catalog unavailable — keep "(None)" only.
+                    }
                 }
             }
             catch (Exception ex)
@@ -397,6 +429,7 @@ namespace Yakult.Inventory.App.Pages.Request
             _companyView = new System.Windows.Data.ListCollectionView(_companies);
             _deptView    = new System.Windows.Data.ListCollectionView(_departments);
             _branchView  = new System.Windows.Data.ListCollectionView(_branches);
+            _distributorView = new System.Windows.Data.ListCollectionView(_distributors);
 
             CmbCompany.DisplayMemberPath    = "Name";
             CmbCompany.ItemsSource          = _companyView;
@@ -409,6 +442,10 @@ namespace Yakult.Inventory.App.Pages.Request
             CmbBranch.DisplayMemberPath     = "Name";
             CmbBranch.ItemsSource           = _branchView;
             CmbBranch.SelectedIndex         = 0;
+
+            CmbDistributor.DisplayMemberPath = "Name";
+            CmbDistributor.ItemsSource       = _distributorView;
+            CmbDistributor.SelectedIndex     = 0;
         }
 
         // ── Row management ────────────────────────────────────────────────────────
@@ -592,9 +629,12 @@ namespace Yakult.Inventory.App.Pages.Request
         {
             bool noEmp = ChkNoEmployee.IsChecked == true;
             PnlEmployee.Visibility = noEmp ? Visibility.Collapsed : Visibility.Visible;
+            PnlDistributor.Visibility = noEmp ? Visibility.Visible : Visibility.Collapsed;
+            if (!noEmp && CmbDistributor != null && CmbDistributor.SelectedIndex != 0)
+                CmbDistributor.SelectedIndex = 0;
             LblOrgRowPrefix.Text   = noEmp ? "Org Unit:" : "Filter:";
             TxtInfoBanner.Text     = noEmp
-                ? "Batch add requests. Select a Company (required), Department, and Branch, then fill each row and click Save."
+                ? "Batch add requests. Select a Company or a Distributor (at least one required), plus optional Department and Branch, then fill each row and click Save."
                 : "Batch add requests. Optionally filter by Company, Dept, or Branch, then select an employee and fill each row.";
 
             // The department/branch ListCollectionViews can still have an employee-derived
@@ -649,6 +689,7 @@ namespace Yakult.Inventory.App.Pages.Request
                 ?? (cmb == CmbCompany    && _companies.Count   > 0 ? _companies[0].Name
                  :  cmb == CmbDepartment && _departments.Count > 0 ? _departments[0].Name
                  :  cmb == CmbBranch     && _branches.Count    > 0 ? _branches[0].Name
+                 :  cmb == CmbDistributor && _distributors.Count > 0 ? _distributors[0].Name
                  :  string.Empty);
 
             if (tb.Text == target) return;
@@ -785,7 +826,8 @@ namespace Yakult.Inventory.App.Pages.Request
             _suppressOrgFilter = true;
             if      (cmb == CmbCompany)    _companyView.Filter = null;
             else if (cmb == CmbDepartment) _deptView.Filter    = _deptCascadeFilter;
-            else                           _branchView.Filter  = _branchCascadeFilter;
+            else if (cmb == CmbBranch)     _branchView.Filter  = _branchCascadeFilter;
+            else if (cmb == CmbDistributor && _distributorView != null) _distributorView.Filter = null;
             _suppressOrgFilter = false;
 
             Dispatcher.BeginInvoke(new Action(() =>
@@ -795,6 +837,126 @@ namespace Yakult.Inventory.App.Pages.Request
                 tb?.SelectAll();
                 if (!cmb.IsDropDownOpen) cmb.IsDropDownOpen = true;
             }));
+        }
+
+        // ── Item search (TextBox + Popup ListBox) ─────────────────────────────────
+        // The Item cell uses a plain TextBox plus a Popup ListBox rather than an editable
+        // ComboBox. A ComboBox re-syncs its Text from SelectedItem whenever its ItemsSource
+        // changes, which erased the user's typed search term on every keystroke as the list
+        // was filtered. Keeping the two controls separate avoids that coupling entirely.
+
+        private static System.Windows.Controls.Primitives.Popup FindItemPopup(FrameworkElement fromTextBox)
+        {
+            var grid = fromTextBox?.Parent as Grid;
+            if (grid == null) return null;
+            foreach (var child in grid.Children)
+                if (child is System.Windows.Controls.Primitives.Popup popup) return popup;
+            return null;
+        }
+
+        private static ListBox FindItemList(System.Windows.Controls.Primitives.Popup popup)
+            => (popup?.Child as Border)?.Child as ListBox;
+
+        private void ItemSearchBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!(sender is System.Windows.Controls.TextBox tb)) return;
+
+            // Entering edit mode starts a fresh search so the full option list is shown
+            // first, rather than pre-filtering by the previously chosen item's name.
+            if (tb.DataContext is RequestRowVm vm)
+                vm.ItemSearchText = string.Empty;
+
+            tb.Focus();
+            tb.SelectAll();
+
+            var popup = FindItemPopup(tb);
+            if (popup != null) popup.IsOpen = true;
+        }
+
+        private void ItemSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // The TwoWay binding already pushed the new text into ItemSearchText, which
+            // rebuilt FilteredItems. Just make sure the option list is visible.
+            if (!(sender is System.Windows.Controls.TextBox tb)) return;
+            var popup = FindItemPopup(tb);
+            if (popup != null && !popup.IsOpen) popup.IsOpen = true;
+        }
+
+        private void ItemSearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (!(sender is System.Windows.Controls.TextBox tb)) return;
+            var popup = FindItemPopup(tb);
+            var list  = FindItemList(popup);
+            if (popup == null || list == null) return;
+
+            switch (e.Key)
+            {
+                case Key.Down:
+                    if (!popup.IsOpen) popup.IsOpen = true;
+                    if (list.Items.Count > 0)
+                    {
+                        list.SelectedIndex = list.SelectedIndex < 0
+                            ? 0
+                            : Math.Min(list.SelectedIndex + 1, list.Items.Count - 1);
+                        list.ScrollIntoView(list.SelectedItem);
+                    }
+                    e.Handled = true;
+                    break;
+
+                case Key.Up:
+                    if (list.Items.Count > 0 && list.SelectedIndex > 0)
+                    {
+                        list.SelectedIndex--;
+                        list.ScrollIntoView(list.SelectedItem);
+                    }
+                    e.Handled = true;
+                    break;
+
+                case Key.Enter:
+                    CommitItemPick(tb, list.SelectedItem as ItemItem);
+                    e.Handled = true;
+                    break;
+
+                case Key.Escape:
+                    popup.IsOpen = false;
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        private void LstItems_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (!(sender is ListBox list)) return;
+
+            // Resolve the clicked row directly from the hit-tested element rather than from
+            // list.SelectedItem: ListBoxItem can mark the mouse event handled and selection
+            // may not have been applied yet at Preview time.
+            var clickedItem = FindVisualParent<ListBoxItem>(e.OriginalSource as DependencyObject);
+            var picked = (clickedItem?.DataContext ?? list.SelectedItem) as ItemItem;
+
+            // The Popup lives outside the cell's visual tree, so resolve the row VM straight
+            // from the ListBox's DataContext, and walk up to the Popup to close it.
+            var popup = FindVisualParent<System.Windows.Controls.Primitives.Popup>(list);
+            CommitItemPick(null, picked, list.DataContext as RequestRowVm, popup);
+            e.Handled = true;
+        }
+
+        // Applies the chosen item to the row and closes the option list. Ignores the
+        // placeholder/blank entries (Id == null) so they can't be committed as a pick.
+        private void CommitItemPick(System.Windows.Controls.TextBox tb, ItemItem picked,
+                                    RequestRowVm vmOverride = null,
+                                    System.Windows.Controls.Primitives.Popup popupOverride = null)
+        {
+            var vm = vmOverride ?? tb?.DataContext as RequestRowVm;
+            if (vm == null || picked == null || !picked.Id.HasValue) return;
+
+            vm.SelectedItem = picked;
+
+            var popup = popupOverride ?? (tb != null ? FindItemPopup(tb) : null);
+            if (popup != null) popup.IsOpen = false;
+
+            // Leave edit mode so the committed value renders in the cell's display template.
+            DgvRequests.CommitEdit(DataGridEditingUnit.Cell, true);
         }
 
         private void FilterOrgCombo(ComboBox cmb, System.Windows.Data.ListCollectionView view, string filter)
@@ -881,6 +1043,7 @@ namespace Yakult.Inventory.App.Pages.Request
         {
             var view = cmb == CmbCompany ? _companyView
                      : cmb == CmbDepartment ? _deptView
+                     : cmb == CmbDistributor ? _distributorView
                      : _branchView;
             if (view == null) return;
 
@@ -1073,28 +1236,40 @@ namespace Yakult.Inventory.App.Pages.Request
             // Resolve employee / org-unit
             EmployeeItem batchEmp = null;
             int? batchComId = null, batchDeptId = null, batchBranchId = null;
+            int? batchDistributorId = null;
             string batchCompanyName = null, batchDeptName = null, batchBranchName = null;
+            string batchDistributorName = null;
 
             bool noEmp = ChkNoEmployee.IsChecked == true;
 
             if (noEmp)
             {
+                // Company OR Distributor required (distributors are independent
+                // of Company/Dept/Branch). Dept/Branch optional.
                 var selCompany = CmbCompany.SelectedItem as OrgItem;
-                if (selCompany == null || selCompany.Id <= 0)
+                if (selCompany != null && selCompany.Id > 0)
                 {
-                    CmbCompany.BorderBrush = new SolidColorBrush(Colors.Red);
-                    WinMsgBox.Show("Please select a Company for this batch.", "Validation",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
+                    batchComId = selCompany.Id;
+                    batchCompanyName = selCompany.Name;
                 }
-                batchComId      = selCompany.Id;
-                batchCompanyName = selCompany.Name;
 
                 var selDept = CmbDepartment.SelectedItem as OrgItem;
                 if (selDept != null && selDept.Id > 0) { batchDeptId = selDept.Id; batchDeptName = selDept.Name; }
 
                 var selBranch = CmbBranch.SelectedItem as OrgItem;
                 if (selBranch != null && selBranch.Id > 0) { batchBranchId = selBranch.Id; batchBranchName = selBranch.Name; }
+
+                var selDistributor = CmbDistributor.SelectedItem as OrgItem;
+                if (selDistributor != null && selDistributor.Id > 0) { batchDistributorId = selDistributor.Id; batchDistributorName = selDistributor.Name; }
+
+                if (!batchComId.HasValue && !batchDistributorId.HasValue)
+                {
+                    CmbCompany.BorderBrush = new SolidColorBrush(Colors.Red);
+                    WinMsgBox.Show("Please select a Company or a Distributor for this batch.", "Validation",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                CmbCompany.ClearValue(Control.BorderBrushProperty);
             }
             else
             {
@@ -1168,9 +1343,11 @@ namespace Yakult.Inventory.App.Pages.Request
                     ComId            = batchComId,
                     DeptId           = batchDeptId,
                     BranchId         = batchBranchId,
+                    DistributorId    = batchDistributorId,
                     CompanyName      = batchCompanyName,
                     DepartmentName   = batchDeptName,
                     BranchName       = batchBranchName,
+                    DistributorName  = batchDistributorName,
                     ItemId           = item.Id.Value,
                     ItemName         = item.Name,
                     Quantity         = vm.Quantity,
@@ -1328,8 +1505,55 @@ namespace Yakult.Inventory.App.Pages.Request
             public List<CategoryItem> Categories => _allCategories;
 
             // ── Filtered items for this row ─────────────────────────────────────
+            // _candidateItems is the full list valid for the current Category (or every
+            // active item when no Category is selected). FilteredItems is what the dropdown
+            // actually binds to, and is rebuilt from _candidateItems whenever the search
+            // text changes — typing narrows the visible options WITHOUT auto-selecting one,
+            // so the user must still click (or press Enter on) an option to choose it.
+            // This replaces WPF's default IsTextSearchEnabled behavior, which inline-completes
+            // to the first prefix match as soon as a few characters are typed.
+            //
+            // Rebuilding the ObservableCollection directly (rather than applying a
+            // ListCollectionView filter) is deliberate: the collection raises
+            // CollectionChanged so the open dropdown reliably refreshes its visible items.
+            private readonly List<ItemItem> _candidateItems = new List<ItemItem>();
+
             public ObservableCollection<ItemItem> FilteredItems { get; } =
                 new ObservableCollection<ItemItem>();
+
+            private string _itemSearchText = string.Empty;
+            public string ItemSearchText
+            {
+                get => _itemSearchText;
+                set
+                {
+                    if (_itemSearchText == value) return;
+                    _itemSearchText = value ?? string.Empty;
+                    Notify();
+                    RebuildVisibleItems();
+                }
+            }
+
+            // Repopulates FilteredItems from _candidateItems, applying the current search
+            // text. The currently-selected item is always kept present so an active
+            // selection is never dropped out of the list. No placeholder row is added —
+            // the search TextBox itself serves as the prompt, and the cell's display
+            // template shows "-- Select Item --" when nothing is chosen yet.
+            private void RebuildVisibleItems()
+            {
+                FilteredItems.Clear();
+
+                string term = _itemSearchText;
+                foreach (var item in _candidateItems)
+                {
+                    bool matches = string.IsNullOrEmpty(term) ||
+                        (item.DisplayName != null &&
+                         item.DisplayName.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0);
+
+                    if (matches || (_selectedItem != null && ReferenceEquals(item, _selectedItem)))
+                        FilteredItems.Add(item);
+                }
+            }
 
             // ── IsSelected ─────────────────────────────────────────────────────
             public bool IsSelected
@@ -1339,6 +1563,10 @@ namespace Yakult.Inventory.App.Pages.Request
             }
 
             // ── SelectedCategory ───────────────────────────────────────────────
+            // NOTE: Category is now a convenience filter, not a prerequisite. Changing it
+            // narrows FilteredItems, but the Item search box works immediately without
+            // picking a Category first — see SelectedItem's setter, which auto-fills
+            // Category (along with everything else) once an Item is chosen.
             public CategoryItem SelectedCategory
             {
                 get => _selectedCategory;
@@ -1348,11 +1576,18 @@ namespace Yakult.Inventory.App.Pages.Request
                     _selectedCategory = value;
                     Notify();
                     RefreshFilteredItems();
-                    // Reset item but keep serial/model typed by user
-                    _selectedItem = null;
-                    Notify(nameof(SelectedItem));
-                    Notify(nameof(SelectedItemDisplay));
-                    Notify(nameof(SelectedItemForeground));
+
+                    // Only clear the selected item if it no longer matches the new category
+                    // filter — avoids wiping out an item the user just picked via search,
+                    // whose category selection was just auto-set to match (see SelectedItem).
+                    if (_selectedItem != null && value != null &&
+                        _selectedItem.CategoryId != value.CategoryId)
+                    {
+                        _selectedItem = null;
+                        Notify(nameof(SelectedItem));
+                        Notify(nameof(SelectedItemDisplay));
+                        Notify(nameof(SelectedItemForeground));
+                    }
                 }
             }
 
@@ -1367,6 +1602,15 @@ namespace Yakult.Inventory.App.Pages.Request
                     Notify(nameof(SelectedItemDisplay));
                     Notify(nameof(SelectedItemForeground));
 
+                    // Clear the live search filter now that a choice was made — the next
+                    // time this row's combo is opened it should show the full list again.
+                    if (_itemSearchText.Length > 0)
+                    {
+                        _itemSearchText = string.Empty;
+                        Notify(nameof(ItemSearchText));
+                        RebuildVisibleItems();
+                    }
+
                     if (value != null && value.Id.HasValue)
                     {
                         UnitPrice    = value.Amount;
@@ -1374,6 +1618,21 @@ namespace Yakult.Inventory.App.Pages.Request
                         ModelNumber  = value.ModelNumber  ?? string.Empty;
                         Description  = value.Name         ?? string.Empty;
                         FixedAsset   = value.IsTrackedAsset ? "Yes" : "No";
+
+                        // Searching/picking an Item directly overrides whatever Category was
+                        // selected — auto-populate Category to match the chosen Item instead
+                        // of requiring the user to pick Category first.
+                        if (value.CategoryId.HasValue &&
+                            (_selectedCategory == null || _selectedCategory.CategoryId != value.CategoryId))
+                        {
+                            var matchingCategory = _allCategories.FirstOrDefault(c => c.CategoryId == value.CategoryId);
+                            if (matchingCategory != null)
+                            {
+                                _selectedCategory = matchingCategory;
+                                Notify(nameof(SelectedCategory));
+                                RefreshFilteredItems();
+                            }
+                        }
                     }
                 }
             }
@@ -1408,9 +1667,7 @@ namespace Yakult.Inventory.App.Pages.Request
                 get
                 {
                     if (_selectedItem == null || !_selectedItem.Id.HasValue)
-                        return _selectedCategory == null
-                            ? "Select category first"
-                            : "-- Select Item --";
+                        return "-- Select Item --";
                     return _selectedItem.DisplayName;
                 }
             }
@@ -1452,25 +1709,25 @@ namespace Yakult.Inventory.App.Pages.Request
             }
 
             // ── Refresh item dropdown for current category ─────────────────────
+            // Category is a convenience filter now, not a prerequisite: with no Category
+            // selected, every active Item is offered so the user can search directly by
+            // name/serial without picking a Category first (SelectedItem's setter then
+            // auto-fills Category from whatever Item gets chosen).
             private void RefreshFilteredItems()
             {
-                FilteredItems.Clear();
-                var placeholder = new ItemItem
+                _candidateItems.Clear();
+
+                var categoryItems = _selectedCategory == null
+                    ? _allItems
+                    : _allItems.Where(x => x.CategoryId == _selectedCategory.CategoryId).ToList();
+
+                bool isConsumableCategory = _selectedCategory != null &&
+                    CanonicalConsumableCategory(_selectedCategory.Name) != null;
+
+                if (!isConsumableCategory)
                 {
-                    Id          = null,
-                    Name        = _selectedCategory == null ? "Select category first" : "-- Select Item --",
-                    IsAvailable = false
-                };
-                FilteredItems.Add(placeholder);
-
-                if (_selectedCategory == null) return;
-
-                var categoryItems = _allItems.Where(x => x.CategoryId == _selectedCategory.CategoryId).ToList();
-
-                if (CanonicalConsumableCategory(_selectedCategory.Name) == null)
-                {
-                    foreach (var item in categoryItems)
-                        FilteredItems.Add(item);
+                    _candidateItems.AddRange(categoryItems);
+                    RebuildVisibleItems();
                     return;
                 }
 
@@ -1487,7 +1744,7 @@ namespace Yakult.Inventory.App.Pages.Request
                     // holds the most stock — that's the one actually worth linking the
                     // new Request to (ItemId is still a required single-row FK).
                     var representative = group.OrderByDescending(x => x.StockOnHand).ThenBy(x => x.Id).First();
-                    FilteredItems.Add(new ItemItem
+                    _candidateItems.Add(new ItemItem
                     {
                         Id                  = representative.Id,
                         Name                = !string.IsNullOrWhiteSpace(representative.ConsumableModelName)
@@ -1502,14 +1759,16 @@ namespace Yakult.Inventory.App.Pages.Request
                         IsAvailable         = representative.IsAvailable,
                         IsTrackedAsset      = representative.IsTrackedAsset,
                         ConsumableModelId   = representative.ConsumableModelId,
-                        ConsumableModelName = representative.ConsumableModelName
+                        ConsumableModelName = representative.ConsumableModelName,
+                        Remarks             = representative.Remarks
                     });
                 }
 
                 // Items not yet linked to a model still show individually so nothing
                 // silently disappears from the picker.
-                foreach (var item in withoutModel)
-                    FilteredItems.Add(item);
+                _candidateItems.AddRange(withoutModel);
+
+                RebuildVisibleItems();
             }
 
             // ── INotifyPropertyChanged ─────────────────────────────────────────
@@ -1572,11 +1831,20 @@ namespace Yakult.Inventory.App.Pages.Request
             public bool    IsTrackedAsset     { get; set; }
             public int?    ConsumableModelId  { get; set; }
             public string  ConsumableModelName { get; set; }
+            public string  Remarks            { get; set; }
 
-            public string DisplayName =>
-                string.IsNullOrWhiteSpace(SerialNumber)
-                    ? Name
-                    : $"{Name} (SN: {SerialNumber})";
+            public string DisplayName
+            {
+                get
+                {
+                    string label = string.IsNullOrWhiteSpace(SerialNumber)
+                        ? Name
+                        : $"{Name} (SN: {SerialNumber})";
+                    return string.IsNullOrWhiteSpace(Remarks)
+                        ? label
+                        : $"{label} — {Remarks}";
+                }
+            }
 
             public override string ToString() => DisplayName;
         }

@@ -39,6 +39,13 @@ namespace Yakult.Inventory.App.WPF.Request.Views
             _vm.RequestWarning += (title, msg) => WinForms.MessageBox.Show(GetOwner(), msg, title, WinForms.MessageBoxButtons.OK, WinForms.MessageBoxIcon.Warning);
             _vm.RequestError += (title, msg) => WinForms.MessageBox.Show(GetOwner(), msg, title, WinForms.MessageBoxButtons.OK, WinForms.MessageBoxIcon.Error);
             _vm.ConfirmYesNo = (title, msg) => WinForms.MessageBox.Show(GetOwner(), msg, title, WinForms.MessageBoxButtons.YesNo, WinForms.MessageBoxIcon.Warning) == WinForms.DialogResult.Yes;
+            _vm.ConfirmYesNoCancel = (title, msg) =>
+            {
+                var result = WinForms.MessageBox.Show(GetOwner(), msg, title, WinForms.MessageBoxButtons.YesNoCancel, WinForms.MessageBoxIcon.Warning);
+                if (result == WinForms.DialogResult.Yes) return "Yes";
+                if (result == WinForms.DialogResult.No) return "No";
+                return "Cancel";
+            };
             _vm.RequestSaveFilePath = OnRequestSaveFilePath;
             _vm.RequestAddNew += OnRequestAddNew;
             _vm.RequestEditRow += OnRequestEditRow;

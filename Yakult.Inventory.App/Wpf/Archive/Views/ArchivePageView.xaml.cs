@@ -271,27 +271,17 @@ namespace Yakult.Inventory.App.WPF.Archive.Views
         /// Translates a SQL "conflicted with the REFERENCE constraint" failure message into a
         /// short human phrase (e.g. "a Set" / "a Request"). Returns null if the message doesn't
         /// match that shape, so the caller can fall back to showing the raw error.
+        ///
+        /// Delegates to the shared <see cref="Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper"/>
+        /// so the table-name mapping stays consistent with every other delete flow in the app.
         /// </summary>
         private static string DescribeReferenceBlock(string sqlErrorMessage)
         {
             if (string.IsNullOrEmpty(sqlErrorMessage) || !sqlErrorMessage.Contains("REFERENCE constraint"))
                 return null;
 
-            var match = System.Text.RegularExpressions.Regex.Match(sqlErrorMessage, "table \"([^\"]+)\"");
-            string table = match.Success ? match.Groups[1].Value : null;
-
-            switch (table)
-            {
-                case "dbo.Set":
-                case "dbo.SetItem":
-                    return "a Set";
-                case "dbo.Request":
-                    return "a Request";
-                case "dbo.Inventory":
-                    return "an Inventory record";
-                default:
-                    return "another record";
-            }
+            string table = Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.ExtractReferencingTable(sqlErrorMessage);
+            return Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.DescribeTable(table);
         }
 
         private static string Escape(string value)

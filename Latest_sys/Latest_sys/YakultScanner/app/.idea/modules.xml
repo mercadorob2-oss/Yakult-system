@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/build/generated/source/buildConfig/androidTest/androidTest.iml" filepath="$PROJECT_DIR$/build/generated/source/buildConfig/androidTest/androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/app.iml" filepath="$PROJECT_DIR$/.idea/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/build/tmp/build.iml" filepath="$PROJECT_DIR$/build/tmp/build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/build/generated/source/buildConfig/dev/dev.iml" filepath="$PROJECT_DIR$/build/generated/source/buildConfig/dev/dev.iml" />
+      <module fileurl="file://$PROJECT_DIR$/build/generated/source/kapt/kapt.iml" filepath="$PROJECT_DIR$/build/generated/source/kapt/kapt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/build/generated/source/buildConfig/prod/prod.iml" filepath="$PROJECT_DIR$/build/generated/source/buildConfig/prod/prod.iml" />
+    </modules>
+  </component>
+</project>

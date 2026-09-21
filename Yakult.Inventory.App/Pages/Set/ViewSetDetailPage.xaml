@@ -276,6 +276,7 @@
                         <RowDefinition Height="Auto"/>  <!-- Employee            -->
                         <RowDefinition Height="Auto"/>  <!-- Company / Branch    -->
                         <RowDefinition Height="Auto"/>  <!-- Department / RecvBy -->
+                        <RowDefinition Height="Auto"/>  <!-- Distributor         -->
                         <RowDefinition Height="Auto"/>  <!-- Hardware (hidden)   -->
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
@@ -402,8 +403,16 @@
                                   Background="#3498DB" Foreground="White" Click="BtnSaveReceivedBy_Click"/>
                     </StackPanel>
 
-                    <!-- Row 10: Hardware info section (hidden unless CPU set) -->
-                    <Border x:Name="HwSectionPanel" Grid.Row="10" Grid.ColumnSpan="4"
+                    <!-- Row 10: Distributor (independent of Company/Dept/Branch; read-only text plus editable combo) -->
+                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Distributor:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                    <Grid Grid.Row="10" Grid.Column="1" Margin="0,3,8,3">
+                        <TextBox  x:Name="TxtDistributor"     Style="{StaticResource ReadField}"/>
+                        <ComboBox x:Name="CmbDistributorEdit" Style="{StaticResource FieldCombo}"
+                                  Visibility="Collapsed" IsEditable="True"/>
+                    </Grid>
+
+                    <!-- Row 11: Hardware info section (hidden unless CPU set) -->
+                    <Border x:Name="HwSectionPanel" Grid.Row="11" Grid.ColumnSpan="4"
                             Visibility="Collapsed" Margin="0,6,0,0"
                             Background="#F8FAFC" BorderBrush="#DDE3EC" BorderThickness="1"
                             CornerRadius="4" Padding="8,6">

@@ -281,6 +281,7 @@ namespace Yakult.Inventory.App.Pages.Request
             LoadEmployees();
             LoadItemCategories();
             LoadItems();
+            LoadStatusOptions();
             PopulateRequestDetails();
 
             TxtQuantity.Text = _request.Quantity.ToString();
@@ -370,6 +371,28 @@ namespace Yakult.Inventory.App.Pages.Request
             LblSubmissionValue.Text = _request.SubmissionSessionId.HasValue
                 ? _request.SubmissionSessionId.Value.ToString()
                 : "–";
+        }
+
+        // Populates the Status combo with the canonical Request status values used
+        // throughout the app (AddRequestPage, ViewCartridgeRequestsPage, RequestPageViewModel,
+        // RequestHistoryViewModel). Without this, CmbStatus stays empty and the preselection
+        // loop in LoadData() never finds a match.
+        private void LoadStatusOptions()
+        {
+            CmbStatus.Items.Clear();
+
+            foreach (var status in new[] { "Under Review", "On Hold", "Fulfilled", "Rejected", "Cancelled" })
+            {
+                CmbStatus.Items.Add(status);
+            }
+
+            // Defensive: if the request's current status is a legacy/unexpected value not in
+            // the canonical list above, add it too so editing never silently drops it.
+            if (!string.IsNullOrWhiteSpace(_request?.Status) &&
+                !CmbStatus.Items.Cast<string>().Any(s => string.Equals(s, _request.Status, StringComparison.OrdinalIgnoreCase)))
+            {
+                CmbStatus.Items.Add(_request.Status);
+            }
         }
 
         private void LoadEmployees()
@@ -601,13 +624,16 @@ namespace Yakult.Inventory.App.Pages.Request
 
             if (_isDeptLevel)
             {
-                if (!(CmbCompanyEdit.SelectedItem is OrgEditItem selCompany) || selCompany.Id == 0)
+                // Company OR Distributor required. Distributors are independent of
+                // Company/Dept/Branch, so a distributor-only request keeps no Company.
+                var selCompany = CmbCompanyEdit.SelectedItem as OrgEditItem;
+                if ((selCompany == null || selCompany.Id == 0) && !_request.DistributorId.HasValue)
                 {
-                    System.Windows.MessageBox.Show(this, "Please select a Company.", "Validation",
+                    System.Windows.MessageBox.Show(this, "Please select a Company or keep the Distributor assignment.", "Validation",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
-                saveComId = selCompany.Id;
+                saveComId = (selCompany != null && selCompany.Id > 0) ? selCompany.Id : (int?)null;
                 if (CmbDeptEdit.SelectedItem is OrgEditItem selDept && selDept.Id > 0)
                     saveDeptId = selDept.Id;
                 if (CmbBranchEdit.SelectedItem is OrgEditItem selBranch && selBranch.Id > 0)

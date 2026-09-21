@@ -128,6 +128,10 @@ namespace Yakult.Inventory.App.Pages.Set
                 {
                     bool matches =
                         (r.EmployeeName ?? "").ToLowerInvariant().Contains(search) ||
+                        (r.CompanyName ?? "").ToLowerInvariant().Contains(search) ||
+                        (r.DepartmentName ?? "").ToLowerInvariant().Contains(search) ||
+                        (r.BranchName ?? "").ToLowerInvariant().Contains(search) ||
+                        (r.DistributorName ?? "").ToLowerInvariant().Contains(search) ||
                         (r.ItemName     ?? "").ToLowerInvariant().Contains(search) ||
                         (r.Description  ?? "").ToLowerInvariant().Contains(search) ||
                         (r.Status       ?? "").ToLowerInvariant().Contains(search) ||

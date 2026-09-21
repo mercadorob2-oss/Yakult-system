@@ -656,7 +656,9 @@ namespace Yakult.Inventory.App.WPF.Branch.ViewModels
                 catch (SqlException ex)
                 {
                     failureCount++;
-                    string reason = ex.Number == 547 ? "Has related records (employees, etc.)" : ex.Message;
+                    string reason = Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.IsForeignKeyViolation(ex)
+                        ? Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.BuildShortReason(ex)
+                        : ex.Message;
                     failedItems.Add($"• {branch.Name} - {reason}");
                 }
                 catch (Exception ex)

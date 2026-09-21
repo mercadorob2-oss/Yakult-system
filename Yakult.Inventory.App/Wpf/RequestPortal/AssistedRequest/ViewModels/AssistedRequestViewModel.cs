@@ -851,15 +851,15 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.AssistedRequest.ViewModels
                 return;
             }
 
-            // Mirrors NewRequestViewModel.SubmitAsync's guard — without this, a PICKUP request
-            // whose "Received By" ComboBox was typed into but never actually clicked/committed
-            // (SelectedReceivedBy stays null) silently saves with ReceivedById = NULL instead of
-            // blocking submission.
-            if (IsPickup && _selectedReceivedBy == null)
-            {
-                ValidationError = "Please select who will receive the cartridges (Received By).";
-                return;
-            }
+            // NOTE: Unlike NewRequestViewModel's guard (the normal employee-facing request
+            // flow), this Assisted Request form is explicitly documented as "All fields
+            // except cartridge details are optional — useful when encoding historical
+            // records" (see the banner in AssistedRequestView.xaml and the "Optional" label
+            // under the Received By field). IT staff frequently backfill old/incomplete
+            // records here where the original receiver was never captured, so PICKUP
+            // requests must NOT be blocked for a missing Received By in this mode.
+            // ReceivedById is already computed as nullable below when _selectedReceivedBy
+            // is null, so no validation guard is needed here.
 
             int destCompanyId    = _selectedCompany?.ComId    ?? _selectedEmployee?.ComId    ?? 0;
             int destBranchId     = _selectedBranch?.BranchId  ?? _selectedEmployee?.BranchId ?? 0;
