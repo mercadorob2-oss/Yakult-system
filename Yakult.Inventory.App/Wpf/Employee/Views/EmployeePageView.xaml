@@ -245,6 +245,8 @@
                                         ElementStyle="{StaticResource WrapCellText}"/>
                     <DataGridTextColumn Header="Department" Binding="{Binding DepartmentName}" Width="1.2*" MinWidth="110" SortMemberPath="DepartmentName"
                                         ElementStyle="{StaticResource WrapCellText}"/>
+                    <DataGridTextColumn Header="Distributor" Binding="{Binding DistributorName}" Width="1.2*" MinWidth="110" SortMemberPath="DistributorName"
+                                        ElementStyle="{StaticResource WrapCellText}"/>
                     <DataGridTextColumn Header="Date Created" Binding="{Binding DateCreated, StringFormat=MM/dd/yyyy}" Width="*" MinWidth="110" SortMemberPath="DateCreated"
                                         ElementStyle="{StaticResource CenteredCellText}"/>
                     <DataGridTextColumn Header="Created By" Binding="{Binding CreatedByName}" Width="1.1*" MinWidth="110" SortMemberPath="CreatedByName"

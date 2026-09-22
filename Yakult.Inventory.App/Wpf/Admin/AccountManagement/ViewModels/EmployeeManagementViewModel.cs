@@ -115,6 +115,20 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                                    ON dea.EmailId = de.EmailAddressId"
                         : "";
 
+                    // Optional posting toward an independent distributor. Older DBs
+                    // predate dbo.Employee.DistributorId, so degrade to NULL there.
+                    bool hasDistributorColumn;
+                    using (var distChk = new SqlCommand("SELECT CASE WHEN COL_LENGTH('dbo.Employee', 'DistributorId') IS NULL THEN 0 ELSE 1 END", con))
+                    {
+                        hasDistributorColumn = Convert.ToInt32(await distChk.ExecuteScalarAsync()) == 1;
+                    }
+                    string distributorSelect = hasDistributorColumn
+                        ? "dist.Name AS DistributorName"
+                        : "CAST(NULL AS NVARCHAR(200)) AS DistributorName";
+                    string distributorJoin = hasDistributorColumn
+                        ? "LEFT JOIN dbo.Distributor dist ON dist.DistributorId = e.DistributorId"
+                        : "";
+
                     string sql = $@"
                         SELECT
                             e.EmpId,
@@ -129,11 +143,13 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                             branch_ea.EmailAddress AS BranchEmail,
                             emp_ea.EmailAddress    AS PrimaryEmail,
                             CASE WHEN arc.ArchiveId IS NOT NULL THEN 1 ELSE 0 END AS IsArchived,
-                            t.Code  AS TitleCode
+                            t.Code  AS TitleCode,
+                            {distributorSelect}
                         FROM dbo.Employee e
                         LEFT JOIN dbo.Company    c   ON e.ComId    = c.ComId
                         LEFT JOIN dbo.Branch     b   ON e.BranchId = b.BranchId
                         LEFT JOIN dbo.Department d   ON e.DeptId   = d.DeptId
+                        {distributorJoin}
                         LEFT JOIN dbo.Title      t   ON e.TitleId  = t.TitleId
                         LEFT JOIN dbo.EmployeeEmail ee
                                ON ee.EmpId = e.EmpId AND ee.IsPrimary = 1 AND ee.IsActive = 1
@@ -170,6 +186,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                                 PrimaryEmail    = reader.IsDBNull(10) ? "(None)" : reader.GetString(10),
                                 IsArchived      = !reader.IsDBNull(11) && reader.GetInt32(11) == 1,
                                 TitleCode       = reader.IsDBNull(12) ? "" : reader.GetString(12),
+                                DistributorName = reader.IsDBNull(13) ? "—" : reader.GetString(13),
                             };
                             dto.PropertyChanged += OnEmployeeRowPropertyChanged;
                             _all.Add(dto);
@@ -234,6 +251,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                         (emp.CompanyName    ?? "").ToLowerInvariant().Contains(token) ||
                         (emp.DepartmentName ?? "").ToLowerInvariant().Contains(token) ||
                         (emp.BranchName     ?? "").ToLowerInvariant().Contains(token) ||
+                        (emp.DistributorName ?? "").ToLowerInvariant().Contains(token) ||
                         (emp.DepartmentEmail ?? "").ToLowerInvariant().Contains(token) ||
                         (emp.BranchEmail    ?? "").ToLowerInvariant().Contains(token) ||
                         (emp.PrimaryEmail   ?? "").ToLowerInvariant().Contains(token));
@@ -284,6 +302,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                 case "Company":        return emp.CompanyName;
                 case "Dept":           return emp.DepartmentName;
                 case "Branch":         return emp.BranchName;
+                case "Distributor":    return emp.DistributorName;
                 case "Status":         return emp.Active ? "Active" : "Inactive";
                 case "Dept Email":     return emp.DepartmentEmail ?? "";
                 case "Branch Email":   return emp.BranchEmail ?? "";

@@ -14,7 +14,7 @@ namespace Yakult.Inventory.App.Pages.Employee
     public partial class QuickAddEmployeeDialog : Form
     {
         private TextBox txtName, txtEmployeeNumber, txtPosition, txtDescription;
-        private ComboBox cmbCompany, cmbBranch, cmbDepartment, cmbPosition, cmbTitle;
+        private ComboBox cmbCompany, cmbBranch, cmbDepartment, cmbDistributor, cmbPosition, cmbTitle;
         private Button btnSave, btnCancel;
         private ErrorProvider _errors;
         private Label _lblStatus;
@@ -28,6 +28,7 @@ namespace Yakult.Inventory.App.Pages.Employee
         public int? NewCompanyId { get; private set; }
         public int? NewBranchId { get; private set; }
         public int? NewDepartmentId { get; private set; }
+        public int? NewDistributorId { get; private set; }
 
         public QuickAddEmployeeDialog()
         {
@@ -146,10 +147,10 @@ namespace Yakult.Inventory.App.Pages.Employee
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 9,
+                RowCount = 10,
                 Margin = new Padding(10, 0, 0, 0)
             };
-            for (int i = 0; i < 9; i++)
+            for (int i = 0; i < 10; i++)
                 right.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             grid.Controls.Add(right, 1, 0);
 
@@ -166,14 +167,18 @@ namespace Yakult.Inventory.App.Pages.Employee
             cmbDepartment = NewCombo();
             right.Controls.Add(cmbDepartment, 0, 6);
 
+            right.Controls.Add(ModernUiHelper.CreateLabel("Distributor (optional)"), 0, 7);
+            cmbDistributor = NewCombo();
+            right.Controls.Add(cmbDistributor, 0, 8);
+
             right.Controls.Add(new Label
             {
-                Text = "Tip: pick Company first, then Branch.\r\nDepartment is optional.",
+                Text = "Tip: pick Company first, then Branch.\r\nDepartment and Distributor are optional.",
                 AutoSize = true,
                 ForeColor = ModernUiHelper.ColorTextSecondary,
                 Font = new Font("Segoe UI", 9F),
                 Margin = new Padding(0, 8, 0, 0)
-            }, 0, 7);
+            }, 0, 9);
 
             var footer = new TableLayoutPanel
             {
@@ -238,6 +243,7 @@ namespace Yakult.Inventory.App.Pages.Employee
             LoadCompanies();
             LoadTitles();
             LoadPositions();
+            LoadDistributors();
         }
 
         private void LoadTitles()
@@ -344,6 +350,46 @@ ORDER BY c.Name", con))
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to load companies: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void LoadDistributors()
+        {
+            cmbDistributor.Items.Clear();
+            cmbDistributor.Items.Add(new ComboItem { Id = null, Name = "(None)" });
+
+            try
+            {
+                var cs = DatabaseConfig.ConnectionString;
+                if (string.IsNullOrWhiteSpace(cs)) return;
+
+                using (var con = new SqlConnection(cs))
+                {
+                    con.Open();
+                    using (var cmd = new SqlCommand(
+                        "IF OBJECT_ID('dbo.Distributor', 'U') IS NOT NULL SELECT DistributorId, Name FROM dbo.Distributor WHERE ISNULL(IsActive, 1) = 1 ORDER BY SortOrder, Name", con))
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            cmbDistributor.Items.Add(new ComboItem
+                            {
+                                Id = reader.GetInt32(0),
+                                Name = reader.GetString(1)
+                            });
+                        }
+                    }
+                }
+
+                if (cmbDistributor.Items.Count > 0)
+                    cmbDistributor.SelectedIndex = 0;
+
+                cmbDistributor.Tag = cmbDistributor.Items.Cast<object>().ToList();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load distributors: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
@@ -534,6 +580,9 @@ ORDER BY c.Name", con))
             // Department is optional — null is stored when not selected
             var selectedDepartment = ResolveComboItem(cmbDepartment);
 
+            // Distributor posting is optional — only a selected few employees carry one
+            var selectedDistributor = ResolveComboItem(cmbDistributor);
+
             try
             {
                 _saving = true;
@@ -553,10 +602,21 @@ ORDER BY c.Name", con))
                 using (var con = new SqlConnection(cs))
                 {
                     con.Open();
+
+                    // Distributor is optional and deployment-guarded: older DBs may
+                    // not have dbo.Employee.DistributorId yet.
+                    bool hasDistributorColumn;
+                    using (var checkCmd = new SqlCommand(
+                        "SELECT CASE WHEN COL_LENGTH('dbo.Employee', 'DistributorId') IS NULL THEN 0 ELSE 1 END", con))
+                    {
+                        hasDistributorColumn = Convert.ToInt32(checkCmd.ExecuteScalar()) == 1;
+                    }
+                    var ins = EmployeeDistributorHelper.BuildDistributorInsertFragments(hasDistributorColumn);
+
                     using (var cmd = new SqlCommand(@"
-                        INSERT INTO dbo.Employee (Name, EmployeeNumber, Position, Description, DateCreated, Createdby, ComId, BranchId, DeptId, TitleId)
+                        INSERT INTO dbo.Employee (Name, EmployeeNumber, Position, Description, DateCreated, Createdby, ComId, BranchId, DeptId, TitleId," + ins.ColumnFragment + @")
                         OUTPUT INSERTED.EmpId
-                        VALUES (@Name, @EmployeeNumber, @Position, @Description, @DateCreated, @Createdby, @ComId, @BranchId, @DeptId, @TitleId)", con))
+                        VALUES (@Name, @EmployeeNumber, @Position, @Description, @DateCreated, @Createdby, @ComId, @BranchId, @DeptId, @TitleId," + ins.ValueFragment + @")", con))
                     {
                         cmd.Parameters.AddWithValue("@Name", txtName.Text.Trim());
                         // EmployeeNumber may be null/empty
@@ -582,12 +642,18 @@ ORDER BY c.Name", con))
                         var selectedTitle = cmbTitle.SelectedItem as ComboItem;
                         cmd.Parameters.AddWithValue("@TitleId",
                             (selectedTitle?.Id.HasValue == true) ? (object)selectedTitle.Id.Value : DBNull.Value);
+                        if (hasDistributorColumn)
+                            cmd.Parameters.AddWithValue("@DistributorId",
+                                (object)EmployeeDistributorHelper.NormalizeDistributorId(selectedDistributor?.Id) ?? DBNull.Value);
 
                         NewEmployeeId = (int)cmd.ExecuteScalar();
                         NewEmployeeName = txtName.Text.Trim();
                         NewCompanyId = selectedCompany.Id;
                         NewBranchId = selectedBranch.Id;
                         NewDepartmentId = selectedDepartment?.Id;
+                        NewDistributorId = hasDistributorColumn
+                            ? EmployeeDistributorHelper.NormalizeDistributorId(selectedDistributor?.Id)
+                            : null;
                     }
                 }
 
@@ -621,6 +687,7 @@ ORDER BY c.Name", con))
             var hasCompany = ResolveComboItem(cmbCompany)?.Id.HasValue == true;
             if (cmbBranch != null) cmbBranch.Enabled = enabled && hasCompany;
             if (cmbDepartment != null) cmbDepartment.Enabled = enabled && hasCompany;
+            if (cmbDistributor != null) cmbDistributor.Enabled = enabled;
 
             if (btnCancel != null) btnCancel.Enabled = enabled;
             if (btnSave != null) btnSave.Enabled = enabled && ValidateInputs(showErrors: false);

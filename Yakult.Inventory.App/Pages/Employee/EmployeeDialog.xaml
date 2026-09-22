@@ -511,12 +511,30 @@
                                 </StackPanel>
                             </Grid>
 
+                            <!-- Distributor (optional posting, selected few only) -->
+                            <Grid Margin="0,0,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Distributor" Style="{StaticResource FL}"/>
+                                <StackPanel Grid.Column="1">
+                                    <ComboBox x:Name="CmbDistributor" Style="{StaticResource FormCombo}"
+                                              IsEditable="True"
+                                              IsTextSearchEnabled="False"
+                                              HorizontalAlignment="Left" Width="360"
+                                              SelectionChanged="CmbDistributor_SelectionChanged"/>
+                                    <TextBlock x:Name="LblDistributorWarning"
+                                               Text="⚠ This distributor is inactive"
+                                               FontSize="10.5" FontStyle="Italic"
+                                               Foreground="Red"
+                                               Margin="2,4,0,0"
+                                               Visibility="Collapsed"/>
+                                </StackPanel>
+                            </Grid>
+
                         </StackPanel>
                     </Border>
-
-                    <!-- ════════════════════════════════════════════════ -->
-                    <!-- SECTION 3 · STATUS (edit mode only)             -->
-                    <!-- ════════════════════════════════════════════════ -->
                     <Border x:Name="SectionStatus" Style="{StaticResource Card}" Visibility="Collapsed">
                         <StackPanel>
                             <TextBlock Text="STATUS" Style="{StaticResource ST}"/>

@@ -9,6 +9,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using Yakult.Inventory.App.Core;
+using Yakult.Inventory.App.Helpers;
 using Yakult.Inventory.App.Session;
 
 // Disambiguate MessageBox / DialogResult — callers may have both namespaces open
@@ -62,7 +63,8 @@ namespace Yakult.Inventory.App.Pages.Employee
             // Wire up searchable filtering — Tag (backing list) is set inside each Load method
             ConfigureSearchableComboBox(CmbCompany, CmbDepartment);
             ConfigureSearchableComboBox(CmbDepartment, CmbBranch);
-            ConfigureSearchableComboBox(CmbBranch, CmbPosition);
+            ConfigureSearchableComboBox(CmbBranch, CmbDistributor);
+            ConfigureSearchableComboBox(CmbDistributor, CmbPosition);
             ConfigureSearchableComboBox(CmbPosition, null);
 
             // Uppercase position on commit (Leave/Enter) — matches the original's ToUpper()
@@ -80,6 +82,7 @@ namespace Yakult.Inventory.App.Pages.Employee
             LoadTitles();
             LoadDepartments();
             LoadBranches();
+            LoadDistributors();
 
             if (_isEditMode)
             {
@@ -721,6 +724,73 @@ namespace Yakult.Inventory.App.Pages.Employee
             }
         }
 
+        private void LoadDistributors()
+        {
+            CmbDistributor.Items.Clear();
+
+            var defaultItem = new DistributorItem { Id = null, Name = "(None)", Active = true };
+            CmbDistributor.Items.Add(defaultItem);
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_connectionString)) return;
+
+                using (var con = new SqlConnection(_connectionString))
+                {
+                    con.Open();
+
+                    // Independent sales distributors (dbo.Distributor) for field-designee
+                    // postings. Missing table on older DBs leaves "(None)" only.
+                    // Optional: only a selected few employees carry one.
+                    string query = @"
+                        IF OBJECT_ID('dbo.Distributor', 'U') IS NOT NULL
+                        SELECT DistributorId, Name, ISNULL(IsActive, 1) AS Active
+                        FROM dbo.Distributor
+                        WHERE ISNULL(IsActive, 1) = 1";
+
+                    bool includeExistingDistributor = _isEditMode && _existingEmployee != null && _existingEmployee.DistributorId.HasValue;
+                    if (includeExistingDistributor)
+                    {
+                        query += " OR DistributorId = @ExistingDistributorId";
+                    }
+
+                    query += " ORDER BY SortOrder, Name";
+
+                    using (var cmd = new SqlCommand(query, con))
+                    {
+                        if (includeExistingDistributor)
+                        {
+                            cmd.Parameters.AddWithValue("@ExistingDistributorId", _existingEmployee.DistributorId.Value);
+                        }
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var item = new DistributorItem
+                                {
+                                    Id = reader.GetInt32(0),
+                                    Name = reader.GetString(1),
+                                    Active = reader.GetBoolean(2)
+                                };
+                                CmbDistributor.Items.Add(item);
+                            }
+                        }
+                    }
+                }
+
+                if (CmbDistributor.Items.Count > 0)
+                    CmbDistributor.SelectedIndex = 0;
+
+                CmbDistributor.Tag = CmbDistributor.Items.Cast<object>().ToList();
+            }
+            catch (Exception ex)
+            {
+                WinMsgBox.Show($"Failed to load distributors: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         // ─────────────────────────────────────────────────────────────────────────
         // Warning label visibility
         // ─────────────────────────────────────────────────────────────────────────
@@ -743,6 +813,13 @@ namespace Yakult.Inventory.App.Pages.Employee
             if (_suppressComboBoxEvents) return;
             var item = CmbBranch.SelectedItem as BranchItem;
             LblBranchWarning.Visibility = (item != null && !item.Active) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void CmbDistributor_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_suppressComboBoxEvents) return;
+            var item = CmbDistributor.SelectedItem as DistributorItem;
+            LblDistributorWarning.Visibility = (item != null && item.Id.HasValue && !item.Active) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         // ─────────────────────────────────────────────────────────────────────────
@@ -815,6 +892,16 @@ namespace Yakult.Inventory.App.Pages.Employee
                         break;
                     }
                 }
+
+                // Select distributor (optional, selected few only; stays on "(None)" when null)
+                for (int i = 0; i < CmbDistributor.Items.Count; i++)
+                {
+                    if (CmbDistributor.Items[i] is DistributorItem distItem && distItem.Id == _existingEmployee.DistributorId)
+                    {
+                        CmbDistributor.SelectedIndex = i;
+                        break;
+                    }
+                }
             }
             finally
             {
@@ -826,6 +913,7 @@ namespace Yakult.Inventory.App.Pages.Employee
             CmbCompany_SelectionChanged(CmbCompany, null);
             CmbDepartment_SelectionChanged(CmbDepartment, null);
             CmbBranch_SelectionChanged(CmbBranch, null);
+            CmbDistributor_SelectionChanged(CmbDistributor, null);
 
             // Load IsArchived
             ChkIsArchived.IsChecked = _existingEmployee.IsArchived;
@@ -856,6 +944,9 @@ namespace Yakult.Inventory.App.Pages.Employee
 
             // Department is optional (dbo.Employee.DeptId is nullable)
             var deptItem = CmbDepartment.SelectedItem as DepartmentItem;
+
+            // Distributor posting is optional (only a selected few employees carry one)
+            var distItem = CmbDistributor.SelectedItem as DistributorItem;
 
             // Validate Branch selection
             if (!(CmbBranch.SelectedItem is BranchItem branchItem) || !branchItem.Id.HasValue)
@@ -934,12 +1025,14 @@ namespace Yakult.Inventory.App.Pages.Employee
             if (!_isEditMode)
             {
                 bool deptInactive = deptItem != null && deptItem.Id.HasValue && !deptItem.Active;
-                if (!compItem.Active || deptInactive || !branchItem.Active)
+                bool distInactive = distItem != null && distItem.Id.HasValue && !distItem.Active;
+                if (!compItem.Active || deptInactive || !branchItem.Active || distInactive)
                 {
                     string warnings = "Warning: You are assigning this employee to inactive item(s):\n";
                     if (!compItem.Active) warnings += "• Company (Inactive)\n";
                     if (deptInactive)     warnings += "• Department (Inactive)\n";
                     if (!branchItem.Active) warnings += "• Branch (Inactive)\n";
+                    if (distInactive)     warnings += "• Distributor (Inactive)\n";
                     warnings += "\nThis is not recommended. Do you want to continue?";
 
                     var result = WinMsgBox.Show(warnings, "Inactive Selection Warning",
@@ -963,6 +1056,7 @@ namespace Yakult.Inventory.App.Pages.Employee
                 CompanyId = compItem.Id.Value,
                 DepartmentId = deptItem?.Id,
                 BranchId = branchItem.Id.Value,
+                DistributorId = EmployeeDistributorHelper.NormalizeDistributorId(distItem?.Id),
                 TitleId = (CmbTitle.SelectedItem is TitleItem ti && ti.Id.HasValue) ? ti.Id : null,
                 IsArchived = _isEditMode && ChkIsArchived.IsChecked == true
             };
@@ -1068,6 +1162,14 @@ namespace Yakult.Inventory.App.Pages.Employee
         }
 
         private class BranchItem
+        {
+            public int? Id { get; set; }
+            public string Name { get; set; }
+            public bool Active { get; set; }
+            public override string ToString() => Name;
+        }
+
+        private class DistributorItem
         {
             public int? Id { get; set; }
             public string Name { get; set; }

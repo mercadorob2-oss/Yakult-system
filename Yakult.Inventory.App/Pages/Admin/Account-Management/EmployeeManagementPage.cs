@@ -2288,6 +2288,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
         public string CompanyName     { get; set; }
         public string BranchName      { get; set; }
         public string DepartmentName  { get; set; }
+        public string DistributorName { get; set; }
         public string DepartmentEmail { get; set; }
         public string BranchEmail     { get; set; }
         public string PrimaryEmail    { get; set; }

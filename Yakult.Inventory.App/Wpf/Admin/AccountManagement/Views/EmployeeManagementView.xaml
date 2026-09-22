@@ -576,6 +576,16 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
+                <!-- Distributor (optional posting, selected few only) -->
+                <DataGridTextColumn Header="Distributor" Binding="{Binding DistributorName}" Width="Auto" MinWidth="95" IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Padding"      Value="4,6,4,6"/>
+                            <Setter Property="TextWrapping" Value="Wrap"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
                 <!-- Status -->
                 <DataGridTextColumn Header="Status" Binding="{Binding ActiveDisplay}" Width="SizeToHeader" MinWidth="92" IsReadOnly="True">
                     <DataGridTextColumn.ElementStyle>

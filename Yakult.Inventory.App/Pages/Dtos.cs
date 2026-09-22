@@ -114,6 +114,10 @@ namespace Yakult.Inventory.App.Pages
         public int? DepartmentId { get; set; }
         public int BranchId { get; set; }
 
+        // Optional posting toward an independent distributor's office.
+        // Only a selected few employees carry one; everyone else stays null.
+        public int? DistributorId { get; set; }
+
         public string Position { get; set; }
         public string EmployeeNumber { get; set; }
         public int? TitleId { get; set; }
@@ -127,6 +131,7 @@ namespace Yakult.Inventory.App.Pages
         public string CompanyName { get; set; }
         public string DepartmentName { get; set; }
         public string BranchName { get; set; }
+        public string DistributorName { get; set; }
     }
 
     public class RoleDto

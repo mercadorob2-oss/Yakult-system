@@ -8,6 +8,7 @@ using Yakult.Inventory.App.Models;
 using Yakult.Inventory.App.Pages;
 using Yakult.Inventory.App.Repositories;
 using Yakult.Inventory.App.Services;
+using Yakult.Inventory.App.Helpers;
 using Yakult.Inventory.App.Session;
 using Yakult.Inventory.App.WPF.CartridgeManagement.Infrastructure;
 using Yakult.Inventory.App.WPF.Shared.Helpers;
@@ -27,6 +28,7 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
         public string CompanyName { get; set; }
         public string BranchName { get; set; }
         public string DepartmentName { get; set; }
+        public string DistributorName { get; set; }
         public DateTime DateCreated { get; set; }
         public string CreatedByName { get; set; }
         public string EmployeeNumber { get; set; }
@@ -323,6 +325,25 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
 
         public Func<string, string, bool> ConfirmYesNo { get; set; }
 
+        private static bool? _employeeHasDistributorId;
+
+        /// <summary>
+        /// Whether dbo.Employee.DistributorId exists in the connected database.
+        /// Older DBs predate the column, so every distributor read/write stays
+        /// conditional. Requires an already-open connection.
+        /// </summary>
+        private static bool HasEmployeeDistributorColumn(SqlConnection openConnection)
+        {
+            if (_employeeHasDistributorId.HasValue)
+                return _employeeHasDistributorId.Value;
+            const string sql = "SELECT CASE WHEN COL_LENGTH('dbo.Employee', 'DistributorId') IS NULL THEN 0 ELSE 1 END";
+            using (var cmd = new SqlCommand(sql, openConnection))
+            {
+                _employeeHasDistributorId = Convert.ToInt32(cmd.ExecuteScalar()) == 1;
+                return _employeeHasDistributorId.Value;
+            }
+        }
+
         /// <summary>Synchronous, matches the original LoadEmployees() (plain blocking ADO.NET).</summary>
         public void LoadEmployees()
         {
@@ -333,6 +354,9 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                 using (var con = new SqlConnection(_connectionString))
                 {
                     con.Open();
+                    bool hasDistributorColumn = HasEmployeeDistributorColumn(con);
+                    string distributorSelect = EmployeeDistributorHelper.BuildDistributorSelectClause(hasDistributorColumn);
+                    string distributorJoin = EmployeeDistributorHelper.BuildDistributorJoinClause(hasDistributorColumn);
                     using (var cmd = new SqlCommand(@"
                         SELECT
                             e.EmpId,
@@ -342,6 +366,7 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                             c.Name AS CompanyName,
                             b.Name AS BranchName,
                             d.Name AS DepartmentName,
+                            " + distributorSelect + @"
                             e.DateCreated,
                             u.Name AS CreatedByName,
                             e.EmployeeNumber,
@@ -350,6 +375,7 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                         LEFT JOIN dbo.Company c ON e.ComId = c.ComId
                         LEFT JOIN dbo.Branch b ON e.BranchId = b.BranchId
                         LEFT JOIN dbo.Department d ON e.DeptId = d.DeptId
+                        " + distributorJoin + @"
                         LEFT JOIN dbo.[User] u ON e.Createdby = u.UserId
                         LEFT JOIN dbo.Title t ON e.TitleId = t.TitleId
                         LEFT JOIN dbo.ArchiveStatus arc ON arc.EntityType = 'Employee' AND arc.EntityId = e.EmpId AND arc.IsArchived = 1
@@ -368,10 +394,11 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                                 CompanyName = reader.IsDBNull(4) ? "N/A" : reader.GetString(4),
                                 BranchName = reader.IsDBNull(5) ? "N/A" : reader.GetString(5),
                                 DepartmentName = reader.IsDBNull(6) ? "N/A" : reader.GetString(6),
-                                DateCreated = reader.GetDateTime(7),
-                                CreatedByName = reader.IsDBNull(8) ? "N/A" : reader.GetString(8),
-                                EmployeeNumber = reader.IsDBNull(9) ? null : reader.GetString(9),
-                                TitleCode = reader.IsDBNull(10) ? null : reader.GetString(10)
+                                DistributorName = reader.IsDBNull(reader.GetOrdinal("DistributorName")) ? "—" : reader.GetString(reader.GetOrdinal("DistributorName")),
+                                DateCreated = reader.GetDateTime(reader.GetOrdinal("DateCreated")),
+                                CreatedByName = reader.IsDBNull(reader.GetOrdinal("CreatedByName")) ? "N/A" : reader.GetString(reader.GetOrdinal("CreatedByName")),
+                                EmployeeNumber = reader.IsDBNull(reader.GetOrdinal("EmployeeNumber")) ? null : reader.GetString(reader.GetOrdinal("EmployeeNumber")),
+                                TitleCode = reader.IsDBNull(reader.GetOrdinal("TitleCode")) ? null : reader.GetString(reader.GetOrdinal("TitleCode"))
                             });
                         }
                     }
@@ -404,7 +431,8 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                     (e.Description != null && e.Description.ToLower().Contains(searchText)) ||
                     (e.CompanyName != null && e.CompanyName.ToLower().Contains(searchText)) ||
                     (e.BranchName != null && e.BranchName.ToLower().Contains(searchText)) ||
-                    (e.DepartmentName != null && e.DepartmentName.ToLower().Contains(searchText)));
+                    (e.DepartmentName != null && e.DepartmentName.ToLower().Contains(searchText)) ||
+                    (e.DistributorName != null && e.DistributorName.ToLower().Contains(searchText)));
             }
 
             _filteredEmployees = filtered.ToList();
@@ -454,6 +482,7 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                 case "Company":       return emp.CompanyName;
                 case "Branch":        return emp.BranchName;
                 case "Department":    return emp.DepartmentName;
+                case "Distributor":   return emp.DistributorName;
                 case "Date Created":  return emp.DateCreated.ToString("MM/dd/yyyy");
                 case "Created By":    return emp.CreatedByName;
                 default:              return null;
@@ -492,6 +521,7 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                 case "Company":       values = _allEmployees.Select(e => e.CompanyName ?? ""); break;
                 case "Branch":        values = _allEmployees.Select(e => e.BranchName ?? ""); break;
                 case "Department":    values = _allEmployees.Select(e => e.DepartmentName ?? ""); break;
+                case "Distributor":   values = _allEmployees.Select(e => e.DistributorName ?? ""); break;
                 case "Date Created":  values = _allEmployees.Select(e => e.DateCreated.ToString("MM/dd/yyyy")); break;
                 case "Created By":    values = _allEmployees.Select(e => e.CreatedByName ?? ""); break;
                 default: return new List<string>();
@@ -513,9 +543,11 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                 using (var con = new SqlConnection(_connectionString))
                 {
                     con.Open();
+                    bool hasDistributorColumn = HasEmployeeDistributorColumn(con);
+                    var ins = EmployeeDistributorHelper.BuildDistributorInsertFragments(hasDistributorColumn);
                     using (var cmd = new SqlCommand(@"
-                        INSERT INTO dbo.Employee (Name, Position, Description, DateCreated, Createdby, ComId, DeptId, BranchId, EmployeeNumber, TitleId)
-                        VALUES (@Name, @Position, @Description, @DateCreated, @CreatedBy, @ComId, @DeptId, @BranchId, @EmployeeNumber, @TitleId);
+                        INSERT INTO dbo.Employee (Name, Position, Description, DateCreated, Createdby, ComId, DeptId, BranchId," + ins.ColumnFragment + @" EmployeeNumber, TitleId)
+                        VALUES (@Name, @Position, @Description, @DateCreated, @CreatedBy, @ComId, @DeptId, @BranchId," + ins.ValueFragment + @" @EmployeeNumber, @TitleId);
                         SELECT CAST(SCOPE_IDENTITY() AS INT);", con))
                     {
                         cmd.Parameters.AddWithValue("@Name", emp.Name);
@@ -526,6 +558,8 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                         cmd.Parameters.AddWithValue("@ComId", emp.CompanyId);
                         cmd.Parameters.AddWithValue("@DeptId", emp.DepartmentId.HasValue ? (object)emp.DepartmentId.Value : DBNull.Value);
                         cmd.Parameters.AddWithValue("@BranchId", emp.BranchId);
+                        if (hasDistributorColumn)
+                            cmd.Parameters.AddWithValue("@DistributorId", (object)emp.DistributorId ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@EmployeeNumber", string.IsNullOrWhiteSpace(emp.EmployeeNumber) ? (object)DBNull.Value : emp.EmployeeNumber);
                         cmd.Parameters.AddWithValue("@TitleId", emp.TitleId.HasValue ? (object)emp.TitleId.Value : DBNull.Value);
                         int newEmpId = (int)cmd.ExecuteScalar();
@@ -569,9 +603,13 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                 using (var con = new SqlConnection(_connectionString))
                 {
                     con.Open();
+                    bool hasDistributorColumn = HasEmployeeDistributorColumn(con);
+                    string distributorSelect = EmployeeDistributorHelper.BuildDistributorSelectClause(hasDistributorColumn);
+                    string distributorJoin = EmployeeDistributorHelper.BuildDistributorJoinClause(hasDistributorColumn);
                     using (var cmd = new SqlCommand(@"
-                        SELECT e.EmpId, e.Name, e.Position, e.Description, e.DateCreated, e.ComId, e.DeptId, e.BranchId, u.Name AS CreatedByName, e.EmployeeNumber, e.TitleId
+                        SELECT e.EmpId, e.Name, e.Position, e.Description, e.DateCreated, e.ComId, e.DeptId, e.BranchId, " + distributorSelect + @" u.Name AS CreatedByName, e.EmployeeNumber, e.TitleId
                         FROM dbo.Employee e
+                        " + distributorJoin + @"
                         LEFT JOIN dbo.[User] u ON e.Createdby = u.UserId
                         WHERE e.EmpId = @EmpId", con))
                     {
@@ -590,9 +628,11 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                                     CompanyId = reader.GetInt32(5),
                                     DepartmentId = reader.IsDBNull(6) ? (int?)null : reader.GetInt32(6),
                                     BranchId = reader.GetInt32(7),
-                                    CreatedByName = reader.IsDBNull(8) ? "N/A" : reader.GetString(8),
-                                    EmployeeNumber = reader.IsDBNull(9) ? null : reader.GetString(9),
-                                    TitleId = reader.IsDBNull(10) ? (int?)null : reader.GetInt32(10)
+                                    DistributorId = reader.IsDBNull(reader.GetOrdinal("DistributorId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("DistributorId")),
+                                    DistributorName = reader.IsDBNull(reader.GetOrdinal("DistributorName")) ? null : reader.GetString(reader.GetOrdinal("DistributorName")),
+                                    CreatedByName = reader.IsDBNull(reader.GetOrdinal("CreatedByName")) ? "N/A" : reader.GetString(reader.GetOrdinal("CreatedByName")),
+                                    EmployeeNumber = reader.IsDBNull(reader.GetOrdinal("EmployeeNumber")) ? null : reader.GetString(reader.GetOrdinal("EmployeeNumber")),
+                                    TitleId = reader.IsDBNull(reader.GetOrdinal("TitleId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("TitleId"))
                                 };
                             }
                         }
@@ -614,6 +654,8 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                 using (var con = new SqlConnection(_connectionString))
                 {
                     con.Open();
+                    bool hasDistributorColumn = HasEmployeeDistributorColumn(con);
+                    string distributorSet = EmployeeDistributorHelper.BuildDistributorUpdateSetClause(hasDistributorColumn);
                     using (var cmd = new SqlCommand(@"
                         UPDATE dbo.Employee
                         SET Name = @Name,
@@ -622,6 +664,7 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                             ComId = @ComId,
                             DeptId = @DeptId,
                             BranchId = @BranchId,
+                            " + distributorSet + @"
                             EmployeeNumber = @EmployeeNumber,
                             TitleId = @TitleId
                         WHERE EmpId = @EmpId", con))
@@ -633,6 +676,8 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                         cmd.Parameters.AddWithValue("@ComId", emp.CompanyId);
                         cmd.Parameters.AddWithValue("@DeptId", emp.DepartmentId.HasValue ? (object)emp.DepartmentId.Value : DBNull.Value);
                         cmd.Parameters.AddWithValue("@BranchId", emp.BranchId);
+                        if (hasDistributorColumn)
+                            cmd.Parameters.AddWithValue("@DistributorId", (object)emp.DistributorId ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@EmployeeNumber", string.IsNullOrWhiteSpace(emp.EmployeeNumber) ? (object)DBNull.Value : emp.EmployeeNumber);
                         cmd.Parameters.AddWithValue("@TitleId", emp.TitleId.HasValue ? (object)emp.TitleId.Value : DBNull.Value);
                         cmd.ExecuteNonQuery();
