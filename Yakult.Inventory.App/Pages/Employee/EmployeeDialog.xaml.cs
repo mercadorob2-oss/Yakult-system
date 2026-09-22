@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Threading;
 using System.Windows.Interop;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Helpers;
@@ -370,8 +371,19 @@ namespace Yakult.Inventory.App.Pages.Employee
 
                 SetComboText(cmb, savedText);
 
-                if (_isDialogLoaded && !cmb.IsDropDownOpen && filtered.Count > 0 && !string.IsNullOrEmpty(savedText))
-                    cmb.IsDropDownOpen = true;
+                // Deferred open: this TextChanged is sometimes raised synchronously from
+                // inside DropDownClosed (selection re-commit sets SelectedIndex, which
+                // retargets Text). Opening the popup inline there throws
+                // InvalidOperationException ("Cannot reopen a popup in the closed event
+                // handler"), so re-check and open one dispatcher cycle later.
+                if (SearchableComboHelper.ShouldReopenDropdown(_isDialogLoaded, cmb.IsDropDownOpen, filtered.Count, savedText))
+                {
+                    cmb.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (!cmb.IsDropDownOpen && !string.IsNullOrEmpty(cmb.Text))
+                            cmb.IsDropDownOpen = true;
+                    }), DispatcherPriority.Background);
+                }
 
                 SetComboText(cmb, savedText);
             }));

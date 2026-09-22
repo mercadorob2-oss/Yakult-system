@@ -410,16 +410,17 @@ namespace Yakult.Inventory.App.Pages.Department
             using (var con = new SqlConnection(cs))
             {
                 con.Open();
-                var sql = @"INSERT INTO Department (Name, Section, Description, ComId, BrId, DateCreated, Createdby, Active)
-                           VALUES (@Name, @Section, @Description, @ComId, @BrId, @DateCreated, @Createdby, @Active)";
+                // Departments are global lookups: dbo.Department has no ComId/BrId
+                // columns (company/branch links live in BranchDepartmentCompany and
+                // DepartmentAccount). The placeholder below handles the association.
+                var sql = @"INSERT INTO dbo.Department (Name, Section, Description, DateCreated, Createdby, Active)
+                           VALUES (@Name, @Section, @Description, @DateCreated, @Createdby, @Active)";
 
                 using (var cmd = new SqlCommand(sql, con))
                 {
                     cmd.Parameters.AddWithValue("@Name",        dept.Name);
                     cmd.Parameters.AddWithValue("@Section",     (object)dept.Section ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@Description", (object)dept.Description ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@ComId",       (object)dept.CompanyId ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@BrId",        (object)dept.BranchId ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@DateCreated", dept.DateCreated);
                     cmd.Parameters.AddWithValue("@Createdby",   dept.CreatedByUserId);
                     cmd.Parameters.AddWithValue("@Active",      true);

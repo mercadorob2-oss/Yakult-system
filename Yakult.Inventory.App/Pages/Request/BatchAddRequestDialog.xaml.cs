@@ -248,10 +248,17 @@ namespace Yakult.Inventory.App.Pages.Request
                 using (var con = new SqlConnection(cs))
                 {
                     con.Open();
-                    const string sql =
-                        "SELECT EmpId, Name, EmployeeNumber, Position, ComId, DeptId, BranchId " +
-                        "FROM dbo.Employee WHERE Active = 1 ORDER BY Name";
-                    using (var cmd = new SqlCommand(sql, con))
+                    // Optional posting column; older DBs predate it.
+                    bool hasEmpDistributor = false;
+                    using (var chk = new SqlCommand("SELECT CASE WHEN COL_LENGTH('dbo.Employee', 'DistributorId') IS NULL THEN 0 ELSE 1 END", con))
+                        hasEmpDistributor = Convert.ToInt32(chk.ExecuteScalar()) == 1;
+                    string distSelect = hasEmpDistributor
+                        ? ", DistributorId"
+                        : ", CAST(NULL AS INT) AS DistributorId";
+                    const string sqlBase =
+                        "SELECT EmpId, Name, EmployeeNumber, Position, ComId, DeptId, BranchId";
+                    using (var cmd = new SqlCommand(sqlBase + distSelect +
+                        " FROM dbo.Employee WHERE Active = 1 ORDER BY Name", con))
                     using (var r = cmd.ExecuteReader())
                     {
                         while (r.Read())
@@ -263,7 +270,8 @@ namespace Yakult.Inventory.App.Pages.Request
                                 Position       = r.IsDBNull(3) ? "" : r.GetString(3),
                                 ComId          = r.IsDBNull(4) ? (int?)null : r.GetInt32(4),
                                 DeptId         = r.IsDBNull(5) ? (int?)null : r.GetInt32(5),
-                                BranchId       = r.IsDBNull(6) ? (int?)null : r.GetInt32(6)
+                                BranchId       = r.IsDBNull(6) ? (int?)null : r.GetInt32(6),
+                                DistributorId  = r.IsDBNull(7) ? (int?)null : r.GetInt32(7)
                             });
                     }
                 }
@@ -621,7 +629,48 @@ namespace Yakult.Inventory.App.Pages.Request
             _suppressEmpFilter    = false;
             PopupEmployee.IsOpen  = false;
             UpdateClearEmployeeButtonVisibility();
+            AutofillOrgFromEmployee(emp);
             DgvRequests.Focus();
+        }
+
+        // Auto-fill the org filter row from the picked employee's own
+        // associations (company/dept/branch/distributor). Suppressed so the
+        // cascade handlers don't wipe the just-applied selections, and the
+        // employee-popup filters are aligned to the same org.
+        private void AutofillOrgFromEmployee(EmployeeItem emp)
+        {
+            _suppressOrgFilter = true;
+            try
+            {
+                SelectOrgComboItem(CmbCompany, emp.ComId);
+                SelectOrgComboItem(CmbDepartment, emp.DeptId);
+                SelectOrgComboItem(CmbBranch, emp.BranchId);
+                SelectOrgComboItem(CmbDistributor, emp.DistributorId);
+            }
+            finally
+            {
+                _suppressOrgFilter = false;
+            }
+
+            _filterComId    = emp.ComId;
+            _filterDeptId   = emp.DeptId;
+            _filterBranchId = emp.BranchId;
+        }
+
+        private static void SelectOrgComboItem(System.Windows.Controls.ComboBox cmb, int? id)
+        {
+            if (cmb == null || cmb.Items.Count == 0) return;
+            for (int i = 0; i < cmb.Items.Count; i++)
+            {
+                if (cmb.Items[i] is OrgItem oi && oi.Id == id)
+                {
+                    cmb.SelectedIndex = i;
+                    return;
+                }
+            }
+            // No match (e.g. inactive org filtered out, or null): fall back to
+            // the first "(Any)/(None)" entry so the row never shows stale org.
+            cmb.SelectedIndex = 0;
         }
 
         // ── No-Employee / Org-unit toggle ─────────────────────────────────────────
@@ -629,13 +678,13 @@ namespace Yakult.Inventory.App.Pages.Request
         {
             bool noEmp = ChkNoEmployee.IsChecked == true;
             PnlEmployee.Visibility = noEmp ? Visibility.Collapsed : Visibility.Visible;
-            PnlDistributor.Visibility = noEmp ? Visibility.Visible : Visibility.Collapsed;
-            if (!noEmp && CmbDistributor != null && CmbDistributor.SelectedIndex != 0)
-                CmbDistributor.SelectedIndex = 0;
+            // Distributor is always visible (filter in employee mode, org unit in
+            // dept mode). No selection reset: what the user sees is what saves.
+            PnlDistributor.Visibility = Visibility.Visible;
             LblOrgRowPrefix.Text   = noEmp ? "Org Unit:" : "Filter:";
             TxtInfoBanner.Text     = noEmp
                 ? "Batch add requests. Select a Company or a Distributor (at least one required), plus optional Department and Branch, then fill each row and click Save."
-                : "Batch add requests. Optionally filter by Company, Dept, or Branch, then select an employee and fill each row.";
+                : "Batch add requests. Optionally filter by Company, Dept, Branch, or Distributor, then select an employee and fill each row.";
 
             // The department/branch ListCollectionViews can still have an employee-derived
             // cascade from the previous mode. Reapply the selected company for the current
@@ -1242,6 +1291,12 @@ namespace Yakult.Inventory.App.Pages.Request
 
             bool noEmp = ChkNoEmployee.IsChecked == true;
 
+            // Distributor is always visible and optional in both modes: org unit
+            // in dept mode, extra tag in employee mode. Resolved before the mode
+            // branch so dept-mode validation sees it. What is shown is saved.
+            var selDistributor = CmbDistributor.SelectedItem as OrgItem;
+            if (selDistributor != null && selDistributor.Id > 0) { batchDistributorId = selDistributor.Id; batchDistributorName = selDistributor.Name; }
+
             if (noEmp)
             {
                 // Company OR Distributor required (distributors are independent
@@ -1258,9 +1313,6 @@ namespace Yakult.Inventory.App.Pages.Request
 
                 var selBranch = CmbBranch.SelectedItem as OrgItem;
                 if (selBranch != null && selBranch.Id > 0) { batchBranchId = selBranch.Id; batchBranchName = selBranch.Name; }
-
-                var selDistributor = CmbDistributor.SelectedItem as OrgItem;
-                if (selDistributor != null && selDistributor.Id > 0) { batchDistributorId = selDistributor.Id; batchDistributorName = selDistributor.Name; }
 
                 if (!batchComId.HasValue && !batchDistributorId.HasValue)
                 {
@@ -1796,6 +1848,7 @@ namespace Yakult.Inventory.App.Pages.Request
             public int?   ComId          { get; set; }
             public int?   DeptId         { get; set; }
             public int?   BranchId       { get; set; }
+            public int?   DistributorId  { get; set; }
 
             public string DisplayText
             {
