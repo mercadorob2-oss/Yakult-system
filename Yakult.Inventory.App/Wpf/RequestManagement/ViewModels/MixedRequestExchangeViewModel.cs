@@ -303,9 +303,12 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
 
                 string keepKey = _selectedGroup?.SessionKey;
 
+                // Only submissions made entirely of known consumable categories are offered here,
+                // the same rule the portal uses before it ever groups a submission into a Set.
                 _allGroups = lines
                     .GroupBy(l => l.SubmissionSessionId)
                     .Select(g => new MixedGroupViewModel(g.Key, g.ToList()))
+                    .Where(g => g.Lines.All(l => ConsumableCategories.IsKnown(l.Dto.Category)))
                     .OrderBy(g => g.DateCreated)
                     .ToList();
 
@@ -515,6 +518,28 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
                     : "Already saved: Req # " + string.Join(", ", done) + ".";
                 MessageBox.Show($"Error fulfilling request:\n\n{ex.Message}\n\n{saved}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+
+            // A self-service submission is not in a Set yet. Group the whole submission into one
+            // now that IT has fulfilled it: this is what moves it onto Request & Set Management
+            // and deducts its quantity (same steps the portal uses for IT-assisted submissions).
+            // Lines that were not fully issued stay pending inside the Set.
+            if (succeeded && !setId.HasValue)
+            {
+                try
+                {
+                    var setRepo = new SetRepository();
+                    int newSetId = await setRepo.CreateSetAsync(userId, remarks: "Auto-grouped from PORTAL submission");
+                    foreach (var l in group.Lines)
+                        await setRepo.AddRequestToSetAsync(l.ReqId, newSetId);
+                    setId = newSetId;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        "The lines were fulfilled, but the request could not be grouped into a Set:\n\n" + ex.Message,
+                        "Set Not Created", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
             }
 
             SelectedGroup = null;

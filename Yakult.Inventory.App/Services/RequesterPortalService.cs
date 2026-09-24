@@ -897,7 +897,13 @@ namespace Yakult.Inventory.App.Services
             // Any other request type must never be swept into a Set here.
             bool isConsumableModelRequest = normalizedItems.All(x => Models.ConsumableCategories.IsKnown(x.Category));
 
-            int? groupedSetId = isConsumableModelRequest
+            // Only IT-assisted submissions are grouped into a Set right away. A self-service
+            // submission (New Request tab) must first be authorized by the requester's
+            // supervisor; once approved it is delivered to the Mixed Request Exchange page,
+            // and only when IT fulfills it there is it grouped into a Set (which is what
+            // deducts the quantity). Grouping here would put an unapproved request on Request
+            // & Set Management and deduct its quantity before anyone approved it.
+            int? groupedSetId = isAssisted && isConsumableModelRequest
                 ? GroupIntoSet(createdIds, createdByUserId, requestSource)
                 : (int?)null;
 

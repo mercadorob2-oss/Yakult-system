@@ -189,6 +189,37 @@
             </div>
             *@
 
+            @if (ViewBag.IsDeptAccount == true)
+            {
+                @* Department Account: searchable employee picker, first on the form (matches the desktop portal) *@
+                <h5 class="destination-header mt-2 mb-3">Employee in Session</h5>
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-person-badge"></i> <strong>@ViewBag.DepartmentName (@ViewBag.BranchName)</strong> —
+                    Select the employee who is submitting this request.
+                </div>
+                <div class="row mb-3">
+                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">
+                        Employee <span class="text-danger">*</span>:
+                    </label>
+                    <div class="col-sm-12 col-md-9">
+                        <div class="position-relative" id="deptEmpPickerWrapper">
+                            <input type="text" id="deptEmpInput" class="form-control pe-4"
+                                   placeholder="— Search employee —" autocomplete="off" required />
+                            <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d;">&#9660;</span>
+                            <input type="hidden" name="SelectedEmployeeId" id="deptEmpHidden" />
+                        </div>
+                        <small class="form-text text-muted">Select who is making this request.</small>
+                    </div>
+                </div>
+
+                @* Hidden fields populated by JS when employee is selected *@
+                <input type="hidden" asp-for="Request.EmployeeName" id="employeeName" />
+                <input type="hidden" asp-for="Request.EmployeePosition" id="employeePosition" />
+                <input type="hidden" asp-for="Request.DestinationCompanyId" id="destCompanyId" />
+                <input type="hidden" asp-for="Request.DestinationBranchId" id="destBranchId" />
+                <input type="hidden" asp-for="Request.DestinationDepartmentId" id="destDeptId" />
+            }
+
             @* ── ITEM SELECTION — staging area for one item at a time; not bound to RequestItems ── *@
             <h5 class="destination-header mt-4 mb-3">Item Selection</h5>
 
@@ -297,33 +328,7 @@
 
             @if (ViewBag.IsDeptAccount == true)
             {
-                @* Department Account: searchable employee picker *@
-                <h5 class="destination-header mt-2 mb-3">Employee in Session</h5>
-                <div class="alert alert-info mb-3">
-                    <i class="bi bi-person-badge"></i> <strong>@ViewBag.DepartmentName (@ViewBag.BranchName)</strong> —
-                    Select the employee who is submitting this request.
-                </div>
-                <div class="row mb-3">
-                    <label class="col-sm-12 col-md-3 col-form-label fw-bold">
-                        Employee <span class="text-danger">*</span>:
-                    </label>
-                    <div class="col-sm-12 col-md-9">
-                        <div class="position-relative" id="deptEmpPickerWrapper">
-                            <input type="text" id="deptEmpInput" class="form-control pe-4"
-                                   placeholder="— Search employee —" autocomplete="off" required />
-                            <span style="position:absolute; right:10px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6c757d;">&#9660;</span>
-                            <input type="hidden" name="SelectedEmployeeId" id="deptEmpHidden" />
-                        </div>
-                        <small class="form-text text-muted">Select who is making this request.</small>
-                    </div>
-                </div>
-
-                @* Hidden fields populated by JS when employee is selected *@
-                <input type="hidden" asp-for="Request.EmployeeName" id="employeeName" />
-                <input type="hidden" asp-for="Request.EmployeePosition" id="employeePosition" />
-                <input type="hidden" asp-for="Request.DestinationCompanyId" id="destCompanyId" />
-                <input type="hidden" asp-for="Request.DestinationBranchId" id="destBranchId" />
-                <input type="hidden" asp-for="Request.DestinationDepartmentId" id="destDeptId" />
+                @* Employee in Session now sits above Item Selection (moved up, see top of the form). *@
 
                 @* Read-only destination display (populated when employee selected) *@
                 <h5 class="destination-header mt-4 mb-3">Destination</h5>

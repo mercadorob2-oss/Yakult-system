@@ -136,17 +136,6 @@
         border-color: var(--yakult-blue);
     }
 
-    .module-card.disabled {
-        cursor: not-allowed;
-        opacity: 0.55;
-    }
-
-    .module-card.disabled:hover {
-        transform: none;
-        box-shadow: var(--shadow-sm);
-        border-color: var(--border-muted);
-    }
-
     .module-card .accent-bar {
         height: 4px;
         width: 100%;
@@ -287,6 +276,7 @@
                 </div>
             </a>
 
+            @* Consumable Management is IT-only: non-IT accounts do not see the card at all. *@
             @if (ViewBag.IsITDepartment == true)
             {
                 <a asp-controller="ConsumableManagement" asp-action="Index" class="module-card">
@@ -300,20 +290,6 @@
                         <span class="card-action" style="color:#2c86bf;">Open →</span>
                     </div>
                 </a>
-            }
-            else
-            {
-                <div class="module-card disabled" title="IT staff only">
-                    <div class="accent-bar" style="background:#94a3b8;"></div>
-                    <div class="card-inner">
-                        <div class="watermark">🖨️</div>
-                        <p class="card-title">Consumable Management</p>
-                        <p class="card-desc">
-                            IT staff only — fulfillment tools for cartridge, ink, toner, and print head requests.
-                        </p>
-                        <span class="card-action" style="color:#94a3b8;">Restricted</span>
-                    </div>
-                </div>
             }
 
         </div>

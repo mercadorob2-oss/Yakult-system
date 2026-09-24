@@ -1967,11 +1967,12 @@ namespace Yakult.Inventory.App.Repositories
                 branchFilter, employeeFilter, referenceCodeFilter, parentTagFilter, reqIdFilter);
 
         /// <summary>
-        /// Every line of an approved portal submission that mixes cartridge and non-cartridge
-        /// items and is not yet fully issued. Portal submissions like this are owned by
-        /// Request &amp; Set Management (dbo.Request.WorkflowType), so the Cartridge Exchange queue
-        /// never lists them; the Mixed Request Exchange page reads them from here instead.
-        /// Only submissions with an Approved supervisor authorization are returned.
+        /// Every line of an approved Request Portal consumable submission (mixed cartridge and
+        /// other consumables, or Ink/Toner/Printhead only) that is not yet in a Set and not yet
+        /// fully issued. These are owned by Request &amp; Set Management (dbo.Request.WorkflowType),
+        /// so the Cartridge Exchange queue never lists them; the Mixed Request Exchange page
+        /// reads them from here. Only submissions with an Approved supervisor authorization are
+        /// returned, which is what makes a self-service request wait for approval first.
         /// </summary>
         public List<Models.MixedRequestLineDto> GetApprovedMixedRequestLines()
         {
@@ -2016,19 +2017,14 @@ namespace Yakult.Inventory.App.Repositories
                         SELECT 1 FROM dbo.CartridgeAuthorization ca
                         WHERE ca.SubmissionSessionId = r.SubmissionSessionId
                           AND ca.Status = 'Approved')
-                  -- Mixed: at least one cartridge line and at least one non-cartridge line.
-                  AND EXISTS (
-                        SELECT 1 FROM dbo.Request rc
-                        INNER JOIN dbo.Item ic ON ic.ItemId = rc.ItemId
-                        WHERE rc.SubmissionSessionId = r.SubmissionSessionId
-                          AND rc.Active = 1
-                          AND ISNULL(ic.Category, '') = 'Cartridge')
-                  AND EXISTS (
-                        SELECT 1 FROM dbo.Request rn
-                        INNER JOIN dbo.Item inn ON inn.ItemId = rn.ItemId
-                        WHERE rn.SubmissionSessionId = r.SubmissionSessionId
-                          AND rn.Active = 1
-                          AND ISNULL(inn.Category, '') <> 'Cartridge')
+                  -- Not in a Set yet. Self-service (New Request) submissions are only grouped into
+                  -- a Set when IT fulfills them on this page; IT-assisted ones are grouped when
+                  -- submitted, so they never appear here.
+                  AND NOT EXISTS (
+                        SELECT 1 FROM dbo.Request rs
+                        WHERE rs.SubmissionSessionId = r.SubmissionSessionId
+                          AND rs.Active = 1
+                          AND rs.SetId IS NOT NULL)
                   -- Drops off once every line of the submission is fully issued.
                   AND EXISTS (
                         SELECT 1 FROM dbo.Request rp
