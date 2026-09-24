@@ -45,6 +45,8 @@
     <string name="report_issue_swipe_hint">Swipe left on an item to report an issue or update its status.</string>
     <string name="report_issue_swipe_card_hint">Swipe left to report an issue</string>
     <string name="pending_edits_label">Updated by mobile (not uploaded yet)</string>
+    <string name="dispatch_item_pc_label">PC</string>
+    <string name="dispatch_item_ip_label">IP</string>
     
     <!-- Image Upload -->
     <string name="attach_photo_title">Attach Photo to Set</string>

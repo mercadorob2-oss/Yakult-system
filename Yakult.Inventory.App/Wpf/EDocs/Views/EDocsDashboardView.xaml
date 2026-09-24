@@ -506,6 +506,7 @@
                                             <DataGridTextColumn Header="REMARKS" Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}" Width="200"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
+                                    <TextBlock Text="Tip: type the same REMARKS text on consecutive rows to brace them into one cell on the printout." FontSize="11" Foreground="#5A6C7D" TextWrapping="Wrap" Margin="0,0,0,4"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource SectionCard}">

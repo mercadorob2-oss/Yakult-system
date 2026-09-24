@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.Set.RequisitionForm.Converters"
              x:Name="Root"
-             FontFamily="Times New Roman"
+             FontFamily="Arial"
              FontSize="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleDoubleConverter.Instance}, ConverterParameter=14.7}"
              Background="White">
 
@@ -15,17 +15,17 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <CheckBox IsChecked="{Binding IsYakultPhilippines, Mode=OneWay}"
                           IsHitTestVisible="False" VerticalAlignment="Center"/>
-                <TextBlock Text="  YAKULT PHILIPPINES INC." VerticalAlignment="Center"/>
+                <TextBlock Text="  YAKULT PHILIPPINES INC." VerticalAlignment="Center" FontWeight="Bold"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0">
                 <CheckBox IsChecked="{Binding IsYakultMarketing, Mode=OneWay}"
                           IsHitTestVisible="False" VerticalAlignment="Center"/>
-                <TextBlock Text="  YAKULT MARKETING CORP." VerticalAlignment="Center"/>
+                <TextBlock Text="  YAKULT MARKETING CORP." VerticalAlignment="Center" FontWeight="Bold"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0">
                 <CheckBox IsChecked="{Binding IsYakultElSalvador, Mode=OneWay}"
                           IsHitTestVisible="False" VerticalAlignment="Center"/>
-                <TextBlock Text="  YAKULT EL SALVADOR MANUFACTURING CORP." VerticalAlignment="Center"/>
+                <TextBlock Text="  YAKULT EL SALVADOR MANUFACTURING CORP." VerticalAlignment="Center" FontWeight="Bold"/>
             </StackPanel>
         </StackPanel>
 
@@ -45,20 +45,33 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
-                <TextBlock Text="DEPARTMENT:  " VerticalAlignment="Bottom"/>
+                <TextBlock Text="DEPARTMENT:  " VerticalAlignment="Bottom" FontWeight="Bold"/>
                 <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="220">
                     <TextBlock Text="{Binding Department, TargetNullValue=''}" VerticalAlignment="Bottom" Padding="0,0,0,1"/>
                 </Border>
             </StackPanel>
             <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                <TextBlock Text="DATE :  " VerticalAlignment="Bottom"/>
+                <TextBlock Text="DATE :  " VerticalAlignment="Bottom" FontWeight="Bold"/>
                 <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="110">
                     <TextBlock Text="{Binding Date, TargetNullValue=''}" VerticalAlignment="Bottom" Padding="0,0,0,1"/>
                 </Border>
             </StackPanel>
             <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal"
                         Margin="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleThicknessConverter.Instance}, ConverterParameter='0,6,0,0'}">
-                <TextBlock Text="EMPLOYEE:  " VerticalAlignment="Bottom"/>
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Employee}" Value="">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Employee}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+                <TextBlock Text="EMPLOYEE:  " VerticalAlignment="Bottom" FontWeight="Bold"/>
                 <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="220">
                     <TextBlock Text="{Binding Employee, TargetNullValue=''}" VerticalAlignment="Bottom" Padding="0,0,0,1"/>
                 </Border>
@@ -106,34 +119,21 @@
                     </Border>
                 </Grid>
 
-                <ItemsControl Grid.Row="1" VerticalAlignment="Top" ItemsSource="{Binding Items}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid MinHeight="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleDoubleConverter.Instance}, ConverterParameter=26}">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="86"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="130"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" BorderBrush="Black" BorderThickness="0,0,1,1"
-                                        Padding="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleThicknessConverter.Instance}, ConverterParameter='4,3,4,3'}">
-                                    <TextBlock Text="{Binding Quantity, TargetNullValue=''}" HorizontalAlignment="Center"/>
-                                </Border>
-                                <Border Grid.Column="1" BorderBrush="Black" BorderThickness="0,0,1,1"
-                                        Padding="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleThicknessConverter.Instance}, ConverterParameter='4,3,4,3'}">
-                                    <TextBlock Text="{Binding Description, TargetNullValue=''}" TextWrapping="Wrap"/>
-                                </Border>
-                                <Border Grid.Column="2" BorderBrush="Black" BorderThickness="0,0,0,1"
-                                        Padding="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleThicknessConverter.Instance}, ConverterParameter='4,3,4,3'}">
-                                    <TextBlock Text="{Binding Remarks, TargetNullValue=''}" TextWrapping="Wrap"/>
-                                </Border>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <!-- Item rows are built in code behind (BuildItemRows) so that
+                     consecutive rows carrying the same REMARKS text share one
+                     merged cell with brace marks, as on the paper form.
+                     ItemsTable columns must stay identical to the header above. -->
+                <Grid Grid.Row="1" x:Name="ItemsTable" VerticalAlignment="Top">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="86"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="130"/>
+                    </Grid.ColumnDefinitions>
+                </Grid>
 
                 <TextBlock Grid.Row="2"
-                           Text="{Binding CcRequestedBy, StringFormat='cc: ITD/Requested by ({0})', TargetNullValue='cc: ITD/Requested by ()'}"
+                           Text="{Binding CcRequestedBy, StringFormat='cc: ITD/Requested by {0}', TargetNullValue='cc: ITD/Requested by'}"
+                           FontWeight="Bold"
                            FontSize="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleDoubleConverter.Instance}, ConverterParameter=12}"
                            Margin="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleThicknessConverter.Instance}, ConverterParameter='4,4,0,4'}"/>
             </Grid>
@@ -155,7 +155,7 @@
                 <TextBlock Text="PREPARED BY:" FontWeight="Bold"/>
                 <Border BorderBrush="Black" BorderThickness="0,0,0,1"
                         Margin="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleThicknessConverter.Instance}, ConverterParameter='0,26,0,4'}"/>
-                <TextBlock Text="{Binding PreparedByName, TargetNullValue=''}" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding PreparedByName, TargetNullValue=''}" TextWrapping="Wrap" FontWeight="Bold"/>
                 <TextBlock Text="{Binding PreparedByPosition, TargetNullValue=''}" Foreground="#333"
                            FontSize="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleDoubleConverter.Instance}, ConverterParameter=13.5}"/>
             </StackPanel>
@@ -163,7 +163,7 @@
                 <TextBlock Text="NOTED BY:" FontWeight="Bold"/>
                 <Border BorderBrush="Black" BorderThickness="0,0,0,1"
                         Margin="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleThicknessConverter.Instance}, ConverterParameter='0,26,0,4'}"/>
-                <TextBlock Text="{Binding NotedByName, TargetNullValue=''}" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding NotedByName, TargetNullValue=''}" TextWrapping="Wrap" FontWeight="Bold"/>
                 <TextBlock Text="{Binding NotedByPosition, TargetNullValue=''}" Foreground="#333"
                            FontSize="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleDoubleConverter.Instance}, ConverterParameter=13.5}"/>
             </StackPanel>
@@ -171,7 +171,7 @@
                 <TextBlock Text="APPROVED BY:" FontWeight="Bold"/>
                 <Border BorderBrush="Black" BorderThickness="0,0,0,1"
                         Margin="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleThicknessConverter.Instance}, ConverterParameter='0,26,0,4'}"/>
-                <TextBlock Text="{Binding ApprovedByName, TargetNullValue=''}" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding ApprovedByName, TargetNullValue=''}" TextWrapping="Wrap" FontWeight="Bold"/>
                 <TextBlock Text="{Binding ApprovedByPosition, TargetNullValue=''}" Foreground="#333"
                            FontSize="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleDoubleConverter.Instance}, ConverterParameter=13.5}"/>
             </StackPanel>
@@ -179,7 +179,7 @@
                 <TextBlock Text="RECEIVED BY :" FontWeight="Bold"/>
                 <Border BorderBrush="Black" BorderThickness="0,0,0,1"
                         Margin="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleThicknessConverter.Instance}, ConverterParameter='0,26,0,4'}"/>
-                <TextBlock Text="{Binding ReceivedByLabel, TargetNullValue=''}" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding ReceivedByLabel, TargetNullValue=''}" TextWrapping="Wrap" FontWeight="Bold"/>
                 <TextBlock Text="{Binding ReceivedByPosition, TargetNullValue=''}" Foreground="#333"
                            FontSize="{Binding FontScale, ElementName=Root, Converter={x:Static conv:ScaleDoubleConverter.Instance}, ConverterParameter=13.5}"/>
             </StackPanel>

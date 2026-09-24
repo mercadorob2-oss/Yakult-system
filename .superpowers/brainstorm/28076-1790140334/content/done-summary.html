@@ -1,0 +1,25 @@
+<h2>Done — printout now matches the paper</h2>
+<p class="subtitle">Reload http://localhost:52341 if the page is stale. Build compiles clean (only failure is the exe copy because the app is running — no code errors).</p>
+
+<div class="section">
+  <h3>What changed (3 files)</h3>
+  <ul>
+    <li><b>RequisitionFormPrintView.xaml</b> — ItemsControl replaced with <code>ItemsTable</code> grid built in code-behind; cc line parens removed (<code>cc: ITD/Requested by IT Department</code>); EMPLOYEE row collapses when blank.</li>
+    <li><b>RequisitionFormPrintView.xaml.cs</b> — <code>BuildItemRows()</code> groups consecutive rows with identical non-blank REMARKS into one merged cell (<code>RowSpan</code>) with <code>{ text }</code> braces sized to the span. Blank remarks never merge. Rebuilds on DataContext / FontScale / Loaded, so preview, print, and shrink-to-fit all see the same layout.</li>
+    <li><b>EDocsDashboardView.xaml</b> — hint under the items grid: same REMARKS text on consecutive rows braces into one cell.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>How to get the photo output</h3>
+  <ul>
+    <li>Row 1 REMARKS: <code>(2 cam) replacement of defective camera in Shipping Storage Area and (2 cam) for elevator Area.</code></li>
+    <li>Rows 2–6 REMARKS: type <code>for GA Building cctv connection.</code> identically on all 5 rows → prints as one braced cell.</li>
+    <li>EMPLOYEE left blank → row hides, matching the paper.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <p class="label">Verify</p>
+  <p>Open E-Docs → Requisition, enter the 6 CCTV rows above, Print Preview. Expect: row 1 standalone remark, rows 2–6 one <code>{ for GA Building cctv connection. }</code> cell. If the braces look too small/large at Legal 2-up, tell me and I will tune the sizing.</p>
+</div>

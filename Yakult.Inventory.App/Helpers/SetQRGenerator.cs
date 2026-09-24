@@ -30,28 +30,143 @@ namespace Yakult.Inventory.App.Helpers
         }
 
         /// <summary>
-        /// Generates a QR code image for a Set
+        /// Generates a QR code image for a Set.
+        /// Branded: Yakult bottle icon in the center; set computer name as caption
+        /// below the QR when one is saved on the set (dbo.Set.ComputerName).
+        /// Payload stays yakult:set:v1:{GUID}; caption sits outside the quiet zone.
         /// </summary>
         /// <param name="setDto">The Set information</param>
         /// <param name="requests">List of requests in the set</param>
         /// <param name="employeeDetail">Employee details including Company, Department, Branch</param>
-        /// <returns>Bitmap image of the QR code</returns>
+        /// <returns>Bitmap image of the QR code (caller owns it and must dispose)</returns>
         public static Bitmap GenerateQRCodeImage(SetDto setDto, List<SetDetailRequestDto> requests, EmployeeDetailDto employeeDetail)
         {
+            bool hasToken = setDto != null && setDto.QRToken != Guid.Empty;
+
             // Build QR data string as JSON
-            string qrData = setDto != null && setDto.QRToken != Guid.Empty
+            string qrData = hasToken
                 ? $"yakult:set:v1:{setDto.QRToken:D}"
                 : BuildQRDataString(setDto, requests, employeeDetail);
 
-            // Generate QR code using QRCoder library
-            QRCodeGenerator qrGenerator = new QRCodeGenerator();
-            QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
-            QRCode qrCode = new QRCode(qrCodeData);
+            // Empty-token fallback encodes the full dispatch JSON (large payload):
+            // keep it plain so CreateQrCode never throws on capacity.
+            if (!hasToken)
+            {
+                using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
+                using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q))
+                using (QRCode qrCode = new QRCode(qrCodeData))
+                {
+                    return qrCode.GetGraphic(5);
+                }
+            }
 
-            // Generate bitmap with 5 pixels per module
-            Bitmap qrCodeImage = qrCode.GetGraphic(5);
+            Bitmap icon = LoadBottleIcon();
+            try
+            {
+                Bitmap qrCodeImage;
+                using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
+                using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q))
+                using (QRCode qrCode = new QRCode(qrCodeData))
+                {
+                    qrCodeImage = (icon != null)
+                        ? qrCode.GetGraphic(5, Color.Black, Color.White, icon, 24, 6, true)
+                        : qrCode.GetGraphic(5);
+                }
 
-            return qrCodeImage;
+                // Caption is the saved set computer name (Set Details header textbox,
+                // dbo.Set.ComputerName). Empty => logo-only QR, no footer.
+                string caption = (setDto.ComputerName ?? string.Empty).Trim();
+                if (caption.Length == 0)
+                    return qrCodeImage;
+
+                try
+                {
+                    Bitmap composed = ComposeCaptionFooter(qrCodeImage, caption);
+                    qrCodeImage.Dispose();
+                    return composed;
+                }
+                catch
+                {
+                    // Caption render failure must never block generation.
+                    return qrCodeImage;
+                }
+            }
+            finally
+            {
+                if (icon != null)
+                    icon.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Loads the square Yakult bottle icon; returns null when the asset is missing
+        /// so generation degrades to a plain QR instead of throwing.
+        /// </summary>
+        private static Bitmap LoadBottleIcon()
+        {
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory ?? string.Empty;
+                string[] candidates = new[]
+                {
+                    Path.Combine(baseDir, "Images", "yakult_bottle_qr_icon.png"),
+                    Path.Combine(baseDir, "Yakult.Inventory.App", "Images", "yakult_bottle_qr_icon.png")
+                };
+
+                foreach (var path in candidates)
+                {
+                    if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                        return new Bitmap(path);
+                }
+            }
+            catch
+            {
+                // Degrade to plain QR.
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Appends a white footer strip with the centered model caption below the QR.
+        /// Footer is outside the QR quiet zone so it cannot affect decoding.
+        /// </summary>
+        private static Bitmap ComposeCaptionFooter(Bitmap qrImage, string caption)
+        {
+            int footerHeight = Math.Max(28, (int)(qrImage.Width * 0.18));
+            Bitmap composed = new Bitmap(qrImage.Width, qrImage.Height + footerHeight);
+            using (Graphics g = Graphics.FromImage(composed))
+            {
+                g.Clear(Color.White);
+                g.DrawImage(qrImage, 0, 0, qrImage.Width, qrImage.Height);
+
+                float fontSize = Math.Max(8f, footerHeight * 0.52f);
+                using (Font font = new Font("Arial", fontSize, FontStyle.Bold, GraphicsUnit.Pixel))
+                {
+                    SizeF measured = g.MeasureString(caption, font);
+                    float maxWidth = qrImage.Width * 0.92f;
+                    using (Font fitted = measured.Width > maxWidth
+                        ? new Font(font.FontFamily, Math.Max(8f, fontSize * maxWidth / measured.Width), FontStyle.Bold, GraphicsUnit.Pixel)
+                        : new Font(font.FontFamily, font.Size, font.Style, font.Unit))
+                    {
+                        var format = new StringFormat
+                        {
+                            Alignment = StringAlignment.Center,
+                            LineAlignment = StringAlignment.Center,
+                            Trimming = StringTrimming.EllipsisCharacter,
+                            FormatFlags = StringFormatFlags.NoWrap
+                        };
+                        var footerRect = new RectangleF(0, qrImage.Height, qrImage.Width, footerHeight);
+                        using (Brush brush = new SolidBrush(Color.Black))
+                        {
+                            g.DrawString(caption, fitted, brush, footerRect, format);
+                        }
+                        format.Dispose();
+                    }
+                }
+            }
+
+            return composed;
         }
 
         /// <summary>

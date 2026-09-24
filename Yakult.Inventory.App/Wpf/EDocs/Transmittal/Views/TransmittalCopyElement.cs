@@ -54,11 +54,11 @@ namespace Yakult.Inventory.App.WPF.EDocs.Transmittal.Views
 
         private static readonly double Squeeze = PrintableWidth / 591.75;
 
-        // Cambria for the form itself; the item lines use the workbook's
-        // Aptos Narrow with fallbacks for machines without the Office 2024 font.
-        private static readonly FontFamily FormFamily = new FontFamily("Cambria");
-        private static readonly FontFamily ItemFamily =
-            new FontFamily("Aptos Narrow, Aptos, Arial Narrow, Segoe UI");
+        // Times New Roman throughout, matching the paper requisition reference:
+        // headers, labels and item lines are all the same serif family, with
+        // Bold for headings, labels, item text and signatory names.
+        private static readonly FontFamily FormFamily = new FontFamily("Arial");
+        private static readonly FontFamily ItemFamily = new FontFamily("Arial");
 
         private static readonly Typeface FormBold =
             new Typeface(FormFamily, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);

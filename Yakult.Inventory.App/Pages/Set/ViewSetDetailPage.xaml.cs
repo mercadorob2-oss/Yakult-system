@@ -957,8 +957,11 @@ namespace Yakult.Inventory.App.Pages.Set
                 var documentItems = await GetRequestsForDocumentAsync(requests);
 
                 string qrDataJson   = SetQRGenerator.GenerateQRDataString(setDto, documentItems, employeeDetail);
-                var    qrImage      = SetQRGenerator.GenerateQRCodeImage(setDto, documentItems, employeeDetail);
-                byte[] qrImageBytes = SetQRGenerator.GetQRCodeImageBytes(qrImage);
+                byte[] qrImageBytes;
+                using (var qrImage = SetQRGenerator.GenerateQRCodeImage(setDto, documentItems, employeeDetail))
+                {
+                    qrImageBytes = SetQRGenerator.GetQRCodeImageBytes(qrImage);
+                }
 
                 await _repository.UpdateQRDataAsync(_setId, qrImageBytes, qrDataJson);
                 await _requestRepository.UpdateHardwareRequestsToSubmittedAsync(_setId);

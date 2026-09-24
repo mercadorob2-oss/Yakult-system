@@ -1789,6 +1789,9 @@
     <Content Include="Images\yakult_Name.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Images\yakult_bottle_qr_icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="YAKULT DATABASE - WITH UNIFIED ARCHIVE DATABASE.txt" />
     <Page Include="WPF\CartridgeManagement\Controls\IntegerSpinner.xaml">
       <Generator>MSBuild:Compile</Generator>

@@ -1,0 +1,46 @@
+<h2>Requisition print — what the photo shows</h2>
+<p class="subtitle">Photo rotated upright for reading. Transcribed exactly as filled on paper. Confirm this matches your reading before we design the new print layout.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Target paper form (your photo, upright)</div>
+    <div class="mockup-body" style="font-family: Georgia, serif; font-size: 13px; line-height: 1.5;">
+      <p style="text-align:center; font-weight:bold;">(✓) YAKULT PHILIPPINES INC.<br>( ) YAKULT MARKETING CORP.<br><span style="font-size:16px;">REQUISITION FORM</span></p>
+      <p><b>DEPARTMENT:</b> <u>IT Department</u> &nbsp;&nbsp; <b>DATE:</b> <u>09/22/2026</u></p>
+      <table style="width:100%; border-collapse:collapse; font-size:12px;">
+        <tr><th style="border:1px solid #000; padding:4px;">QUANTITY</th><th style="border:1px solid #000; padding:4px;">DESCRIPTION</th><th style="border:1px solid #000; padding:4px;">REMARKS</th></tr>
+        <tr><td style="border:1px solid #000; padding:4px; text-align:center;">4 pcs</td><td style="border:1px solid #000; padding:4px;">Dahua Outdoor CCTV Camera</td><td style="border:1px solid #000; padding:4px;" rowspan="1">(2 cam) replacement of defective camera in Shipping Storage Area and (2 cam) for elevator Area.</td></tr>
+        <tr><td style="border:1px solid #000; padding:4px; text-align:center;">2 pcs</td><td style="border:1px solid #000; padding:4px;">Gigabit Switch 16Port</td><td style="border:1px solid #000; padding:4px;" rowspan="5">⎫ for GA Building cctv connection. ⎧<br><span style="color:#666;">(one remark braced across 5 description rows)</span></td></tr>
+        <tr><td style="border:1px solid #000; padding:4px; text-align:center;">4 pcs</td><td style="border:1px solid #000; padding:4px;">Ruijie SFP Module-1km</td></tr>
+        <tr><td style="border:1px solid #000; padding:4px; text-align:center;">240 meters</td><td style="border:1px solid #000; padding:4px;">fiber cable dual core</td></tr>
+        <tr><td style="border:1px solid #000; padding:4px; text-align:center;">10 pcs</td><td style="border:1px solid #000; padding:4px;">fiber connector</td></tr>
+        <tr><td style="border:1px solid #000; padding:4px; text-align:center;">1 set</td><td style="border:1px solid #000; padding:4px;">contruction materials [sic]</td></tr>
+      </table>
+      <p style="font-size:11px;">cc: ITD/Requested by IT Department <span style="color:#666;">(no parens, inside table foot)</span></p>
+      <p><b>PREPARED BY:</b> Abigail Paduada, Secretary (signed) &nbsp;|&nbsp; <b>NOTED BY:</b> MR. ROD ANG JR., Asst. Manager &nbsp;|&nbsp; <b>APPROVED BY:</b> MR. Y. KAWASAKI, Comptroller &nbsp;|&nbsp; <b>RECEIVED BY:</b> <i>(blank)</i></p>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">Current print output (what we generate today)</div>
+    <div class="mockup-body" style="font-size:13px; line-height:1.5;">
+      <p>Times New Roman, portrait, <b>2 copies per sheet</b> (top + bottom, cut in half). Letter default, Legal/A4 optional.</p>
+      <ul>
+        <li>Header: 3 checkboxes (adds El Salvador — paper has 2)</li>
+        <li>DEPARTMENT / DATE row + <b>EMPLOYEE row</b> (not on paper)</li>
+        <li>Table: QUANTITY 86px / DESCRIPTION * / REMARKS 130px, 1:1 rows — <b>no brace-grouping</b></li>
+        <li>cc line: <code>cc: ITD/Requested by (DEPT)</code> — <b>with parens</b>, below rows</li>
+        <li>Signatures: 4 columns, name + grey position</li>
+        <li>Shrink-to-fit 1.0 → 0.55 to keep both copies on one page</li>
+      </ul>
+      <div class="pros-cons">
+        <div class="pros"><h4>Already matches</h4><ul><li>Company checkmarks</li><li>Dept/Date underlines</li><li>3-col table + bold headers</li><li>Noted/Approved permanent names</li></ul></div>
+        <div class="cons"><h4>Gaps vs photo</h4><ul><li>REMARKS brace grouping missing</li><li>cc parens differ</li><li>EMPLOYEE extra row</li><li>Font (Times vs paper sans?)</li><li>2-up vs single?</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <p class="label">Please confirm in terminal</p>
+  <p>Is the transcription on the left correct — especially the two REMARKS (one per-row, one braced across 5 rows)? That brace is the biggest new requirement, so I want to be sure before we design around it.</p>
+</div>
