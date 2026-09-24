@@ -1960,6 +1960,25 @@ private fun ItemCardContent(
                 DispatchItemFact("QTY", item.quantity.toString(), Modifier.weight(0.65f))
             }
         }
+        val pcName = item.computerName?.trim().takeIf { !it.isNullOrEmpty() }
+        val ipAddress = item.ipAddress?.trim().takeIf { !it.isNullOrEmpty() }
+        if (pcName != null || ipAddress != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                DispatchItemFact(
+                    label = stringResource(id = R.string.dispatch_item_pc_label),
+                    value = pcName ?: "N/A",
+                    modifier = Modifier.weight(1f)
+                )
+                DispatchItemFact(
+                    label = stringResource(id = R.string.dispatch_item_ip_label),
+                    value = ipAddress ?: "N/A",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
 
         if (!editState.remarkInput.isBlank()) {
             Text(
