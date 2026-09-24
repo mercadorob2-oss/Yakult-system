@@ -1052,8 +1052,31 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                     _lblSelectedEmployee.Text      = $"{emp.Name}  ({emp.EmployeeNumber})";
                     _lblSelectedEmployee.Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold);
                     _lblSelectedEmployee.ForeColor = Color.FromArgb(0, 120, 60);
+                    AutoFillEmail(emp);
                 }
             }
+        }
+
+        private static bool IsPlaceholderEmail(string email)
+            => System.Text.RegularExpressions.Regex.IsMatch(
+                   email ?? "", @"^user\d+@yakult\.local$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// Fills the Email box from the linked employee: Personal Email first, then Branch Email.
+        /// Only when the box is empty or still a userNNN@yakult.local placeholder, so a
+        /// hand-typed address is never replaced.
+        /// </summary>
+        private void AutoFillEmail(EmployeeLookupResult emp)
+        {
+            if (emp == null) return;
+
+            string current = (txtEmail.Text ?? "").Trim();
+            if (current.Length > 0 && !IsPlaceholderEmail(current)) return;
+
+            string pick = !string.IsNullOrWhiteSpace(emp.PrimaryEmail) ? emp.PrimaryEmail
+                        : !string.IsNullOrWhiteSpace(emp.BranchEmail)  ? emp.BranchEmail
+                        : null;
+            if (pick != null) txtEmail.Text = pick.Trim();
         }
 
         // ── Data loading ──────────────────────────────────────────────────────
@@ -1140,6 +1163,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                             _lblSelectedEmployee.Text = $"{preselected.Name}  ({preselected.EmployeeNumber})";
                             _lblSelectedEmployee.Font = new System.Drawing.Font("Segoe UI", 8.5F, System.Drawing.FontStyle.Bold);
                             _lblSelectedEmployee.ForeColor = System.Drawing.Color.FromArgb(0, 120, 60);
+                            AutoFillEmail(preselected);
                         }
                     }
 
@@ -1230,6 +1254,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                     _lblSelectedEmployee.Text      = $"{emp.Name}  ({emp.EmployeeNumber})";
                     _lblSelectedEmployee.Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold);
                     _lblSelectedEmployee.ForeColor = Color.FromArgb(0, 120, 60);
+                    AutoFillEmail(emp);   // replaces a userNNN@yakult.local placeholder shown in the box
                 }
             }
 

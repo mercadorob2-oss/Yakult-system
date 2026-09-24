@@ -546,6 +546,9 @@
     <Compile Include="Wpf\Admin\AccountManagement\Dialogs\EditDeptAccountWindow.xaml.cs">
       <DependentUpon>EditDeptAccountWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Wpf\Admin\AccountManagement\Dialogs\BulkCreateAccountsWindow.xaml.cs">
+      <DependentUpon>BulkCreateAccountsWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Wpf\Admin\AccountManagement\Dialogs\ColumnFilterWindow.xaml.cs">
       <DependentUpon>ColumnFilterWindow.xaml</DependentUpon>
     </Compile>
@@ -1888,6 +1891,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Wpf\Admin\AccountManagement\Dialogs\EditDeptAccountWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Admin\AccountManagement\Dialogs\BulkCreateAccountsWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -356,6 +356,8 @@
                         <ComboBoxItem Content="All" IsSelected="True"/>
                         <ComboBoxItem Content="Active Only"/>
                         <ComboBoxItem Content="Inactive Only"/>
+                        <ComboBoxItem Content="Newly Added"/>
+                        <ComboBoxItem Content="Oldest Added"/>
                     </ComboBox>
                 </WrapPanel>
 

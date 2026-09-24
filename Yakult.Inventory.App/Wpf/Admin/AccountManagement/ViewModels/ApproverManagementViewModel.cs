@@ -21,6 +21,22 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
         public string IsApprover     { get; set; }
         public string SystemRoles    { get; set; }
         public bool   IsArchived     { get; set; }
+        public int    EmpId          { get; set; }
+        public bool   HasAccount     { get; set; }
+        public bool   IsSelected     { get; set; }   // checkbox state in the Bulk Create dialog
+        public string AccountStatus  => HasAccount ? "Has account" : "No account";
+    }
+
+    public sealed class BulkAccountResult
+    {
+        public string EmployeeNumber { get; set; }
+        public string EmployeeName   { get; set; }
+        public string Username       { get; set; }
+        public string Email          { get; set; }
+        public string Role           { get; set; }
+        public string Password       { get; set; }
+        public string Status         { get; set; }   // Created / Skipped / Failed
+        public string Message        { get; set; }
     }
 
     public sealed class ApproverTitleEntry
@@ -179,7 +195,9 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                                     FOR XML PATH(''), TYPE
                                 ).value('.', 'NVARCHAR(MAX)'), 1, 2, ''),
                             'No Account') AS SystemRoles,
-                            CASE WHEN arc.ArchiveId IS NOT NULL THEN 1 ELSE 0 END AS IsArchived
+                            CASE WHEN arc.ArchiveId IS NOT NULL THEN 1 ELSE 0 END AS IsArchived,
+                            e.EmpId,
+                            CASE WHEN EXISTS (SELECT 1 FROM dbo.[User] ux WHERE ux.EmpId = e.EmpId) THEN 1 ELSE 0 END AS HasAccount
                         FROM dbo.Employee e
                         LEFT JOIN dbo.Title        t   ON e.TitleId  = t.TitleId
                         LEFT JOIN dbo.Department   d   ON e.DeptId   = d.DeptId
@@ -210,6 +228,8 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                                     IsApprover     = reader.IsDBNull(7) ? "" : reader.GetString(7),
                                     SystemRoles    = reader.IsDBNull(8) ? "No Account" : reader.GetString(8),
                                     IsArchived     = !reader.IsDBNull(9) && reader.GetInt32(9) == 1,
+                                    EmpId          = reader.GetInt32(10),
+                                    HasAccount     = reader.GetInt32(11) == 1,
                                 });
                             }
                         }
@@ -230,7 +250,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
 
         // Produces a sort key so "141X" (3-digit manager code) sorts beside "141"
         // rather than after all 4-digit numbers: pads the leading digit run to 10 chars.
-        private static string EmpNumSortKey(string empNum)
+        internal static string EmpNumSortKey(string empNum)
         {
             if (string.IsNullOrEmpty(empNum)) return "";
             int i = 0;
@@ -238,7 +258,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
             return empNum.Substring(0, i).PadLeft(10, '0') + empNum.Substring(i).ToUpperInvariant();
         }
 
-        private static string GetColumnValue(ApproverRow r, string column)
+        internal static string GetColumnValue(ApproverRow r, string column)
         {
             switch (column)
             {
@@ -295,6 +315,244 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
 
             _currentPage = 1;
             RebuildPagedRows();
+        }
+
+        /// <summary>
+        /// Position to system role: any Manager-family position gets "Manager", Supervisor gets
+        /// "Supervisor". "IT Manager" / "IT Supervisor" are IT Department roles and are never
+        /// assigned from a position. Coordinators get none (that role is deprecated).
+        /// </summary>
+        internal string RoleNameForPosition(string position)
+        {
+            string p = (position ?? "").Trim();
+            if (p.Length == 0) return null;
+
+            var entry = ApproverTitleEntries.FirstOrDefault(t =>
+                string.Equals(t.PositionTitle?.Trim(), p, StringComparison.OrdinalIgnoreCase));
+            string role = entry?.ApprovalRole;
+
+            if (string.IsNullOrEmpty(role))
+                role = ManagerPositions.Any(m => m.Key.Equals(p, StringComparison.OrdinalIgnoreCase)) ? "Manager"
+                     : SupervisorPositions.Any(m => m.Key.Equals(p, StringComparison.OrdinalIgnoreCase)) ? "Supervisor"
+                     : null;
+
+            return string.Equals(role, "Manager", StringComparison.OrdinalIgnoreCase) ? "Manager"
+                 : string.Equals(role, "Supervisor", StringComparison.OrdinalIgnoreCase) ? "Supervisor"
+                 : null;
+        }
+
+        /// <summary>Rows currently shown (search, archived toggle and column filters applied), across all pages.</summary>
+        public List<ApproverRow> FilteredRows => _filtered;
+
+        /// <summary>Copy of the active column filters, so a dialog can start from the same filter state.</summary>
+        public Dictionary<string, HashSet<string>> GetColumnFiltersSnapshot()
+            => _columnFilters.ToDictionary(
+                kv => kv.Key,
+                kv => new HashSet<string>(kv.Value, StringComparer.OrdinalIgnoreCase),
+                StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Creates a dbo.[User] account for each row, linked by EmpId. Each account is its own
+        /// transaction so one failure does not undo the others. Employees that already have an
+        /// account are skipped. The username is the employee name (as in the single-account flow);
+        /// if that name is taken, the employee number is appended.
+        /// </summary>
+        public async Task<List<BulkAccountResult>> CreateAccountsAsync(
+            IEnumerable<ApproverRow> rows,
+            Func<ApproverRow, string> passwordFor,
+            bool mustChangePassword,
+            bool assignRoleFromPosition = false,
+            IProgress<int> progress = null)
+        {
+            var results = new List<BulkAccountResult>();
+            int done = 0;
+
+            using (var con = new SqlConnection(_cs))
+            {
+                await con.OpenAsync();
+
+                var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                using (var cmd = new SqlCommand("SELECT Name FROM dbo.[User]", con))
+                using (var r = await cmd.ExecuteReaderAsync())
+                    while (await r.ReadAsync()) usedNames.Add(r.GetString(0).Trim());
+
+                // System roles by name, only those that exist and are active.
+                var roleIds = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                if (assignRoleFromPosition)
+                {
+                    using (var cmd = new SqlCommand("SELECT RoleId, RoleName FROM dbo.Role WHERE IsActive = 1 AND RoleName IN ('Manager','Supervisor')", con))
+                    using (var r = await cmd.ExecuteReaderAsync())
+                        while (await r.ReadAsync()) roleIds[r.GetString(1)] = r.GetInt32(0);
+                }
+
+                // Emails already held by an account (dbo.User.EmailAddress is unique).
+                var usedEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                using (var cmd = new SqlCommand("SELECT EmailAddress FROM dbo.[User] WHERE EmailAddress IS NOT NULL", con))
+                using (var r = await cmd.ExecuteReaderAsync())
+                    while (await r.ReadAsync()) usedEmails.Add(r.GetString(0).Trim());
+
+                // Personal email = the employee's primary email (Employee Management "Personal Email").
+                // Branch email = the DepartmentAccount email for their company/department/branch.
+                var personalEmails = new Dictionary<int, string>();
+                var branchEmails   = new Dictionary<int, string>();
+                try
+                {
+                    using (var cmd = new SqlCommand(@"
+                        SELECT ee.EmpId, ea.EmailAddress
+                        FROM dbo.EmployeeEmail ee
+                        INNER JOIN dbo.EmailAddress ea ON ea.EmailId = ee.EmailId
+                        WHERE ee.IsPrimary = 1 AND ee.IsActive = 1 AND ea.IsActive = 1
+                        ORDER BY ee.EmployeeEmailId", con))
+                    using (var r = await cmd.ExecuteReaderAsync())
+                        while (await r.ReadAsync())
+                        {
+                            int id = r.GetInt32(0);
+                            if (!personalEmails.ContainsKey(id)) personalEmails[id] = r.GetString(1).Trim();
+                        }
+
+                    using (var cmd = new SqlCommand(@"
+                        SELECT e.EmpId, ba.EmailAddress
+                        FROM dbo.Employee e
+                        INNER JOIN dbo.Company    c  ON c.ComId    = e.ComId
+                        INNER JOIN dbo.Branch     b  ON b.BranchId = e.BranchId
+                        INNER JOIN dbo.Department d  ON d.DeptId   = e.DeptId
+                        INNER JOIN dbo.DepartmentAccount da
+                                ON da.CompanyName = c.Name AND da.DepartmentName = d.Name AND da.BranchName = b.Name
+                        INNER JOIN dbo.EmailAddress ba ON ba.EmailId = da.EmailAddressId
+                        ORDER BY e.EmpId", con) { CommandTimeout = 120 })
+                    using (var r = await cmd.ExecuteReaderAsync())
+                        while (await r.ReadAsync())
+                        {
+                            int id = r.GetInt32(0);
+                            if (!branchEmails.ContainsKey(id)) branchEmails[id] = r.GetString(1).Trim();
+                        }
+                }
+                catch { /* email tables missing on older DBs: placeholder emails are used */ }
+
+                foreach (var row in rows)
+                {
+                    var res = new BulkAccountResult
+                    {
+                        EmployeeNumber = row.EmployeeNumber,
+                        EmployeeName   = row.EmployeeName
+                    };
+                    results.Add(res);
+
+                    try
+                    {
+                        string baseName = (row.EmployeeName ?? "").Trim();
+                        if (baseName.Length == 0)
+                        {
+                            res.Status = "Failed"; res.Message = "Employee has no name.";
+                            continue;
+                        }
+
+                        string username = baseName;
+                        if (usedNames.Contains(username))
+                            username = $"{baseName} ({row.EmployeeNumber})";
+                        if (username.Length > 100 || usedNames.Contains(username))
+                        {
+                            res.Status = "Failed"; res.Message = "Could not build a unique username.";
+                            continue;
+                        }
+
+                        // Personal email first, then the branch email, then the placeholder the
+                        // single-account flow uses. dbo.User.EmailAddress is unique, so an address
+                        // already held by another account (branch emails are shared) is skipped.
+                        string email = null;
+                        foreach (var cand in new[]
+                        {
+                            personalEmails.TryGetValue(row.EmpId, out var pe) ? pe : null,
+                            branchEmails.TryGetValue(row.EmpId, out var be) ? be : null
+                        })
+                        {
+                            if (!string.IsNullOrWhiteSpace(cand) && cand.Length <= 255 && !usedEmails.Contains(cand))
+                            { email = cand; break; }
+                        }
+                        if (email == null) email = $"user{row.EmpId}@yakult.local";
+
+                        string password = passwordFor(row);
+                        byte[] salt = Yakult.Inventory.App.Helpers.PasswordHelper.GenerateSalt();
+                        byte[] hash = Yakult.Inventory.App.Helpers.PasswordHelper.HashPassword(password, salt);
+
+                        const string sql = @"
+                            IF EXISTS (SELECT 1 FROM dbo.[User] WHERE EmpId = @EmpId)
+                                SELECT CAST(0 AS INT);
+                            ELSE
+                            BEGIN
+                                INSERT INTO dbo.[User] (
+                                    Name, EmailAddress, DateCreated, IsDeveloper, EmpId,
+                                    PasswordHash, PasswordSalt, IsTemporaryPassword, MustChangePassword, IsActive)
+                                VALUES (
+                                    @Name, @Email, GETDATE(), 0, @EmpId,
+                                    @Hash, @Salt, @IsTemp, @MustChange, 1);
+                                SELECT CAST(SCOPE_IDENTITY() AS INT);
+                            END";
+
+                        int userId;
+                        using (var tx = con.BeginTransaction())
+                        {
+                            try
+                            {
+                                using (var cmd = new SqlCommand(sql, con, tx))
+                                {
+                                    cmd.Parameters.AddWithValue("@Name",       username);
+                                    cmd.Parameters.AddWithValue("@Email",      email);
+                                    cmd.Parameters.AddWithValue("@EmpId",      row.EmpId);
+                                    cmd.Parameters.AddWithValue("@Hash",       hash);
+                                    cmd.Parameters.AddWithValue("@Salt",       salt);
+                                    cmd.Parameters.AddWithValue("@IsTemp",     mustChangePassword);
+                                    cmd.Parameters.AddWithValue("@MustChange", mustChangePassword);
+                                    userId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                                }
+
+                                string roleName = assignRoleFromPosition ? RoleNameForPosition(row.Position) : null;
+                                if (userId != 0 && roleName != null && roleIds.TryGetValue(roleName, out int roleId))
+                                {
+                                    using (var rc = new SqlCommand(
+                                        "INSERT INTO dbo.UserRole (UserId, RoleId, DateAssigned) VALUES (@U, @R, GETDATE())", con, tx))
+                                    {
+                                        rc.Parameters.AddWithValue("@U", userId);
+                                        rc.Parameters.AddWithValue("@R", roleId);
+                                        await rc.ExecuteNonQueryAsync();
+                                    }
+                                    res.Role = roleName;
+                                }
+                                tx.Commit();
+                            }
+                            catch { tx.Rollback(); throw; }
+                        }
+
+                        if (userId == 0)
+                        {
+                            res.Status = "Skipped"; res.Message = "Already has an account.";
+                            continue;
+                        }
+
+                        usedNames.Add(username);
+                        usedEmails.Add(email);
+                        row.HasAccount = true;
+                        res.Username = username;
+                        res.Email    = email;
+                        res.Password = password;
+                        res.Status   = "Created";
+
+                        Yakult.Inventory.App.Services.ActivityLogger.Log(Yakult.Inventory.App.Services.ActivityLogger.Actions.Create, "User", userId,
+                            $"Bulk-created account '{username}' for employee {row.EmployeeNumber}");
+                    }
+                    catch (Exception ex)
+                    {
+                        res.Status  = "Failed";
+                        res.Message = ex.Message;
+                    }
+                    finally
+                    {
+                        progress?.Report(++done);
+                    }
+                }
+            }
+
+            return results;
         }
 
         public HashSet<string> GetColumnFilter(string column)

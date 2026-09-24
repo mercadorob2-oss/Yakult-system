@@ -79,6 +79,17 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.Views
                 dlg.ShowDialog(owner);
         }
 
+        private void BtnBulkCreate_Click(object sender, RoutedEventArgs e)
+        {
+            var win = new BulkCreateAccountsWindow(
+                _vm, _vm.SearchText, _vm.ShowArchived, _vm.GetColumnFiltersSnapshot());
+            SetWpfOwner(win);
+            win.ShowDialog();
+
+            if (win.AccountsCreated)
+                _ = _vm.LoadAsync();   // refresh System Role(s) / account state
+        }
+
         private void BtnFirst_Click(object sender, RoutedEventArgs e) => _vm.GoToFirstPage();
         private void BtnPrev_Click(object sender, RoutedEventArgs e)  => _vm.GoToPrevPage();
         private void BtnNext_Click(object sender, RoutedEventArgs e)  => _vm.GoToNextPage();
