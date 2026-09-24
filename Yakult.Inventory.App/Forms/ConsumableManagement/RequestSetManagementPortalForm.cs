@@ -225,7 +225,7 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
             // ── VIEW TRANSACTIONS ────────────────────────────────────────────────────
             _viewTransactionsPanel = new Panel
             {
-                Height = 5 * buttonHeight,
+                Height = 6 * buttonHeight,
                 Dock = DockStyle.Top,
                 BackColor = Color.FromArgb(250, 250, 250),
                 Visible = false
@@ -234,6 +234,7 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
             AddSubMenuButton(_viewTransactionsPanel, "Send Notifications (Sets)", (s, e) => { ShowSetDispatchNotificationPage(); ToggleMenu(); });
             AddSubMenuButton(_viewTransactionsPanel, "Unfulfilled Requests", (s, e) => { ShowUnfulfilledRequestsPage(); ToggleMenu(); });
             AddSubMenuButton(_viewTransactionsPanel, "Partially Fulfilled Requests", (s, e) => { ShowPartiallyFulfilledRequestsPage(); ToggleMenu(); });
+            AddSubMenuButton(_viewTransactionsPanel, "Mixed Request Exchange", (s, e) => { ShowMixedRequestExchangePage(); ToggleMenu(); });
             AddSubMenuButton(_viewTransactionsPanel, "View Requests", (s, e) => { ShowViewRequestsPage(); ToggleMenu(); });
             _sideMenuPanel.Controls.Add(_viewTransactionsPanel);
 
@@ -325,6 +326,18 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
         private void ShowPartiallyFulfilledRequestsPage()
         {
             ShowPage(new Yakult.Inventory.App.Forms.Request.PartiallyFulfilledRequestsWpfHost());
+        }
+
+        // Same page-access key as Cartridge Exchange: this is its counterpart for mixed submissions.
+        private void ShowMixedRequestExchangePage()
+        {
+            if (!Yakult.Inventory.App.Security.PermissionResolver.HasPageAccess("CartridgeExchangePage"))
+            {
+                MessageBox.Show("Access denied. You do not have permission to view this page.",
+                    "Unauthorized", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            ShowPage(new Yakult.Inventory.App.Forms.CartridgeManagement.MixedRequestExchangeWpfHost());
         }
 
         private void ShowSetDispatchNotificationPage()

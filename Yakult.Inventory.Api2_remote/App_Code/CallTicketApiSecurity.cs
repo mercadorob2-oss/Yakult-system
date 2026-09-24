@@ -82,7 +82,7 @@ SELECT TOP 1
             INNER JOIN dbo.Role r ON r.RoleId = ur.RoleId
             WHERE ur.UserId = u.UserId
               AND ISNULL(r.IsActive, 1) = 1
-              AND r.RoleName IN ('Admin', 'Developer', 'IT Manager', 'Supervisor', 'Tech Support')
+              AND r.RoleName IN ('Admin', 'Developer', 'IT Manager', 'IT Supervisor', 'Tech Support')
         )
         THEN 1 ELSE 0 END AS bit) AS IsItAuthorized
 FROM dbo.[User] u

@@ -15,6 +15,61 @@ namespace Yakult.Inventory.App.Repositories
 
         // ── Read ─────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Who approved a submission: the employee behind the digital sign-off
+        /// (SignedBySupervisorId -> User -> Employee) or, for IT manual authorizations, the
+        /// employee recorded in AuthorizedByEmpId. Returns null when the submission has no
+        /// Approved authorization or the approver cannot be resolved to a name.
+        /// </summary>
+        public Task<(string Name, string Position)?> GetApproverForSessionAsync(Guid submissionSessionId)
+            => QueryApproverAsync(
+                "ca.SubmissionSessionId = @Key",
+                new SqlParameter("@Key", submissionSessionId));
+
+        /// <summary>
+        /// Same as <see cref="GetApproverForSessionAsync"/>, for a Set: uses the submission(s)
+        /// its requests came from. Returns null for sets that were not created from a portal
+        /// submission (there is no authorization to read an approver from).
+        /// </summary>
+        public Task<(string Name, string Position)?> GetApproverForSetAsync(int setId)
+            => QueryApproverAsync(
+                @"ca.SubmissionSessionId IN (
+                      SELECT r.SubmissionSessionId FROM dbo.Request r
+                      WHERE r.SetId = @Key AND r.SubmissionSessionId IS NOT NULL)",
+                new SqlParameter("@Key", setId));
+
+        private async Task<(string Name, string Position)?> QueryApproverAsync(string whereClause, SqlParameter key)
+        {
+            string sql = @"
+                SELECT TOP 1
+                    COALESCE(ae.Name, se.Name, su.Name)                 AS ApproverName,
+                    COALESCE(ae.Position, se.Position, ca.SignerPosition) AS ApproverPosition
+                FROM dbo.CartridgeAuthorization ca
+                LEFT JOIN dbo.Employee ae ON ae.EmpId  = ca.AuthorizedByEmpId
+                LEFT JOIN dbo.[User]   su ON su.UserId = ca.SignedBySupervisorId
+                LEFT JOIN dbo.Employee se ON se.EmpId  = su.EmpId
+                WHERE " + whereClause + @"
+                  AND ca.Status = 'Approved'
+                ORDER BY ca.SignedDate DESC, ca.AuthorizationId DESC";
+
+            using (var con = new SqlConnection(ConnStr))
+            using (var cmd = new SqlCommand(sql, con))
+            {
+                cmd.Parameters.Add(key);
+                await con.OpenAsync();
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (!await reader.ReadAsync()) return null;
+
+                    string name = reader.IsDBNull(0) ? null : reader.GetString(0);
+                    if (string.IsNullOrWhiteSpace(name)) return null;
+
+                    string position = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                    return (name, position);
+                }
+            }
+        }
+
         public async Task<CartridgeAuthorizationModel> GetEmployeeAuthorizationAsync(int employeeId)
         {
             const string sql = @"

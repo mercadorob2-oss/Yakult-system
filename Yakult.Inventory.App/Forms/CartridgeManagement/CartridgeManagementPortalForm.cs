@@ -301,7 +301,7 @@ namespace Yakult.Inventory.App.Forms.CartridgeManagement
             // ── GROUP 2: CARTRIDGE FULFILLMENT ───────────────────────────────────────
             _fulfillmentPanel = new Panel
             {
-                Height = 4 * buttonHeight,
+                Height = 5 * buttonHeight,
                 Dock = DockStyle.Top,
                 BackColor = Color.FromArgb(250, 250, 250),
                 Visible = false
@@ -310,6 +310,7 @@ namespace Yakult.Inventory.App.Forms.CartridgeManagement
             AddSubMenuButton(_fulfillmentPanel, "Partially Fulfilled", (s, e) => { ShowPartiallyFulfilledCartridgePage(); ToggleMenu(); });
             AddSubMenuButton(_fulfillmentPanel, "Unfulfilled Cartridges", (s, e) => { ShowUnfulfilledCartridgeExchangesPage(); ToggleMenu(); });
             AddSubMenuButton(_fulfillmentPanel, "Cartridge Exchange", (s, e) => { ShowItFulfillmentPage(); ToggleMenu(); });
+            AddSubMenuButton(_fulfillmentPanel, "Mixed Request Exchange", (s, e) => { ShowMixedRequestExchangePage(); ToggleMenu(); });
             _sideMenuPanel.Controls.Add(_fulfillmentPanel);
 
             _fulfillmentButton = AddCollapsibleSection("Cartridge Fulfillment");
@@ -538,6 +539,18 @@ namespace Yakult.Inventory.App.Forms.CartridgeManagement
                 return;
             }
             ShowForm(new CartridgeManagementWpfHost());
+        }
+
+        // Same page-access key as Cartridge Exchange: it is the counterpart for mixed submissions.
+        private void ShowMixedRequestExchangePage()
+        {
+            if (!PermissionResolver.HasPageAccess("CartridgeExchangePage"))
+            {
+                MessageBox.Show("Access denied. You do not have permission to view this page.",
+                    "Unauthorized", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            ShowPage(new MixedRequestExchangeWpfHost());
         }
 
         internal void NavigateToSendNotifications()

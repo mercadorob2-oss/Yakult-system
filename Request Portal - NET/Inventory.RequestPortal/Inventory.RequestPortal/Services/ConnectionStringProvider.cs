@@ -40,8 +40,11 @@ namespace Inventory.RequestPortal.Services
         /// </summary>
         public string GetConnectionString()
         {
-            var baseConnectionString = _configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not configured.");
+            var baseConnectionString = _configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(baseConnectionString))
+                throw new InvalidOperationException(
+                    "Connection string 'DefaultConnection' is empty. Provide it in appsettings.Local.json " +
+                    "(see appsettings.Local.json.example) or the ConnectionStrings__DefaultConnection environment variable.");
 
             // Session-based database override is a Development-only convenience (DevToolsController
             // is itself restricted to Development, but a preference saved before that restriction
