@@ -1574,6 +1574,20 @@ namespace Yakult.Inventory.App.Pages.Set
 
                 var vm = RequisitionFormViewModel.FromSet(setDto, documentItems, employeeDetail);
 
+                // Noted By defaults to whoever approved the portal submission this set came
+                // from (the manager or supervisor). Best effort: sets without an approved
+                // authorization, or an approver who cannot be resolved, just start blank.
+                try
+                {
+                    var approver = await new CartridgeAuthorizationRepository().GetApproverForSetAsync(_setId);
+                    if (approver.HasValue)
+                    {
+                        vm.NotedByName     = approver.Value.Name;
+                        vm.NotedByPosition = approver.Value.Position;
+                    }
+                }
+                catch { }
+
                 Mouse.OverrideCursor = null;
                 RequisitionFormPrintService.ShowPrintDialog(vm, this);
             }

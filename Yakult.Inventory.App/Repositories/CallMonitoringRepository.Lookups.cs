@@ -506,7 +506,7 @@ GROUP BY t.AssignedToEmpId;";
                 "InventoryManager",
                 "Inventory Manager",
                 "IT Manager",
-                "Supervisor",
+                "IT Supervisor",
                 "Tech Support"
             };
 
@@ -640,7 +640,7 @@ ORDER BY e.Name;";
                 "InventoryManager",
                 "Inventory Manager",
                 "IT Manager",
-                "Supervisor",
+                "IT Supervisor",
                 "Tech Support"
             };
 

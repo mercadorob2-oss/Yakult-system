@@ -1967,6 +1967,117 @@ namespace Yakult.Inventory.App.Repositories
                 branchFilter, employeeFilter, referenceCodeFilter, parentTagFilter, reqIdFilter);
 
         /// <summary>
+        /// Every line of an approved portal submission that mixes cartridge and non-cartridge
+        /// items and is not yet fully issued. Portal submissions like this are owned by
+        /// Request &amp; Set Management (dbo.Request.WorkflowType), so the Cartridge Exchange queue
+        /// never lists them; the Mixed Request Exchange page reads them from here instead.
+        /// Only submissions with an Approved supervisor authorization are returned.
+        /// </summary>
+        public List<Models.MixedRequestLineDto> GetApprovedMixedRequestLines()
+        {
+            const string sql = @"
+                SELECT
+                    r.ReqId,
+                    r.SetId,
+                    r.SubmissionSessionId,
+                    r.DateCreated,
+                    r.Quantity,
+                    ISNULL(r.IssuedQty, 0)  AS IssuedQty,
+                    r.Remarks,
+                    r.Status,
+                    r.ItemId,
+                    i.Name                  AS ItemName,
+                    ISNULL(i.Category, '')  AS Category,
+                    ISNULL(i.StockOnHand, 0) AS StockOnHand,
+                    r.EmpId,
+                    e.Name                  AS EmployeeName,
+                    c.Name                  AS CompanyName,
+                    b.Name                  AS BranchName,
+                    d.Name                  AS DepartmentName,
+                    CASE
+                        WHEN r.Description LIKE '%PICKUP%'   THEN 'PICKUP'
+                        WHEN r.Description LIKE '%DELIVERY%' THEN 'DELIVERY'
+                        ELSE 'N/A'
+                    END                     AS DistributionMethod,
+                    ISNULL(recv.Name, 'N/A') AS ReceivedByName
+                FROM dbo.Request r
+                INNER JOIN dbo.Item i ON i.ItemId = r.ItemId
+                LEFT JOIN dbo.Employee   e    ON e.EmpId    = r.EmpId
+                LEFT JOIN dbo.Company    c    ON c.ComId    = COALESCE(e.ComId,    r.ComId)
+                LEFT JOIN dbo.Branch     b    ON b.BranchId = COALESCE(e.BranchId, r.BranchId)
+                LEFT JOIN dbo.Department d    ON d.DeptId   = COALESCE(e.DeptId,   r.DeptId)
+                LEFT JOIN dbo.Employee   recv ON recv.EmpId = r.ReceivedById
+                WHERE r.Active = 1
+                  AND r.WorkflowType = 'RequestSetManagement'
+                  AND r.SubmissionSessionId IS NOT NULL
+                  AND r.Status IN ('Pending', 'Under Review', 'Processing')
+                  -- Approved supervisor authorization for the whole submission.
+                  AND EXISTS (
+                        SELECT 1 FROM dbo.CartridgeAuthorization ca
+                        WHERE ca.SubmissionSessionId = r.SubmissionSessionId
+                          AND ca.Status = 'Approved')
+                  -- Mixed: at least one cartridge line and at least one non-cartridge line.
+                  AND EXISTS (
+                        SELECT 1 FROM dbo.Request rc
+                        INNER JOIN dbo.Item ic ON ic.ItemId = rc.ItemId
+                        WHERE rc.SubmissionSessionId = r.SubmissionSessionId
+                          AND rc.Active = 1
+                          AND ISNULL(ic.Category, '') = 'Cartridge')
+                  AND EXISTS (
+                        SELECT 1 FROM dbo.Request rn
+                        INNER JOIN dbo.Item inn ON inn.ItemId = rn.ItemId
+                        WHERE rn.SubmissionSessionId = r.SubmissionSessionId
+                          AND rn.Active = 1
+                          AND ISNULL(inn.Category, '') <> 'Cartridge')
+                  -- Drops off once every line of the submission is fully issued.
+                  AND EXISTS (
+                        SELECT 1 FROM dbo.Request rp
+                        WHERE rp.SubmissionSessionId = r.SubmissionSessionId
+                          AND rp.Active = 1
+                          AND ISNULL(rp.IssuedQty, 0) < rp.Quantity)
+                ORDER BY r.DateCreated ASC, r.SubmissionSessionId, r.ReqId ASC";
+
+            var lines = new List<Models.MixedRequestLineDto>();
+
+            using (var con = new SqlConnection(GetConnectionString()))
+            using (var cmd = new SqlCommand(sql, con))
+            {
+                cmd.CommandTimeout = 60;
+                con.Open();
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        lines.Add(new Models.MixedRequestLineDto
+                        {
+                            ReqId               = reader.GetInt32(reader.GetOrdinal("ReqId")),
+                            SetId               = reader.IsDBNull(reader.GetOrdinal("SetId")) ? (int?)null : reader.GetInt32(reader.GetOrdinal("SetId")),
+                            SubmissionSessionId = reader.GetGuid(reader.GetOrdinal("SubmissionSessionId")),
+                            DateCreated         = reader.GetDateTime(reader.GetOrdinal("DateCreated")),
+                            Quantity            = reader.GetInt32(reader.GetOrdinal("Quantity")),
+                            IssuedQty           = reader.GetInt32(reader.GetOrdinal("IssuedQty")),
+                            Remarks             = reader.IsDBNull(reader.GetOrdinal("Remarks")) ? null : reader.GetString(reader.GetOrdinal("Remarks")),
+                            Status              = reader.IsDBNull(reader.GetOrdinal("Status")) ? null : reader.GetString(reader.GetOrdinal("Status")),
+                            ItemId              = reader.GetInt32(reader.GetOrdinal("ItemId")),
+                            ItemName            = reader.IsDBNull(reader.GetOrdinal("ItemName")) ? "Unknown Item" : reader.GetString(reader.GetOrdinal("ItemName")),
+                            Category            = reader.GetString(reader.GetOrdinal("Category")),
+                            StockOnHand         = reader.GetInt32(reader.GetOrdinal("StockOnHand")),
+                            EmpId               = reader.IsDBNull(reader.GetOrdinal("EmpId")) ? 0 : reader.GetInt32(reader.GetOrdinal("EmpId")),
+                            EmployeeName        = reader.IsDBNull(reader.GetOrdinal("EmployeeName")) ? null : reader.GetString(reader.GetOrdinal("EmployeeName")),
+                            CompanyName         = reader.IsDBNull(reader.GetOrdinal("CompanyName")) ? null : reader.GetString(reader.GetOrdinal("CompanyName")),
+                            BranchName          = reader.IsDBNull(reader.GetOrdinal("BranchName")) ? null : reader.GetString(reader.GetOrdinal("BranchName")),
+                            DepartmentName      = reader.IsDBNull(reader.GetOrdinal("DepartmentName")) ? null : reader.GetString(reader.GetOrdinal("DepartmentName")),
+                            DistributionMethod  = reader.IsDBNull(reader.GetOrdinal("DistributionMethod")) ? "N/A" : reader.GetString(reader.GetOrdinal("DistributionMethod")),
+                            ReceivedByName      = reader.IsDBNull(reader.GetOrdinal("ReceivedByName")) ? "N/A" : reader.GetString(reader.GetOrdinal("ReceivedByName"))
+                        });
+                    }
+                }
+            }
+
+            return lines;
+        }
+
+        /// <summary>
         /// Every Request belonging to a Set where NOTHING has been issued anywhere yet.
         /// </summary>
         public List<Pages.RequestDto> GetUnfulfilledRequestsFullSet(

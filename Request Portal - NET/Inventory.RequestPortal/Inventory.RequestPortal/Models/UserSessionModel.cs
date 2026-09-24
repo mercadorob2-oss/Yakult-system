@@ -58,7 +58,7 @@ namespace Inventory.RequestPortal.Models
             IsDeveloper
             || HasRole("Admin")
             || HasRole("IT Manager")
-            || HasRole("Supervisor")
+            || HasRole("IT Supervisor")
             || HasRole("Tech Support");
 
         public bool HasRole(string roleName)

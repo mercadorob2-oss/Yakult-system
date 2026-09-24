@@ -404,6 +404,9 @@
     <Compile Include="Forms\Request\UnfulfilledRequestsWpfHost.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="Forms\CartridgeManagement\MixedRequestExchangeWpfHost.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Forms\Consumables\ConsumableModelsWpfHost.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -920,6 +923,11 @@
     <Compile Include="Wpf\RequestManagement\ViewModels\RequestSessionGroupViewModel.cs" />
     <Compile Include="Wpf\RequestManagement\ViewModels\FulfillRequestRowStateViewModel.cs" />
     <Compile Include="Wpf\RequestManagement\ViewModels\PartiallyFulfilledRequestsViewModel.cs" />
+    <Compile Include="Wpf\RequestManagement\ViewModels\MixedRequestExchangeViewModel.cs" />
+    <Compile Include="Models\MixedRequestLineDto.cs" />
+    <Compile Include="Wpf\RequestManagement\Views\MixedRequestExchangeView.xaml.cs">
+      <DependentUpon>MixedRequestExchangeView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Wpf\RequestManagement\ViewModels\UnfulfilledRequestsViewModel.cs" />
     <Compile Include="Wpf\RequestManagement\Views\PartiallyFulfilledRequestsView.xaml.cs">
       <DependentUpon>PartiallyFulfilledRequestsView.xaml</DependentUpon>
@@ -1992,6 +2000,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Wpf\RequestManagement\Views\PartiallyFulfilledRequestsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\RequestManagement\Views\MixedRequestExchangeView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

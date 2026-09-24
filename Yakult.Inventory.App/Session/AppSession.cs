@@ -84,13 +84,14 @@ namespace Yakult.Inventory.App.Session
 
         /// <summary>
         /// IT staff are permitted to create assisted requests on behalf of other employees.
-        /// Includes: Developer, Admin, IT Manager, Supervisor, Tech Support.
+        /// Includes: Developer, Admin, IT Manager, IT Supervisor, Tech Support.
+        /// (The plain "Supervisor" role is Request Portal only and is not IT staff.)
         /// </summary>
         public static bool IsITStaff =>
             IsDeveloper
             || HasRole("Admin")
             || HasRole("IT Manager")
-            || HasRole("Supervisor")
+            || HasRole("IT Supervisor")
             || HasRole("Tech Support");
 
         /// <summary>

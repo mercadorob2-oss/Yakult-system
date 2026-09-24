@@ -56,7 +56,9 @@ namespace Yakult.Inventory.App.Security
             { "Requester",        new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "RequesterPortal" } },
             { "Viewer",           new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "InventorySystem","CallITMonitoring","RequesterPortal" } },
             { "IT Manager",       new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "InventorySystem","CallITMonitoring","CartridgeManagement","BorrowItems","Reports","AdminPortal","RepairTechnicianPortal" } },
-            { "Supervisor",       new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "InventorySystem","CallITMonitoring","CartridgeManagement","BorrowItems","Reports" } },
+            { "Manager",          new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "RequesterPortal" } },
+            { "IT Supervisor",    new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "InventorySystem","CallITMonitoring","CartridgeManagement","BorrowItems","Reports" } },
+            { "Supervisor",       new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "RequesterPortal" } },
             { "Tech Support",     new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "CallITMonitoring","CartridgeManagement","BorrowItems","RepairTechnicianPortal" } }
         };
 
