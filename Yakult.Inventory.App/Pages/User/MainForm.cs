@@ -321,10 +321,20 @@ namespace Yakult.Inventory.App.Pages.User
             if (Yakult.Inventory.App.Session.AppSession.IsDepartmentAccountSession)
             {
                 this.Hide();
+                bool backToPortal;
                 using (var requesterPortal = new RequesterPortalForm())
+                {
                     requesterPortal.ShowDialog();
-                LogOutOnMenu_Click(this, EventArgs.Empty);
-                return;
+                    backToPortal = requesterPortal.BackToPortalRequested && !requesterPortal.LogoutRequested;
+                }
+
+                // Only "Back to Portal" continues to the dashboard loop below; closing the
+                // window or Logout still ends the department session.
+                if (!backToPortal)
+                {
+                    LogOutOnMenu_Click(this, EventArgs.Empty);
+                    return;
+                }
             }
 
             while (true)

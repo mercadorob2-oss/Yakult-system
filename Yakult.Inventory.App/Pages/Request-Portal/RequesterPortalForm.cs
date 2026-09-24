@@ -72,6 +72,9 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
         /// <summary>True when the user clicked Logout from the side menu.</summary>
         public bool LogoutRequested { get; private set; }
 
+        /// <summary>True when the form was closed via the side menu's "Back to Portal" item.</summary>
+        public bool BackToPortalRequested { get; private set; }
+
         // Notification bell (WPF UserControl hosted via ElementHost)
         private NotificationBellControl  _notifBell;
         private ElementHost              _notifBellHost;
@@ -371,6 +374,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 () =>
                 {
                     TogglePortalMenu();
+                    BackToPortalRequested = true;
                     var dashboard = Application.OpenForms["MainDashboardForm"];
                     this.Close();
                     if (dashboard != null && !dashboard.IsDisposed)
