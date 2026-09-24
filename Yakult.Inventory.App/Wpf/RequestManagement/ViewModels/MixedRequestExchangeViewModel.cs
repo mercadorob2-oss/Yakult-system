@@ -96,7 +96,7 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
             SessionId = sessionId;
             var first = lines.First();
 
-            Requester          = string.IsNullOrWhiteSpace(first.EmployeeName) ? "Unknown" : first.EmployeeName;
+            Requester          = string.IsNullOrWhiteSpace(first.EmployeeName) ? "Dept Level" : first.EmployeeName;
             Company            = first.CompanyName ?? "Unknown Company";
             Branch             = first.BranchName ?? "Unknown Branch";
             Department         = first.DepartmentName ?? "Unknown Department";
