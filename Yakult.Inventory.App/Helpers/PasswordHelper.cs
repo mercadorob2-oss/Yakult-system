@@ -79,12 +79,20 @@ namespace Yakult.Inventory.App.Helpers
         public static string GenerateTemporaryPassword()
         {
             const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-            var random = new Random();
             var result = new char[8];
 
-            for (int i = 0; i < result.Length; i++)
+            // Crypto RNG: a time-seeded new Random() returns identical passwords when
+            // called in a tight loop (bulk account creation).
+            using (var rng = RandomNumberGenerator.Create())
             {
-                result[i] = chars[random.Next(chars.Length)];
+                var buf = new byte[1];
+                for (int i = 0; i < result.Length; i++)
+                {
+                    // Rejection sampling so every character is equally likely.
+                    int limit = 256 - (256 % chars.Length);
+                    do { rng.GetBytes(buf); } while (buf[0] >= limit);
+                    result[i] = chars[buf[0] % chars.Length];
+                }
             }
 
             return new string(result);

@@ -623,7 +623,7 @@
                 <DataGridTextColumn x:Name="ColBranchEmail"
                                     Header="Branch Email ✎"
                                     Binding="{Binding BranchEmail, UpdateSourceTrigger=LostFocus}"
-                                    Width="*" MinWidth="155" IsReadOnly="False">
+                                    Width="*" MinWidth="110" IsReadOnly="False">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Padding"      Value="4,6,4,6"/>
@@ -636,7 +636,9 @@
                             <Setter Property="BorderThickness"          Value="1"/>
                             <Setter Property="BorderBrush"              Value="#4E9AFC"/>
                             <Setter Property="Padding"                  Value="4,0,0,0"/>
-                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="VerticalContentAlignment" Value="Top"/>
+                            <Setter Property="TextWrapping"             Value="Wrap"/>
+                            <Setter Property="MinHeight"                Value="40"/>
                         </Style>
                     </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>
@@ -645,7 +647,7 @@
                 <DataGridTextColumn x:Name="ColPersonalEmail"
                                     Header="Personal Email ✎"
                                     Binding="{Binding PrimaryEmail, UpdateSourceTrigger=LostFocus}"
-                                    Width="*" MinWidth="165" IsReadOnly="False">
+                                    Width="*" MinWidth="110" IsReadOnly="False">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Padding"      Value="4,6,4,6"/>
@@ -658,7 +660,9 @@
                             <Setter Property="BorderThickness"          Value="1"/>
                             <Setter Property="BorderBrush"              Value="#4E9AFC"/>
                             <Setter Property="Padding"                  Value="4,0,0,0"/>
-                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="VerticalContentAlignment" Value="Top"/>
+                            <Setter Property="TextWrapping"             Value="Wrap"/>
+                            <Setter Property="MinHeight"                Value="40"/>
                         </Style>
                     </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>

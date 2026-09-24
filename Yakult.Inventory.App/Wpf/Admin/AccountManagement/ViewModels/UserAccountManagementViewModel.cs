@@ -64,6 +64,98 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
             _cs = DatabaseConfig.ConnectionString;
         }
 
+        // Replaces userNNN@yakult.local placeholder emails with the linked employee's email:
+        // Personal Email first, then Branch Email. Only placeholders are touched, and because
+        // dbo.User.EmailAddress is unique an address already held by another account is skipped
+        // (branch emails are shared, so only one account per branch can take it).
+        private const string SyncPlaceholderEmailsSql = @"
+            SET NOCOUNT ON;
+            IF OBJECT_ID('dbo.EmployeeEmail') IS NULL OR OBJECT_ID('dbo.EmailAddress') IS NULL RETURN;
+
+            SELECT u.UserId, u.EmpId, e.ComId, e.BranchId, e.DeptId
+            INTO #T
+            FROM dbo.[User] u
+            INNER JOIN dbo.Employee e ON e.EmpId = u.EmpId
+            WHERE u.EmailAddress LIKE 'user%@yakult.local'
+              AND REPLACE(REPLACE(u.EmailAddress, 'user', ''), '@yakult.local', '') <> ''
+              AND REPLACE(REPLACE(u.EmailAddress, 'user', ''), '@yakult.local', '') NOT LIKE '%[^0-9]%';
+
+            IF NOT EXISTS (SELECT 1 FROM #T) RETURN;
+
+            CREATE TABLE #Plan (UserId INT NOT NULL PRIMARY KEY, NewEmail NVARCHAR(255) NOT NULL);
+
+            INSERT INTO #Plan (UserId, NewEmail)
+            SELECT x.UserId, x.EmailAddress
+            FROM (
+                SELECT t.UserId, ea.EmailAddress,
+                       ROW_NUMBER() OVER (PARTITION BY LOWER(ea.EmailAddress) ORDER BY t.UserId) AS pick
+                FROM #T t
+                CROSS APPLY (SELECT TOP 1 ee.EmailId FROM dbo.EmployeeEmail ee
+                             WHERE ee.EmpId = t.EmpId AND ee.IsPrimary = 1 AND ee.IsActive = 1
+                             ORDER BY ee.EmployeeEmailId) pe
+                INNER JOIN dbo.EmailAddress ea ON ea.EmailId = pe.EmailId AND ea.IsActive = 1
+                WHERE NOT EXISTS (SELECT 1 FROM dbo.[User] o WHERE o.EmailAddress = ea.EmailAddress AND o.UserId <> t.UserId)
+            ) x WHERE x.pick = 1;
+
+            INSERT INTO #Plan (UserId, NewEmail)
+            SELECT x.UserId, x.EmailAddress
+            FROM (
+                SELECT t.UserId, ba.EmailAddress,
+                       ROW_NUMBER() OVER (PARTITION BY LOWER(ba.EmailAddress) ORDER BY t.UserId) AS pick
+                FROM #T t
+                INNER JOIN dbo.Company    c ON c.ComId    = t.ComId
+                INNER JOIN dbo.Branch     b ON b.BranchId = t.BranchId
+                INNER JOIN dbo.Department d ON d.DeptId   = t.DeptId
+                INNER JOIN dbo.DepartmentAccount da
+                        ON da.CompanyName = c.Name AND da.DepartmentName = d.Name AND da.BranchName = b.Name
+                INNER JOIN dbo.EmailAddress ba ON ba.EmailId = da.EmailAddressId
+                WHERE NOT EXISTS (SELECT 1 FROM #Plan p WHERE p.UserId = t.UserId)
+                  AND NOT EXISTS (SELECT 1 FROM #Plan p WHERE p.NewEmail = ba.EmailAddress)
+                  AND NOT EXISTS (SELECT 1 FROM dbo.[User] o WHERE o.EmailAddress = ba.EmailAddress AND o.UserId <> t.UserId)
+            ) x WHERE x.pick = 1;
+
+            UPDATE u SET u.EmailAddress = p.NewEmail
+            FROM dbo.[User] u
+            INNER JOIN #Plan p ON p.UserId = u.UserId
+            WHERE u.EmailAddress LIKE 'user%@yakult.local';";
+
+        // Accounts with NO role yet get one from the linked employee's position: Manager-family
+        // positions -> Manager, SUPERVISOR -> Supervisor. IT Manager / IT Supervisor are IT
+        // Department roles and are never assigned from a position; coordinators get none.
+        // Accounts that already hold any role are never touched.
+        private static string BuildSyncRolesSql(bool hasApprovalRoleTitle)
+        {
+            string artSelect = hasApprovalRoleTitle ? "art.ApprovalRole" : "CAST(NULL AS NVARCHAR(50))";
+            string artJoin   = hasApprovalRoleTitle
+                ? @"LEFT JOIN dbo.ApprovalRoleTitle art
+                           ON UPPER(LTRIM(RTRIM(art.PositionTitle))) = UPPER(LTRIM(RTRIM(e.Position))) AND art.IsActive = 1"
+                : "";
+
+            return $@"
+                SET NOCOUNT ON;
+                DECLARE @Manager    INT = (SELECT RoleId FROM dbo.Role WHERE RoleName = 'Manager'    AND IsActive = 1);
+                DECLARE @Supervisor INT = (SELECT RoleId FROM dbo.Role WHERE RoleName = 'Supervisor' AND IsActive = 1);
+
+                INSERT INTO dbo.UserRole (UserId, RoleId, DateAssigned)
+                SELECT x.UserId, CASE x.NewRole WHEN 'Manager' THEN @Manager ELSE @Supervisor END, GETDATE()
+                FROM (
+                    SELECT u.UserId,
+                           CASE
+                               WHEN {artSelect} IN ('Manager', 'Supervisor') THEN {artSelect}
+                               WHEN {artSelect} IS NULL AND UPPER(LTRIM(RTRIM(e.Position))) IN
+                                    ('MANAGER', 'ASST. MANAGER', 'ASSISTANT MANAGER', 'JR. ASST. MANAGER',
+                                     'JUNIOR ASSISTANT MANAGER', 'ACTING JR. ASST. MANAGER') THEN 'Manager'
+                               WHEN {artSelect} IS NULL AND UPPER(LTRIM(RTRIM(e.Position))) = 'SUPERVISOR' THEN 'Supervisor'
+                           END AS NewRole
+                    FROM dbo.[User] u
+                    INNER JOIN dbo.Employee e ON e.EmpId = u.EmpId
+                    {artJoin}
+                    WHERE NOT EXISTS (SELECT 1 FROM dbo.UserRole ur WHERE ur.UserId = u.UserId)
+                ) x
+                WHERE x.NewRole IS NOT NULL
+                  AND ((x.NewRole = 'Manager' AND @Manager IS NOT NULL) OR (x.NewRole = 'Supervisor' AND @Supervisor IS NOT NULL));";
+        }
+
         public async Task LoadAsync()
         {
             _columnFilters.Clear();
@@ -77,6 +169,31 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                 using (var con = new SqlConnection(_cs))
                 {
                     await con.OpenAsync();
+
+                    // Best effort: a failure here must never stop the list from loading.
+                    try
+                    {
+                        using (var sync = new SqlCommand(SyncPlaceholderEmailsSql, con) { CommandTimeout = 120 })
+                            await sync.ExecuteNonQueryAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[Accounts] placeholder email sync failed: " + ex.Message);
+                    }
+
+                    try
+                    {
+                        bool hasArt;
+                        using (var chk = new SqlCommand("SELECT CASE WHEN OBJECT_ID('dbo.ApprovalRoleTitle') IS NULL THEN 0 ELSE 1 END", con))
+                            hasArt = Convert.ToInt32(await chk.ExecuteScalarAsync()) == 1;
+
+                        using (var sync = new SqlCommand(BuildSyncRolesSql(hasArt), con) { CommandTimeout = 120 })
+                            await sync.ExecuteNonQueryAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[Accounts] role-from-position sync failed: " + ex.Message);
+                    }
 
                     const string sql = @"
                         SELECT
@@ -163,6 +280,16 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                 string col     = kv.Key;
                 var    allowed = kv.Value;
                 _filtered = _filtered.Where(u => allowed.Contains(GetUserColumnValue(u, col) ?? "")).ToList();
+            }
+
+            // "Newly Added" / "Oldest Added" order by creation (UserId is an identity, so it is
+            // insertion order). A column sort chosen in the grid header takes priority.
+            if (string.IsNullOrEmpty(_sortColumn))
+            {
+                if (filter == "Newly Added")
+                    _filtered = _filtered.OrderByDescending(u => u.UserId).ToList();
+                else if (filter == "Oldest Added")
+                    _filtered = _filtered.OrderBy(u => u.UserId).ToList();
             }
 
             if (!string.IsNullOrEmpty(_sortColumn))
