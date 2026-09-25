@@ -1332,6 +1332,15 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                             }
                         }
 
+                        // A Developer account's employee link (set, changed or cleared) needs a
+                        // second stage so it can't be rebound to someone else by accident.
+                        if (_user.IsDeveloper && _user.EmpId != empId
+                            && !await ConfirmDeveloperLinkChangeAsync(con))
+                        {
+                            DialogResult = DialogResult.None;
+                            return;
+                        }
+
                         // Update user
                         const string sql = @"
                             UPDATE [User]
@@ -1460,6 +1469,130 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
             public string Description { get; set; }
         }
 
+
+        /// <summary>
+        /// Second stage for changing a Developer account's employee link: asks for the current
+        /// system password of that Developer account (dbo.[User]), plus the password of the
+        /// database the app is connected to. Under Windows Authentication there is no database
+        /// password, so only the account password is asked. Returns true only when all match.
+        /// </summary>
+        private async System.Threading.Tasks.Task<bool> ConfirmDeveloperLinkChangeAsync(SqlConnection con)
+        {
+            string dbPassword = null;
+            bool   windowsAuth = false;
+            try
+            {
+                var csb = new SqlConnectionStringBuilder(Yakult.Inventory.App.Core.DatabaseConfig.ConnectionString);
+                windowsAuth = csb.IntegratedSecurity;
+                dbPassword  = csb.Password;
+            }
+            catch
+            {
+            }
+
+            bool askDbPassword = !windowsAuth && !string.IsNullOrEmpty(dbPassword);
+
+            string enteredDbPassword, enteredUserPassword;
+            using (var dlg = new DeveloperLinkConfirmDialog(_user.Username, askDbPassword))
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return false;
+                enteredDbPassword   = dlg.DatabasePassword;
+                enteredUserPassword = dlg.AccountPassword;
+            }
+
+            byte[] storedHash = null, storedSalt = null;
+            using (var cmd = new SqlCommand("SELECT PasswordHash, PasswordSalt FROM dbo.[User] WHERE UserId = @UserId", con))
+            {
+                cmd.Parameters.AddWithValue("@UserId", _user.UserId);
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        storedHash = reader.IsDBNull(0) ? null : (byte[])reader[0];
+                        storedSalt = reader.IsDBNull(1) ? null : (byte[])reader[1];
+                    }
+                }
+            }
+
+            // Evaluate both before reporting, and don't say which one failed.
+            bool dbOk   = !askDbPassword || FixedTimeEquals(enteredDbPassword, dbPassword);
+            bool userOk = PasswordHelper.VerifyPassword(enteredUserPassword, storedHash, storedSalt);
+            if (dbOk && userOk) return true;
+
+            MessageBox.Show(
+                (askDbPassword
+                    ? "The database password or the account password is incorrect."
+                    : $"The password of \"{_user.Username}\" is incorrect.") +
+                "\n\nThe employee link was not changed.",
+                "Verification Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+        }
+
+        private static bool FixedTimeEquals(string a, string b)
+        {
+            byte[] x = System.Text.Encoding.UTF8.GetBytes(a ?? "");
+            byte[] y = System.Text.Encoding.UTF8.GetBytes(b ?? "");
+            int diff = x.Length ^ y.Length;
+            for (int i = 0; i < Math.Min(x.Length, y.Length); i++)
+                diff |= x[i] ^ y[i];
+            return diff == 0;
+        }
+
+        private sealed class DeveloperLinkConfirmDialog : Form
+        {
+            private readonly TextBox _txtDbPassword;
+            private readonly TextBox _txtAccountPassword;
+
+            public string DatabasePassword => _txtDbPassword?.Text ?? "";
+            public string AccountPassword  => _txtAccountPassword.Text;
+
+            public DeveloperLinkConfirmDialog(string username, bool askDbPassword)
+            {
+                Text = "Confirm Developer Account Change";
+                FormBorderStyle = FormBorderStyle.FixedDialog;
+                StartPosition = FormStartPosition.CenterParent;
+                MaximizeBox = false;
+                MinimizeBox = false;
+                ShowInTaskbar = false;
+
+                var lblInfo = new Label
+                {
+                    Text = $"\"{username}\" is a Developer account. To change which employee it is linked to, enter " +
+                           (askDbPassword
+                               ? "the password of the database this system is connected to and the current password of this account."
+                               : "the current password of this account."),
+                    Left = 16,
+                    Top = 14,
+                    Width = 488,
+                    Height = 48,
+                    AutoSize = false
+                };
+                Controls.Add(lblInfo);
+
+                int y = 72;
+                if (askDbPassword)
+                {
+                    Controls.Add(new Label { Text = "Database password:", Left = 16, Top = y, Width = 488, AutoSize = false });
+                    _txtDbPassword = new TextBox { Left = 16, Top = y + 20, Width = 488, UseSystemPasswordChar = true };
+                    Controls.Add(_txtDbPassword);
+                    y += 52;
+                }
+
+                Controls.Add(new Label { Text = $"Password of \"{username}\":", Left = 16, Top = y, Width = 488, AutoSize = false, AutoEllipsis = true });
+                _txtAccountPassword = new TextBox { Left = 16, Top = y + 20, Width = 488, UseSystemPasswordChar = true };
+                Controls.Add(_txtAccountPassword);
+                y += 62;
+
+                var btnOk     = new Button { Text = "Confirm", Left = 328, Top = y, Width = 84, DialogResult = DialogResult.OK };
+                var btnCancel = new Button { Text = "Cancel",  Left = 420, Top = y, Width = 84, DialogResult = DialogResult.Cancel };
+                Controls.Add(btnOk);
+                Controls.Add(btnCancel);
+                ClientSize = new Size(520, y + 40);
+
+                AcceptButton = btnOk;
+                CancelButton = btnCancel;
+            }
+        }
 
         private sealed class TemporaryPasswordDialog : Form
         {

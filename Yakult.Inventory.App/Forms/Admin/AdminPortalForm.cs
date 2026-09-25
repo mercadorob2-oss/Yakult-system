@@ -242,7 +242,8 @@ namespace Yakult.Inventory.App.Forms.Admin
             // ── REFERENCE DATA SUB-PANEL ─────────────────────────────────────────────
             _referenceDataPanel = new Panel
             {
-                Height = 4 * 50,
+                // 3 buttons while Master Data Update is hidden (was 4 * 50).
+                Height = 3 * 50,
                 Dock = DockStyle.Top,
                 BackColor = Color.FromArgb(250, 250, 250),
                 Visible = false
@@ -251,7 +252,8 @@ namespace Yakult.Inventory.App.Forms.Admin
             AddSubMenuButton(_referenceDataPanel, "Dept Acronyms", (s, e) => { ShowDepartmentAcronymPage(); ToggleMenu(); });
             AddSubMenuButton(_referenceDataPanel, "Branch Acronyms", (s, e) => { ShowBranchAcronymPage(); ToggleMenu(); });
             AddSubMenuButton(_referenceDataPanel, "Holidays", (s, e) => { ShowHolidayManagementPage(); ToggleMenu(); });
-            AddSubMenuButton(_referenceDataPanel, "Master Data Update", (s, e) => { ShowMasterDataUpdatePage(); ToggleMenu(); });
+            // Master Data Update is hidden for now. Uncomment this line and set Height back to 4 * 50 to restore it.
+            //AddSubMenuButton(_referenceDataPanel, "Master Data Update", (s, e) => { ShowMasterDataUpdatePage(); ToggleMenu(); });
             _sideMenuPanel.Controls.Add(_referenceDataPanel);
 
             // ── REFERENCE DATA HEADER BUTTON ─────────────────────────────────────────
@@ -264,7 +266,8 @@ namespace Yakult.Inventory.App.Forms.Admin
             // ── ACCOUNT MANAGEMENT SUB-PANEL ────────────────────────────────────────
             _accountMgmtPanel = new Panel
             {
-                Height = 6 * 50,
+                // Account Management (user accounts) is Super Admin only, so one less button otherwise.
+                Height = (CanOpenUserAccountManagement ? 6 : 5) * 50,
                 Dock = DockStyle.Top,
                 BackColor = Color.FromArgb(250, 250, 250),
                 Visible = false
@@ -274,7 +277,8 @@ namespace Yakult.Inventory.App.Forms.Admin
             AddSubMenuButton(_accountMgmtPanel, "User Activity", (s, e) => { ShowUserActivityPage(); ToggleMenu(); });
             AddSubMenuButton(_accountMgmtPanel, "Approver Management", (s, e) => { ShowAccountPermissionsPage(); ToggleMenu(); });
             AddSubMenuButton(_accountMgmtPanel, "Department Accounts", (s, e) => { ShowDepartmentAccountsPage(); ToggleMenu(); });
-            AddSubMenuButton(_accountMgmtPanel, "Account Management", (s, e) => { ShowUserAccountManagementPage(); ToggleMenu(); });
+            if (CanOpenUserAccountManagement)
+                AddSubMenuButton(_accountMgmtPanel, "Account Management", (s, e) => { ShowUserAccountManagementPage(); ToggleMenu(); });
             AddSubMenuButton(_accountMgmtPanel, "Employee Management", (s, e) => { ShowEmployeeManagementPage(); ToggleMenu(); });
             _sideMenuPanel.Controls.Add(_accountMgmtPanel);
 
@@ -510,8 +514,22 @@ namespace Yakult.Inventory.App.Forms.Admin
             ShowPage(new EmployeeManagementWpfHost());
         }
 
+        /// <summary>
+        /// Super Admin only, and not restricted on User Access > Pages
+        /// (PermissionItem 'UserAccountManagementPage').
+        /// </summary>
+        private static bool CanOpenUserAccountManagement =>
+            AppSession.IsSuperAdmin &&
+            Yakult.Inventory.App.Security.PermissionResolver.HasPageAccess("UserAccountManagementPage");
+
         private void ShowUserAccountManagementPage()
         {
+            if (!CanOpenUserAccountManagement)
+            {
+                MessageBox.Show("Access denied. Super Admin privileges required.",
+                    "Unauthorized", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             ShowPage(new UserAccountManagementWpfHost());
         }
 
@@ -564,17 +582,19 @@ namespace Yakult.Inventory.App.Forms.Admin
 
         private void ShowBranchAcronymPage()
         {
-            ShowPage(new BranchAcronymPage());
+            ShowPage(new Yakult.Inventory.App.Forms.Admin.ReferenceData.AcronymWpfHost(
+                Yakult.Inventory.App.WPF.Admin.ReferenceData.ViewModels.AcronymKind.Branch));
         }
 
         private void ShowDepartmentAcronymPage()
         {
-            ShowPage(new DepartmentAcronymPage());
+            ShowPage(new Yakult.Inventory.App.Forms.Admin.ReferenceData.AcronymWpfHost(
+                Yakult.Inventory.App.WPF.Admin.ReferenceData.ViewModels.AcronymKind.Department));
         }
 
         private void ShowHolidayManagementPage()
         {
-            ShowPage(new HolidayManagementPage());
+            ShowPage(new Yakult.Inventory.App.Forms.Admin.ReferenceData.HolidayManagementWpfHost());
         }
 
         private void ShowMasterDataUpdatePage()
@@ -601,7 +621,7 @@ namespace Yakult.Inventory.App.Forms.Admin
                     "Unauthorized", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
-            ShowPage(new UserPortalAccessPage());
+            ShowPage(new Yakult.Inventory.App.Forms.Admin.UserAccess.UserAccessWpfHost());
         }
 
         private void ShowQrImageBackfillPage()

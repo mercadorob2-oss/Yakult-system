@@ -71,7 +71,8 @@ Use `SubType`:
 
 - `AppSession.cs` — static session state set at login
 - `IsDeveloper` — set from `dbo.[User].IsDeveloper` column
-- `IsSuperAdmin` — set from `dbo.[User].IsSuperAdmin` column; grants access to Account Permissions page and future role management UI
+- `IsSuperAdmin` — set from `dbo.[User].IsSuperAdmin` column; grants access to Account Permissions page, the Account Management (user accounts) page (Admin Portal "Account Management" and main app Admin → "Users"; hidden and blocked for everyone else), and future role management UI. The Account Management page also has a page permission (`PermissionItem` 'Page' / `UserAccountManagementPage`, seeded by `Migration_PermissionItem_SeedUserAccountManagementPage.sql`); it opens only when `IsSuperAdmin` **and** `PermissionResolver.HasPageAccess("UserAccountManagementPage")`
+- The User Access page (Admin Portal → Developer Tools → User Portal Access) is WPF: `Wpf\Admin\UserAccess\` hosted by `Forms\Admin\UserAccess\UserAccessWpfHost`. The old WinForms `Pages\Admin\Security\UserPortalAccessPage` + panels are no longer opened anywhere
 - `IsAdmin` — `IsDeveloper || HasRole("Admin")`
 - `IsApprover` — hardcoded position string list in `AppSession.cs`; positions must be added here manually for now
 - **Who sees a pending authorization (desktop and web must match):**
