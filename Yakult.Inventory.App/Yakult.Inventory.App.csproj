@@ -616,6 +616,16 @@
     <Compile Include="Wpf\Set\BulkAddFiles\BulkAddFilesWindow.xaml.cs">
       <DependentUpon>BulkAddFilesWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Wpf\Set\BulkDeploy\BulkDeployWindow.xaml.cs">
+      <DependentUpon>BulkDeployWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Set\BulkDeploy\BulkDeployParser.cs" />
+    <Compile Include="Wpf\Set\BulkDeploy\BulkDeployRow.cs" />
+    <Compile Include="Wpf\Set\BulkDeploy\BulkDeployValidator.cs" />
+    <Compile Include="Wpf\Set\BulkDeploy\BulkDeployExcelImporter.cs" />
+    <Compile Include="Wpf\Set\BulkDeploy\BulkDeployTemplateExporter.cs" />
+    <Compile Include="Wpf\Set\BulkDeploy\BulkDeployViewModel.cs" />
+    <Compile Include="Wpf\Set\BulkDeploy\DeptAliasMap.cs" />
     <Compile Include="Wpf\Receipt\ReceiptSetsView.xaml.cs">
       <DependentUpon>ReceiptSetsView.xaml</DependentUpon>
     </Compile>
@@ -1616,6 +1626,7 @@
     <Compile Include="Models\CallMonitoring\CallFieldVisitReportRow.cs" />
     <Compile Include="Models\CallMonitoring\CallFieldVisitAttachmentItem.cs" />
     <Compile Include="Repositories\SetRepository.cs" />
+    <Compile Include="Repositories\SetBulkDeployRepository.cs" />
     <Compile Include="Repositories\SetItemUpdateRepository.cs" />
     <Compile Include="Repositories\ItemMovementAuditRepository.cs" />
     <Compile Include="Repositories\ItemAuditTrailRepository.cs" />
@@ -1978,6 +1989,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Wpf\Set\BulkAddFiles\BulkAddFilesWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Set\BulkDeploy\BulkDeployWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -3187,6 +3202,13 @@
     </Page>
     <Compile Include="Pages\Set\RecordSetInvoiceDialog.xaml.cs">
       <DependentUpon>RecordSetInvoiceDialog.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Pages\Set\DeployDateDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="Pages\Set\DeployDateDialog.xaml.cs">
+      <DependentUpon>DeployDateDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Pages\Set\ViewSetPage.cs">
       <SubType>UserControl</SubType>

@@ -54,6 +54,7 @@ namespace Yakult.Inventory.App.WPF.Set.ViewModels
             BulkDeleteCommand = new RelayCommand(() => DeleteRowsAsync(Rows.Where(r => r.Selected).ToList()), () => Rows.Any(r => r.Selected));
             GenerateReportCommand = new RelayCommand(GenerateReport);
             BulkAddFilesCommand = new RelayCommand(() => RequestBulkAddFiles?.Invoke());
+            BulkDeployCommand = new RelayCommand(() => RequestBulkDeploy?.Invoke());
 
             TotalCardCommand = new RelayCommand(() => ToggleCard(SummaryFilter.All));
             ExpiredCardCommand = new RelayCommand(() => ToggleCard(SummaryFilter.Expired));
@@ -93,6 +94,9 @@ namespace Yakult.Inventory.App.WPF.Set.ViewModels
         /// <summary>View opens BulkAddFilesWindow, then reloads once it closes.</summary>
         public event Action RequestBulkAddFiles;
 
+        /// <summary>View opens BulkDeployWindow (paste-grid bulk deploy), then reloads once it closes.</summary>
+        public event Action RequestBulkDeploy;
+
         // ── Row selection (grid highlight, used by the toolbar "Open" button) ──
         private SetRow _selectedRow;
         public SetRow SelectedRow
@@ -109,6 +113,7 @@ namespace Yakult.Inventory.App.WPF.Set.ViewModels
         public RelayCommand BulkDeleteCommand { get; }
         public RelayCommand GenerateReportCommand { get; }
         public RelayCommand BulkAddFilesCommand { get; }
+        public RelayCommand BulkDeployCommand { get; }
         public RelayCommand TotalCardCommand { get; }
         public RelayCommand ExpiredCardCommand { get; }
         public RelayCommand WithQrCardCommand { get; }

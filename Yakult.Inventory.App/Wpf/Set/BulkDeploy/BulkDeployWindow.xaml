@@ -1,0 +1,150 @@
+<Window x:Class="Yakult.Inventory.App.Wpf.Set.BulkDeploy.BulkDeployWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Paste Bulk Deploy"
+        Width="1400" Height="800"
+        WindowStartupLocation="CenterOwner"
+        Background="#F0F2F6"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="DeployCard" TargetType="Border">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush1}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Padding" Value="14,10"/>
+                <Setter Property="Margin" Value="0,0,0,12"/>
+            </Style>
+            <Style x:Key="DeployTitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="15"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="#1A2333"/>
+            </Style>
+            <Style x:Key="DeploySubtitle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="120"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Paste Bulk Deploy" Style="{StaticResource DeployTitle}"/>
+            <TextBlock Text="Tick the columns present in the paste, paste rows, validate, then create one Set per ComputerName." Style="{StaticResource DeploySubtitle}"/>
+        </StackPanel>
+
+        <!-- Step 1 -->
+        <Border Grid.Row="1" Style="{StaticResource DeployCard}">
+            <WrapPanel VerticalAlignment="Center">
+                <TextBlock Text="Step 1 Columns:" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,4"/>
+                <CheckBox x:Name="ChkDate" Content="Deployment Date" IsChecked="True" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkPc" Content="ComputerName" IsChecked="True" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkIp" Content="IP Address" IsChecked="True" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkDept" Content="Department column" IsChecked="True" IsEnabled="False" ToolTip="Always per-row" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkFa" Content="Fixed Asset" IsChecked="True" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkEmp" Content="Employee link" IsChecked="False" ToolTip="When ticked, an Employee column shows. Rows with a matching Name or Employee # are assigned to that person instead of the department only." VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkCat" Content="Category" IsChecked="True" ToolTip="When unticked, the Category column hides and Category is auto-assigned from ItemRole." VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkDropdown" Content="Dropdown lists" IsChecked="True" ToolTip="When ticked, Department, Category, ItemRole, and Condition edit as dropdown lists fed by live data. Unique columns (ComputerName, IP, Serial, Model) always stay free text." VerticalContentAlignment="Center" Margin="0,0,16,4" Checked="DropdownCheck_Changed" Unchecked="DropdownCheck_Changed"/>
+                <Button x:Name="PresetYpi" Content="Preset YPI" Style="{StaticResource SmallBtn}" Margin="0,0,6,4" Click="PresetYpi_Click"/>
+                <Button x:Name="PresetMinimal" Content="Preset Minimal" Style="{StaticResource SmallBtn}" Margin="0,0,16,4" Click="PresetMinimal_Click"/>
+                <Button x:Name="BtnTemplate" Content="Export Template" Style="{StaticResource SmallBtn}" Margin="0,0,6,4" Click="BtnTemplate_Click"/>
+                <Button x:Name="BtnImportFile" Content="Import Excel File" Style="{StaticResource SmallBtn}" Margin="0,0,0,4" Click="BtnImportFile_Click"/>
+            </WrapPanel>
+        </Border>
+
+        <!-- Step 2 -->
+        <Border Grid.Row="2" Style="{StaticResource DeployCard}" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="14,10,14,6">
+                    <TextBlock Text="Step 2 Rows:" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="SummaryText" Text="No rows yet. Paste or import to begin." FontSize="11" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <CheckBox x:Name="ChkErrorsOnly" Content="Show problems only" VerticalContentAlignment="Center" Margin="16,0,0,0" Checked="ErrorsOnly_Changed" Unchecked="ErrorsOnly_Changed"/>
+                    <CheckBox x:Name="ChkAutoValidate" Content="Auto-validate" IsChecked="True" ToolTip="Validate automatically after every paste or file import." VerticalContentAlignment="Center" Margin="12,0,0,0"/>
+                    <TextBlock Text="Find:" FontSize="11" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="16,0,4,0"/>
+                    <TextBox x:Name="TxtFind" Width="200" VerticalContentAlignment="Center" ToolTip="Filter by bundle, department, computer, serial, item, or message." TextChanged="FindBox_Changed"/>
+                </StackPanel>
+                <DataGrid x:Name="BulkGrid" Grid.Row="1"
+                          BorderThickness="0"
+                          Style="{StaticResource ListDataGridChrome}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="True"
+                          SelectionUnit="CellOrRowHeader"
+                          RowHeaderWidth="36"
+                          ItemsSource="{Binding Rows}"
+                          PreviewKeyDown="BulkGrid_PreviewKeyDown"
+                          PreviewMouseRightButtonDown="BulkGrid_PreviewMouseRightButtonDown"
+                          LoadingRow="BulkGrid_LoadingRow"
+                          Sorting="BulkGrid_Sorting">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding RowStatus}" Value="Error">
+                                    <Setter Property="Background" Value="#FDECEA"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding RowStatus}" Value="Warning">
+                                    <Setter Property="Background" Value="#FFF8E6"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding RowStatus}" Value="Valid">
+                                    <Setter Property="Background" Value="#EAF7EE"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="BundleKey" Binding="{Binding BundleKey}" MinWidth="90"/>
+                        <DataGridTextColumn Header="Department" Binding="{Binding Department}" MinWidth="120"/>
+                        <DataGridTextColumn Header="ComputerName" Binding="{Binding ComputerName}" MinWidth="110"/>
+                        <DataGridTextColumn Header="IPAddress" Binding="{Binding IPAddress}" MinWidth="100"/>
+                        <DataGridTextColumn Header="ItemRole" Binding="{Binding ItemRole}" MinWidth="80"/>
+                        <DataGridTextColumn Header="ItemName" Binding="{Binding ItemName}" MinWidth="200"/>
+                        <DataGridTextColumn Header="ModelNumber" Binding="{Binding ModelNumber}" MinWidth="110"/>
+                        <DataGridTextColumn Header="SerialNumber" Binding="{Binding SerialNumber}" MinWidth="130"/>
+                        <DataGridTextColumn Header="FixedAssetNumber" Binding="{Binding FixedAssetNumber}" MinWidth="130"/>
+                        <DataGridTextColumn Header="Category" Binding="{Binding Category}" MinWidth="100"/>
+                        <DataGridTextColumn Header="Quantity" Binding="{Binding Quantity}" MinWidth="70"/>
+                        <DataGridTextColumn Header="DateDeployedText" Binding="{Binding DateDeployedText}" MinWidth="110"/>
+                        <DataGridTextColumn Header="Condition" Binding="{Binding Condition}" MinWidth="80"/>
+                        <DataGridTextColumn Header="Vendor" Binding="{Binding Vendor}" MinWidth="120"/>
+                        <DataGridTextColumn Header="Remarks" Binding="{Binding Remarks}" MinWidth="140"/>
+                        <DataGridTextColumn Header="Employee" Binding="{Binding Employee}" MinWidth="130" Visibility="Collapsed"/>
+                        <DataGridTextColumn Header="RowStatus" Binding="{Binding RowStatus}" IsReadOnly="True" MinWidth="80"/>
+                        <DataGridTextColumn Header="RowMessage" Binding="{Binding RowMessage}" IsReadOnly="True" Width="*" MinWidth="260"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <!-- Bottom bar -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
+            <Button x:Name="BtnPaste" Content="Paste (Ctrl+V)" Style="{StaticResource SmallBtn}" Margin="0,0,6,0" Click="BtnPaste_Click"/>
+            <Button x:Name="BtnValidate" Content="Validate" Style="{StaticResource SmallBtn}" Margin="0,0,6,0" Click="BtnValidate_Click"/>
+            <Button x:Name="BtnCreate" Content="Create valid only" Style="{StaticResource PrimaryBtn}" Margin="0,0,6,0" Click="BtnCreate_Click"/>
+            <Button x:Name="BtnCancel" Content="Cancel" Style="{StaticResource SmallBtn}" Margin="0,0,6,0" Click="BtnCancel_Click"/>
+            <Button x:Name="BtnClear" Content="Clear grid" Style="{StaticResource SmallBtn}" Margin="0,0,12,0" Click="BtnClear_Click"/>
+            <ProgressBar x:Name="CommitProgress" Width="220" Height="16" Minimum="0" Maximum="100" Value="0" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Result log -->
+        <Border Grid.Row="4" Style="{StaticResource DeployCard}" Margin="0,8,0,0" Padding="10">
+            <TextBox x:Name="ResultLog" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                     VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent" FontSize="11"/>
+        </Border>
+    </Grid>
+</Window>

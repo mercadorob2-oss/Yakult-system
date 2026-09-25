@@ -5,6 +5,7 @@ using Yakult.Inventory.App.Pages.Set;
 using Yakult.Inventory.App.WPF.Set.ViewModels;
 using Yakult.Inventory.App.WPF.Shared.Helpers;
 using Yakult.Inventory.App.Wpf.Set.BulkAddFiles;
+using Yakult.Inventory.App.Wpf.Set.BulkDeploy;
 using WinForms = System.Windows.Forms;
 
 namespace Yakult.Inventory.App.WPF.Set.Views
@@ -29,6 +30,7 @@ namespace Yakult.Inventory.App.WPF.Set.Views
             _vm.RequestArchiveRows += OnRequestArchiveRows;
             _vm.RequestGenerateReport += OnRequestGenerateReport;
             _vm.RequestBulkAddFiles += OnRequestBulkAddFiles;
+            _vm.RequestBulkDeploy += OnRequestBulkDeploy;
             _vm.HighlightApplied += row => SetsGrid.ScrollIntoView(row);
 
             RebuildSortByOptions();
@@ -91,6 +93,14 @@ namespace Yakult.Inventory.App.WPF.Set.Views
             {
                 bulkDialog.ShowDialog(GetOwner());
             }
+            _vm.LoadSets();
+        }
+
+        private void OnRequestBulkDeploy()
+        {
+            var dialog = new BulkDeployWindow();
+            SetWpfOwner(dialog);
+            dialog.ShowDialog();
             _vm.LoadSets();
         }
 
