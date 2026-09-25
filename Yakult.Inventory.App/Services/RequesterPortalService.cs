@@ -728,10 +728,9 @@ namespace Yakult.Inventory.App.Services
 
             // Composition of the WHOLE submission, computed once — this is the single point
             // that decides Card 1 (Cartridge Management) vs Card 2 (Request & Set Management)
-            // routing. A cartridge line inside a MIXED submission must NOT be pooled/placeholder
-            // or recorded in CartridgeRequestModel (which is what Cartridge Management's pending
-            // queue reads from) — the entire submission routes through the general Request flow
-            // instead, exactly like a pure Ink/Printhead/Toner request.
+            // routing. A cartridge line inside a MIXED submission must NOT be pooled/placeholder;
+            // the entire submission routes through the general Request flow instead, exactly
+            // like a pure Ink/Printhead/Toner request (WorkflowType below).
             bool allCartridge = normalizedItems.All(x =>
                 string.IsNullOrWhiteSpace(x.Category) || x.Category == "Cartridge");
 
@@ -811,11 +810,13 @@ namespace Yakult.Inventory.App.Services
                 int newReqId = _requestRepository.AddRequest(requestDto);
                 createdIds.Add(newReqId);
 
-                // Only persist into dbo.CartridgeRequestModel — the table Cartridge Management's
-                // pending queue reads from — when the whole submission is cartridge-only. A
-                // cartridge line inside a mixed submission has a real ItemId (like Ink/Printhead/
-                // Toner) and no side-table row, so it never appears in that queue.
-                if (isCartridgeItem && allCartridge)
+                // Every cartridge line records its model and declared Good/Damaged empties in
+                // dbo.CartridgeRequestModel, whether the submission is cartridge-only or mixed.
+                // A mixed line still never reaches Cartridge Management's queue: that queue
+                // filters on WorkflowType = 'CartridgeManagement', not on this table. Fulfillment
+                // of a mixed line reads the declared empties from here
+                // (CartridgeManagementRepository.IssueMixedCartridgeLine).
+                if (isCartridgeItem)
                     InsertCartridgeRequestModel(newReqId, item.CartridgeModel, item.Quantity, remarks, item.GoodEmptyQty, item.DamagedEmptyQty);
             }
 

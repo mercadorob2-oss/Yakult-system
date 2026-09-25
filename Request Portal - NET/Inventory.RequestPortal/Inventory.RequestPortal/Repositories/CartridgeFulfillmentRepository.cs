@@ -462,6 +462,7 @@ namespace Inventory.RequestPortal.Repositories
                 FROM dbo.Item i
                 WHERE i.Category = 'Cartridge'
                   AND i.CartridgeModelId = @CartridgeModelId
+                  AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                   AND i.Active = 1";
 
             using var con = new SqlConnection(_connectionStringProvider.GetConnectionString());
@@ -491,6 +492,7 @@ namespace Inventory.RequestPortal.Repositories
                     FROM dbo.Item i
                     WHERE i.Category = 'Cartridge'
                       AND i.CartridgeModelId = @CartridgeModelId
+                      AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                       AND i.Active = 1
                       AND i.RefillStatus IS NULL";
             }
@@ -501,6 +503,7 @@ namespace Inventory.RequestPortal.Repositories
                     FROM dbo.Item i
                     WHERE i.Category = 'Cartridge'
                       AND i.CartridgeModelId = @CartridgeModelId
+                      AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                       AND i.Active = 1
                       AND i.RefillStatus = 'Available'";
             }

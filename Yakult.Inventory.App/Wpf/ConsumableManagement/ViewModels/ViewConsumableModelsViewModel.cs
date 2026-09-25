@@ -243,8 +243,14 @@ namespace Yakult.Inventory.App.WPF.ConsumableManagement.ViewModels
                     (r.ModelNumber ?? "").ToLowerInvariant().Contains(search) ||
                     (r.Category ?? "").ToLowerInvariant().Contains(search));
 
+            // Compare canonical category names: the dropdown says "Print Head" while models are
+            // stored as "Printhead" (and older rows may use other spellings).
             if (!string.Equals(category, "All Categories", StringComparison.OrdinalIgnoreCase))
-                query = query.Where(r => string.Equals(r.Category, category, StringComparison.OrdinalIgnoreCase));
+            {
+                var wanted = Yakult.Inventory.App.Models.ConsumableCategories.Canonicalize(category);
+                query = query.Where(r => string.Equals(
+                    Yakult.Inventory.App.Models.ConsumableCategories.Canonicalize(r.Category), wanted, StringComparison.OrdinalIgnoreCase));
+            }
 
             _filtered = query.ToList();
 

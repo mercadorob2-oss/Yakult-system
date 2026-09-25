@@ -159,6 +159,10 @@ namespace Yakult.Inventory.App.Repositories
 
         public async Task<int> CreateAsync(ConsumableModelDto model)
         {
+            // Store the canonical category ("Printhead", not "Print Head") so filters, the
+            // portal pickers and ConsumableCategories.IsKnown all match it.
+            model.Category = Yakult.Inventory.App.Models.ConsumableCategories.Canonicalize(model.Category);
+
             using (var con = new SqlConnection(_connectionString))
             {
                 await con.OpenAsync();
@@ -229,6 +233,10 @@ namespace Yakult.Inventory.App.Repositories
 
         public async Task UpdateAsync(ConsumableModelDto model)
         {
+            // Store the canonical category ("Printhead", not "Print Head") so filters, the
+            // portal pickers and ConsumableCategories.IsKnown all match it.
+            model.Category = Yakult.Inventory.App.Models.ConsumableCategories.Canonicalize(model.Category);
+
             using (var con = new SqlConnection(_connectionString))
             {
                 await con.OpenAsync();

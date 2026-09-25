@@ -528,6 +528,7 @@ namespace Yakult.Inventory.App.Repositories
                     FROM dbo.Item i
                     WHERE i.Category = 'Cartridge'
                       AND i.CartridgeModelId = @CartridgeModelId
+                      AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                       AND i.Active = 1";
 
                 using (var cmd = new SqlCommand(sql, con))
@@ -563,6 +564,7 @@ namespace Yakult.Inventory.App.Repositories
                         FROM dbo.Item i
                         WHERE i.Category = 'Cartridge'
                           AND i.CartridgeModelId = @CartridgeModelId
+                          AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                           AND i.Active = 1
                           AND i.RefillStatus IS NULL";
                 }
@@ -574,6 +576,7 @@ namespace Yakult.Inventory.App.Repositories
                         FROM dbo.Item i
                         WHERE i.Category = 'Cartridge'
                           AND i.CartridgeModelId = @CartridgeModelId
+                          AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                           AND i.Active = 1
                           AND i.RefillStatus = 'Available'";
                 }
@@ -612,6 +615,7 @@ namespace Yakult.Inventory.App.Repositories
                     FROM dbo.Item i
                     WHERE i.Category = 'Cartridge'
                       AND i.CartridgeModelId = @CartridgeModelId
+                      AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                       AND i.Active = 1
                       AND i.RefillStatus IS NULL
                       AND ISNULL(i.StockOnHand, 0) > 0
@@ -628,6 +632,7 @@ namespace Yakult.Inventory.App.Repositories
                     FROM dbo.Item i
                     WHERE i.Category = 'Cartridge'
                       AND i.CartridgeModelId = @CartridgeModelId
+                      AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                       AND i.Active = 1
                       AND i.RefillStatus = 'Available'
                       AND ISNULL(i.StockOnHand, 0) > 0
@@ -686,6 +691,7 @@ namespace Yakult.Inventory.App.Repositories
                 FROM dbo.Item i
                 WHERE i.Category = 'Cartridge'
                   AND i.CartridgeModelId = @CartridgeModelId
+                  AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                   AND i.Active = 1
                   AND ISNULL(i.StockOnHand, 0) > 0
                 ORDER BY i.DateCreated ASC, i.ItemId ASC";
@@ -792,6 +798,7 @@ namespace Yakult.Inventory.App.Repositories
                 FROM dbo.Item i
                 WHERE i.Category = 'Cartridge'
                   AND i.CartridgeModelId = @CartridgeModelId
+                  AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'  -- returned empties held by IT, not stock
                   AND i.Active = 1
                   AND i.StockOnHand > 0
                   AND ISNULL(i.RefillStatus, '') NOT IN ('OUTBOUND', 'IN_USE', 'Issued', 'For Refill', 'Disposed')
@@ -2718,89 +2725,11 @@ namespace Yakult.Inventory.App.Repositories
                                 }
                             }
 
-                            // Re-evaluate isRefillableModel using the authoritative CartridgeModel.IsRefillable
-                            // flag. Earlier lookup paths set this based only on cartridgeModelId > 0.
-                            // Also capture ModelNumber for use in the IT inventory row (non-refillable path).
-                            isRefillableModel = false;
-                            string modelNumber = string.Empty;
+                            // One EmptyCartridge row per returned unit, split by the declared Good/Damaged
+                            // counts when they add up to the issued quantity (legacy single EMPTY batch otherwise).
+                            // RecordReturnedEmpties is shared with mixed-submission cartridge lines.
                             if (cartridgeModelId > 0)
                             {
-                                using (var cmd = new SqlCommand("SELECT IsRefillable, ModelNumber FROM dbo.CartridgeModel WHERE CartridgeModelId = @ModelId", con, transaction))
-                                {
-                                    cmd.Parameters.AddWithValue("@ModelId", cartridgeModelId);
-                                    using (var reader = cmd.ExecuteReader())
-                                    {
-                                        if (reader.Read())
-                                        {
-                                            isRefillableModel = !reader.IsDBNull(0) && reader.GetBoolean(0);
-                                            modelNumber = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
-                                        }
-                                    }
-                                }
-                            }
-
-                            // All returned cartridges create an EmptyCartridge row.
-                            // IsRefillable controls RefillStatus and downstream batching eligibility only.
-                            if (cartridgeModelId > 0)
-                            {
-                                // Non-refillable models: create the IT custody Item FIRST so its ItemId
-                                // can be written into SourceItemId on each EmptyCartridge row.  The
-                                // dispose/sell workflow later uses SourceItemId to find the inventory row
-                                // to decrement and to anchor the Inventory / CartridgeMovement records.
-                                int? itCustodyItemId = null;
-                                if (!isRefillableModel)
-                                {
-                                    const string sqlInsertITItem = @"
-                                        INSERT INTO dbo.Item
-                                            (Name, Description, Active, UnitOfMeasure, StockOnHand,
-                                             DateCreated, CreatedBy, DateModified, ModifiedBy,
-                                             Category, CategoryId, ModelNumber, CartridgeModelId,
-                                             ConditionID, VendorId, RefillStatus, Remarks,
-                                             Amount, ItemType, StartDate, AffectsInventory, IsTrackedAsset)
-                                        SELECT
-                                            @Name, @Description, 1, 'Unit', @Quantity,
-                                            GETDATE(), @CreatedBy, GETDATE(), @CreatedBy,
-                                            'Cartridge',
-                                            (SELECT TOP 1 CategoryId FROM dbo.Item WHERE Category = 'Cartridge' AND CategoryId IS NOT NULL),
-                                            @ModelNumber, @CartridgeModelId,
-                                            COALESCE(@ConditionID, (SELECT TOP 1 ConditionId FROM dbo.Condition ORDER BY ConditionId ASC)),
-                                            NULL, NULL, @Remarks,
-                                            0, 'Hardware', GETDATE(), 1, 0;
-                                        SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-                                    using (var cmd = new SqlCommand(sqlInsertITItem, con, transaction))
-                                    {
-                                        cmd.Parameters.AddWithValue("@Name",             $"{modelNumber} - Returned Empty");
-                                        cmd.Parameters.AddWithValue("@Description",      $"Returned empty cartridge (non-refillable) - IT custody - Request #{reqId}");
-                                        cmd.Parameters.AddWithValue("@Quantity",          totalIssuedQty);
-                                        cmd.Parameters.AddWithValue("@CartridgeModelId",  cartridgeModelId);
-                                        cmd.Parameters.AddWithValue("@ModelNumber",       modelNumber);
-                                        cmd.Parameters.AddWithValue("@ConditionID",       conditionId > 0 ? (object)conditionId : DBNull.Value);
-                                        cmd.Parameters.AddWithValue("@Remarks",           $"Non-refillable - IT custody - Request #{reqId}");
-                                        cmd.Parameters.AddWithValue("@CreatedBy",         userId);
-                                        var idResult = cmd.ExecuteScalar();
-                                        itCustodyItemId = idResult != null && idResult != DBNull.Value
-                                            ? Convert.ToInt32(idResult) : (int?)null;
-                                    }
-                                }
-
-                                // INSERT one EmptyCartridge row per physical unit returned.
-                                // VendorId is NULL — vendor is unknown at the empty stage and is
-                                // assigned only when a refill batch is created by Purchasing.
-                                // VendorBatchId is NULL — batch is assigned manually after creation.
-                                // CRITICAL: Loop totalIssuedQty times (NOT returnedQuantity)
-                                // RefillStatus is 'For Refill' only for refillable models; NULL otherwise.
-                                // SourceItemId links each non-refillable unit to its IT custody Item row.
-                                const string sqlInsertEmpty = @"
-                                    INSERT INTO dbo.EmptyCartridge
-                                        (CartridgeModelId, VendorId, VendorBatchId, Quantity, ConditionId, Status,
-                                         RefillStatus, ReturnedAt, ReturnedBy, ReqId, EmpId, BranchId, DeptId,
-                                         Remarks, CreatedDate, CreatedBy, SourceItemId, ConditionStatus)
-                                    VALUES
-                                        (@CartridgeModelId, NULL, NULL, 1, @ConditionId, 'Pending',
-                                         @RefillStatus, GETDATE(), @ReturnedBy, @ReqId, @EmpId, @BranchId, @DeptId,
-                                         @Remarks, GETDATE(), @CreatedBy, @SourceItemId, @ConditionStatus)";
-
                                 bool hasSplit2 = totalIssuedQty > 0
                                     && (goodEmptyQty + damagedEmptyQty) == totalIssuedQty;
 
@@ -2815,34 +2744,9 @@ namespace Yakult.Inventory.App.Repositories
                                           (totalIssuedQty, conditionId, "GOOD")
                                       };
 
-                                foreach (var (batchQty2, batchCondId2, batchCondStatus2) in emptyBatches2)
-                                {
-                                    for (int i = 0; i < batchQty2; i++)
-                                    {
-                                        using (var cmd = new SqlCommand(sqlInsertEmpty, con, transaction))
-                                        {
-                                            cmd.Parameters.AddWithValue("@CartridgeModelId", cartridgeModelId);
-                                            cmd.Parameters.AddWithValue("@ConditionId", batchCondId2 == 0 ? (object)DBNull.Value : batchCondId2);
-                                            cmd.Parameters.AddWithValue("@ConditionStatus", (object)batchCondStatus2 ?? DBNull.Value);
-                                            cmd.Parameters.AddWithValue("@RefillStatus", isRefillableModel && batchCondStatus2 != "DAMAGED" ? (object)"For Refill" : DBNull.Value);
-                                            cmd.Parameters.AddWithValue("@ReturnedBy", empId > 0 ? (object)empId : DBNull.Value);
-                                            cmd.Parameters.AddWithValue("@ReqId", reqId);
-                                            cmd.Parameters.AddWithValue("@EmpId", empId > 0 ? (object)empId : DBNull.Value);
-                                            cmd.Parameters.AddWithValue("@BranchId", (object)branchId ?? DBNull.Value);
-                                            cmd.Parameters.AddWithValue("@DeptId", (object)deptId ?? DBNull.Value);
-                                            cmd.Parameters.AddWithValue("@Remarks", $"Empty returned - Request #{reqId}");
-                                            cmd.Parameters.AddWithValue("@CreatedBy", userId);
-                                            cmd.Parameters.AddWithValue("@SourceItemId", itCustodyItemId.HasValue ? (object)itCustodyItemId.Value : DBNull.Value);
-                                            cmd.ExecuteNonQuery();
-                                        }
-                                    }
-                                }
-
-                                // Record movement for audit trail
-                                RecordCartridgeMovement(
-                                    con, transaction, returnedItemIds[0], MovementType.ReturnForRefill,
-                                    totalIssuedQty, empId, branchId, deptId, "EMPTY",
-                                    reqId, userId, $"Returned {totalIssuedQty} Empty Cartridge(s) - Request #{reqId}");
+                                RecordReturnedEmpties(
+                                    con, transaction, reqId, cartridgeModelId, emptyBatches2,
+                                    returnedItemIds[0], empId, branchId, deptId, userId, conditionId);
                             }
                         }
 
@@ -3117,6 +3021,438 @@ namespace Yakult.Inventory.App.Repositories
                         throw;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Records returned empty cartridges for a fulfilled request: one dbo.EmptyCartridge row
+        /// per unit (Good units of refillable models are queued 'For Refill'), an IT custody Item
+        /// for non-refillable models, and a ReturnForRefill movement anchored on
+        /// <paramref name="anchorItemId"/>. Shared by the Cartridge Exchange
+        /// (FulfillCartridgeExchangeByCondition) and cartridge lines of mixed submissions
+        /// (IssueMixedCartridgeLine) so both return empties exactly the same way.
+        /// </summary>
+        private void RecordReturnedEmpties(
+            SqlConnection con,
+            SqlTransaction transaction,
+            int reqId,
+            int cartridgeModelId,
+            IEnumerable<(int qty, int condId, string condStatus)> batches,
+            int anchorItemId,
+            int empId,
+            int? branchId,
+            int? deptId,
+            int userId,
+            int emptyConditionId)
+        {
+            var batchList = batches.Where(b => b.qty > 0).ToList();
+            int totalQty = batchList.Sum(b => b.qty);
+            if (cartridgeModelId <= 0 || totalQty <= 0)
+                return;
+
+            // Authoritative CartridgeModel.IsRefillable flag, plus ModelNumber for the IT
+            // inventory row (non-refillable path).
+            bool isRefillableModel = false;
+            string modelNumber = string.Empty;
+            using (var cmd = new SqlCommand("SELECT IsRefillable, ModelNumber FROM dbo.CartridgeModel WHERE CartridgeModelId = @ModelId", con, transaction))
+            {
+                cmd.Parameters.AddWithValue("@ModelId", cartridgeModelId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        isRefillableModel = !reader.IsDBNull(0) && reader.GetBoolean(0);
+                        modelNumber = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                    }
+                }
+            }
+
+            // Non-refillable models: create the IT custody Item FIRST so its ItemId
+            // can be written into SourceItemId on each EmptyCartridge row.  The
+            // dispose/sell workflow later uses SourceItemId to find the inventory row
+            // to decrement and to anchor the Inventory / CartridgeMovement records.
+            int? itCustodyItemId = null;
+            if (!isRefillableModel)
+            {
+                const string sqlInsertITItem = @"
+                    INSERT INTO dbo.Item
+                        (Name, Description, Active, UnitOfMeasure, StockOnHand,
+                         DateCreated, CreatedBy, DateModified, ModifiedBy,
+                         Category, CategoryId, ModelNumber, CartridgeModelId,
+                         ConditionID, VendorId, RefillStatus, Remarks,
+                         Amount, ItemType, StartDate, AffectsInventory, IsTrackedAsset)
+                    SELECT
+                        @Name, @Description, 1, 'Unit', @Quantity,
+                        GETDATE(), @CreatedBy, GETDATE(), @CreatedBy,
+                        'Cartridge',
+                        (SELECT TOP 1 CategoryId FROM dbo.Item WHERE Category = 'Cartridge' AND CategoryId IS NOT NULL),
+                        @ModelNumber, @CartridgeModelId,
+                        COALESCE(@ConditionID, (SELECT TOP 1 ConditionId FROM dbo.Condition ORDER BY ConditionId ASC)),
+                        NULL, NULL, @Remarks,
+                        0, 'Hardware', GETDATE(), 1, 0;
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                using (var cmd = new SqlCommand(sqlInsertITItem, con, transaction))
+                {
+                    cmd.Parameters.AddWithValue("@Name",             $"{modelNumber} - Returned Empty");
+                    cmd.Parameters.AddWithValue("@Description",      $"Returned empty cartridge (non-refillable) - IT custody - Request #{reqId}");
+                    cmd.Parameters.AddWithValue("@Quantity",          totalQty);
+                    cmd.Parameters.AddWithValue("@CartridgeModelId",  cartridgeModelId);
+                    cmd.Parameters.AddWithValue("@ModelNumber",       modelNumber);
+                    cmd.Parameters.AddWithValue("@ConditionID",       emptyConditionId > 0 ? (object)emptyConditionId : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Remarks",           $"Non-refillable - IT custody - Request #{reqId}");
+                    cmd.Parameters.AddWithValue("@CreatedBy",         userId);
+                    var idResult = cmd.ExecuteScalar();
+                    itCustodyItemId = idResult != null && idResult != DBNull.Value
+                        ? Convert.ToInt32(idResult) : (int?)null;
+                }
+            }
+
+            // INSERT one EmptyCartridge row per physical unit returned.
+            // VendorId is NULL — vendor is unknown at the empty stage and is
+            // assigned only when a refill batch is created by Purchasing.
+            // VendorBatchId is NULL — batch is assigned manually after creation.
+            // RefillStatus is 'For Refill' only for refillable models; NULL otherwise.
+            // SourceItemId links each non-refillable unit to its IT custody Item row.
+            const string sqlInsertEmpty = @"
+                INSERT INTO dbo.EmptyCartridge
+                    (CartridgeModelId, VendorId, VendorBatchId, Quantity, ConditionId, Status,
+                     RefillStatus, ReturnedAt, ReturnedBy, ReqId, EmpId, BranchId, DeptId,
+                     Remarks, CreatedDate, CreatedBy, SourceItemId, ConditionStatus)
+                VALUES
+                    (@CartridgeModelId, NULL, NULL, 1, @ConditionId, 'Pending',
+                     @RefillStatus, GETDATE(), @ReturnedBy, @ReqId, @EmpId, @BranchId, @DeptId,
+                     @Remarks, GETDATE(), @CreatedBy, @SourceItemId, @ConditionStatus)";
+
+            foreach (var (batchQty, batchCondId, batchCondStatus) in batchList)
+            {
+                for (int i = 0; i < batchQty; i++)
+                {
+                    using (var cmd = new SqlCommand(sqlInsertEmpty, con, transaction))
+                    {
+                        cmd.Parameters.AddWithValue("@CartridgeModelId", cartridgeModelId);
+                        cmd.Parameters.AddWithValue("@ConditionId", batchCondId == 0 ? (object)DBNull.Value : batchCondId);
+                        cmd.Parameters.AddWithValue("@ConditionStatus", (object)batchCondStatus ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@RefillStatus", isRefillableModel && batchCondStatus != "DAMAGED" ? (object)"For Refill" : DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ReturnedBy", empId > 0 ? (object)empId : DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ReqId", reqId);
+                        cmd.Parameters.AddWithValue("@EmpId", empId > 0 ? (object)empId : DBNull.Value);
+                        cmd.Parameters.AddWithValue("@BranchId", (object)branchId ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@DeptId", (object)deptId ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Remarks", $"Empty returned - Request #{reqId}");
+                        cmd.Parameters.AddWithValue("@CreatedBy", userId);
+                        cmd.Parameters.AddWithValue("@SourceItemId", itCustodyItemId.HasValue ? (object)itCustodyItemId.Value : DBNull.Value);
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+
+            // Record movement for audit trail
+            RecordCartridgeMovement(
+                con, transaction, anchorItemId, MovementType.ReturnForRefill,
+                totalQty, empId, branchId, deptId, "EMPTY",
+                reqId, userId, $"Returned {totalQty} Empty Cartridge(s) - Request #{reqId}");
+        }
+
+        // ── Cartridge lines inside MIXED portal submissions ──────────────────────────
+        //
+        // A mixed submission (cartridges plus Ink / Toner / Printhead) belongs to Request & Set
+        // Management and is tracked by dbo.Request.IssuedQty, not by the Cartridge Management
+        // queue. Its cartridge lines are still cartridge EXCHANGES though: IT issues Brand New /
+        // Refilled units picked FIFO by condition, every unit gets a CartridgeMovement, and the
+        // requester's empties come back as dbo.EmptyCartridge rows, the same as the Cartridge
+        // Exchange. The differences are process only: the issued quantity goes to
+        // Request.IssuedQty, any shortfall stays pending in Request & Set Management (no
+        // UnfulfilledCartridgeExchange row), and the Set is the submission's ordinary Set.
+
+        private const string SqlResolveMixedCartridgeLine = @"
+            SELECT
+                r.ReqId,
+                r.Quantity,
+                ISNULL(r.IssuedQty, 0) AS IssuedQty,
+                CAST(CASE WHEN i.Category = 'Cartridge'
+                           AND r.WorkflowType = 'RequestSetManagement'
+                           AND r.SubmissionSessionId IS NOT NULL
+                          THEN 1 ELSE 0 END AS BIT) AS IsExchangeLine,
+                COALESCE(cm_tag.CartridgeModelId, i.CartridgeModelId) AS CartridgeModelId,
+                COALESCE(cm_tag.ModelNumber, cm_item.ModelNumber, NULLIF(i.ModelNumber, ''), i.Name) AS ModelNumber
+            FROM dbo.Request r
+            INNER JOIN dbo.Item i ON i.ItemId = r.ItemId
+            LEFT JOIN dbo.CartridgeModel cm_item ON cm_item.CartridgeModelId = i.CartridgeModelId
+            -- The model the requester picked, from the [MODEL:xxx] tag the portal writes. The
+            -- resolved Item can be a fallback row when that model has no Item of its own.
+            OUTER APPLY (
+                SELECT CASE
+                    WHEN CHARINDEX('[MODEL:', r.Description) > 0
+                     AND CHARINDEX(']', r.Description, CHARINDEX('[MODEL:', r.Description) + 7) > 0
+                    THEN LTRIM(RTRIM(SUBSTRING(
+                            r.Description,
+                            CHARINDEX('[MODEL:', r.Description) + 7,
+                            CHARINDEX(']', r.Description, CHARINDEX('[MODEL:', r.Description) + 7)
+                                - (CHARINDEX('[MODEL:', r.Description) + 7))))
+                END AS Tag
+            ) t
+            OUTER APPLY (
+                SELECT TOP 1 cm.CartridgeModelId, cm.ModelNumber
+                FROM dbo.CartridgeModel cm
+                WHERE LTRIM(RTRIM(cm.ModelNumber)) = COALESCE(
+                          (SELECT TOP 1 NULLIF(LTRIM(RTRIM(crm.CartridgeModel)), '')
+                           FROM dbo.CartridgeRequestModel crm
+                           WHERE crm.ReqId = r.ReqId
+                           ORDER BY crm.RequestModelId),
+                          t.Tag)
+                ORDER BY cm.IsActive DESC, cm.CartridgeModelId
+            ) cm_tag
+            WHERE r.ReqId = @ReqId;
+
+            -- Declared empties: the requester's Good / Damaged counts, kept in
+            -- dbo.CartridgeRequestModel for every portal cartridge line (cartridge-only or mixed).
+            SELECT ISNULL(SUM(crm.GoodEmptyQty), 0), ISNULL(SUM(crm.DamagedEmptyQty), 0)
+            FROM dbo.CartridgeRequestModel crm
+            WHERE crm.ReqId = @ReqId;
+
+            -- Empties already returned by earlier partial fulfillments of this line.
+            SELECT
+                ISNULL(SUM(CASE WHEN ec.ConditionStatus = 'DAMAGED' THEN ec.Quantity ELSE 0 END), 0),
+                ISNULL(SUM(CASE WHEN ec.ConditionStatus = 'DAMAGED' THEN 0 ELSE ec.Quantity END), 0)
+            FROM dbo.EmptyCartridge ec
+            WHERE ec.ReqId = @ReqId;";
+
+        /// <summary>
+        /// Reads what is needed to fulfill one cartridge line of a mixed portal submission:
+        /// its requested model, pending quantity, declared and already-returned empties, and the
+        /// issuable Brand New / Refilled stock of that model. Returns null when the request does
+        /// not exist; check <see cref="MixedCartridgeLineInfo.IsExchangeLine"/> before using it.
+        /// </summary>
+        public MixedCartridgeLineInfo GetMixedCartridgeLineInfo(int reqId)
+        {
+            MixedCartridgeLineInfo info;
+            using (var con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+                info = ReadMixedCartridgeLine(con, null, reqId);
+            }
+
+            if (info != null && info.IsExchangeLine && info.CartridgeModelId.HasValue)
+            {
+                info.AvailableBrandNew = Math.Max(0, GetAvailableIssuableStockByCondition(info.CartridgeModelId, "Brand New"));
+                info.AvailableRefilled = Math.Max(0, GetAvailableIssuableStockByCondition(info.CartridgeModelId, "Refilled"));
+            }
+            return info;
+        }
+
+        private static MixedCartridgeLineInfo ReadMixedCartridgeLine(SqlConnection con, SqlTransaction transaction, int reqId)
+        {
+            using (var cmd = new SqlCommand(SqlResolveMixedCartridgeLine, con, transaction))
+            {
+                cmd.Parameters.AddWithValue("@ReqId", reqId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read())
+                        return null;
+
+                    var info = new MixedCartridgeLineInfo
+                    {
+                        ReqId            = reader.GetInt32(0),
+                        Quantity         = reader.GetInt32(1),
+                        IssuedQty        = reader.GetInt32(2),
+                        IsExchangeLine   = reader.GetBoolean(3),
+                        CartridgeModelId = reader.IsDBNull(4) ? (int?)null : reader.GetInt32(4),
+                        ModelNumber      = reader.IsDBNull(5) ? null : reader.GetString(5)
+                    };
+
+                    if (reader.NextResult() && reader.Read())
+                    {
+                        info.DeclaredGood    = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                        info.DeclaredDamaged = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+                    }
+                    if (reader.NextResult() && reader.Read())
+                    {
+                        info.ReturnedDamaged = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                        info.ReturnedGood    = reader.IsDBNull(1) ? 0 : reader.GetInt32(1);
+                    }
+                    return info;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Fulfills a cartridge line of a mixed portal submission the way the Cartridge Exchange
+        /// does: picks Brand New / Refilled units FIFO, deducts their stock, records an Issue
+        /// movement per unit, and records one returned empty per issued unit (split by the
+        /// requester's declared Good / Damaged counts). Adds the issued quantity to
+        /// dbo.Request.IssuedQty. All in one transaction; throws if stock or the pending quantity
+        /// changed since the screen was loaded.
+        /// </summary>
+        public void IssueMixedCartridgeLine(int reqId, int issuedBrandNewQty, int issuedRefilledQty, int userId, string remarks)
+        {
+            if (issuedBrandNewQty < 0 || issuedRefilledQty < 0)
+                throw new ArgumentException("Issued quantities cannot be negative.");
+            int totalIssued = issuedBrandNewQty + issuedRefilledQty;
+            if (totalIssued <= 0)
+                return;
+
+            var preview = GetMixedCartridgeLineInfo(reqId)
+                ?? throw new InvalidOperationException($"Request #{reqId} was not found.");
+            if (!preview.IsExchangeLine)
+                throw new InvalidOperationException($"Request #{reqId} is not a cartridge line of a mixed portal submission.");
+            if (!preview.CartridgeModelId.HasValue)
+                throw new InvalidOperationException(
+                    $"Request #{reqId}: the cartridge model '{preview.ModelNumber}' is not registered in Cartridge Models, so no stock can be issued for it.");
+
+            // Same FIFO unit selection the Cartridge Exchange uses.
+            var bnIds = GetIssuableItemIdsByCondition(preview.CartridgeModelId, "Brand New", issuedBrandNewQty);
+            var rfIds = GetIssuableItemIdsByCondition(preview.CartridgeModelId, "Refilled", issuedRefilledQty);
+            if (bnIds.Count < issuedBrandNewQty)
+                throw new InvalidOperationException($"Only {bnIds.Count} Brand New {preview.ModelNumber} in stock (tried to issue {issuedBrandNewQty}).");
+            if (rfIds.Count < issuedRefilledQty)
+                throw new InvalidOperationException($"Only {rfIds.Count} Refilled {preview.ModelNumber} in stock (tried to issue {issuedRefilledQty}).");
+
+            using (var con = new SqlConnection(_connectionString))
+            {
+                con.Open();
+                using (var transaction = con.BeginTransaction())
+                {
+                    try
+                    {
+                        // Lock the row and re-check the pending quantity inside the transaction
+                        // so two IT users cannot over-issue the same line.
+                        using (var cmd = new SqlCommand(
+                            "SELECT Quantity, ISNULL(IssuedQty, 0) FROM dbo.Request WITH (UPDLOCK, ROWLOCK) WHERE ReqId = @ReqId",
+                            con, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@ReqId", reqId);
+                            using (var reader = cmd.ExecuteReader())
+                            {
+                                if (!reader.Read())
+                                    throw new InvalidOperationException($"Request #{reqId} was not found.");
+                                int pending = reader.GetInt32(0) - reader.GetInt32(1);
+                                if (totalIssued > pending)
+                                    throw new InvalidOperationException(
+                                        $"Request #{reqId} only has {Math.Max(0, pending)} unit(s) pending (tried to issue {totalIssued}). Refresh and try again.");
+                            }
+                        }
+
+                        var line = ReadMixedCartridgeLine(con, transaction, reqId);
+
+                        // Requester / branch / department, resolved the same way as the Cartridge Exchange.
+                        int empId = 0;
+                        int? branchId = null;
+                        int? deptId = null;
+                        const string sqlGetRequest = @"
+                            SELECT
+                                COALESCE(
+                                    (SELECT e1.EmpId FROM dbo.Employee e1 WHERE e1.EmpId = r.EmpId),
+                                    (SELECT e2.EmpId FROM dbo.Employee e2 WHERE e2.EmpId = r.ReceivedById),
+                                    (SELECT TOP 1 u.EmpId FROM dbo.[User] u WHERE u.UserId = @UserId AND u.EmpId IS NOT NULL),
+                                    0
+                                ) AS ResolvedEmpId,
+                                COALESCE(e.BranchId, r.BranchId) AS BranchId,
+                                COALESCE(e.DeptId,   r.DeptId)   AS DeptId
+                            FROM dbo.Request r
+                            LEFT JOIN dbo.Employee e ON r.EmpId = e.EmpId
+                            WHERE r.ReqId = @ReqId";
+
+                        using (var cmd = new SqlCommand(sqlGetRequest, con, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@ReqId", reqId);
+                            cmd.Parameters.AddWithValue("@UserId", userId);
+                            using (var reader = cmd.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    empId    = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+                                    branchId = reader.IsDBNull(1) ? (int?)null : reader.GetInt32(1);
+                                    deptId   = reader.IsDBNull(2) ? (int?)null : reader.GetInt32(2);
+                                }
+                            }
+                        }
+
+                        foreach (var itemId in bnIds)
+                        {
+                            DecreaseItemStock(con, transaction, itemId, 1, userId);
+                            RecordCartridgeMovement(
+                                con, transaction, itemId, MovementType.Issue, 1,
+                                empId, branchId, deptId, "Brand New",
+                                reqId, userId, $"Issued Brand New - Request #{reqId}");
+                        }
+
+                        foreach (var itemId in rfIds)
+                        {
+                            DecreaseItemStock(con, transaction, itemId, 1, userId);
+                            RecordCartridgeMovement(
+                                con, transaction, itemId, MovementType.Issue, 1,
+                                empId, branchId, deptId, "Refilled",
+                                reqId, userId, $"Issued Refilled - Request #{reqId}");
+                        }
+
+                        // One empty comes back per full cartridge issued. Use up the declared Good
+                        // empties first, then the Damaged ones; anything beyond what was declared is
+                        // recorded like an undeclared Cartridge Exchange (EMPTY condition, GOOD).
+                        var (goodConditionId, damagedConditionId, emptyConditionId) = GetEmptyConditionIds(con, transaction);
+                        int goodNow    = Math.Min(totalIssued, Math.Max(0, line.DeclaredGood - line.ReturnedGood));
+                        int damagedNow = Math.Min(totalIssued - goodNow, Math.Max(0, line.DeclaredDamaged - line.ReturnedDamaged));
+                        int plainNow   = totalIssued - goodNow - damagedNow;
+
+                        var batches = new (int qty, int condId, string condStatus)[]
+                        {
+                            (goodNow,    goodConditionId    > 0 ? goodConditionId    : emptyConditionId, "GOOD"),
+                            (damagedNow, damagedConditionId > 0 ? damagedConditionId : emptyConditionId, "DAMAGED"),
+                            (plainNow,   emptyConditionId,                                               "GOOD")
+                        };
+
+                        int anchorItemId = bnIds.Count > 0 ? bnIds[0] : rfIds[0];
+                        RecordReturnedEmpties(
+                            con, transaction, reqId, preview.CartridgeModelId.Value, batches,
+                            anchorItemId, empId, branchId, deptId, userId, emptyConditionId);
+
+                        const string sqlIssue = @"
+                            UPDATE dbo.Request
+                            SET IssuedQty     = ISNULL(IssuedQty, 0) + @Issued,
+                                Remarks       = ISNULL(@Remarks, Remarks),
+                                DateModified  = (SYSDATETIMEOFFSET() AT TIME ZONE 'Singapore Standard Time'),
+                                ModifiedBy    = @ModifiedBy
+                            WHERE ReqId = @ReqId";
+
+                        using (var cmd = new SqlCommand(sqlIssue, con, transaction))
+                        {
+                            cmd.Parameters.AddWithValue("@ReqId", reqId);
+                            cmd.Parameters.AddWithValue("@Issued", totalIssued);
+                            cmd.Parameters.AddWithValue("@ModifiedBy", userId);
+                            cmd.Parameters.AddWithValue("@Remarks", string.IsNullOrWhiteSpace(remarks) ? (object)DBNull.Value : remarks.Trim());
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        private static (int good, int damaged, int empty) GetEmptyConditionIds(SqlConnection con, SqlTransaction transaction)
+        {
+            const string sql = @"
+                SELECT
+                    MAX(CASE WHEN ConditionName = 'Good'    THEN ConditionId END),
+                    MAX(CASE WHEN ConditionName = 'Damaged' THEN ConditionId END),
+                    MAX(CASE WHEN ConditionName = 'EMPTY'   THEN ConditionId END)
+                FROM dbo.Condition
+                WHERE ConditionName IN ('Good', 'Damaged', 'EMPTY')";
+
+            using (var cmd = new SqlCommand(sql, con, transaction))
+            using (var reader = cmd.ExecuteReader())
+            {
+                if (!reader.Read())
+                    return (0, 0, 0);
+                return (
+                    reader.IsDBNull(0) ? 0 : reader.GetInt32(0),
+                    reader.IsDBNull(1) ? 0 : reader.GetInt32(1),
+                    reader.IsDBNull(2) ? 0 : reader.GetInt32(2));
             }
         }
 
@@ -3572,6 +3908,29 @@ namespace Yakult.Inventory.App.Repositories
     /// <summary>
     /// Represents a fulfilled portal Set shown on the Send Notifications page.
     /// </summary>
+    /// <summary>
+    /// A cartridge line of a mixed portal submission, as fulfilled on Mixed Request Exchange /
+    /// Unfulfilled / Partially Fulfilled Requests. See CartridgeManagementRepository.IssueMixedCartridgeLine.
+    /// </summary>
+    public class MixedCartridgeLineInfo
+    {
+        public int    ReqId            { get; set; }
+        public int    Quantity         { get; set; }
+        public int    IssuedQty        { get; set; }
+        /// <summary>Cartridge item, Request and Set Management workflow, portal submission.</summary>
+        public bool   IsExchangeLine   { get; set; }
+        public int?   CartridgeModelId { get; set; }
+        public string ModelNumber      { get; set; }
+        public int    DeclaredGood     { get; set; }
+        public int    DeclaredDamaged  { get; set; }
+        public int    ReturnedGood     { get; set; }
+        public int    ReturnedDamaged  { get; set; }
+        public int    AvailableBrandNew { get; set; }
+        public int    AvailableRefilled { get; set; }
+
+        public int PendingQty => Math.Max(0, Quantity - IssuedQty);
+    }
+
     public class FulfilledSetNotificationDto
     {
         public int    SetId              { get; set; }

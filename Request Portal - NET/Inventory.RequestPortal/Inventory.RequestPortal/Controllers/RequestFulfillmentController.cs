@@ -15,14 +15,17 @@ namespace Inventory.RequestPortal.Controllers
     public class RequestFulfillmentController : Controller
     {
         private readonly IRequestFulfillmentRepository _repository;
+        private readonly ICartridgeExchangeRepository _cartridgeRepository;
         private readonly IActivityLogRepository _activityLog;
 
         public RequestFulfillmentController(
             IRequestFulfillmentRepository repository,
+            ICartridgeExchangeRepository cartridgeRepository,
             IActivityLogRepository activityLog)
         {
-            _repository  = repository;
-            _activityLog = activityLog;
+            _repository          = repository;
+            _cartridgeRepository = cartridgeRepository;
+            _activityLog         = activityLog;
         }
 
         private UserSessionModel? GetCurrentUser()
@@ -153,7 +156,7 @@ namespace Inventory.RequestPortal.Controllers
             foreach (var row in siblings)
             {
                 int available = await _repository.GetItemStockOnHandAsync(row.ItemId);
-                lines.Add(new FulfillRequestLineViewModel
+                var line = new FulfillRequestLineViewModel
                 {
                     ReqId          = row.ReqId,
                     ItemId         = row.ItemId,
@@ -161,7 +164,25 @@ namespace Inventory.RequestPortal.Controllers
                     Quantity       = row.Quantity,
                     IssuedQty      = row.IssuedQty,
                     AvailableStock = available
-                });
+                };
+
+                // Cartridge line of a mixed submission: issued as a cartridge exchange.
+                var cartridge = await _cartridgeRepository.GetMixedCartridgeLineInfoAsync(row.ReqId);
+                if (cartridge != null && cartridge.IsExchangeLine)
+                {
+                    line.IsExchangeLine  = true;
+                    line.ModelRegistered = cartridge.CartridgeModelId.HasValue;
+                    line.ModelNumber     = cartridge.ModelNumber;
+                    line.AvailBrandNew   = cartridge.AvailableBrandNew;
+                    line.AvailRefilled   = cartridge.AvailableRefilled;
+                    line.AvailableStock  = cartridge.AvailableBrandNew + cartridge.AvailableRefilled;
+                    line.DeclaredGood    = cartridge.DeclaredGood;
+                    line.DeclaredDamaged = cartridge.DeclaredDamaged;
+                    line.ReturnedGood    = cartridge.ReturnedGood;
+                    line.ReturnedDamaged = cartridge.ReturnedDamaged;
+                }
+
+                lines.Add(line);
             }
 
             var form = new FulfillRequestFormViewModel
@@ -190,10 +211,36 @@ namespace Inventory.RequestPortal.Controllers
             var freshById   = unfulfilled.Concat(partial).ToDictionary(r => r.ReqId);
 
             int fulfilledCount = 0;
+            var errors = new List<string>();
             foreach (var line in model.Lines)
             {
-                if (line.IssueQty <= 0) continue;
                 if (!freshById.TryGetValue(line.ReqId, out var fresh)) continue;
+
+                // Cartridge line of a mixed submission: Brand New / Refilled against the model's
+                // own stock, empties recorded as returned (same as the Cartridge Exchange).
+                var cartridge = await _cartridgeRepository.GetMixedCartridgeLineInfoAsync(fresh.ReqId);
+                if (cartridge != null && cartridge.IsExchangeLine)
+                {
+                    int bn = Math.Max(0, Math.Min(line.BrandNewQty, Math.Min(cartridge.AvailableBrandNew, cartridge.PendingQty)));
+                    int rf = Math.Max(0, Math.Min(line.RefilledQty, Math.Min(cartridge.AvailableRefilled, cartridge.PendingQty - bn)));
+                    if (bn + rf <= 0) continue;
+
+                    try
+                    {
+                        string? cartridgeRemarks = string.IsNullOrWhiteSpace(line.Remarks) ? null : line.Remarks.Trim();
+                        await _cartridgeRepository.IssueMixedCartridgeLineAsync(fresh.ReqId, bn, rf, userId, cartridgeRemarks);
+                        _activityLog.LogActivity(userId, "Update", "Request", fresh.ReqId,
+                            $"[Portal] Issued {bn + rf} more unit(s) for Request #{fresh.ReqId} ({bn} Brand New, {rf} Refilled, {bn + rf} empties returned)");
+                        fulfilledCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add($"Req #{fresh.ReqId}: {ex.Message}");
+                    }
+                    continue;
+                }
+
+                if (line.IssueQty <= 0) continue;
 
                 int pendingQty  = Math.Max(0, fresh.Quantity - fresh.IssuedQty);
                 int available   = await _repository.GetItemStockOnHandAsync(fresh.ItemId);
@@ -202,15 +249,24 @@ namespace Inventory.RequestPortal.Controllers
                 if (issueQty <= 0) continue;
 
                 string? remarks = string.IsNullOrWhiteSpace(line.Remarks) ? null : line.Remarks.Trim();
-                await _repository.FulfillRequestAsync(fresh.ReqId, issueQty, userId, remarks);
-                _activityLog.LogActivity(userId, "Update", "Request", fresh.ReqId,
-                    $"[Portal] Issued {issueQty} more unit(s) for Request #{fresh.ReqId}");
-                fulfilledCount++;
+                try
+                {
+                    await _repository.FulfillRequestAsync(fresh.ReqId, issueQty, userId, remarks);
+                    _activityLog.LogActivity(userId, "Update", "Request", fresh.ReqId,
+                        $"[Portal] Issued {issueQty} more unit(s) for Request #{fresh.ReqId}");
+                    fulfilledCount++;
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"Req #{fresh.ReqId}: {ex.Message}");
+                }
             }
 
             TempData["SuccessMessage"] = fulfilledCount > 0
                 ? $"Fulfillment recorded for {fulfilledCount} line(s)."
                 : "No quantities were issued.";
+            if (errors.Count > 0)
+                TempData["ErrorMessage"] = "Some lines could not be issued: " + string.Join(" | ", errors);
 
             return RedirectToAction("Unfulfilled");
         }

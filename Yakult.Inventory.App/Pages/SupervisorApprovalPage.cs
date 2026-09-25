@@ -1255,8 +1255,12 @@ namespace Yakult.Inventory.App.Pages
             if (string.IsNullOrWhiteSpace(raw)) return "(no cartridge details)";
             var parsed = ParseModelsJson(raw);
             if (parsed.Count == 0) return raw.Trim();   // plain-text fallback
+            // Ink / Toner / Printhead lines of a mixed request return no empties, so only show the
+            // Good / Damaged part when some were declared (same as AuthorizationDetailDialog).
             return string.Join("\r\n", parsed.Select((m, i) =>
-                $"{i + 1}. {m.Model}  –  Qty: {m.Qty}  (Submitted Good: {m.Good}, Submitted Damaged: {m.Damaged})"));
+                m.Good > 0 || m.Damaged > 0
+                    ? $"{i + 1}. {m.Model}  –  Qty: {m.Qty}  (Submitted Good: {m.Good}, Submitted Damaged: {m.Damaged})"
+                    : $"{i + 1}. {m.Model}  –  Qty: {m.Qty}"));
         }
 
         /// <summary>
@@ -1298,15 +1302,15 @@ namespace Yakult.Inventory.App.Pages
             Append($"{signerCo} \u2013 {signerDept}, {signerBr}", true);
             Append(",\r\n");
 
-            // Line 3: "hereby authorize the Cartridge Refill Request/s"
-            Append("hereby authorize the Cartridge Refill Request/s\r\n");
+            // Line 3: "hereby authorize the Consumable/s Request/s"
+            Append("hereby authorize the Consumable/s Request/s\r\n");
 
             // Line 4: "submitted by [REQUESTER] ([POSITION])"
             Append("submitted by ");
             Append(requesterName, true);
             Append(" (");
             Append(requesterPos, true);
-            Append(") for the following cartridges:");
+            Append(") for the following consumable/s:");
 
             // Cartridge table — populate the DataGridView below the prose
             _dgvPreviewModels.Rows.Clear();
@@ -1318,7 +1322,13 @@ namespace Yakult.Inventory.App.Pages
             else
             {
                 foreach (var (model, qty, good, damaged) in parsed)
-                    _dgvPreviewModels.Rows.Add(model, qty, good, damaged);
+                {
+                    // No empties declared (e.g. Ink / Toner / Printhead lines): show a dash, not 0 / 0.
+                    bool hasEmpties = good > 0 || damaged > 0;
+                    _dgvPreviewModels.Rows.Add(model, qty,
+                        hasEmpties ? (object)good    : "—",
+                        hasEmpties ? (object)damaged : "—");
+                }
             }
             // Resize grid height to fit rows exactly
             int rowH  = _dgvPreviewModels.RowTemplate.Height > 0 ? _dgvPreviewModels.RowTemplate.Height : 22;

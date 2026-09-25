@@ -21,6 +21,18 @@ namespace Inventory.RequestPortal.Repositories
             int issuedBrandNewQty, int issuedRefilledQty,
             int userId, int? requestModelId, string? fulfillmentRemarks);
 
+        /// <summary>
+        /// Cartridge line of a MIXED portal submission: model, pending qty, Brand New / Refilled
+        /// stock and declared / already-returned empties. Null when the request does not exist.
+        /// </summary>
+        Task<MixedCartridgeLineInfo?> GetMixedCartridgeLineInfoAsync(int reqId);
+
+        /// <summary>
+        /// Issues a mixed-submission cartridge line like the Cartridge Exchange (FIFO units by
+        /// condition, movements, returned empties) and adds the total to Request.IssuedQty.
+        /// </summary>
+        Task IssueMixedCartridgeLineAsync(int reqId, int issuedBrandNewQty, int issuedRefilledQty, int userId, string? remarks);
+
         Task<List<FulfilledCartridgeRowDto>> GetFulfilledCartridgeHistoryAsync();
         Task<FulfilledCartridgeDetailDto?> GetFulfilledCartridgeDetailAsync(int setId);
 

@@ -20,7 +20,10 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
     public class MixedLineViewModel : ViewModelBase
     {
         private int    _issueQty;
+        private int    _issueBrandNewQty;
+        private int    _issueRefilledQty;
         private string _remarks;
+        private MixedCartridgeLineInfo _cartridge;
 
         public MixedLineViewModel(MixedRequestLineDto dto, MixedGroupViewModel group)
         {
@@ -41,17 +44,139 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
         public DateTime DateCreated => Dto.DateCreated;
         public bool     IsCartridge => string.Equals(Dto.Category, "Cartridge", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>Most that can be issued now: what is still pending, capped by stock on hand.</summary>
-        public int MaxIssue => Math.Max(0, Math.Min(PendingQty, StockOnHand));
+        // ── Cartridge exchange (cartridge lines only) ────────────────────────────
+        // A cartridge line is issued like the Cartridge Exchange: Brand New / Refilled quantities
+        // against the model's stock, with the requester's empties collected in return.
 
+        /// <summary>Model, stock by condition and declared empties; loaded when the submission is selected.</summary>
+        public MixedCartridgeLineInfo Cartridge
+        {
+            get => _cartridge;
+            set
+            {
+                if (!SetField(ref _cartridge, value)) return;
+                _issueBrandNewQty = 0;
+                _issueRefilledQty = 0;
+                _issueQty         = 0;
+                OnPropertyChanged(nameof(IsExchangeLine));
+                OnPropertyChanged(nameof(IsPlainLine));
+                OnPropertyChanged(nameof(MaxIssue));
+                OnPropertyChanged(nameof(StockInfo));
+                OnPropertyChanged(nameof(StockInfoBrush));
+                RaiseIssueChanged();
+            }
+        }
+
+        /// <summary>Issued as a cartridge exchange (Brand New / Refilled + returned empties).</summary>
+        public bool IsExchangeLine => IsCartridge && _cartridge?.IsExchangeLine != false;
+        public bool IsPlainLine    => !IsExchangeLine;
+
+        public int AvailableBrandNew => _cartridge?.AvailableBrandNew ?? 0;
+        public int AvailableRefilled => _cartridge?.AvailableRefilled ?? 0;
+
+        public int MaxBrandNew => Math.Max(0, Math.Min(PendingQty - _issueRefilledQty, AvailableBrandNew));
+        public int MaxRefilled => Math.Max(0, Math.Min(PendingQty - _issueBrandNewQty, AvailableRefilled));
+
+        public int IssueBrandNewQty
+        {
+            get => _issueBrandNewQty;
+            set
+            {
+                if (SetField(ref _issueBrandNewQty, Math.Max(0, Math.Min(value, MaxBrandNew))))
+                    SyncExchangeTotal();
+            }
+        }
+
+        public int IssueRefilledQty
+        {
+            get => _issueRefilledQty;
+            set
+            {
+                if (SetField(ref _issueRefilledQty, Math.Max(0, Math.Min(value, MaxRefilled))))
+                    SyncExchangeTotal();
+            }
+        }
+
+        private void SyncExchangeTotal()
+        {
+            _issueQty = _issueBrandNewQty + _issueRefilledQty;
+            RaiseIssueChanged();
+        }
+
+        private void RaiseIssueChanged()
+        {
+            OnPropertyChanged(nameof(IssueQty));
+            OnPropertyChanged(nameof(IssueBrandNewQty));
+            OnPropertyChanged(nameof(IssueRefilledQty));
+            OnPropertyChanged(nameof(MaxBrandNew));
+            OnPropertyChanged(nameof(MaxRefilled));
+            OnPropertyChanged(nameof(IssueSummary));
+            OnPropertyChanged(nameof(EmptiesInfo));
+            RaiseStatusChanged();
+        }
+
+        /// <summary>
+        /// The empties to collect for the quantity being issued, allocated the same way
+        /// CartridgeManagementRepository.IssueMixedCartridgeLine records them: declared Good
+        /// first, then declared Damaged, then any undeclared unit.
+        /// </summary>
+        public string EmptiesInfo
+        {
+            get
+            {
+                if (_cartridge == null || !IsExchangeLine) return string.Empty;
+                var c = _cartridge;
+                int goodLeft    = Math.Max(0, c.DeclaredGood - c.ReturnedGood);
+                int damagedLeft = Math.Max(0, c.DeclaredDamaged - c.ReturnedDamaged);
+
+                string declared = c.DeclaredGood + c.DeclaredDamaged == 0
+                    ? "No empties declared by the requester"
+                    : $"Declared empties: {c.DeclaredGood} Good, {c.DeclaredDamaged} Damaged";
+                if (c.ReturnedGood + c.ReturnedDamaged > 0)
+                    declared += $" (already returned: {c.ReturnedGood} Good, {c.ReturnedDamaged} Damaged)";
+
+                if (_issueQty <= 0) return declared;
+
+                int good    = Math.Min(_issueQty, goodLeft);
+                int damaged = Math.Min(_issueQty - good, damagedLeft);
+                int plain   = _issueQty - good - damaged;
+                string collect = $"Collect {_issueQty} empty cartridge(s): {good + plain} Good, {damaged} Damaged";
+                if (plain > 0) collect += $" ({plain} not declared)";
+                return declared + "\n" + collect;
+            }
+        }
+
+        /// <summary>Most that can be issued now: what is still pending, capped by stock on hand.</summary>
+        public int MaxIssue => IsExchangeLine
+            ? Math.Max(0, Math.Min(PendingQty, AvailableBrandNew + AvailableRefilled))
+            : Math.Max(0, Math.Min(PendingQty, StockOnHand));
+
+        /// <summary>
+        /// Quantity to issue now. On a cartridge exchange line it is Brand New + Refilled and is
+        /// set through those two; assigning 0 here clears both (used by Clear).
+        /// </summary>
         public int IssueQty
         {
             get => _issueQty;
             set
             {
+                if (IsExchangeLine)
+                {
+                    if (value <= 0 && _issueQty != 0)
+                    {
+                        _issueBrandNewQty = 0;
+                        _issueRefilledQty = 0;
+                        SyncExchangeTotal();
+                    }
+                    return;
+                }
+
                 int clamped = Math.Max(0, Math.Min(value, MaxIssue));
                 if (SetField(ref _issueQty, clamped))
+                {
                     OnPropertyChanged(nameof(IssueSummary));
+                    RaiseStatusChanged();
+                }
             }
         }
 
@@ -62,27 +187,63 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
         }
 
         public string StockInfo
-            => PendingQty == 0 ? "Fully issued"
-             : StockOnHand <= 0 ? "No stock available"
-             : StockOnHand < PendingQty ? $"In stock: {StockOnHand} (less than pending)"
-             : $"In stock: {StockOnHand}";
+        {
+            get
+            {
+                if (PendingQty == 0) return "Fully issued";
+                if (IsExchangeLine)
+                {
+                    if (_cartridge == null) return "Loading cartridge stock...";
+                    if (!_cartridge.CartridgeModelId.HasValue)
+                        return $"Model '{_cartridge.ModelNumber}' is not in Cartridge Models; cannot issue (stays pending)";
+                    if (AvailableBrandNew + AvailableRefilled <= 0)
+                        return $"{_cartridge.ModelNumber}: no stock. Stays pending until stock arrives";
+                    return $"{_cartridge.ModelNumber} in stock: Brand New {AvailableBrandNew}, Refilled {AvailableRefilled}";
+                }
+                return StockOnHand <= 0 ? "No stock. Stays pending until stock arrives"
+                     : StockOnHand < PendingQty ? $"In stock: {StockOnHand} (less than pending)"
+                     : $"In stock: {StockOnHand}";
+            }
+        }
 
         public Brush StockInfoBrush
-            => PendingQty > 0 && StockOnHand <= 0
+            => PendingQty > 0 && MaxIssue <= 0 && !(IsExchangeLine && _cartridge == null)
                 ? Brushes.Firebrick
                 : new SolidColorBrush(Color.FromRgb(0x5A, 0x6A, 0x7E));
 
-        public string IssueSummary => IssueQty > 0 ? $"Issuing {IssueQty} of {PendingQty} pending" : string.Empty;
+        public string IssueSummary
+            => IssueQty <= 0 ? string.Empty
+             : IsExchangeLine ? $"Issuing {IssueQty} of {PendingQty} pending ({IssueBrandNewQty} Brand New, {IssueRefilledQty} Refilled)"
+             : $"Issuing {IssueQty} of {PendingQty} pending";
 
+        /// <summary>Status this line will have after Fulfill, counting what is being issued now.</summary>
         public string FulfillmentStatus
+        {
+            get
+            {
+                int issuedAfter = Dto.IssuedQty + IssueQty;
+                return issuedAfter >= Dto.Quantity ? "Fulfilled"
+                     : issuedAfter > 0 ? "Partially Fulfilled"
+                     : "Unfulfilled";
+            }
+        }
+
+        public Brush FulfillmentStatusBrush => MixedGroupViewModel.StatusBrush(FulfillmentStatus);
+
+        /// <summary>Status right now, before this fulfill (left list).</summary>
+        public string CurrentStatus
             => Dto.IssuedQty >= Dto.Quantity ? "Fulfilled"
              : Dto.IssuedQty > 0 ? "Partially Fulfilled"
              : "Unfulfilled";
 
-        public Brush FulfillmentStatusBrush
-            => Dto.IssuedQty >= Dto.Quantity ? new SolidColorBrush(Color.FromRgb(39, 174, 96))
-             : Dto.IssuedQty > 0 ? new SolidColorBrush(Color.FromRgb(230, 126, 34))
-             : new SolidColorBrush(Color.FromRgb(192, 57, 43));
+        public Brush CurrentStatusBrush => MixedGroupViewModel.StatusBrush(CurrentStatus);
+
+        private void RaiseStatusChanged()
+        {
+            OnPropertyChanged(nameof(FulfillmentStatus));
+            OnPropertyChanged(nameof(FulfillmentStatusBrush));
+            Group?.RaiseResultChanged();
+        }
     }
 
     /// <summary>One submission (all its lines) shown as a block in the left list.</summary>
@@ -130,6 +291,35 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
         public int    TotalQty     => Lines.Sum(l => l.Quantity);
         public string LineCountBadge => Lines.Count == 1 ? "1 line" : $"{Lines.Count} lines";
 
+        /// <summary>
+        /// Status the whole submission will have after Fulfill (Cartridge Exchange's
+        /// "Fulfillment Status"): Unfulfilled when nothing is issued, Fulfilled when every line
+        /// is fully issued, Partially Fulfilled otherwise.
+        /// </summary>
+        public string ResultStatus
+        {
+            get
+            {
+                int issuedAfter = Lines.Sum(l => l.IssuedQty + l.IssueQty);
+                return issuedAfter <= 0 ? "Unfulfilled"
+                     : Lines.All(l => l.IssuedQty + l.IssueQty >= l.Quantity) ? "Fulfilled"
+                     : "Partially Fulfilled";
+            }
+        }
+
+        public Brush ResultStatusBrush => StatusBrush(ResultStatus);
+
+        public void RaiseResultChanged()
+        {
+            OnPropertyChanged(nameof(ResultStatus));
+            OnPropertyChanged(nameof(ResultStatusBrush));
+        }
+
+        public static Brush StatusBrush(string status)
+            => status == "Fulfilled"           ? new SolidColorBrush(Color.FromRgb(39, 174, 96))
+             : status == "Partially Fulfilled" ? new SolidColorBrush(Color.FromRgb(230, 126, 34))
+             : new SolidColorBrush(Color.FromRgb(192, 57, 43));
+
         public Brush HeaderBrush      { get; } = new SolidColorBrush(Color.FromRgb(0xFF, 0xD9, 0xB8));
         public Brush HeaderForeground { get; } = new SolidColorBrush(Color.FromRgb(0x2A, 0x3A, 0x4A));
 
@@ -153,12 +343,15 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
     /// Layout mirrors Cartridge Exchange: submissions on the left, the selected one on the right.
     /// Each line is fulfilled through RequestRepository.FulfillRequest (issued qty, audit trail,
     /// requester notification), the same path the Partially Fulfilled / Unfulfilled Requests pages use.
+    /// Cartridge lines go through RequestRepository.FulfillCartridgeLine instead: Brand New /
+    /// Refilled units and returned empties, exactly like the Cartridge Exchange.
     /// </summary>
     public class MixedRequestExchangeViewModel : ViewModelBase, IDisposable
     {
         private const int PageSize = 5;
 
         private readonly RequestRepository _repo = new RequestRepository();
+        private readonly CartridgeManagementRepository _cartridgeRepo = new CartridgeManagementRepository();
 
         private List<MixedGroupViewModel> _allGroups = new List<MixedGroupViewModel>();
 
@@ -456,6 +649,29 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
             if (_selectedGroup != null) _selectedGroup.IsSelected = false;
             group.IsSelected = true;
             SelectedGroup = group;
+
+            LoadCartridgeInfo(group);
+        }
+
+        /// <summary>
+        /// Loads model, Brand New / Refilled stock and declared empties for the cartridge lines of
+        /// the selected submission (fresh on every selection so stock is current).
+        /// </summary>
+        private async void LoadCartridgeInfo(MixedGroupViewModel group)
+        {
+            foreach (var line in group.Lines.Where(l => l.IsCartridge))
+            {
+                line.Cartridge = null;
+                try
+                {
+                    line.Cartridge = await Task.Run(() => _cartridgeRepo.GetMixedCartridgeLineInfo(line.ReqId));
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Could not load cartridge stock for Req #{line.ReqId}:\n\n{ex.Message}",
+                        "Cartridge Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
         }
 
         private void OnClear()
@@ -474,19 +690,36 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
             var group = _selectedGroup;
             if (group == null) return;
 
-            var toIssue = group.Lines.Where(l => l.IssueQty > 0).ToList();
-            if (toIssue.Count == 0)
+            if (group.Lines.Any(l => l.IsCartridge && l.Cartridge == null && l.PendingQty > 0))
             {
-                MessageBox.Show("Enter a quantity to issue for at least one line.", "Nothing to Issue",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Cartridge stock is still loading (or failed to load). Wait a moment, or re-select the request.",
+                    "Cartridge Stock", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            string summary = string.Join("\n", toIssue.Select(l =>
-                $"• Req #{l.ReqId}  {l.ItemName} ({l.Category}):  issue {l.IssueQty} of {l.PendingQty} pending"));
+            // Like the Cartridge Exchange, Fulfill always records the outcome: whatever is issued
+            // now (possibly nothing, when there is no stock) decides whether the submission ends
+            // up Fulfilled, Partially Fulfilled or Unfulfilled. Lines not fully issued stay
+            // pending in the submission's Set (Unfulfilled / Partially Fulfilled Requests).
+            var toIssue = group.Lines.Where(l => l.IssueQty > 0).ToList();
+            var unissued = group.Lines.Where(l => l.PendingQty > 0 && l.IssueQty == 0).ToList();
+            string outcome = group.ResultStatus;
+
+            string lineList = string.Join("\n", group.Lines.Where(l => l.PendingQty > 0).Select(l =>
+            {
+                string line = $"• Req #{l.ReqId}  {l.ItemName} ({l.Category}):  {l.IssueQty} / {l.PendingQty} pcs  ->  {l.FulfillmentStatus}";
+                if (l.IsExchangeLine && l.IssueQty > 0)
+                    line += $"\n      {l.IssueBrandNewQty} Brand New, {l.IssueRefilledQty} Refilled; collect {l.IssueQty} empty cartridge(s)";
+                return line;
+            }));
+
+            string whereNext =
+                outcome == "Fulfilled"           ? "Every line is fully issued."
+              : outcome == "Partially Fulfilled" ? "The rest stays pending on Partially Fulfilled Requests."
+              :                                    "Nothing is issued (no stock). It stays pending on Unfulfilled Requests.";
 
             var confirm = MessageBox.Show(
-                $"Fulfill these lines for {group.Requester}?\n\n{summary}",
+                $"Fulfill request for {group.Requester}?\n\n{lineList}\n\nResult: {outcome}. {whereNext}",
                 "Confirm Fulfillment", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (confirm != MessageBoxResult.Yes) return;
 
@@ -504,13 +737,19 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
                 foreach (var l in toIssue)
                 {
                     string remarks = string.IsNullOrWhiteSpace(l.Remarks) ? null : l.Remarks.Trim();
-                    await Task.Run(() => _repo.FulfillRequest(l.ReqId, l.IssueQty, userId, remarks));
+                    if (l.IsExchangeLine)
+                    {
+                        int bn = l.IssueBrandNewQty, rf = l.IssueRefilledQty;
+                        await Task.Run(() => _repo.FulfillCartridgeLine(l.ReqId, bn, rf, userId, remarks));
+                    }
+                    else
+                    {
+                        await Task.Run(() => _repo.FulfillRequest(l.ReqId, l.IssueQty, userId, remarks));
+                    }
                     done.Add(l.ReqId);
                 }
 
                 succeeded = true;
-                MessageBox.Show("Fulfillment completed successfully.", "Success",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -522,8 +761,10 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
 
             // A self-service submission is not in a Set yet. Group the whole submission into one
             // now that IT has fulfilled it: this is what moves it onto Request & Set Management
-            // and deducts its quantity (same steps the portal uses for IT-assisted submissions).
-            // Lines that were not fully issued stay pending inside the Set.
+            // (same steps the portal uses for IT-assisted submissions). Lines that were not fully
+            // issued, even when nothing was issued at all, stay pending inside the Set and appear
+            // on Unfulfilled / Partially Fulfilled Requests.
+            bool grouped = setId.HasValue;
             if (succeeded && !setId.HasValue)
             {
                 try
@@ -533,19 +774,38 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
                     foreach (var l in group.Lines)
                         await setRepo.AddRequestToSetAsync(l.ReqId, newSetId);
                     setId = newSetId;
+                    grouped = true;
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(
-                        "The lines were fulfilled, but the request could not be grouped into a Set:\n\n" + ex.Message,
+                        "The fulfillment was saved, but the request could not be grouped into a Set:\n\n" + ex.Message,
                         "Set Not Created", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
+            }
+
+            if (succeeded && grouped)
+            {
+                // Lines that got nothing: tell the requester, as the Cartridge Exchange does.
+                // (Issued lines were already notified by FulfillRequest / FulfillCartridgeLine.)
+                foreach (var l in unissued)
+                {
+                    int reqId = l.ReqId;
+                    await Task.Run(() => _repo.NotifyUnfulfilled(reqId, userId));
+                }
+
+                string next =
+                    outcome == "Fulfilled"           ? string.Empty
+                  : outcome == "Partially Fulfilled" ? "\n\nThe remaining quantity is on Partially Fulfilled Requests."
+                  :                                    "\n\nThe request is on Unfulfilled Requests until stock arrives.";
+                MessageBox.Show($"Fulfillment recorded. Status: {outcome}.{next}",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
             SelectedGroup = null;
             await LoadAsync();
 
-            // Offer the printable requisition form once the lines are saved.
+            // Offer the printable requisition form, as the Cartridge Exchange offers its transmittal.
             if (succeeded)
                 FulfillmentCompleted?.Invoke(setId, sessionId);
         }

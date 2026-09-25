@@ -50,6 +50,30 @@ namespace Inventory.RequestPortal.Repositories
                         REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%ink%'
                      OR REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%toner%'
                      OR REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%printhead%'
+                        -- Cartridge lines of MIXED portal submissions are finished here too, as
+                        -- cartridge exchanges (ICartridgeExchangeRepository.IssueMixedCartridgeLineAsync).
+                        -- Cartridge-only submissions stay on Cartridge Fulfillment.
+                     OR (i.Category = 'Cartridge'
+                         AND r.WorkflowType = 'RequestSetManagement'
+                         AND r.SubmissionSessionId IS NOT NULL)
+                      )
+                  -- APPROVAL GATE (MATCHES desktop RequestRepository.BuildFulfillmentTrackedRequestsCte):
+                  -- a portal submission is only fulfillable here once its authorization is Approved
+                  -- (or Used) AND it is in a Set. Pending / Rejected submissions never appear, and
+                  -- the approval stays valid while the lines are Unfulfilled or Partially Fulfilled.
+                  -- Admin-created requests and old portal rows without any authorization row are
+                  -- unaffected.
+                  AND (
+                        r.SubmissionSessionId IS NULL
+                     OR NOT EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca0
+                                    WHERE ca0.SubmissionSessionId = r.SubmissionSessionId)
+                     OR (r.SetId IS NOT NULL
+                         AND EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca1
+                                     WHERE ca1.SubmissionSessionId = r.SubmissionSessionId
+                                       AND ca1.Status IN ('Approved', 'Used'))
+                         AND NOT EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca2
+                                         WHERE ca2.SubmissionSessionId = r.SubmissionSessionId
+                                           AND ca2.Status IN ('Pending', 'Rejected')))
                       )
             ),
             GroupAgg AS (
@@ -108,7 +132,47 @@ namespace Inventory.RequestPortal.Repositories
 
         public async Task FulfillRequestAsync(int reqId, int additionalIssuedQty, int modifiedByUserId, string? remarks)
         {
+            // Cartridge lines of mixed portal submissions are exchanges: issuing them here would
+            // skip the Brand New / Refilled pick, the cartridge movements and the returned empties.
+            const string sqlIsExchangeLine = @"
+                SELECT COUNT(*)
+                FROM dbo.Request r
+                INNER JOIN dbo.Item i ON i.ItemId = r.ItemId
+                WHERE r.ReqId = @ReqId
+                  AND i.Category = 'Cartridge'
+                  AND r.WorkflowType = 'RequestSetManagement'
+                  AND r.SubmissionSessionId IS NOT NULL";
+            using (var checkCon = new SqlConnection(_connectionStringProvider.GetConnectionString()))
+            using (var checkCmd = new SqlCommand(sqlIsExchangeLine, checkCon))
+            {
+                checkCmd.Parameters.AddWithValue("@ReqId", reqId);
+                await checkCon.OpenAsync();
+                if (Convert.ToInt32(await checkCmd.ExecuteScalarAsync()) > 0)
+                    throw new InvalidOperationException(
+                        $"Request #{reqId} is a cartridge exchange line. Issue it with Brand New / Refilled quantities.");
+            }
+
+            await EnsurePortalRequestApprovedAsync(_connectionStringProvider.GetConnectionString(), reqId);
+
+            // Issuing an Ink / Toner / Printhead line deducts the units issued now from the line's
+            // Item.StockOnHand in the same transaction; refuses rather than going negative.
+            // MATCHES: Yakult.Inventory.App RequestRepository.FulfillRequest
             const string sql = @"
+                SET XACT_ABORT ON;
+                BEGIN TRAN;
+
+                DECLARE @Before INT, @After INT, @ItemId INT, @IsConsumable BIT, @Stock INT;
+
+                SELECT @Before = ISNULL(r.IssuedQty, 0),
+                       @ItemId = r.ItemId,
+                       @IsConsumable = CASE WHEN REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%ink%'
+                                              OR REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%toner%'
+                                              OR REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%printhead%'
+                                            THEN 1 ELSE 0 END
+                FROM dbo.Request r WITH (UPDLOCK, ROWLOCK)
+                INNER JOIN dbo.Item i ON i.ItemId = r.ItemId
+                WHERE r.ReqId = @ReqId;
+
                 UPDATE dbo.Request
                 SET IssuedQty     = CASE
                                         WHEN IssuedQty + @AdditionalIssuedQty > Quantity THEN Quantity
@@ -117,7 +181,28 @@ namespace Inventory.RequestPortal.Repositories
                     Remarks       = ISNULL(@Remarks, Remarks),
                     DateModified  = (SYSDATETIMEOFFSET() AT TIME ZONE 'Singapore Standard Time'),
                     ModifiedBy    = @ModifiedBy
-                WHERE ReqId = @ReqId";
+                WHERE ReqId = @ReqId;
+
+                SELECT @After = ISNULL(IssuedQty, 0) FROM dbo.Request WHERE ReqId = @ReqId;
+
+                IF @IsConsumable = 1 AND @After > @Before
+                BEGIN
+                    SELECT @Stock = ISNULL(StockOnHand, 0) FROM dbo.Item WITH (UPDLOCK, ROWLOCK) WHERE ItemId = @ItemId;
+                    IF @Stock < @After - @Before
+                    BEGIN
+                        DECLARE @Msg NVARCHAR(300) = CONCAT('Only ', @Stock, ' in stock for Request #', @ReqId,
+                            ' (tried to issue ', @After - @Before, '). Refresh and try again.');
+                        THROW 50012, @Msg, 1;
+                    END
+
+                    UPDATE dbo.Item
+                    SET StockOnHand  = StockOnHand - (@After - @Before),
+                        DateModified = GETDATE(),
+                        ModifiedBy   = @ModifiedBy
+                    WHERE ItemId = @ItemId;
+                END
+
+                COMMIT;";
 
             using var con = new SqlConnection(_connectionStringProvider.GetConnectionString());
             using var cmd = new SqlCommand(sql, con);
@@ -128,6 +213,38 @@ namespace Inventory.RequestPortal.Repositories
 
             await con.OpenAsync();
             await cmd.ExecuteNonQueryAsync();
+        }
+
+        /// <summary>
+        /// Refuses to issue against a portal request whose submission is not approved (Pending or
+        /// Rejected authorization, or none Approved / Used). Admin-created requests and old portal
+        /// rows without any authorization row pass, matching the approval gate in the CTE above.
+        /// Also used by CartridgeExchangeRepository.IssueMixedCartridgeLineAsync.
+        /// MATCHES: Yakult.Inventory.App RequestRepository.EnsurePortalRequestApproved
+        /// </summary>
+        public static async Task EnsurePortalRequestApprovedAsync(string connectionString, int reqId)
+        {
+            const string sql = @"
+                SELECT COUNT(*)
+                FROM dbo.Request r
+                WHERE r.ReqId = @ReqId
+                  AND r.SubmissionSessionId IS NOT NULL
+                  AND EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca0
+                              WHERE ca0.SubmissionSessionId = r.SubmissionSessionId)
+                  AND (NOT EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca1
+                                   WHERE ca1.SubmissionSessionId = r.SubmissionSessionId
+                                     AND ca1.Status IN ('Approved', 'Used'))
+                       OR EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca2
+                                  WHERE ca2.SubmissionSessionId = r.SubmissionSessionId
+                                    AND ca2.Status IN ('Pending', 'Rejected')))";
+
+            using var con = new SqlConnection(connectionString);
+            using var cmd = new SqlCommand(sql, con);
+            cmd.Parameters.AddWithValue("@ReqId", reqId);
+            await con.OpenAsync();
+            if (Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0)
+                throw new InvalidOperationException(
+                    $"Request #{reqId} has not been approved (or was rejected). It cannot be issued until its authorization is approved.");
         }
 
         public async Task<int> GetItemStockOnHandAsync(int itemId)

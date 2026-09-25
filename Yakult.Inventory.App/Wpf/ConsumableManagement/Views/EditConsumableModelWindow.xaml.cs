@@ -52,9 +52,13 @@ namespace Yakult.Inventory.App.WPF.ConsumableManagement.Views
 
         private void SelectCategory(string category)
         {
+            // Canonical compare: the list shows "Print Head" while models are stored as "Printhead".
+            // An exact compare fell through to index 0, so saving silently changed the category.
+            var wanted = Yakult.Inventory.App.Models.ConsumableCategories.Canonicalize(category);
             foreach (ComboBoxItem item in CmbCategory.Items)
             {
-                if (string.Equals(item.Content?.ToString(), category, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(Yakult.Inventory.App.Models.ConsumableCategories.Canonicalize(item.Content?.ToString()),
+                                  wanted, StringComparison.OrdinalIgnoreCase))
                 {
                     CmbCategory.SelectedItem = item;
                     return;

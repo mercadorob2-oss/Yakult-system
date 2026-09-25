@@ -107,9 +107,11 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.Views
 
                 Mouse.OverrideCursor = null;
 
-                // No WPF owner window here (this page is hosted in WinForms), so the print
-                // service attaches its dialogs to the active WinForms form.
-                RequisitionFormPrintService.ShowPrintDialog(form);
+                // No WPF owner window here (this page is hosted in WinForms). Own the dialogs by
+                // the hosting portal form explicitly: relying on Form.ActiveForm left the modal
+                // dialog ownerless (and hidden behind the disabled portal) whenever the portal
+                // was not the active window right after the success message, freezing the app.
+                RequisitionFormPrintService.ShowPrintDialog(form, GetHostFormHandle());
             }
             catch (Exception ex)
             {
@@ -120,6 +122,20 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.Views
             {
                 Mouse.OverrideCursor = null;
             }
+        }
+
+        /// <summary>
+        /// Handle of the top-level WinForms form hosting this page through its ElementHost
+        /// (e.g. the Request &amp; Set Management portal), or IntPtr.Zero if it cannot be found.
+        /// </summary>
+        private IntPtr GetHostFormHandle()
+        {
+            if (!(PresentationSource.FromVisual(this) is System.Windows.Interop.HwndSource source))
+                return IntPtr.Zero;
+
+            var control = System.Windows.Forms.Control.FromChildHandle(source.Handle);
+            var topLevel = control?.TopLevelControl ?? control?.FindForm();
+            return topLevel != null && topLevel.IsHandleCreated ? topLevel.Handle : IntPtr.Zero;
         }
 
         private void OnGridMouseDown(object sender, MouseButtonEventArgs e)

@@ -1840,6 +1840,33 @@ namespace Yakult.Inventory.App.Repositories
                         REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%ink%'
                      OR REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%toner%'
                      OR REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%printhead%'
+                        -- Cartridge lines of MIXED portal submissions belong to Request & Set
+                        -- Management, not the Cartridge Management queue, so their pending
+                        -- quantity is finished here (issued as cartridge exchanges through
+                        -- FulfillCartridgeLine). Cartridge-only submissions stay excluded.
+                     OR (i.Category = 'Cartridge'
+                         AND r.WorkflowType = 'RequestSetManagement'
+                         AND r.SubmissionSessionId IS NOT NULL)
+                      )
+                  -- APPROVAL GATE: a portal submission is only fulfillable here once its
+                  -- authorization is Approved (or Used) AND it is in a Set. IT-Assisted
+                  -- submissions are grouped into a Set at submit time; New Request submissions
+                  -- are grouped when IT first fulfills them on Mixed Request Exchange (which has
+                  -- the same approval check). Pending / Rejected submissions never appear, and the
+                  -- approval stays valid while the lines are Unfulfilled or Partially Fulfilled.
+                  -- Admin-created requests (no SubmissionSessionId) and old portal rows from before
+                  -- authorizations existed (no CartridgeAuthorization row at all) are unaffected.
+                  AND (
+                        r.SubmissionSessionId IS NULL
+                     OR NOT EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca0
+                                    WHERE ca0.SubmissionSessionId = r.SubmissionSessionId)
+                     OR (r.SetId IS NOT NULL
+                         AND EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca1
+                                     WHERE ca1.SubmissionSessionId = r.SubmissionSessionId
+                                       AND ca1.Status IN ('Approved', 'Used'))
+                         AND NOT EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca2
+                                         WHERE ca2.SubmissionSessionId = r.SubmissionSessionId
+                                           AND ca2.Status IN ('Pending', 'Rejected')))
                       )" + extraWhere + @"
             ),
             GroupAgg AS (
@@ -2016,7 +2043,7 @@ namespace Yakult.Inventory.App.Repositories
                   AND EXISTS (
                         SELECT 1 FROM dbo.CartridgeAuthorization ca
                         WHERE ca.SubmissionSessionId = r.SubmissionSessionId
-                          AND ca.Status = 'Approved')
+                          AND ca.Status IN ('Approved', 'Used'))
                   -- Not in a Set yet. Self-service (New Request) submissions are only grouped into
                   -- a Set when IT fulfills them on this page; IT-assisted ones are grouped when
                   -- submitted, so they never appear here.
@@ -2096,7 +2123,36 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public void FulfillRequest(int reqId, int additionalIssuedQty, int modifiedByUserId, string remarks)
         {
+            // Cartridge lines of mixed portal submissions are exchanges: issuing them here would
+            // skip the Brand New / Refilled pick, the cartridge movements and the returned empties.
+            EnsurePortalRequestApproved(reqId);
+
+            if (new CartridgeManagementRepository().GetMixedCartridgeLineInfo(reqId)?.IsExchangeLine == true)
+                throw new InvalidOperationException(
+                    $"Request #{reqId} is a cartridge exchange line. Issue it with Brand New / Refilled quantities (FulfillCartridgeLine).");
+
+            // Issuing an Ink / Toner / Printhead line deducts the units actually issued now from
+            // the line's Item.StockOnHand, in the same transaction as the IssuedQty update.
+            // Nothing else deducts consumable stock (request creation, Set grouping and Deploy
+            // don't; Deploy only deducts what is still unissued, see DispatchSetAsync), so this is
+            // where issued consumables leave the stock count. Refuses rather than going negative
+            // if stock ran out since the screen was loaded.
             const string sql = @"
+                SET XACT_ABORT ON;
+                BEGIN TRAN;
+
+                DECLARE @Before INT, @After INT, @ItemId INT, @IsConsumable BIT, @Stock INT;
+
+                SELECT @Before = ISNULL(r.IssuedQty, 0),
+                       @ItemId = r.ItemId,
+                       @IsConsumable = CASE WHEN REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%ink%'
+                                              OR REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%toner%'
+                                              OR REPLACE(LOWER(ISNULL(i.Category, '')), ' ', '') LIKE '%printhead%'
+                                            THEN 1 ELSE 0 END
+                FROM dbo.Request r WITH (UPDLOCK, ROWLOCK)
+                INNER JOIN dbo.Item i ON i.ItemId = r.ItemId
+                WHERE r.ReqId = @ReqId;
+
                 UPDATE dbo.Request
                 SET IssuedQty     = CASE
                                         WHEN IssuedQty + @AdditionalIssuedQty > Quantity THEN Quantity
@@ -2105,7 +2161,28 @@ namespace Yakult.Inventory.App.Repositories
                     Remarks       = ISNULL(@Remarks, Remarks),
                     DateModified  = (SYSDATETIMEOFFSET() AT TIME ZONE 'Singapore Standard Time'),
                     ModifiedBy    = @ModifiedBy
-                WHERE ReqId = @ReqId";
+                WHERE ReqId = @ReqId;
+
+                SELECT @After = ISNULL(IssuedQty, 0) FROM dbo.Request WHERE ReqId = @ReqId;
+
+                IF @IsConsumable = 1 AND @After > @Before
+                BEGIN
+                    SELECT @Stock = ISNULL(StockOnHand, 0) FROM dbo.Item WITH (UPDLOCK, ROWLOCK) WHERE ItemId = @ItemId;
+                    IF @Stock < @After - @Before
+                    BEGIN
+                        DECLARE @Msg NVARCHAR(300) = CONCAT('Only ', @Stock, ' in stock for Request #', @ReqId,
+                            ' (tried to issue ', @After - @Before, '). Refresh and try again.');
+                        THROW 50012, @Msg, 1;
+                    END
+
+                    UPDATE dbo.Item
+                    SET StockOnHand  = StockOnHand - (@After - @Before),
+                        DateModified = GETDATE(),
+                        ModifiedBy   = @ModifiedBy
+                    WHERE ItemId = @ItemId;
+                END
+
+                COMMIT;";
 
             using (var con = new SqlConnection(GetConnectionString()))
             using (var cmd = new SqlCommand(sql, con))
@@ -2119,6 +2196,66 @@ namespace Yakult.Inventory.App.Repositories
                 cmd.ExecuteNonQuery();
             }
 
+            AfterRequestIssued(reqId, additionalIssuedQty, modifiedByUserId);
+        }
+
+        /// <summary>
+        /// Fulfills a CARTRIDGE line of a mixed portal submission. Unlike FulfillRequest it goes
+        /// through the Cartridge Exchange rules: Brand New / Refilled units are picked and
+        /// deducted, each unit gets a cartridge movement, and the requester's empties are
+        /// recorded as returned (CartridgeManagementRepository.IssueMixedCartridgeLine).
+        /// IssuedQty, audit trail and requester notification behave the same as FulfillRequest.
+        /// </summary>
+        public void FulfillCartridgeLine(int reqId, int issuedBrandNewQty, int issuedRefilledQty, int modifiedByUserId, string remarks)
+        {
+            int total = issuedBrandNewQty + issuedRefilledQty;
+            if (total <= 0)
+                return;
+
+            EnsurePortalRequestApproved(reqId);
+
+            new CartridgeManagementRepository().IssueMixedCartridgeLine(
+                reqId, issuedBrandNewQty, issuedRefilledQty, modifiedByUserId, remarks);
+
+            AfterRequestIssued(reqId, total, modifiedByUserId);
+        }
+
+        /// <summary>
+        /// Refuses to issue against a portal request whose submission is not approved (its
+        /// CartridgeAuthorization is Pending or Rejected, or none is Approved / Used). Admin-created
+        /// requests and old portal rows without any authorization row pass, matching the
+        /// approval gate in BuildFulfillmentTrackedRequestsCte.
+        /// </summary>
+        private void EnsurePortalRequestApproved(int reqId)
+        {
+            const string sql = @"
+                SELECT COUNT(*)
+                FROM dbo.Request r
+                WHERE r.ReqId = @ReqId
+                  AND r.SubmissionSessionId IS NOT NULL
+                  AND EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca0
+                              WHERE ca0.SubmissionSessionId = r.SubmissionSessionId)
+                  AND (NOT EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca1
+                                   WHERE ca1.SubmissionSessionId = r.SubmissionSessionId
+                                     AND ca1.Status IN ('Approved', 'Used'))
+                       OR EXISTS (SELECT 1 FROM dbo.CartridgeAuthorization ca2
+                                  WHERE ca2.SubmissionSessionId = r.SubmissionSessionId
+                                    AND ca2.Status IN ('Pending', 'Rejected')))";
+
+            using (var con = new SqlConnection(GetConnectionString()))
+            using (var cmd = new SqlCommand(sql, con))
+            {
+                cmd.Parameters.AddWithValue("@ReqId", reqId);
+                con.Open();
+                if (Convert.ToInt32(cmd.ExecuteScalar()) > 0)
+                    throw new InvalidOperationException(
+                        $"Request #{reqId} has not been approved (or was rejected). It cannot be issued until its authorization is approved.");
+            }
+        }
+
+        /// <summary>Audit trail, requester notification and activity log after units are issued.</summary>
+        private void AfterRequestIssued(int reqId, int additionalIssuedQty, int modifiedByUserId)
+        {
             int itemId = 0;
             string serial = null;
             int issuedTotal = 0;
@@ -2212,6 +2349,56 @@ namespace Yakult.Inventory.App.Repositories
 
             ActivityLogger.Log(modifiedByUserId, ActivityLogger.Actions.Update,
                 "Request", reqId, $"Issued {additionalIssuedQty} more unit(s) for Request #{reqId}");
+        }
+
+        /// <summary>
+        /// "Request Unfulfilled" notification for a line that got nothing when IT fulfilled its
+        /// submission (e.g. no stock), matching the Cartridge Exchange's zero-issue notice. The
+        /// line stays pending on Unfulfilled / Partially Fulfilled Requests. Best-effort: never throws.
+        /// </summary>
+        public void NotifyUnfulfilled(int reqId, int actorUserId)
+        {
+            try
+            {
+                string itemName = null;
+                int? requesterUserId = null;
+                using (var con = new SqlConnection(GetConnectionString()))
+                using (var cmd = new SqlCommand(@"
+                    SELECT i.Name, r.CreatedBy
+                    FROM dbo.Request r
+                    LEFT JOIN dbo.Item i ON i.ItemId = r.ItemId
+                    WHERE r.ReqId = @ReqId", con))
+                {
+                    cmd.Parameters.AddWithValue("@ReqId", reqId);
+                    con.Open();
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            itemName = reader.IsDBNull(0) ? null : reader.GetString(0);
+                            requesterUserId = reader.IsDBNull(1) ? (int?)null : Convert.ToInt32(reader[1]);
+                        }
+                    }
+                }
+
+                if (!requesterUserId.HasValue || requesterUserId.Value <= 0)
+                    return;
+
+                string item = string.IsNullOrWhiteSpace(itemName) ? "your item" : $"\"{itemName}\"";
+                // ReferenceId left null for the same reason as in AfterRequestIssued.
+                new NotificationRepository().Create(new NotificationCreateDto
+                {
+                    UserId           = requesterUserId.Value,
+                    Title            = "Request Unfulfilled",
+                    Message          = $"Your request for {item} (Req #{reqId}) could not be fulfilled due to insufficient stock. It stays pending and will be issued when stock is available.",
+                    NotificationType = NotificationType.RequestUnfulfilled,
+                    ActorUserId      = actorUserId
+                });
+
+                ActivityLogger.Log(actorUserId, ActivityLogger.Actions.Update,
+                    "Request", reqId, $"Request #{reqId} fulfilled with 0 issued (Unfulfilled, pending stock)");
+            }
+            catch { /* notification is non-critical */ }
         }
 
         /// <summary>

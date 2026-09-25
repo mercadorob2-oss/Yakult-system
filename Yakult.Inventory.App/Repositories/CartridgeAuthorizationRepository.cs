@@ -122,17 +122,27 @@ namespace Yakult.Inventory.App.Repositories
                     ca.SignedBySupervisorId, ca.SignedDate, ca.CreatedDate,
                     -- Build JSON from CartridgeRequestModel rows for this session so we always
                     -- have accurate qty/good/damaged regardless of what was stored in RequestedModels.
-                    (
-                        SELECT crm.CartridgeModel   AS model,
-                               SUM(crm.RequestedQty) AS qty,
-                               SUM(ISNULL(crm.GoodEmptyQty,    0)) AS good,
-                               SUM(ISNULL(crm.DamagedEmptyQty, 0)) AS damaged
-                        FROM   dbo.Request r
-                        JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
-                        WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
-                        GROUP  BY crm.CartridgeModel
-                        FOR JSON PATH
-                    ) AS RequestedModels,
+                    -- Request & Set Management submissions (mixed, or Ink / Toner / Printhead only) have
+                    -- no CartridgeRequestModel row for their non-cartridge lines, so show the full line list
+                    -- saved on the authorization at submit time (what the web approval pages show).
+                    -- Cartridge-only submissions keep the CartridgeRequestModel-built list.
+                    CASE WHEN ca.RequestedModels IS NOT NULL
+                          AND EXISTS (SELECT 1 FROM dbo.Request rw
+                                      WHERE rw.SubmissionSessionId = ca.SubmissionSessionId
+                                        AND rw.WorkflowType = 'RequestSetManagement')
+                         THEN ca.RequestedModels
+                         ELSE (
+                            SELECT crm.CartridgeModel   AS model,
+                                   SUM(crm.RequestedQty) AS qty,
+                                   SUM(ISNULL(crm.GoodEmptyQty,    0)) AS good,
+                                   SUM(ISNULL(crm.DamagedEmptyQty, 0)) AS damaged
+                            FROM   dbo.Request r
+                            JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
+                            WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
+                            GROUP  BY crm.CartridgeModel
+                            FOR JSON PATH
+                         )
+                    END AS RequestedModels,
                     e.Name      AS EmployeeName,
                     e.Position  AS EmployeePosition,
                     d.Name      AS DepartmentName,
@@ -168,17 +178,27 @@ namespace Yakult.Inventory.App.Repositories
                 SELECT
                     ca.AuthorizationId, ca.EmployeeId, ca.DepartmentId, ca.Status,
                     ca.SignedBySupervisorId, ca.SignedDate, ca.CreatedDate,
-                    (
-                        SELECT crm.CartridgeModel   AS model,
-                               SUM(crm.RequestedQty) AS qty,
-                               SUM(ISNULL(crm.GoodEmptyQty,    0)) AS good,
-                               SUM(ISNULL(crm.DamagedEmptyQty, 0)) AS damaged
-                        FROM   dbo.Request r
-                        JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
-                        WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
-                        GROUP  BY crm.CartridgeModel
-                        FOR JSON PATH
-                    ) AS RequestedModels,
+                    -- Request & Set Management submissions (mixed, or Ink / Toner / Printhead only) have
+                    -- no CartridgeRequestModel row for their non-cartridge lines, so show the full line list
+                    -- saved on the authorization at submit time (what the web approval pages show).
+                    -- Cartridge-only submissions keep the CartridgeRequestModel-built list.
+                    CASE WHEN ca.RequestedModels IS NOT NULL
+                          AND EXISTS (SELECT 1 FROM dbo.Request rw
+                                      WHERE rw.SubmissionSessionId = ca.SubmissionSessionId
+                                        AND rw.WorkflowType = 'RequestSetManagement')
+                         THEN ca.RequestedModels
+                         ELSE (
+                            SELECT crm.CartridgeModel   AS model,
+                                   SUM(crm.RequestedQty) AS qty,
+                                   SUM(ISNULL(crm.GoodEmptyQty,    0)) AS good,
+                                   SUM(ISNULL(crm.DamagedEmptyQty, 0)) AS damaged
+                            FROM   dbo.Request r
+                            JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
+                            WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
+                            GROUP  BY crm.CartridgeModel
+                            FOR JSON PATH
+                         )
+                    END AS RequestedModels,
                     e.Name      AS EmployeeName,
                     e.Position  AS EmployeePosition,
                     d.Name      AS DepartmentName,
@@ -334,15 +354,25 @@ namespace Yakult.Inventory.App.Repositories
                     e.Name  AS EmployeeName,
                     d.Name  AS DepartmentName,
                     COALESCE(se.Name, u.Name) AS SignedByName,
-                    (
-                        SELECT crm.CartridgeModel AS model,
-                               SUM(crm.RequestedQty) AS qty
-                        FROM   dbo.Request r
-                        JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
-                        WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
-                        GROUP  BY crm.CartridgeModel
-                        FOR JSON PATH
-                    ) AS RequestedModels
+                    -- Request & Set Management submissions (mixed, or Ink / Toner / Printhead only) have
+                    -- no CartridgeRequestModel row for their non-cartridge lines, so show the full line list
+                    -- saved on the authorization at submit time (what the web approval pages show).
+                    -- Cartridge-only submissions keep the CartridgeRequestModel-built list.
+                    CASE WHEN ca.RequestedModels IS NOT NULL
+                          AND EXISTS (SELECT 1 FROM dbo.Request rw
+                                      WHERE rw.SubmissionSessionId = ca.SubmissionSessionId
+                                        AND rw.WorkflowType = 'RequestSetManagement')
+                         THEN ca.RequestedModels
+                         ELSE (
+                            SELECT crm.CartridgeModel AS model,
+                                   SUM(crm.RequestedQty) AS qty
+                            FROM   dbo.Request r
+                            JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
+                            WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
+                            GROUP  BY crm.CartridgeModel
+                            FOR JSON PATH
+                         )
+                    END AS RequestedModels
                 FROM  dbo.CartridgeAuthorization ca
                 INNER JOIN dbo.Employee    e  ON ca.EmployeeId           = e.EmpId
                 INNER JOIN dbo.Department  d  ON ca.DepartmentId         = d.DeptId
@@ -364,15 +394,25 @@ namespace Yakult.Inventory.App.Repositories
                     e.Name  AS EmployeeName,
                     d.Name  AS DepartmentName,
                     COALESCE(se.Name, u.Name) AS SignedByName,
-                    (
-                        SELECT crm.CartridgeModel AS model,
-                               SUM(crm.RequestedQty) AS qty
-                        FROM   dbo.Request r
-                        JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
-                        WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
-                        GROUP  BY crm.CartridgeModel
-                        FOR JSON PATH
-                    ) AS RequestedModels
+                    -- Request & Set Management submissions (mixed, or Ink / Toner / Printhead only) have
+                    -- no CartridgeRequestModel row for their non-cartridge lines, so show the full line list
+                    -- saved on the authorization at submit time (what the web approval pages show).
+                    -- Cartridge-only submissions keep the CartridgeRequestModel-built list.
+                    CASE WHEN ca.RequestedModels IS NOT NULL
+                          AND EXISTS (SELECT 1 FROM dbo.Request rw
+                                      WHERE rw.SubmissionSessionId = ca.SubmissionSessionId
+                                        AND rw.WorkflowType = 'RequestSetManagement')
+                         THEN ca.RequestedModels
+                         ELSE (
+                            SELECT crm.CartridgeModel AS model,
+                                   SUM(crm.RequestedQty) AS qty
+                            FROM   dbo.Request r
+                            JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
+                            WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
+                            GROUP  BY crm.CartridgeModel
+                            FOR JSON PATH
+                         )
+                    END AS RequestedModels
                 FROM  dbo.CartridgeAuthorization ca
                 INNER JOIN dbo.Employee    e  ON ca.EmployeeId           = e.EmpId
                 INNER JOIN dbo.Department  d  ON ca.DepartmentId         = d.DeptId
@@ -413,17 +453,27 @@ namespace Yakult.Inventory.App.Repositories
                 SELECT ca.AuthorizationId, ca.EmployeeId, ca.DepartmentId, ca.Status,
                        ca.SignedBySupervisorId, ca.SignedDate, ca.CreatedDate,
                        ca.SubmittedByUserId, ca.Remarks,
-                       (
-                           SELECT crm.CartridgeModel   AS model,
-                                  SUM(crm.RequestedQty)                AS qty,
-                                  SUM(ISNULL(crm.GoodEmptyQty,    0)) AS good,
-                                  SUM(ISNULL(crm.DamagedEmptyQty, 0)) AS damaged
-                           FROM   dbo.Request r
-                           JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
-                           WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
-                           GROUP  BY crm.CartridgeModel
-                           FOR JSON PATH
-                       ) AS RequestedModels,
+                       -- Request & Set Management submissions (mixed, or Ink / Toner / Printhead only) have
+                       -- no CartridgeRequestModel row for their non-cartridge lines, so show the full line list
+                       -- saved on the authorization at submit time (what the web approval pages show).
+                       -- Cartridge-only submissions keep the CartridgeRequestModel-built list.
+                       CASE WHEN ca.RequestedModels IS NOT NULL
+                             AND EXISTS (SELECT 1 FROM dbo.Request rw
+                                         WHERE rw.SubmissionSessionId = ca.SubmissionSessionId
+                                           AND rw.WorkflowType = 'RequestSetManagement')
+                            THEN ca.RequestedModels
+                            ELSE (
+                               SELECT crm.CartridgeModel   AS model,
+                                      SUM(crm.RequestedQty)                AS qty,
+                                      SUM(ISNULL(crm.GoodEmptyQty,    0)) AS good,
+                                      SUM(ISNULL(crm.DamagedEmptyQty, 0)) AS damaged
+                               FROM   dbo.Request r
+                               JOIN   dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
+                               WHERE  r.SubmissionSessionId = ca.SubmissionSessionId
+                               GROUP  BY crm.CartridgeModel
+                               FOR JSON PATH
+                            )
+                       END AS RequestedModels,
                        e.Name     AS EmployeeName,
                        e.Position AS EmployeePosition,
                        d.Name     AS DepartmentName,

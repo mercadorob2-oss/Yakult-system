@@ -520,7 +520,47 @@ If all fail: log warning, return false → StartTour() aborts cleanly
 - **`Application.DispatcherUnhandledException` never fires** — if you need a global WPF exception handler use `Dispatcher.CurrentDispatcher.UnhandledException`.
 - **`Form.Activated` / `Form.Deactivate` on `RequesterPortalForm` fire only on Alt+Tab (OS-level focus change)**, NOT when WPF child windows within the same process gain or lose focus. During tours, `[Portal] Activated` and `[Portal] Deactivated` will never appear in the debug log from WPF overlay activation.
 - **`WindowInteropHelper.Owner` must be set before `Show()`** — setting it after Show() has no effect.
+- **Never own a modal WPF dialog by `Form.ActiveForm` from a page hosted in an `ElementHost`.** `ActiveForm` is null whenever the app isn't the foreground window at that instant (for example right after a MessageBox closes). The dialog then opens ownerless, **behind** the form it disables, and the whole app looks frozen (even minimize and close stop working). Resolve the hosting form instead: `PresentationSource.FromVisual(this)` → `HwndSource.Handle` → `Control.FromChildHandle(...).TopLevelControl`. Then pass that handle, e.g. `RequisitionFormPrintService.ShowPrintDialog(vm, hostFormHandle)` (see `MixedRequestExchangeView.GetHostFormHandle`).
 - **`ShutdownMode` must be set to `OnExplicitShutdown` after every `Show()` call** — WPF resets it to `OnMainWindowClose` when it first creates `Application.Current`.
+
+## Cartridge Lines in Mixed Portal Submissions
+
+A portal submission that mixes cartridges with Ink/Toner/Printhead gets `WorkflowType = 'RequestSetManagement'` for every line, so its cartridge lines never reach the Cartridge Management queue. That queue filters on `WorkflowType`, **not** on whether a `dbo.CartridgeRequestModel` row exists. They are still **cartridge exchanges**:
+
+- Every portal cartridge line (cartridge-only **and** mixed) gets a `dbo.CartridgeRequestModel` row holding its model and the declared `GoodEmptyQty` / `DamagedEmptyQty` (`InsertCartridgeRequestModel` in both portals' `RequesterPortalService`). No extra columns or migration are needed. Readers of that table were checked: the Cartridge queues and fulfilled history select on `WorkflowType` / Set counts, not on this table.
+- **Desktop approver screens show every line of a mixed request.** The `RequestedModels` list in `CartridgeAuthorizationRepository` (`GetAllPendingAsync`, `GetPendingByScopeAsync`, `GetHistoryByEmployeeAsync`, `GetSignedByUserAsync`, `GetDetailByIdAsync`) uses the full line list saved on `dbo.CartridgeAuthorization.RequestedModels` at submit time for Request & Set Management submissions. That is the same list the web approval pages and Authorization Monitor show. Cartridge-only submissions still build it from `CartridgeRequestModel`. `SupervisorApprovalPage` hides the Good / Damaged figures for lines with no empties (Ink / Toner / Printhead).
+- Fulfill them with `RequestRepository.FulfillCartridgeLine(reqId, brandNew, refilled, ...)`, which calls `CartridgeManagementRepository.IssueMixedCartridgeLine`: FIFO Brand New/Refilled units, a `CartridgeMovement` per unit, and returned empties through the shared `RecordReturnedEmpties` helper (also used by `FulfillCartridgeExchangeByCondition`). The issued qty goes to `Request.IssuedQty`, and any shortfall stays pending in Request & Set Management (no `UnfulfilledCartridgeExchange` row).
+- `RequestRepository.FulfillRequest` **throws** for these lines (`GetMixedCartridgeLineInfo(reqId).IsExchangeLine`). Any new screen that issues Request lines must route cartridge lines to `FulfillCartridgeLine`. Current callers: Mixed Request Exchange, and Unfulfilled / Partially Fulfilled Requests (the shared `FulfillRequestDialog`).
+- The Unfulfilled / Partially Fulfilled Requests queue (`BuildFulfillmentTrackedRequestsCte`) is scoped to Ink/Toner/Printhead **plus** these mixed cartridge lines. Cartridge-only submissions stay excluded.
+- **Web portal mirror:** `RequestFulfillmentRepository` (same scope; `FulfillRequestAsync` refuses these lines), `CartridgeExchangeRepository.GetMixedCartridgeLineInfoAsync` / `IssueMixedCartridgeLineAsync` / `RecordReturnedEmptiesAsync` (shared with `FulfillCartridgeExchangeByConditionAsync`), and `RequestFulfillmentController.Fulfill`, whose form shows Brand New / Refilled inputs and the empties preview for these lines. Keep desktop and web in sync when changing either.
+
+### Approval gate on fulfillment (desktop and web)
+
+Portal requests can only be issued once their submission's `dbo.CartridgeAuthorization` is **Approved or Used** (`Used` means approved, then consumed; nothing sets it today, but treat it as approved). The approval never changes when lines are fulfilled, so a request that is Unfulfilled or Partially Fulfilled stays approved and stays issuable.
+- **Unfulfilled / Partially Fulfilled Requests** (`BuildFulfillmentTrackedRequestsCte` on desktop, `FulfillmentTrackedRequestsCte` on web) list a portal request only when it is approved **and** in a Set. IT-Assisted submissions are grouped into a Set at submit time; New Request submissions are grouped when IT first fulfills them on Mixed Request Exchange. So a submission is on exactly one page at a time, and Pending / Rejected ones appear on neither.
+- **Mixed Request Exchange** (`GetApprovedMixedRequestLines`) lists approved submissions that are not in a Set yet.
+- **Issue methods refuse unapproved requests:** `RequestRepository.EnsurePortalRequestApproved` (desktop `FulfillRequest` / `FulfillCartridgeLine`) and `RequestFulfillmentRepository.EnsurePortalRequestApprovedAsync` (web `FulfillRequestAsync` / `IssueMixedCartridgeLineAsync`).
+- **Exempt:** admin-created requests (no `SubmissionSessionId`) and old portal rows with no authorization row at all, so they are not stranded.
+- **Web limitation:** the web has no Mixed Request Exchange page, so a New Request submission's first fulfill must be done in the desktop app.
+
+### Consumable stock deduction (Ink / Toner / Printhead)
+
+Consumable `Item.StockOnHand` is deducted **when units are issued**, and nowhere else. Request creation and Set grouping never touch stock (see the "Previously … INCORRECT" comments in `RequestRepository.AddRequest`).
+- **Fulfill:** `RequestRepository.FulfillRequest` (desktop) and `RequestFulfillmentRepository.FulfillRequestAsync` (web) deduct exactly the IssuedQty increase from the line's `Item`, in the same transaction. They refuse (THROW 50012) instead of going negative.
+- **Deploy:** `SetRepository.DispatchSetAsync` sets IssuedQty = Quantity for every line, so it first deducts the still-unissued remainder of consumable lines (floored at 0). It does this only on the call that actually dispatches, so a repeat Deploy never deducts twice.
+- **Cartridges** are deducted per unit by the cartridge paths (`DecreaseItemStock`).
+- **IT custody items are not stock.** Returned empties of non-refillable models are kept as an Item named "&lt;model&gt; - Returned Empty" with `Remarks LIKE '%IT custody%'` and no RefillStatus. That looks like Brand New stock, so every issuable-stock query must add `AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%'`. Already done in `CartridgeManagementRepository` (GetAvailableIssuableStock*, GetIssuableItemIds*, GetIssuableCartridges), the web `CartridgeExchangeRepository` / `CartridgeFulfillmentRepository`, and the Cartridge Models page counts (`CartridgeModelRepository`). The dispose/sell workflow finds those items by the same marker.
+- **The `SetRepository` "ONLY place where stock should be deducted" comment** applies to item **upgrades**, not normal issuing.
+- **Before 2026-09-25** none of this existed, so older consumable stock figures were never reduced by issued requests.
+
+### Zero-stock fulfillment on Mixed Request Exchange (mirrors Cartridge Exchange)
+
+A submission stays on Mixed Request Exchange until IT clicks Fulfill. Fulfill always works, even with every quantity at 0 (no stock), exactly like the Cartridge Exchange. The panel shows a live **Fulfillment Status** (`MixedGroupViewModel.ResultStatus`), and each line's badge shows its status after this fulfill; the left list shows the current status (`CurrentStatus`). On Fulfill the submission is grouped into its Set and ends up:
+- **Unfulfilled** (nothing issued): on Unfulfilled Requests
+- **Partially Fulfilled**: on Partially Fulfilled Requests
+- **Fulfilled**: done
+
+Lines that got nothing are sent the Cartridge Exchange's "Request Unfulfilled" notification (`RequestRepository.NotifyUnfulfilled`). The printable requisition form is offered after every fulfill, like the Cartridge transmittal.
 
 ## Portal Media Import (yt-dlp) Maintenance
 

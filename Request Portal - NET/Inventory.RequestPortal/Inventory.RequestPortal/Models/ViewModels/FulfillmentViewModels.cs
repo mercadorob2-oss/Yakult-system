@@ -36,6 +36,24 @@ namespace Inventory.RequestPortal.Models.ViewModels
         public int MaxIssuable => Math.Min(AvailableStock, PendingQty);
         public int IssueQty { get; set; }
         public string? Remarks { get; set; }
+
+        // ── Cartridge line of a mixed portal submission ──────────────────────────
+        // Issued like the Cartridge Exchange: Brand New / Refilled quantities, each capped by its
+        // own stock, with the requester's empties recorded as returned. Mirrors desktop's
+        // FulfillRequestRowStateViewModel. The server re-reads stock and pending on POST.
+        public bool IsExchangeLine { get; set; }
+        public bool ModelRegistered { get; set; }
+        public string? ModelNumber { get; set; }
+        public int AvailBrandNew { get; set; }
+        public int AvailRefilled { get; set; }
+        public int BrandNewQty { get; set; }
+        public int RefilledQty { get; set; }
+        public int DeclaredGood { get; set; }
+        public int DeclaredDamaged { get; set; }
+        public int ReturnedGood { get; set; }
+        public int ReturnedDamaged { get; set; }
+        public int MaxBrandNew => Math.Max(0, Math.Min(AvailBrandNew, PendingQty));
+        public int MaxRefilled => Math.Max(0, Math.Min(AvailRefilled, PendingQty));
     }
 
     public class FulfillRequestFormViewModel

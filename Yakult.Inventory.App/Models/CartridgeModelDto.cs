@@ -19,6 +19,12 @@ namespace Yakult.Inventory.App.Models
         public string CreatedByName { get; set; }
         public int AvailableStock { get; set; }
 
+        /// <summary>Issuable Brand New units (Item.RefillStatus IS NULL). Loaded by GetAllActiveModelsAsync.</summary>
+        public int BrandNewStock { get; set; }
+
+        /// <summary>Issuable Refilled units (Item.RefillStatus = 'Available'). Loaded by GetAllActiveModelsAsync.</summary>
+        public int RefilledStock { get; set; }
+
         /// <summary>
         /// Display name for dropdown selection
         /// </summary>

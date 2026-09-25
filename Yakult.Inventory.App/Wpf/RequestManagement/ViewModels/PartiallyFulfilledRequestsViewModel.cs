@@ -17,6 +17,7 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
         private const int PageSize = 10;
 
         private readonly RequestRepository _repository;
+        private readonly CartridgeManagementRepository _cartridgeRepository = new CartridgeManagementRepository();
 
         // Full flat list kept for fulfill sibling-lookup within the same Set
         private List<RequestDto> _allRequests = new List<RequestDto>();
@@ -457,7 +458,17 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
                 int available = 0;
                 try { available = _repository.GetItemStockOnHand(row.Dto.ItemId); }
                 catch { }
-                states.Add(new FulfillRequestRowStateViewModel(row.Dto, available));
+
+                // Cartridge lines of mixed portal submissions are issued as cartridge exchanges.
+                MixedCartridgeLineInfo cartridge = null;
+                try
+                {
+                    var info = _cartridgeRepository.GetMixedCartridgeLineInfo(row.Dto.ReqId);
+                    if (info != null && info.IsExchangeLine) cartridge = info;
+                }
+                catch { }
+
+                states.Add(new FulfillRequestRowStateViewModel(row.Dto, available, cartridge));
             }
             return states;
         }
@@ -469,7 +480,10 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
             {
                 if (st.IssueQty <= 0) continue;
                 string remarks = string.IsNullOrWhiteSpace(st.Remarks) ? null : st.Remarks.Trim();
-                _repository.FulfillRequest(st.Dto.ReqId, st.IssueQty, userId, remarks);
+                if (st.IsExchangeLine)
+                    _repository.FulfillCartridgeLine(st.Dto.ReqId, st.IssueBrandNewQty, st.IssueRefilledQty, userId, remarks);
+                else
+                    _repository.FulfillRequest(st.Dto.ReqId, st.IssueQty, userId, remarks);
             }
         }
 

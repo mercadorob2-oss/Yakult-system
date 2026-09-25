@@ -55,15 +55,26 @@ namespace Yakult.Inventory.App.WPF.Set.RequisitionForm.Services
         /// whenever the caller is itself a top-level WPF Window — see SetDialogOwner.
         /// </param>
         public static void ShowPrintDialog(RequisitionFormViewModel vm, Window ownerWindow = null)
+            => ShowPrintDialog(vm, ownerWindow, IntPtr.Zero);
+
+        /// <summary>
+        /// Same workflow, owned by a WinForms window given by its handle. Use this from a WPF
+        /// UserControl hosted in an ElementHost: pass the hosting form's handle so the dialogs
+        /// never depend on Form.ActiveForm (see SetDialogOwner).
+        /// </summary>
+        public static void ShowPrintDialog(RequisitionFormViewModel vm, IntPtr ownerHandle)
+            => ShowPrintDialog(vm, null, ownerHandle);
+
+        private static void ShowPrintDialog(RequisitionFormViewModel vm, Window ownerWindow, IntPtr ownerHandle)
         {
             var prepareDialog = new PrepareRequisitionDialog(vm);
-            SetDialogOwner(prepareDialog, ownerWindow);
+            SetDialogOwner(prepareDialog, ownerWindow, ownerHandle);
             if (prepareDialog.ShowDialog() != true) return;
 
             prepareDialog.ViewModel.ApplyTo(vm);
 
             var printDialog = new PrintRequisitionDialog(vm);
-            SetDialogOwner(printDialog, ownerWindow);
+            SetDialogOwner(printDialog, ownerWindow, ownerHandle);
             printDialog.ShowDialog();
         }
 
@@ -80,7 +91,12 @@ namespace Yakult.Inventory.App.WPF.Set.RequisitionForm.Services
         // owner, desyncing the Z-order/taskbar chain — the caller's WPF window (and
         // any dialog stacked on it) ends up stranded off-screen while the process
         // keeps running, un-closable except via Task Manager.
-        private static void SetDialogOwner(Window dialog, Window ownerWindow)
+        //
+        // An explicit ownerHandle (the hosting WinForms form) beats Form.ActiveForm: ActiveForm is
+        // null whenever the app is not the foreground window at that instant (e.g. right after a
+        // MessageBox closes). A modal dialog with no owner then opens BEHIND the form it disables,
+        // leaving the app unclickable, including its minimize / close buttons.
+        private static void SetDialogOwner(Window dialog, Window ownerWindow, IntPtr ownerHandle)
         {
             if (ownerWindow != null)
             {
@@ -89,6 +105,12 @@ namespace Yakult.Inventory.App.WPF.Set.RequisitionForm.Services
             }
 
             var helper = new System.Windows.Interop.WindowInteropHelper(dialog);
+            if (ownerHandle != IntPtr.Zero)
+            {
+                helper.Owner = ownerHandle;
+                return;
+            }
+
             var wfForm = System.Windows.Forms.Form.ActiveForm;
             if (wfForm != null)
                 helper.Owner = wfForm.Handle;

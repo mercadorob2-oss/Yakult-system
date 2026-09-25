@@ -205,7 +205,7 @@
                             I, <strong>@signerFullName</strong>, <strong>@signerPos</strong>
                             @if (!string.IsNullOrWhiteSpace(stmtOrg2)) { <text>of <strong>@stmtOrg2</strong></text> }
                             @if (!string.IsNullOrWhiteSpace(signerBr)) { <text>, based at the <strong>@signerBr</strong></text> },
-                            hereby authorize the cartridge refill request(s)
+                            hereby authorize the consumable/s request(s)
                             submitted and facilitated by <strong>@a.EmployeeName</strong>.
                         </p>
                         <p class="mb-2" style="font-style:italic; line-height:1.8; color:#333;">
@@ -383,7 +383,7 @@
                             {
                                 <span>&#8211; <strong>@a.DepartmentName</strong></span>
                             },
-                            based at the <strong>@(a.SignerBranch ?? "")</strong>, hereby authorize the cartridge refill request(s)
+                            based at the <strong>@(a.SignerBranch ?? "")</strong>, hereby authorize the consumable/s request(s)
                             submitted and facilitated by <strong>@a.EmployeeName</strong>.
                         </p>
                         <p style="font-style:italic; line-height:2; color:#333; font-size:1rem; margin:0 0 12px 0;">

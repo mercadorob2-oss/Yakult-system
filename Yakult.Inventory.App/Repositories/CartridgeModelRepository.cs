@@ -45,7 +45,24 @@ namespace Yakult.Inventory.App.Repositories
         private const string AvailableStockSubquery = @"
             (SELECT ISNULL(SUM(i.StockOnHand), 0)
              FROM dbo.Item i
-             WHERE i.CartridgeModelId = cm.CartridgeModelId AND i.Active = 1)";
+             WHERE i.CartridgeModelId = cm.CartridgeModelId AND i.Active = 1
+               AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%')";
+
+        // Issuable stock split the same way the Cartridge Exchange counts it
+        // (CartridgeManagementRepository.GetAvailableIssuableStockByCondition):
+        // Brand New = RefillStatus IS NULL, Refilled = RefillStatus 'Available'.
+        private const string BrandNewStockSubquery = @"
+            (SELECT ISNULL(SUM(ISNULL(i.StockOnHand, 0)), 0)
+             FROM dbo.Item i
+             WHERE i.Category = 'Cartridge' AND i.CartridgeModelId = cm.CartridgeModelId
+               AND i.Active = 1 AND i.RefillStatus IS NULL
+               AND ISNULL(i.Remarks, '') NOT LIKE '%IT custody%')";
+
+        private const string RefilledStockSubquery = @"
+            (SELECT ISNULL(SUM(ISNULL(i.StockOnHand, 0)), 0)
+             FROM dbo.Item i
+             WHERE i.Category = 'Cartridge' AND i.CartridgeModelId = cm.CartridgeModelId
+               AND i.Active = 1 AND i.RefillStatus = 'Available')";
 
         /// <summary>
         /// Gets all active cartridge models. VendorId / VendorName are resolved
@@ -71,7 +88,9 @@ namespace Yakult.Inventory.App.Repositories
                         cm.CreatedAt,
                         cm.CreatedBy,
                         u.Name AS CreatedByName,
-                        {AvailableStockSubquery} AS AvailableStock
+                        {AvailableStockSubquery} AS AvailableStock,
+                        {BrandNewStockSubquery}  AS BrandNewStock,
+                        {RefilledStockSubquery}  AS RefilledStock
                     FROM dbo.CartridgeModel cm
                     LEFT JOIN dbo.[User] u ON cm.CreatedBy = u.UserId
                     WHERE cm.IsActive = 1
@@ -94,7 +113,9 @@ namespace Yakult.Inventory.App.Repositories
                             CreatedAt        = reader.GetDateTime(7),
                             CreatedBy        = reader.GetInt32(8),
                             CreatedByName    = reader.IsDBNull(9) ? null : reader.GetString(9),
-                            AvailableStock   = reader.GetInt32(10)
+                            AvailableStock   = reader.GetInt32(10),
+                            BrandNewStock    = reader.GetInt32(11),
+                            RefilledStock    = reader.GetInt32(12)
                         });
                     }
                 }
