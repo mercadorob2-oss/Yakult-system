@@ -22,6 +22,10 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
         public string   ModelNumber      => Model.ModelNumber;
         public bool     IsRequestable    => Model.IsRequestable;
         public bool     IsRefillable     => Model.IsRefillable;
+        public int      BrandNewStock    => Model.BrandNewStock;
+        public int      RefilledStock    => Model.RefilledStock;
+        /// <summary>Issuable units on hand (Brand New + Refilled), as the Cartridge Exchange counts them.</summary>
+        public int      ItemCount        => Model.BrandNewStock + Model.RefilledStock;
         public DateTime CreatedAt        => Model.CreatedAt;
         public string   CreatedByName    => Model.CreatedByName;
 

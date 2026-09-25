@@ -533,7 +533,7 @@
                         '<p class="mb-1" style="font-style:italic;color:#333;line-height:1.7;">' +
                             'I, <strong>[Your Name]</strong>, <strong>[Your Position]</strong> of ' +
                             '<strong>Yakult Philippines &ndash; Sales Department</strong>, based at the ' +
-                            '<strong>Manila Main Branch</strong>, hereby authorize the cartridge refill ' +
+                            '<strong>Manila Main Branch</strong>, hereby authorize the consumable/s ' +
                             'request(s) submitted and facilitated by <strong>Maria Santos</strong>.' +
                         '</p>' +
                         '<div class="table-responsive mb-1">' +

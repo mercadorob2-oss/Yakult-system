@@ -45,9 +45,15 @@
                         <input type="hidden" asp-for="Lines[i].IssuedQty" />
                         <input type="hidden" asp-for="Lines[i].AvailableStock" />
 
+                        <input type="hidden" asp-for="Lines[i].IsExchangeLine" />
+
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
                                 <strong>@line.ItemName</strong>
+                                @if (line.IsExchangeLine)
+                                {
+                                    <span class="badge bg-warning text-dark ms-1">Cartridge exchange</span>
+                                }
                                 <div class="text-muted small">
                                     Req #@line.ReqId · Requested: @line.Quantity · Previously Issued: @line.IssuedQty · Still Pending: @line.PendingQty
                                 </div>
@@ -57,6 +63,60 @@
                             </span>
                         </div>
 
+                        @if (line.IsExchangeLine)
+                        {
+                            @* Cartridge line of a mixed submission: issued like the Cartridge Exchange.
+                               Brand New / Refilled are each capped by their own stock, and one empty is
+                               collected per cartridge issued (declared Good first, then Damaged). *@
+                            <div class="row g-2 align-items-end">
+                                @if (!line.ModelRegistered)
+                                {
+                                    <div class="col-12">
+                                        <div class="alert alert-warning py-1 px-2 mb-1 small">
+                                            Model '@line.ModelNumber' is not in Cartridge Models, so it cannot be issued. It stays pending.
+                                        </div>
+                                    </div>
+                                }
+                                <div class="col-auto">
+                                    <label class="form-label small mb-1">
+                                        Brand New <span class="text-muted">(@line.AvailBrandNew available)</span>
+                                    </label>
+                                    <input type="number" class="form-control mixed-bn-input" style="width:110px;"
+                                           asp-for="Lines[i].BrandNewQty" min="0" max="@line.MaxBrandNew"
+                                           data-row="@i" data-avail-bn="@line.AvailBrandNew" data-avail-rf="@line.AvailRefilled"
+                                           data-requested="@line.PendingQty" />
+                                </div>
+                                <div class="col-auto">
+                                    <label class="form-label small mb-1">
+                                        Refilled <span class="text-muted">(@line.AvailRefilled available)</span>
+                                    </label>
+                                    <input type="number" class="form-control mixed-rf-input" style="width:110px;"
+                                           asp-for="Lines[i].RefilledQty" min="0" max="@line.MaxRefilled"
+                                           data-row="@i" data-avail-bn="@line.AvailBrandNew" data-avail-rf="@line.AvailRefilled"
+                                           data-requested="@line.PendingQty" />
+                                </div>
+                                <div class="col-auto text-center">
+                                    <label class="form-label small mb-1 d-block">Total to Issue</label>
+                                    <div class="fw-bold fs-5" id="mxTotal_@i">0</div>
+                                </div>
+                                <div class="col">
+                                    <label class="form-label small mb-1">Remarks (optional)</label>
+                                    <input type="text" class="form-control" asp-for="Lines[i].Remarks" />
+                                </div>
+                                <div class="col-12">
+                                    <div class="small rounded px-2 py-1 mt-1" style="background:#FFF4E5;border:1px solid #F5C58A;color:#8A4B08;"
+                                         id="mxEmpties_@i"
+                                         data-good="@line.DeclaredGood" data-damaged="@line.DeclaredDamaged"
+                                         data-returned-good="@line.ReturnedGood" data-returned-damaged="@line.ReturnedDamaged">
+                                        @(line.DeclaredGood + line.DeclaredDamaged == 0
+                                            ? "No empties declared by the requester"
+                                            : $"Declared empties: {line.DeclaredGood} Good, {line.DeclaredDamaged} Damaged")
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
                         <div class="row g-2 align-items-end">
                             <div class="col-auto">
                                 <label class="form-label small mb-1">Issue Qty (max @line.MaxIssuable)</label>
@@ -68,6 +128,7 @@
                                 <input type="text" class="form-control" asp-for="Lines[i].Remarks" />
                             </div>
                         </div>
+                        }
                     </div>
                 }
 
@@ -81,3 +142,58 @@
 </div>
 
 <script src="~/js/fulfillment.js" asp-append-version="true"></script>
+<script>
+    // Cartridge lines of mixed submissions: cross-clamps Brand New / Refilled so BN + RF never
+    // exceeds Still Pending (each capped by its own stock), and previews the empties to collect,
+    // allocated like CartridgeExchangeRepository.IssueMixedCartridgeLineAsync (declared Good
+    // first, then Damaged). The server re-caps against fresh DB state on submit regardless.
+    (function () {
+        function num(el, attr) { return parseInt(el.getAttribute(attr), 10) || 0; }
+
+        function update(bnInput, rfInput) {
+            var requested = num(bnInput, 'data-requested');
+            var availBn = num(bnInput, 'data-avail-bn');
+            var availRf = num(bnInput, 'data-avail-rf');
+
+            var bn = parseInt(bnInput.value, 10); if (isNaN(bn) || bn < 0) bn = 0;
+            var rf = parseInt(rfInput.value, 10); if (isNaN(rf) || rf < 0) rf = 0;
+            var maxBn = Math.max(0, Math.min(requested - rf, availBn));
+            var maxRf = Math.max(0, Math.min(requested - bn, availRf));
+            if (bn > maxBn) { bn = maxBn; bnInput.value = bn; }
+            if (rf > maxRf) { rf = maxRf; rfInput.value = rf; }
+
+            var row = bnInput.getAttribute('data-row');
+            var total = bn + rf;
+            var totalEl = document.getElementById('mxTotal_' + row);
+            if (totalEl) totalEl.textContent = total;
+
+            var box = document.getElementById('mxEmpties_' + row);
+            if (!box) return;
+            var dg = num(box, 'data-good'), dd = num(box, 'data-damaged');
+            var rg = num(box, 'data-returned-good'), rd = num(box, 'data-returned-damaged');
+            var text = (dg + dd === 0)
+                ? 'No empties declared by the requester'
+                : 'Declared empties: ' + dg + ' Good, ' + dd + ' Damaged';
+            if (rg + rd > 0) text += ' (already returned: ' + rg + ' Good, ' + rd + ' Damaged)';
+            if (total > 0) {
+                var good = Math.min(total, Math.max(0, dg - rg));
+                var damaged = Math.min(total - good, Math.max(0, dd - rd));
+                var plain = total - good - damaged;
+                text += ' | Collect ' + total + ' empty cartridge(s): ' + (good + plain) + ' Good, ' + damaged + ' Damaged';
+                if (plain > 0) text += ' (' + plain + ' not declared)';
+            }
+            box.textContent = text;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.mixed-bn-input').forEach(function (bnInput) {
+                var row = bnInput.getAttribute('data-row');
+                var rfInput = document.querySelector('.mixed-rf-input[data-row="' + row + '"]');
+                if (!rfInput) return;
+                bnInput.addEventListener('input', function () { update(bnInput, rfInput); });
+                rfInput.addEventListener('input', function () { update(bnInput, rfInput); });
+                update(bnInput, rfInput);
+            });
+        });
+    })();
+</script>

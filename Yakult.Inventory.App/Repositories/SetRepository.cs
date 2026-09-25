@@ -2236,6 +2236,24 @@ END";
                 WHERE SetId = @SetId
                   AND IssuedQty < Quantity;";
 
+            const string deductUnissuedConsumablesSql = @"
+                UPDATE i
+                SET i.StockOnHand  = CASE WHEN ISNULL(i.StockOnHand, 0) >= x.Remaining
+                                          THEN i.StockOnHand - x.Remaining ELSE 0 END,
+                    i.DateModified = GETDATE()
+                FROM dbo.Item i
+                INNER JOIN (
+                    SELECT r.ItemId, SUM(r.Quantity - ISNULL(r.IssuedQty, 0)) AS Remaining
+                    FROM dbo.Request r
+                    INNER JOIN dbo.Item ci ON ci.ItemId = r.ItemId
+                    WHERE r.SetId = @SetId
+                      AND ISNULL(r.IssuedQty, 0) < r.Quantity
+                      AND (   REPLACE(LOWER(ISNULL(ci.Category, '')), ' ', '') LIKE '%ink%'
+                           OR REPLACE(LOWER(ISNULL(ci.Category, '')), ' ', '') LIKE '%toner%'
+                           OR REPLACE(LOWER(ISNULL(ci.Category, '')), ' ', '') LIKE '%printhead%')
+                    GROUP BY r.ItemId
+                ) x ON x.ItemId = i.ItemId;";
+
             const string getSetCodeSql = @"
                 SELECT SetCode
                 FROM dbo.[Set]
@@ -2257,6 +2275,20 @@ END";
                         {
                             cmd.Parameters.AddWithValue("@SetId", setId);
                             rowsAffected = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+                        }
+
+                        // The sync below marks every still-pending line as issued. For Ink / Toner /
+                        // Printhead lines deduct that remainder from stock first; the part already
+                        // issued was deducted by RequestRepository.FulfillRequest. Only on the call
+                        // that actually dispatches the Set (rowsAffected > 0), so a repeat Deploy
+                        // never deducts twice. Floors at 0: a dispatched item is physically gone.
+                        if (rowsAffected > 0)
+                        {
+                            using (var cmd = new SqlCommand(deductUnissuedConsumablesSql, con, tx))
+                            {
+                                cmd.Parameters.AddWithValue("@SetId", setId);
+                                await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
+                            }
                         }
 
                         using (var cmd = new SqlCommand(syncIssuedQtySql, con, tx))

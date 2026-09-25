@@ -4,8 +4,9 @@ namespace Inventory.RequestPortal.Repositories
 {
     /// <summary>
     /// Fulfillment loop for Ink / Toner / Print Head requests (dbo.Request, WorkflowType =
-    /// 'RequestSetManagement'). Cartridge exchange requests are handled separately by
-    /// ICartridgeFulfillmentRepository.
+    /// 'RequestSetManagement'), plus the cartridge lines of mixed portal submissions (listed here,
+    /// but issued through ICartridgeExchangeRepository.IssueMixedCartridgeLineAsync; FulfillRequestAsync
+    /// refuses them). Cartridge-only exchange requests are handled by ICartridgeFulfillmentRepository.
     /// PORTED FROM: Yakult.Inventory.App/Repositories/RequestRepository.cs
     /// (FulfillmentTrackedRequestsCte, GetUnfulfilledRequestsFullSet,
     /// GetPartiallyFulfilledRequestsFullSet, FulfillRequest, GetItemStockOnHand)

@@ -209,7 +209,56 @@
                                                FontSize="9" FontWeight="SemiBold"
                                                Foreground="#4A5A6A" Margin="0,0,0,8"/>
 
-                                    <Grid Margin="0,0,0,4">
+                                    <!-- Cartridge line of a mixed submission: exchanged like the Cartridge Exchange -->
+                                    <StackPanel Margin="0,0,0,4"
+                                                Visibility="{Binding IsExchangeLine, Converter={StaticResource BoolToVis}}">
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Brand New:"
+                                                       FontSize="11" Foreground="#2A3A4A"
+                                                       VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource SpinBtn}" Content="−"
+                                                        Command="{Binding DecreaseBrandNewCommand}"/>
+                                                <TextBox Style="{StaticResource QtyBox}" Margin="4,0"
+                                                         Text="{Binding IssueBrandNewQty, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <Button Style="{StaticResource SpinBtn}" Content="+"
+                                                        Command="{Binding IncreaseBrandNewCommand}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Refilled:"
+                                                       FontSize="11" Foreground="#2A3A4A"
+                                                       VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Style="{StaticResource SpinBtn}" Content="−"
+                                                        Command="{Binding DecreaseRefilledCommand}"/>
+                                                <TextBox Style="{StaticResource QtyBox}" Margin="4,0"
+                                                         Text="{Binding IssueRefilledQty, UpdateSourceTrigger=PropertyChanged}"/>
+                                                <Button Style="{StaticResource SpinBtn}" Content="+"
+                                                        Command="{Binding IncreaseRefilledCommand}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                        <TextBlock Text="{Binding CartridgeStockText}"
+                                                   FontSize="10" Foreground="{Binding AvailableStockColor,
+                                                       Converter={StaticResource HexToBrush}}"
+                                                   TextWrapping="Wrap"/>
+                                        <Border Background="#FFF4E5" BorderBrush="#F5C58A" BorderThickness="1"
+                                                CornerRadius="4" Padding="8,5" Margin="0,6,0,0">
+                                            <TextBlock Text="{Binding EmptiesInfo}" FontSize="10"
+                                                       Foreground="#8A4B08" TextWrapping="Wrap"/>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <Grid Margin="0,0,0,4"
+                                          Visibility="{Binding IsPlainLine, Converter={StaticResource BoolToVis}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="100"/>
                                             <ColumnDefinition Width="Auto"/>

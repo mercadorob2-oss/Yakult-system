@@ -457,6 +457,45 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
+                <!-- Stock: counted the same way as the Cartridge Exchange panel -->
+                <DataGridTextColumn Header="Brand New"
+                                    Binding="{Binding BrandNewStock}"
+                                    Width="95"
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                            <Setter Property="VerticalAlignment"   Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Refilled"
+                                    Binding="{Binding RefilledStock}"
+                                    Width="85"
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                            <Setter Property="VerticalAlignment"   Value="Center"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Item Count"
+                                    Binding="{Binding ItemCount}"
+                                    Width="95"
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                            <Setter Property="VerticalAlignment"   Value="Center"/>
+                            <Setter Property="FontWeight"          Value="SemiBold"/>
+                            <Setter Property="Foreground"          Value="#1E9E5E"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
                 <!-- Created At -->
                 <DataGridTextColumn Header="Created At"
                                     Binding="{Binding CreatedAt, StringFormat={}{0:MM/dd/yyyy}}"

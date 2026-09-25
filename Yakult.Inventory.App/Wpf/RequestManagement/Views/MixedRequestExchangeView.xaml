@@ -440,11 +440,11 @@
                             <DataGridTextColumn Header="Pending" Binding="{Binding PendingQty, Mode=OneWay}" Width="60"
                                                 ElementStyle="{StaticResource CellCenter}"/>
 
-                            <DataGridTextColumn Header="Status" Binding="{Binding FulfillmentStatus, Mode=OneWay}" Width="115">
+                            <DataGridTextColumn Header="Status" Binding="{Binding CurrentStatus, Mode=OneWay}" Width="115">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource CellLeft}">
                                         <Setter Property="FontWeight" Value="SemiBold"/>
-                                        <Setter Property="Foreground" Value="{Binding FulfillmentStatusBrush}"/>
+                                        <Setter Property="Foreground" Value="{Binding CurrentStatusBrush}"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
@@ -489,23 +489,59 @@
                     </TextBlock>
 
                     <!-- Issue quantity -->
-                    <Grid Grid.Row="1" Margin="0,0,0,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" MinWidth="90"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Issue Qty:" Style="{StaticResource FieldLabel}"
-                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <conv:IntegerSpinner Grid.Column="1"
-                                             Value="{Binding IssueQty, Mode=TwoWay}"
-                                             MinValue="0"
-                                             MaxValue="{Binding MaxIssue}"/>
-                        <TextBlock Grid.Column="2" Text="{Binding StockInfo}"
-                                   FontSize="9" FontStyle="Italic"
-                                   Foreground="{Binding StockInfoBrush}"
-                                   VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"/>
-                    </Grid>
+                    <StackPanel Grid.Row="1" Margin="0,0,0,6">
+                        <!-- Non-cartridge line: one quantity against the item's stock -->
+                        <Grid Visibility="{Binding IsPlainLine, Converter={StaticResource BoolToVis}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" MinWidth="90"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Issue Qty:" Style="{StaticResource FieldLabel}"
+                                       VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <conv:IntegerSpinner Grid.Column="1"
+                                                 Value="{Binding IssueQty, Mode=TwoWay}"
+                                                 MinValue="0"
+                                                 MaxValue="{Binding MaxIssue}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding StockInfo}"
+                                       FontSize="9" FontStyle="Italic"
+                                       Foreground="{Binding StockInfoBrush}"
+                                       VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"/>
+                        </Grid>
+
+                        <!-- Cartridge line: exchanged like the Cartridge Exchange (Brand New / Refilled, empties returned) -->
+                        <StackPanel Visibility="{Binding IsExchangeLine, Converter={StaticResource BoolToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MinWidth="90"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto" MinWidth="70"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Brand New:" Style="{StaticResource FieldLabel}"
+                                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <conv:IntegerSpinner Grid.Column="1"
+                                                     Value="{Binding IssueBrandNewQty, Mode=TwoWay}"
+                                                     MinValue="0"
+                                                     MaxValue="{Binding MaxBrandNew}"/>
+                                <TextBlock Grid.Column="2" Text="Refilled:" Style="{StaticResource FieldLabel}"
+                                           VerticalAlignment="Center" Margin="14,0,6,0"/>
+                                <conv:IntegerSpinner Grid.Column="3"
+                                                     Value="{Binding IssueRefilledQty, Mode=TwoWay}"
+                                                     MinValue="0"
+                                                     MaxValue="{Binding MaxRefilled}"/>
+                            </Grid>
+                            <TextBlock Text="{Binding StockInfo}"
+                                       FontSize="9" FontStyle="Italic"
+                                       Foreground="{Binding StockInfoBrush}"
+                                       Margin="0,4,0,0" TextWrapping="Wrap"/>
+                            <Border Background="#FFF4E5" BorderBrush="#F5C58A" BorderThickness="1"
+                                    CornerRadius="4" Padding="7,4" Margin="0,4,0,0">
+                                <TextBlock Text="{Binding EmptiesInfo}" FontSize="10" Foreground="#8A4B08"
+                                           TextWrapping="Wrap"/>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
 
                     <!-- Metrics + status -->
                     <Grid Grid.Row="2" Margin="0,0,0,6">
@@ -839,9 +875,26 @@
                                        Margin="0,0,0,10"/>
                             <ItemsControl ItemsSource="{Binding SelectedGroup.Lines}"
                                           ItemTemplate="{StaticResource IssueLineTemplate}"/>
-                            <TextBlock Text="Each line is issued from its own stock on hand. Quantities cannot exceed what is pending or in stock."
+
+                            <!-- Outcome of this fulfill, same as Cartridge Exchange's Fulfillment Status -->
+                            <Grid Margin="0,4,0,0"
+                                  Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Fulfillment Status:" Style="{StaticResource FieldLabel}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <Border Grid.Column="1" Background="{Binding SelectedGroup.ResultStatusBrush}"
+                                        CornerRadius="10" Padding="10,3">
+                                    <TextBlock Text="{Binding SelectedGroup.ResultStatus}" Foreground="White"
+                                               FontWeight="Bold" FontSize="10"/>
+                                </Border>
+                            </Grid>
+
+                            <TextBlock Text="Each line is issued from its own stock. With no stock, leave it at 0: Fulfill still records the request as Unfulfilled or Partially Fulfilled, and what is not issued stays pending until stock arrives."
                                        FontSize="9" FontStyle="Italic" Foreground="#5A6A7E"
-                                       TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                       TextWrapping="Wrap" Margin="0,6,0,0"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

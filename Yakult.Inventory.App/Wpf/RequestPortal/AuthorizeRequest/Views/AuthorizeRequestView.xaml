@@ -484,13 +484,13 @@
                                             <Run Text="{Binding SignerOrgLine, Mode=OneWay}" FontWeight="Bold"/>
                                             <Run Text=","/>
                                             <LineBreak/>
-                                            <Run Text="hereby authorize the Cartridge Refill Request/s"/>
+                                            <Run Text="hereby authorize the Consumable/s Request/s"/>
                                             <LineBreak/>
                                             <Run Text="submitted by "/>
                                             <Run Text="{Binding RequesterName,     Mode=OneWay}" FontWeight="Bold"/>
                                             <Run Text=" ("/>
                                             <Run Text="{Binding RequesterPosition, Mode=OneWay}" FontWeight="Bold"/>
-                                            <Run Text=") for the following cartridges:"/>
+                                            <Run Text=") for the following consumable/s:"/>
                                         </TextBlock>
 
                                         <!-- Cartridge table inside the document -->
