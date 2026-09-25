@@ -292,7 +292,7 @@
                         <!-- Draw panel -->
                         <div id="panelDraw">
                             <div style="border:2px solid #e0e0e0; border-radius:12px; overflow:hidden; background:#fff; touch-action:none; cursor:crosshair; display:inline-block; width:100%;">
-                                <canvas id="sigCanvas" height="180"
+                                <canvas id="sigCanvas" height="240"
                                         style="display:block; width:100%; touch-action:none;"></canvas>
                             </div>
                             <div class="mt-2 d-flex gap-2">
@@ -545,7 +545,7 @@
             // Preserve existing drawing on resize
             const tmp = canvas.toDataURL();
             canvas.width  = w;
-            canvas.height = 180;
+            canvas.height = 240;   // same height as the desktop signing pad
             // Restore
             const img = new Image();
             img.onload = () => ctx.drawImage(img, 0, 0);

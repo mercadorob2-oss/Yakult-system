@@ -87,7 +87,7 @@ namespace Inventory.RequestPortal.Controllers
             int pendingCount = 0;
             if (user!.DepartmentId.HasValue)
             {
-                var pending = await _authRepo.GetPendingByDepartmentAsync(user.DepartmentId.Value);
+                var pending = await _authRepo.GetPendingForApproverAsync(user.CompanyId, user.BranchId, user.DepartmentId, user.EmployeeId);
                 pendingCount = pending.Count;
             }
 
@@ -147,7 +147,7 @@ namespace Inventory.RequestPortal.Controllers
 
             if (user!.DepartmentId.HasValue)
             {
-                pending = await _authRepo.GetPendingByDepartmentAsync(user.DepartmentId.Value);
+                pending = await _authRepo.GetPendingForApproverAsync(user.CompanyId, user.BranchId, user.DepartmentId, user.EmployeeId);
             }
 
             ViewBag.SelectedAuthId = selectedId;
@@ -260,7 +260,7 @@ namespace Inventory.RequestPortal.Controllers
             var pending = user!.IsDeveloper
                 ? await _authRepo.GetAllPendingAsync()
                 : user.DepartmentId.HasValue
-                    ? await _authRepo.GetPendingByDepartmentAsync(user.DepartmentId.Value)
+                    ? await _authRepo.GetPendingForApproverAsync(user.CompanyId, user.BranchId, user.DepartmentId, user.EmployeeId)
                     : new List<CartridgeAuthorizationViewModel>();
 
             var result = pending.Select(a => new

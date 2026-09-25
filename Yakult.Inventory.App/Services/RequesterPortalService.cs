@@ -764,12 +764,12 @@ namespace Yakult.Inventory.App.Services
 
                 // CartridgeType ("With Cartridge" / "Without Cartridge") is the primary value read
                 // back as ConditionType by GetPendingCartridgeRequests (via crm.Remarks) — but that
-                // queue only exists for pure cartridge-only submissions (InsertCartridgeRequestModel
-                // below is only ever called in that case). Outside of it, there is no downstream
-                // reader expecting a condition/category tag in Remarks, so tagging it there just
-                // shows up as a fabricated "remark" the requester never typed (e.g. the bare
-                // category "Ink") on pages like Set Details. Only synthesize the tag when it's
-                // actually consumed.
+                // queue only exists for pure cartridge-only submissions. Outside of it, there is no
+                // downstream reader expecting a condition/category tag in Remarks, so tagging it
+                // there just shows up as a fabricated "remark" the requester never typed (e.g. the
+                // bare category "Ink") on pages like Set Details and the requisition form. Only
+                // synthesize the tag when it's actually consumed.
+                // MATCHES: Inventory.RequestPortal (Web) CreateCartridgeRequestByModelCore.
                 bool needsConditionTag = isCartridgeItem && allCartridge;
                 string conditionPart = needsConditionTag
                     ? (!string.IsNullOrWhiteSpace(item.CartridgeType) ? item.CartridgeType : "With Cartridge")

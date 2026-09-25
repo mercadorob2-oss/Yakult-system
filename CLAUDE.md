@@ -74,6 +74,13 @@ Use `SubType`:
 - `IsSuperAdmin` — set from `dbo.[User].IsSuperAdmin` column; grants access to Account Permissions page and future role management UI
 - `IsAdmin` — `IsDeveloper || HasRole("Admin")`
 - `IsApprover` — hardcoded position string list in `AppSession.cs`; positions must be added here manually for now
+- **Who sees a pending authorization (desktop and web must match):**
+  - The rule lives in desktop `CartridgeAuthorizationRepository.GetPendingByScopeAsync` and web `CartridgeAuthorizationWebRepository.GetPendingForApproverAsync`.
+  - **Scope:** the approver's company, branch and department.
+  - **Manager-title requesters** (`dbo.ApprovalRoleTitle`, role 'Manager') are visible only to themselves (they self-sign). If that manager has **no active user account**, the request falls back to the other approvers in scope, so it can't get stuck.
+  - **Everyone else's requests** are visible to all approvers in scope except the requester.
+  - Developers / admins see all pending requests.
+  - The Approve / Reject actions don't re-check this; the rule only controls what is listed.
 
 ## WPF XAML — Properties That Do NOT Exist
 

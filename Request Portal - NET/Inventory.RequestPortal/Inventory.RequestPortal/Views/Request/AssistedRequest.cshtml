@@ -568,7 +568,10 @@
             box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
         }
         .combo-option { padding: .375rem .75rem; cursor: pointer; }
-        .combo-option:hover, .combo-option.active { background: #0d6efd; color: #fff; }
+        /* Hover: border highlight only, no solid fill. Current selection: blue bold text. */
+        .combo-option { border: 1px solid transparent; border-radius: .25rem; margin: 1px 2px; }
+        .combo-option:hover { background: transparent; border-color: #0d6efd; box-shadow: 0 0 0 .15rem rgba(13,110,253,.15); }
+        .combo-option.active { background: transparent; color: #0d6efd; font-weight: 600; }
     </style>
 
     <script>
@@ -638,8 +641,8 @@
                     clearLi.textContent = '— Clear filter —';
                     clearLi.style.cssText = 'padding:7px 12px; cursor:pointer; font-size:0.85rem; color:#6c757d; font-style:italic; border-bottom:1px solid #eee;';
                     clearLi.addEventListener('mousedown', function(e) { e.preventDefault(); pick(null); });
-                    clearLi.addEventListener('mouseenter', function() { clearLi.style.background = '#f8f9fa'; });
-                    clearLi.addEventListener('mouseleave', function() { clearLi.style.background = ''; });
+                    clearLi.addEventListener('mouseenter', function() { clearLi.style.boxShadow = 'inset 0 0 0 1px #0d6efd'; });
+                    clearLi.addEventListener('mouseleave', function() { clearLi.style.boxShadow = ''; });
                     dropdown.appendChild(clearLi);
                 }
                 items.slice(0, 60).forEach(function(item) {
@@ -647,8 +650,8 @@
                     li.textContent = item.name;
                     li.style.cssText = 'padding:8px 12px; cursor:pointer; font-size:0.88rem;';
                     li.addEventListener('mousedown', function(e) { e.preventDefault(); pick(item); });
-                    li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
-                    li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                    li.addEventListener('mouseenter', function() { li.style.boxShadow = 'inset 0 0 0 1px #0d6efd'; });
+                    li.addEventListener('mouseleave', function() { li.style.boxShadow = ''; });
                     dropdown.appendChild(li);
                 });
                 if (dropdown.children.length > 0) { position(); dropdown.style.display = 'block'; }
@@ -780,8 +783,8 @@
                     empDropdown.style.display = 'none';
                     showEmpInfo(emp);
                 });
-                li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
-                li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                li.addEventListener('mouseenter', function() { li.style.boxShadow = 'inset 0 0 0 1px #0d6efd'; });
+                li.addEventListener('mouseleave', function() { li.style.boxShadow = ''; });
                 empDropdown.appendChild(li);
             });
             positionEmpDropdown();
@@ -841,8 +844,8 @@
                     approverHidden.value           = a.empId;
                     approverDropdown.style.display = 'none';
                 });
-                li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
-                li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                li.addEventListener('mouseenter', function() { li.style.boxShadow = 'inset 0 0 0 1px #0d6efd'; });
+                li.addEventListener('mouseleave', function() { li.style.boxShadow = ''; });
                 approverDropdown.appendChild(li);
             });
             positionApproverDropdown();
@@ -1180,8 +1183,8 @@
                     rbAutofillFilters(emp);
                     syncRbPreview();
                 });
-                li.addEventListener('mouseenter', function() { li.style.background = '#f0f0f0'; });
-                li.addEventListener('mouseleave', function() { li.style.background = ''; });
+                li.addEventListener('mouseenter', function() { li.style.boxShadow = 'inset 0 0 0 1px #0d6efd'; });
+                li.addEventListener('mouseleave', function() { li.style.boxShadow = ''; });
                 rbDropdown.appendChild(li);
             });
             positionRbDropdown();

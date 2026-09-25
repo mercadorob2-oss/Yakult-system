@@ -211,9 +211,9 @@
                     </div>
 
                     <div id="panelDraw">
-                        <div style="max-width:min(520px, 100%); position:relative;">
+                        <div style="width:100%; position:relative;">
                             <div style="border:1.5px solid #d0d0d0; border-radius:8px; overflow:hidden; background:#fafafa; touch-action:none; cursor:crosshair; position:relative;">
-                                <canvas id="sigCanvas" height="150" style="display:block; width:100%; touch-action:none;"></canvas>
+                                <canvas id="sigCanvas" height="240" style="display:block; width:100%; touch-action:none;"></canvas>
                                 <div style="position:absolute; bottom:28px; left:16px; right:16px; border-bottom:1.5px solid #c0c0c0; pointer-events:none;"></div>
                                 <div style="position:absolute; bottom:10px; left:16px; font-size:.7rem; color:#bbb; pointer-events:none; letter-spacing:.5px;">SIGN ABOVE</div>
                             </div>
@@ -497,7 +497,7 @@ else
         function resizeCanvas() {
             const w = canvas.offsetWidth;
             const tmp = canvas.toDataURL();
-            canvas.width = w; canvas.height = 150;
+            canvas.width = w; canvas.height = 240;   // same height as the desktop signing pad
             const img = new Image();
             img.onload = () => ctx.drawImage(img, 0, 0);
             img.src = tmp;

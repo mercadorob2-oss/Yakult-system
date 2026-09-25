@@ -225,14 +225,23 @@ namespace Yakult.Inventory.App.Repositories
                   AND (@BranchId     IS NULL OR e.BranchId       = @BranchId)
                   AND (@DepartmentId IS NULL OR ca.DepartmentId  = @DepartmentId)
                   AND (
-                      -- Manager requests: visible only to the manager themselves
+                      -- Manager requests: visible only to the manager themselves (they self-sign).
+                      -- If the manager has no active user account (e.g. an IT-Assisted request
+                      -- made on their behalf) nobody could ever sign it, so it falls back to the
+                      -- other approvers in scope.
+                      -- MATCHES: Inventory.RequestPortal (Web) CartridgeAuthorizationWebRepository.GetPendingForApproverAsync
                       (
                           EXISTS (
                               SELECT 1 FROM dbo.ApprovalRoleTitle art
                               WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
                                 AND art.IsActive = 1 AND art.ApprovalRole = 'Manager'
                           )
-                          AND ca.EmployeeId = @ExcludeEmpId
+                          AND (
+                                ca.EmployeeId = @ExcludeEmpId
+                             OR (NOT EXISTS (SELECT 1 FROM dbo.[User] mu
+                                             WHERE mu.EmpId = ca.EmployeeId AND mu.IsActive = 1)
+                                 AND (@ExcludeEmpId IS NULL OR ca.EmployeeId <> @ExcludeEmpId))
+                          )
                       )
                       OR
                       -- Non-manager requests: visible to everyone except the requester themselves
