@@ -2217,12 +2217,12 @@ END";
         /// <summary>
         /// Manual dispatch: marks set as dispatched and logs per-item audit entries
         /// </summary>
-        public async Task<string> DispatchSetAsync(int setId)
+        public async Task<string> DispatchSetAsync(int setId, DateTime? dispatchDate = null)
         {
             const string updateSql = @"
                 UPDATE dbo.[Set]
                 SET Status = 'Dispatched',
-                    DispatchDate = ISNULL(DispatchDate, SYSDATETIME())
+                    DispatchDate = ISNULL(@DispatchDate, ISNULL(DispatchDate, SYSDATETIME()))
                 WHERE SetId = @SetId
                   AND ISNULL(Status, '') <> 'Dispatched';";
 
@@ -2256,6 +2256,8 @@ END";
                         using (var cmd = new SqlCommand(updateSql, con, tx))
                         {
                             cmd.Parameters.AddWithValue("@SetId", setId);
+                            cmd.Parameters.AddWithValue("@DispatchDate",
+                                dispatchDate.HasValue ? (object)dispatchDate.Value : DBNull.Value);
                             rowsAffected = await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
                         }
 
@@ -2281,8 +2283,13 @@ END";
 
                         requests = await GetRequestsInSetAsync(setId, con, tx).ConfigureAwait(false);
 
-                        // Use Client time (DateTime.Now) to match Request creation time and avoid clock skew
-                        DateTime actionTime = DateTime.Now;
+                        // Backdated deploys stamp the dispatch audit entries with the chosen
+                        // date so history stays coherent; otherwise use client time (DateTime.Now)
+                        // to match Request creation time and avoid clock skew.
+                        DateTime actionTime = dispatchDate ?? DateTime.Now;
+                        string deployNote = dispatchDate.HasValue && dispatchDate.Value.Date != DateTime.Today
+                            ? "Manually deployed via Deploy button (backdated to " + dispatchDate.Value.ToString("yyyy-MM-dd") + ")"
+                            : "Manually deployed via Deploy button";
 
                         var auditRepo = new ItemAuditTrailRepository();
 
@@ -2307,7 +2314,7 @@ END";
                                     ReferenceType = "Set",
                                     ReferenceId = setId,
                                     SetCode = info.SetCode,
-                                    Notes = "Manually deployed via Deploy button",
+                                    Notes = deployNote,
                                     CreatedBy = AppSession.CurrentUserName ?? "System"
                                 }, con, tx).ConfigureAwait(false);
                             }

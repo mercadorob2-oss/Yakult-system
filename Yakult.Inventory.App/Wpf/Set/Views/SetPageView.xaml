@@ -293,6 +293,9 @@
                     <Button Style="{StaticResource SmallBtn}" Command="{Binding BulkAddFilesCommand}" Margin="0,0,16,8">
                         <TextBlock Text="📁  Bulk Add Files"/>
                     </Button>
+                    <Button Style="{StaticResource SmallBtn}" Command="{Binding BulkDeployCommand}" Margin="0,0,16,8">
+                        <TextBlock Text="📋  Paste Bulk Deploy"/>
+                    </Button>
 
                     <!-- Search -->
                     <Border BorderBrush="{StaticResource InputBorderBrush}" BorderThickness="1"

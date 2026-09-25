@@ -1273,19 +1273,18 @@ namespace Yakult.Inventory.App.Pages.Set
         {
             try
             {
-                var result = WinMsgBox.Show(
-                    "Deploy this set now? This will mark it as dispatched and log the action.",
-                    "Confirm Deploy", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                if (result != MessageBoxResult.Yes) return;
+                var dateDialog = new DeployDateDialog(_setId);
+                if (dateDialog.ShowDialog(new WpfWin32Window(this)) != WinForms.DialogResult.OK) return;
+                DateTime deployDate = dateDialog.SelectedDate;
 
                 Mouse.OverrideCursor  = WinCursor.Wait;
                 BtnDeploy.IsEnabled   = false;
                 BtnDeploy.Content     = "Deploying...";
 
-                await _repository.DispatchSetAsync(_setId);
+                await _repository.DispatchSetAsync(_setId, deployDate);
 
                 WinMsgBox.Show(
-                    "Set deployed successfully.\n\nUse 'Send Notifications (Sets)' from the menu to send the deployment email.",
+                    $"Set deployed successfully (deployed {deployDate:yyyy-MM-dd}).\n\nUse 'Send Notifications (Sets)' from the menu to send the deployment email.",
                     "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 _isDeployed         = true;
