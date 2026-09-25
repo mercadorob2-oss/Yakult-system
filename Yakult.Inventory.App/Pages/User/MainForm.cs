@@ -891,13 +891,15 @@ private void UpdateAdminMenuVisibility()
             // ── ADMIN PANEL (Admin/Developer only) ───────────────────────────────────
             adminPanel = new System.Windows.Forms.Panel
             {
-                Height = 2 * buttonHeight,
+                // "Users" (Account Management) is Super Admin only.
+                Height = (CanOpenUserAccountManagement ? 2 : 1) * buttonHeight,
                 Dock = DockStyle.Top,
                 BackColor = Color.FromArgb(250, 250, 250),
                 Visible = false
             };
             // Sub-buttons added in reverse visual order (last added = top)
-            AddSubMenuButton(adminPanel, "Users", (s, e) => { ShowUserAccountManagementPage(); ToggleMenu(); });
+            if (CanOpenUserAccountManagement)
+                AddSubMenuButton(adminPanel, "Users", (s, e) => { ShowUserAccountManagementPage(); ToggleMenu(); });
             AddSubMenuButton(adminPanel, "User Activity", (s, e) => { ShowUserActivityPage(); ToggleMenu(); });
             sideMenuContent.Controls.Add(adminPanel);
 
@@ -3925,13 +3927,21 @@ private void UpdateAdminMenuVisibility()
             page.Dock = DockStyle.Fill;
         }
 
-        // NEW: User Account Management (Admin Only)
+        /// <summary>
+        /// Super Admin only, and not restricted on User Access > Pages
+        /// (PermissionItem 'UserAccountManagementPage').
+        /// </summary>
+        private static bool CanOpenUserAccountManagement =>
+            Session.AppSession.IsSuperAdmin &&
+            Yakult.Inventory.App.Security.PermissionResolver.HasPageAccess("UserAccountManagementPage");
+
+        // User Account Management (SuperAdmin Only)
         private void ShowUserAccountManagementPage()
         {
             // Check authorization
-            if (!Session.AppSession.IsAdmin)
+            if (!CanOpenUserAccountManagement)
             {
-                MessageBox.Show("Access denied. Admin privileges required.",
+                MessageBox.Show("Access denied. Super Admin privileges required.",
                     "Unauthorized",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);

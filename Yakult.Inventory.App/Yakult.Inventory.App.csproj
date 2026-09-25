@@ -467,6 +467,9 @@
     <Compile Include="WPF\CartridgeManagement\ViewModels\NonRefillableEmptyCartridgesViewModel.cs" />
     <Compile Include="WPF\CartridgeManagement\ViewModels\OutboundBatchesViewModel.cs" />
     <Compile Include="WPF\CartridgeManagement\ViewModels\VendorCartridgeRefillViewModel.cs" />
+    <Compile Include="Wpf\Admin\ReferenceData\ViewModels\HolidayManagementViewModel.cs" />
+    <Compile Include="Wpf\Admin\ReferenceData\ViewModels\AcronymListViewModel.cs" />
+    <Compile Include="Wpf\Admin\UserAccess\ViewModels\UserAccessViewModel.cs" />
     <Compile Include="Wpf\Admin\AccountManagement\ViewModels\EmployeeManagementViewModel.cs" />
     <Compile Include="Wpf\Admin\AccountManagement\ViewModels\UserAccountManagementViewModel.cs" />
     <Compile Include="Wpf\Shared\Controls\TokenSearchBox.cs" />
@@ -483,6 +486,18 @@
     <Compile Include="Wpf\Admin\EmailManagement\ViewModels\SmtpSendSettingsViewModel.cs" />
     <Compile Include="Wpf\Admin\EmailManagement\ViewModels\EmailLogsViewModel.cs" />
     <Compile Include="Wpf\Admin\EmailManagement\Converters\NullableProfileIdConverter.cs" />
+    <Compile Include="Wpf\Admin\ReferenceData\Views\HolidayManagementView.xaml.cs">
+      <DependentUpon>HolidayManagementView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Admin\ReferenceData\Views\HolidayEditWindow.xaml.cs">
+      <DependentUpon>HolidayEditWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Admin\ReferenceData\Views\AcronymListView.xaml.cs">
+      <DependentUpon>AcronymListView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Admin\UserAccess\Views\UserAccessView.xaml.cs">
+      <DependentUpon>UserAccessView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Wpf\Admin\AccountManagement\Views\EmployeeManagementView.xaml.cs">
       <DependentUpon>EmployeeManagementView.xaml</DependentUpon>
     </Compile>
@@ -1117,6 +1132,15 @@
     </Compile>
     <Compile Include="Forms\ConsumableManagement\RequestSetManagementPortalForm.cs">
       <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\Admin\ReferenceData\HolidayManagementWpfHost.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Admin\ReferenceData\AcronymWpfHost.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Admin\UserAccess\UserAccessWpfHost.cs">
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Forms\Admin\AccountManagement\EmployeeManagementWpfHost.cs">
       <SubType>UserControl</SubType>
@@ -1813,6 +1837,22 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="WPF\CartridgeManagement\Dialogs\AssignReturnsDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Admin\ReferenceData\Views\HolidayManagementView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Admin\ReferenceData\Views\HolidayEditWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Admin\ReferenceData\Views\AcronymListView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Admin\UserAccess\Views\UserAccessView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -1,0 +1,331 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Admin.ReferenceData.Views.HolidayManagementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+             xmlns:local="clr-namespace:Yakult.Inventory.App.WPF.Admin.ReferenceData.Views"
+             Background="#F5F7FA"
+             FontFamily="Segoe UI"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter        x:Key="BoolToVis"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+        <local:HolidayDateMarkConverter        x:Key="DayMark"/>
+
+        <SolidColorBrush x:Key="RegularBrush" Color="#E74C3C"/>
+        <SolidColorBrush x:Key="SpecialBrush" Color="#3498DB"/>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Foreground" Value="#1A2333"/>
+        </Style>
+
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="10"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#7A8A9A"/>
+        </Style>
+
+        <Style x:Key="StatCaption" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Margin"     Value="0,4"/>
+        </Style>
+
+        <Style x:Key="StatValue" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin"     Value="0,2"/>
+        </Style>
+
+        <Style x:Key="FilterLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"          Value="11"/>
+            <Setter Property="Foreground"        Value="#5A6A7A"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin"            Value="0,0,6,0"/>
+        </Style>
+
+        <Style x:Key="PillButton" TargetType="Button">
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="FontWeight"      Value="Bold"/>
+            <Setter Property="Padding"         Value="16,0"/>
+            <Setter Property="Height"          Value="32"/>
+            <Setter Property="MinWidth"        Value="96"/>
+            <Setter Property="Margin"          Value="0,0,6,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="16"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.87"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.70"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.38"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Calendar day: bold + coloured when a holiday falls on it (red = Regular, blue = Special) -->
+        <Style x:Key="HolidayDayButton" TargetType="CalendarDayButton"
+               BasedOn="{StaticResource {x:Type CalendarDayButton}}">
+            <Setter Property="Foreground" Value="{Binding Converter={StaticResource DayMark}, ConverterParameter=fg}"/>
+            <Setter Property="FontWeight" Value="{Binding Converter={StaticResource DayMark}, ConverterParameter=weight}"/>
+            <Setter Property="Background" Value="{Binding Converter={StaticResource DayMark}, ConverterParameter=bg}"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background"      Value="#3498DB"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="FontSize"        Value="12"/>
+            <Setter Property="Padding"         Value="12,9"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <!-- Row colours match the old page: red Regular, blue Special, grey Inactive -->
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="#F3F8FF"/>
+            <Setter Property="Foreground" Value="#195AA0"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsRegular}" Value="True">
+                    <Setter Property="Background" Value="#FFF5F4"/>
+                    <Setter Property="Foreground" Value="#B41E14"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsActive}" Value="False">
+                    <Setter Property="Background" Value="#FAFAFA"/>
+                    <Setter Property="Foreground" Value="#A0A0A0"/>
+                </DataTrigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#EAF2FC"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#C8DFFE"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{Binding Foreground, RelativeSource={RelativeSource AncestorType=DataGridRow}}"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background"  Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Foreground"  Value="#1A2333"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CellText" TargetType="TextBlock">
+            <Setter Property="Padding"           Value="12,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextTrimming"      Value="CharacterEllipsis"/>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- ClearTypeHint: WPF drops to greyscale anti-aliasing inside an ElementHost unless told
+         the surface is opaque (it is: every panel below has a solid background). -->
+    <Grid RenderOptions.ClearTypeHint="Enabled" Background="#F5F7FA">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ═══ Left sidebar ═══ -->
+        <Border Grid.Column="0" Background="White" BorderBrush="#DAE0E6" BorderThickness="0,0,1,0">
+            <DockPanel LastChildFill="True">
+                <Border DockPanel.Dock="Top" Background="#3498DB" Height="58" Padding="18,0">
+                    <TextBlock Text="Company Holidays" Foreground="White" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+                </Border>
+
+                <StackPanel DockPanel.Dock="Top" Margin="12,10,12,6">
+                    <TextBlock Text="CALENDAR" Style="{StaticResource SectionLabel}" Margin="0,0,0,6"/>
+                    <!-- The Viewbox scales the calendar up. Display-mode text is snapped to pixels at its
+                         original size and then stretched (blurry), so text here renders in Ideal mode,
+                         which stays sharp at any scale. -->
+                    <Viewbox Stretch="Uniform" StretchDirection="Both" MaxHeight="260"
+                             TextOptions.TextFormattingMode="Ideal"
+                             TextOptions.TextRenderingMode="ClearType"
+                             RenderOptions.ClearTypeHint="Enabled">
+                        <Calendar x:Name="HolidayCalendar"
+                                  SelectionMode="SingleDate"
+                                  IsTodayHighlighted="True"
+                                  CalendarDayButtonStyle="{StaticResource HolidayDayButton}"
+                                  SelectedDatesChanged="HolidayCalendar_SelectedDatesChanged"
+                                  PreviewMouseUp="HolidayCalendar_PreviewMouseUp"
+                                  MouseDoubleClick="HolidayCalendar_MouseDoubleClick"/>
+                    </Viewbox>
+                    <TextBlock Text="Double-click a date to add a holiday on it." FontSize="10" Foreground="#9AA5B1"
+                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <Border DockPanel.Dock="Top" Background="#F2F6FA" Padding="18,10">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="10" Height="10" Fill="{StaticResource RegularBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Regular Holiday" FontSize="11" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,2">
+                            <Ellipse Width="10" Height="10" Fill="{StaticResource SpecialBrush}" VerticalAlignment="Center"/>
+                            <TextBlock Text="Special Non-Working" FontSize="11" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Margin="18,14,18,14">
+                    <TextBlock Text="QUICK STATS" Style="{StaticResource SectionLabel}" Margin="0,0,0,6"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="Total"        Style="{StaticResource StatCaption}"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding StatTotal}"    Style="{StaticResource StatValue}"/>
+                        <TextBlock Grid.Row="1" Text="Regular"      Style="{StaticResource StatCaption}"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding StatRegular}"  Style="{StaticResource StatValue}" Foreground="{StaticResource RegularBrush}"/>
+                        <TextBlock Grid.Row="2" Text="Special"      Style="{StaticResource StatCaption}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding StatSpecial}"  Style="{StaticResource StatValue}" Foreground="{StaticResource SpecialBrush}"/>
+                        <TextBlock Grid.Row="3" Text="Next 30 Days" Style="{StaticResource StatCaption}"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding StatUpcoming}" Style="{StaticResource StatValue}"/>
+                    </Grid>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ═══ Right: filters, actions, list, details ═══ -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Filter bar -->
+            <Border Grid.Row="0" Background="White" BorderBrush="#DEE2E6" BorderThickness="0,0,0,1" Padding="14,10">
+                <DockPanel LastChildFill="False">
+                    <Border DockPanel.Dock="Right" Background="#EBF5FF" CornerRadius="4" Padding="8,3" VerticalAlignment="Center"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="#4E9AFC"/>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Search:" Style="{StaticResource FilterLabel}"/>
+                        <TextBox Width="200" Height="26" FontSize="11" VerticalContentAlignment="Center" Margin="0,0,16,0"
+                                 ToolTip="Search by holiday name or type"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Show:" Style="{StaticResource FilterLabel}"/>
+                        <ComboBox Width="160" Height="26" FontSize="11" VerticalContentAlignment="Center" Margin="0,0,16,0"
+                                  ItemsSource="{Binding ShowOptions}" SelectedItem="{Binding ShowOption}"/>
+
+                        <TextBlock Text="Year:" Style="{StaticResource FilterLabel}"/>
+                        <ComboBox Width="80" Height="26" FontSize="11" VerticalContentAlignment="Center" Margin="0,0,16,0"
+                                  ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear}"/>
+
+                        <TextBlock Text="{Binding CountText}" FontSize="11" Foreground="#7A8A9A" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- Actions -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="12,8">
+                <Button Content="+  Add"      Style="{StaticResource PillButton}" Background="#4E9AFC" Click="BtnAdd_Click"/>
+                <Button Content="✎  Edit"     Style="{StaticResource PillButton}" Background="#34495E" Click="BtnEdit_Click"
+                        IsEnabled="{Binding HasSelection}"/>
+                <Button Content="✕  Delete"   Style="{StaticResource PillButton}" Background="#E74C3C" Click="BtnDelete_Click"
+                        IsEnabled="{Binding HasSelection}"/>
+                <Button Content="↺  Refresh"  Style="{StaticResource PillButton}" Background="#27AE60" Click="BtnRefresh_Click"/>
+            </StackPanel>
+
+            <!-- Holiday list -->
+            <Border Grid.Row="2" Background="White" BorderBrush="#DCE0E5" BorderThickness="1" Margin="12,0,12,0">
+                <Grid>
+                    <DataGrid x:Name="HolidayGrid"
+                              ItemsSource="{Binding Rows}"
+                              SelectedItem="{Binding SelectedRow}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              CanUserSortColumns="False"
+                              CanUserReorderColumns="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              RowHeaderWidth="0"
+                              GridLinesVisibility="Horizontal"
+                              HorizontalGridLinesBrush="#E8ECF0"
+                              Background="White"
+                              BorderThickness="0"
+                              RowHeight="36"
+                              FontSize="12"
+                              SelectionChanged="HolidayGrid_SelectionChanged"
+                              MouseDoubleClick="HolidayGrid_MouseDoubleClick"
+                              Visibility="{Binding IsEmpty, Converter={StaticResource InvBoolToVis}}">
+                        <DataGrid.Resources>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"                      Color="#C8DFFE"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"                  Color="#1A2333"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"     Color="#D6E6FC"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                        </DataGrid.Resources>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Date"         Binding="{Binding DateText}"      Width="17*" ElementStyle="{StaticResource CellText}"/>
+                            <DataGridTextColumn Header="Holiday Name" Binding="{Binding HolidayName}"   Width="34*" ElementStyle="{StaticResource CellText}"/>
+                            <DataGridTextColumn Header="Type"         Binding="{Binding HolidayType}"   Width="24*" ElementStyle="{StaticResource CellText}"/>
+                            <DataGridTextColumn Header="Recurring"    Binding="{Binding RecurringText}" Width="12*" ElementStyle="{StaticResource CellText}"/>
+                            <DataGridTextColumn Header="Active"       Binding="{Binding StatusText}"    Width="11*" ElementStyle="{StaticResource CellText}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <TextBlock TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               FontSize="13" Foreground="#BEBEBE"
+                               Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+                        No holidays found for this selection.<LineBreak/>Click  + Add  to create a new holiday.
+                    </TextBlock>
+                </Grid>
+            </Border>
+
+            <!-- Details strip -->
+            <Border Grid.Row="3" Background="White" BorderBrush="#DEE2E6" BorderThickness="0,1,0,0" Padding="14,10" Margin="0,10,0,0">
+                <StackPanel>
+                    <TextBlock Text="{Binding DetailName}" FontSize="15" FontWeight="Bold">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#195AA0"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding DetailIsRegular}" Value="True">
+                                        <Setter Property="Foreground" Value="#B41E14"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding HasSelection}" Value="False">
+                                        <Setter Property="Foreground" Value="#7A8A9A"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="{Binding DetailMeta}" FontSize="11" Foreground="#7A8A9A" Margin="0,3,0,0"/>
+                    <TextBlock Text="{Binding DetailNotes}" FontSize="11" FontStyle="Italic" Foreground="#7A8A9A" Margin="0,2,0,0"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

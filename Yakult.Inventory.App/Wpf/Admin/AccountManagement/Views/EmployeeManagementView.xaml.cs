@@ -49,7 +49,16 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.Views
         private void CboFilter_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_vm == null || CboFilter.SelectedItem == null) return;
-            _vm.FilterOption = ((ComboBoxItem)CboFilter.SelectedItem).Content?.ToString() ?? "All";
+            string option = ((ComboBoxItem)CboFilter.SelectedItem).Content?.ToString() ?? "All";
+
+            // Newly / Oldest Added only apply when no column header sort is active, so drop it.
+            if (option == "Newly Added" || option == "Oldest Added")
+            {
+                foreach (var col in MainGrid.Columns)
+                    col.SortDirection = null;
+                _vm.ClearSort();
+            }
+            _vm.FilterOption = option;
         }
 
         private void BtnAdd_Click(object sender, RoutedEventArgs e)

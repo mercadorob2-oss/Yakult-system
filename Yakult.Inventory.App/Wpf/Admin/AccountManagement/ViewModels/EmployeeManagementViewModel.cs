@@ -280,6 +280,12 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                     ? ordered.OrderBy(e => GetEmployeeColumnValue(e, _sortColumn) ?? "", System.StringComparer.OrdinalIgnoreCase)
                     : ordered.OrderByDescending(e => GetEmployeeColumnValue(e, _sortColumn) ?? "", System.StringComparer.OrdinalIgnoreCase);
             }
+            // "Newly Added" / "Oldest Added" order by EmpId (identity = insertion order).
+            // DateCreated is unreliable for this: some inserts write local time, others the UTC default.
+            else if (filter == "Newly Added")
+                ordered = ordered.OrderByDescending(e => e.EmpId);
+            else if (filter == "Oldest Added")
+                ordered = ordered.OrderBy(e => e.EmpId);
 
             // With Show Archived on, float archived rows to the top (stable sort — preserves
             // the column/name ordering established above within each group).
@@ -337,6 +343,14 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
             _sortAscending = ascending;
             _currentPage   = 1;
             ApplyFilter();
+        }
+
+        /// <summary>Drops the column header sort and returns to page 1. Doesn't re-filter; the caller does that.</summary>
+        public void ClearSort()
+        {
+            _sortColumn    = null;
+            _sortAscending = true;
+            _currentPage   = 1;
         }
 
         public List<string> GetUniqueValuesForColumn(string column)
