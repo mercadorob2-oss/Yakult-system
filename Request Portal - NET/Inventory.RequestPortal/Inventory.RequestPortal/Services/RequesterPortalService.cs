@@ -837,12 +837,22 @@ namespace Inventory.RequestPortal.Services
                 Console.WriteLine($"[PORTAL REQUEST - MULTI] Category={item.Category}, ItemId={itemId}");
                 Console.WriteLine($"  ModelKey: {item.ModelKey}");
 
-                string conditionPart = isCartridgeItem
+                // The cartridge condition tag ("With Cartridge" / "Without Cartridge") is only read
+                // back by the Cartridge Management queue, which only holds cartridge-only
+                // submissions. Anywhere else a tag in Remarks shows up as a fabricated remark the
+                // requester never typed (e.g. the bare category "Ink") on Set Details and the
+                // requisition form, so mixed submissions and Ink / Toner / Printhead lines keep
+                // just the requester's own remark.
+                // MATCHES: Yakult.Inventory.App RequesterPortalService.CreateCartridgeRequestByModel.
+                bool needsConditionTag = isCartridgeItem && allCartridge;
+                string? conditionPart = needsConditionTag
                     ? (string.IsNullOrWhiteSpace(request.CartridgeCondition) ? "With Cartridge" : request.CartridgeCondition)
-                    : item.Category;
-                string itemRemarks = string.IsNullOrWhiteSpace(request.AdditionalRemarks)
-                    ? conditionPart
-                    : $"{conditionPart} | {request.AdditionalRemarks}";
+                    : null;
+                string itemRemarks = conditionPart == null
+                    ? (request.AdditionalRemarks ?? string.Empty)
+                    : string.IsNullOrWhiteSpace(request.AdditionalRemarks)
+                        ? conditionPart
+                        : $"{conditionPart} | {request.AdditionalRemarks}";
 
                 // Embed [MODEL:xxx] per item so downstream fulfillment can read the typed model.
                 string itemDescription = $"{descriptionTag} [MODEL:{item.CartridgeModel}] {request.DistributionMethod} → {destinationInfo}";

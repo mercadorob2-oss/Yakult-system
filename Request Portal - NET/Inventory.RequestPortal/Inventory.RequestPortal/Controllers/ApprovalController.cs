@@ -81,7 +81,7 @@ namespace Inventory.RequestPortal.Controllers
             List<CartridgeAuthorizationViewModel> approvedAuths  = new();
             if (currentUser.DepartmentId.HasValue)
             {
-                pendingAuths  = await _authRepo.GetPendingByDepartmentAsync(currentUser.DepartmentId.Value);
+                pendingAuths  = await _authRepo.GetPendingForApproverAsync(currentUser.CompanyId, currentUser.BranchId, currentUser.DepartmentId, currentUser.EmployeeId);
                 approvedAuths = await _authRepo.GetApprovedByDepartmentAsync(currentUser.DepartmentId.Value);
             }
 

@@ -265,10 +265,29 @@ namespace Yakult.Inventory.App.WPF.RequestManagement.ViewModels
             ReceivedBy         = first.ReceivedByName;
             DateCreated        = lines.Min(l => l.DateCreated);
 
-            // The requester's own remark is stored on each line's Remarks; show the first non-empty one.
-            AdditionalRemarks = lines.Select(l => l.Remarks).FirstOrDefault(r => !string.IsNullOrWhiteSpace(r)) ?? string.Empty;
+            // Each line's Remarks is "<tag> | <requester's remark>", where the tag is the category
+            // (Ink / Toner / Printhead) or the cartridge condition. Show the requester's own text.
+            AdditionalRemarks = lines.Select(l => RequesterRemark(l.Remarks))
+                                     .FirstOrDefault(r => !string.IsNullOrWhiteSpace(r)) ?? string.Empty;
 
             Lines = lines.OrderBy(l => l.ReqId).Select(l => new MixedLineViewModel(l, this)).ToList();
+        }
+
+        /// <summary>
+        /// The requester's part of a portal line's Remarks: the text after " | ", or nothing when
+        /// the Remarks is only the category / cartridge-condition tag.
+        /// </summary>
+        private static string RequesterRemark(string remarks)
+        {
+            if (string.IsNullOrWhiteSpace(remarks)) return null;
+            int bar = remarks.IndexOf(" | ", StringComparison.Ordinal);
+            if (bar >= 0) return remarks.Substring(bar + 3).Trim();
+
+            string t = remarks.Trim();
+            bool isTagOnly = ConsumableCategories.IsConsumable(t)
+                || t.Equals("With Cartridge", StringComparison.OrdinalIgnoreCase)
+                || t.Equals("Without Cartridge", StringComparison.OrdinalIgnoreCase);
+            return isTagOnly ? null : t;
         }
 
         public Guid   SessionId { get; }

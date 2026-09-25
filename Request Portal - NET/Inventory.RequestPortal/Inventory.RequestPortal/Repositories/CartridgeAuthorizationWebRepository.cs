@@ -18,6 +18,7 @@ namespace Inventory.RequestPortal.Repositories
         /// </summary>
         Task<(bool wasApproved, int authorizationId)> CreateAutoOrPendingAsync(int employeeId, int departmentId, Guid submissionSessionId, string requestedModels, int signerUserId);
         Task<List<CartridgeAuthorizationViewModel>> GetPendingByDepartmentAsync(int departmentId, int? queueUserId = null);
+        Task<List<CartridgeAuthorizationViewModel>> GetPendingForApproverAsync(int? companyId, int? branchId, int? departmentId, int? approverEmpId);
         Task<List<CartridgeAuthorizationViewModel>> GetAllPendingAsync();
         Task<List<CartridgeAuthorizationViewModel>> GetApprovedByDepartmentAsync(int departmentId);
         Task<int> CreateITAssistedAsync(int employeeId, int departmentId, Guid submissionSessionId, string requestedModels, int itUserId, int authorizedByEmpId, string decision, string? remarks);
@@ -122,6 +123,67 @@ namespace Inventory.RequestPortal.Repositories
             {
                 cmd.Parameters.AddWithValue("@DepartmentId", departmentId);
                 cmd.Parameters.AddWithValue("@QueueUserId", (object?)queueUserId ?? DBNull.Value);
+            });
+        }
+
+        /// <summary>
+        /// Pending authorizations an approver may see and sign. Same rules as the desktop
+        /// (Yakult.Inventory.App CartridgeAuthorizationRepository.GetPendingByScopeAsync):
+        ///   - scope: the approver's company, branch and department (null = no filter);
+        ///   - a Manager-title requester's request (dbo.ApprovalRoleTitle) is visible only to that
+        ///     manager, who self-signs, unless the manager has no active user account, in which
+        ///     case the other approvers in scope see it so it can still be signed;
+        ///   - everyone else's requests are visible to every approver in scope except the requester.
+        /// </summary>
+        public async Task<List<CartridgeAuthorizationViewModel>> GetPendingForApproverAsync(
+            int? companyId, int? branchId, int? departmentId, int? approverEmpId)
+        {
+            const string sql = @"
+                SELECT
+                    ca.AuthorizationId, ca.EmployeeId, ca.DepartmentId, ca.Status,
+                    ca.SignedBySupervisorId, ca.SignedDate, ca.CreatedDate,
+                    ca.RequestedModels,
+                    e.Name AS EmployeeName, e.Position AS EmployeePosition,
+                    d.Name AS DepartmentName, CASE WHEN u.IsDeveloper = 1 THEN 'Information Technology Department' ELSE COALESCE(se.Name, u.Name) END AS SignedByName
+                FROM  dbo.CartridgeAuthorization ca
+                INNER JOIN dbo.Employee   e ON ca.EmployeeId          = e.EmpId
+                INNER JOIN dbo.Department d ON ca.DepartmentId        = d.DeptId
+                LEFT  JOIN dbo.[User]     u  ON ca.SignedBySupervisorId = u.UserId
+                LEFT  JOIN dbo.Employee   se ON u.EmpId = se.EmpId
+                WHERE ca.Status = 'Pending'
+                  AND (@CompanyId    IS NULL OR EXISTS (
+                           SELECT 1 FROM dbo.BranchDepartmentCompany bdc
+                           WHERE bdc.BranchID = e.BranchId AND bdc.CompanyID = @CompanyId))
+                  AND (@BranchId     IS NULL OR e.BranchId      = @BranchId)
+                  AND (@DepartmentId IS NULL OR ca.DepartmentId = @DepartmentId)
+                  AND (
+                      (
+                          EXISTS (SELECT 1 FROM dbo.ApprovalRoleTitle art
+                                  WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
+                                    AND art.IsActive = 1 AND art.ApprovalRole = 'Manager')
+                          AND (
+                                ca.EmployeeId = @ApproverEmpId
+                             OR (NOT EXISTS (SELECT 1 FROM dbo.[User] mu
+                                             WHERE mu.EmpId = ca.EmployeeId AND mu.IsActive = 1)
+                                 AND (@ApproverEmpId IS NULL OR ca.EmployeeId <> @ApproverEmpId))
+                          )
+                      )
+                      OR
+                      (
+                          NOT EXISTS (SELECT 1 FROM dbo.ApprovalRoleTitle art
+                                      WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
+                                        AND art.IsActive = 1 AND art.ApprovalRole = 'Manager')
+                          AND (@ApproverEmpId IS NULL OR ca.EmployeeId <> @ApproverEmpId)
+                      )
+                  )
+                ORDER BY ca.CreatedDate ASC";
+
+            return await QueryListAsync(sql, cmd =>
+            {
+                cmd.Parameters.AddWithValue("@CompanyId",     (object?)companyId     ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@BranchId",      (object?)branchId      ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@DepartmentId",  (object?)departmentId  ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@ApproverEmpId", (object?)approverEmpId ?? DBNull.Value);
             });
         }
 
