@@ -1,0 +1,74 @@
+<Window x:Class="Yakult.Inventory.App.Wpf.Set.BulkDeploy.ColumnFiltersDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Column Filters"
+        Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#F0F2F6"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="FilterCard" TargetType="Border">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush1}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Padding" Value="16,14"/>
+                <Setter Property="Margin" Value="0,0,0,12"/>
+            </Style>
+            <Style x:Key="FilterCheckBox" TargetType="CheckBox">
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Margin" Value="0,0,0,10"/>
+                <Setter Property="Padding" Value="6,0,0,0"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Column Filters" FontSize="15" FontWeight="Bold" Foreground="#1A2333"/>
+            <TextBlock Text="Tick the columns present in your paste/import, then close this dialog." FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource FilterCard}">
+            <StackPanel>
+                <CheckBox x:Name="ChkDate" Content="Deployment Date" IsChecked="True" Style="{StaticResource FilterCheckBox}" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkPc" Content="ComputerName" IsChecked="True" Style="{StaticResource FilterCheckBox}" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkIp" Content="IP Address" IsChecked="True" Style="{StaticResource FilterCheckBox}" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkDept" Content="Department column" IsChecked="True" IsEnabled="False" ToolTip="Always per-row" Style="{StaticResource FilterCheckBox}" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkFa" Content="Fixed Asset" IsChecked="True" Style="{StaticResource FilterCheckBox}" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkEmp" Content="Employee link" IsChecked="False" ToolTip="When ticked, an Employee column shows. Rows with a matching Name or Employee # are assigned to that person instead of the department only." Style="{StaticResource FilterCheckBox}" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkCom" Content="Company column" IsChecked="False" ToolTip="When ticked, a Company column shows. Rows with a matching Company name are linked to that company on the created Request." Style="{StaticResource FilterCheckBox}" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkBranch" Content="Branch column" IsChecked="False" ToolTip="When ticked, a Branch column shows. Rows with a matching Branch name are linked to that branch on the created Request." Style="{StaticResource FilterCheckBox}" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkCat" Content="Category" IsChecked="True" ToolTip="When unticked, the Category column hides and Category is auto-assigned from ItemRole." Style="{StaticResource FilterCheckBox}" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
+                <CheckBox x:Name="ChkDropdown" Content="Dropdown lists" IsChecked="True" ToolTip="When ticked, Department, Category, ItemRole, and Condition edit as dropdown lists fed by live data. Unique columns (ComputerName, IP, Serial, Model) always stay free text." Style="{StaticResource FilterCheckBox}" Margin="0" Checked="DropdownCheck_Changed" Unchecked="DropdownCheck_Changed"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource FilterCard}">
+            <StackPanel>
+                <TextBlock Text="Presets" FontWeight="Bold" FontSize="12" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="PresetYpi" Content="Preset YPI" Style="{StaticResource SmallBtn}" Margin="0,0,6,0" Click="PresetYpi_Click"/>
+                    <Button x:Name="PresetMinimal" Content="Preset Minimal" Style="{StaticResource SmallBtn}" Click="PresetMinimal_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
+            <Button x:Name="BtnDone" Content="Done" Style="{StaticResource PrimaryBtn}" Click="BtnDone_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -63,6 +63,70 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
                 sb.ToString(), includeDate, includeComputerName, includeIp, includeDeptCol, includeFixedAsset, includeEmployee, legacy, includeCompany, includeBranch, includeCategory);
         }
 
+        /// <summary>
+        /// Column-mapping preview report for a candidate import file (feature:
+        /// confirm-before-import dialog). Reads only the header row/shape, does
+        /// NOT parse any data rows yet - lets the caller show the user exactly
+        /// which template columns were found in their file, which are missing
+        /// (and will import blank), and how many data rows were detected,
+        /// before committing to LoadRows().
+        /// </summary>
+        public sealed class ColumnMappingReport
+        {
+            public bool IsLegacyFormat;
+            public int DataRowCount;
+            public List<string> MatchedColumns = new List<string>();
+            public List<string> MissingColumns = new List<string>();
+            public List<string> UnrecognizedFileColumns = new List<string>();
+        }
+
+        public static ColumnMappingReport InspectColumns(string filePath)
+        {
+            var report = new ColumnMappingReport();
+            var table = LoadExcelToDataTable(filePath);
+            if (table == null || table.Columns.Count == 0)
+                return report;
+
+            report.IsLegacyFormat = IsLegacyTable(table);
+            string[] order = report.IsLegacyFormat ? LegacyOrder : TemplateOrder;
+
+            foreach (var header in order)
+            {
+                if (GetColumnIndex(table.Columns, header) >= 0)
+                    report.MatchedColumns.Add(header);
+                else
+                    report.MissingColumns.Add(header);
+            }
+
+            var recognized = new HashSet<string>(order.Select(NormHeader), StringComparer.OrdinalIgnoreCase);
+            foreach (DataColumn col in table.Columns)
+            {
+                string norm = NormHeader(col.ColumnName);
+                if (!string.IsNullOrEmpty(norm) && !recognized.Contains(norm))
+                    report.UnrecognizedFileColumns.Add(col.ColumnName);
+            }
+
+            int[] indexes = order.Select(h => GetColumnIndex(table.Columns, h)).ToArray();
+            int dataRows = 0;
+            foreach (DataRow dr in table.Rows)
+            {
+                bool allEmpty = true;
+                for (int i = 0; i < order.Length; i++)
+                {
+                    if (indexes[i] < 0) continue;
+                    if (!string.IsNullOrWhiteSpace(GetCellString(dr[indexes[i]])))
+                    {
+                        allEmpty = false;
+                        break;
+                    }
+                }
+                if (!allEmpty) dataRows++;
+            }
+            report.DataRowCount = dataRows;
+
+            return report;
+        }
+
         private static bool IsLegacyTable(DataTable table)
         {
             return GetColumnIndex(table.Columns, "Computer Name") >= 0

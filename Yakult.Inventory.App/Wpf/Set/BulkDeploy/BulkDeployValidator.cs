@@ -40,7 +40,8 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
             Dictionary<string, string> computerToBundle,
             Dictionary<string, BulkDeployEmployee> employeeLookup = null,
             Dictionary<string, int> companyLookup = null,
-            Dictionary<string, int> branchLookup = null)
+            Dictionary<string, int> branchLookup = null,
+            HashSet<string> validCategories = null)
         {
             var result = new BulkDeployValidationResult();
             var errors = new List<string>();
@@ -59,6 +60,15 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
                 errors.Add("ItemName is required.");
             if (string.IsNullOrWhiteSpace(row.Category))
                 errors.Add("Category is required.");
+            else if (validCategories != null && validCategories.Count > 0
+                     && !validCategories.Contains(row.Category.Trim()))
+                // dbo.Item.CategoryId is NOT NULL and is resolved at commit time
+                // by an exact-name lookup against dbo.ItemCategory with no
+                // fallback - an unmatched Category silently produces a NULL
+                // insert that only fails at the database. Catching it here
+                // gives a row-level error message instead of a whole-bundle
+                // SQL failure during Create.
+                errors.Add("Unknown Category '" + row.Category.Trim() + "' (not in dbo.ItemCategory).");
 
             if (string.IsNullOrWhiteSpace(row.ItemRole) || !ValidRoles.Contains(row.ItemRole.Trim()))
                 errors.Add("Invalid ItemRole.");

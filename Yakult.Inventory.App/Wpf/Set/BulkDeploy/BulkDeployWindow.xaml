@@ -48,21 +48,12 @@
 
         <!-- Step 1 -->
         <Border Grid.Row="1" Style="{StaticResource DeployCard}">
-            <WrapPanel VerticalAlignment="Center">
-                <TextBlock Text="Step 1 Columns:" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Margin="0,0,10,4"/>
-                <CheckBox x:Name="ChkDate" Content="Deployment Date" IsChecked="True" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
-                <CheckBox x:Name="ChkPc" Content="ComputerName" IsChecked="True" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
-                <CheckBox x:Name="ChkIp" Content="IP Address" IsChecked="True" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
-                <CheckBox x:Name="ChkDept" Content="Department column" IsChecked="True" IsEnabled="False" ToolTip="Always per-row" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
-                <CheckBox x:Name="ChkFa" Content="Fixed Asset" IsChecked="True" VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
-                <CheckBox x:Name="ChkEmp" Content="Employee link" IsChecked="False" ToolTip="When ticked, an Employee column shows. Rows with a matching Name or Employee # are assigned to that person instead of the department only." VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
-                <CheckBox x:Name="ChkCat" Content="Category" IsChecked="True" ToolTip="When unticked, the Category column hides and Category is auto-assigned from ItemRole." VerticalContentAlignment="Center" Margin="0,0,12,4" Checked="OptionCheck_Changed" Unchecked="OptionCheck_Changed"/>
-                <CheckBox x:Name="ChkDropdown" Content="Dropdown lists" IsChecked="True" ToolTip="When ticked, Department, Category, ItemRole, and Condition edit as dropdown lists fed by live data. Unique columns (ComputerName, IP, Serial, Model) always stay free text." VerticalContentAlignment="Center" Margin="0,0,16,4" Checked="DropdownCheck_Changed" Unchecked="DropdownCheck_Changed"/>
-                <Button x:Name="PresetYpi" Content="Preset YPI" Style="{StaticResource SmallBtn}" Margin="0,0,6,4" Click="PresetYpi_Click"/>
-                <Button x:Name="PresetMinimal" Content="Preset Minimal" Style="{StaticResource SmallBtn}" Margin="0,0,16,4" Click="PresetMinimal_Click"/>
-                <Button x:Name="BtnTemplate" Content="Export Template" Style="{StaticResource SmallBtn}" Margin="0,0,6,4" Click="BtnTemplate_Click"/>
-                <Button x:Name="BtnImportFile" Content="Import Excel File" Style="{StaticResource SmallBtn}" Margin="0,0,0,4" Click="BtnImportFile_Click"/>
-            </WrapPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="BtnColumnFilters" Content="Column Filters..." Style="{StaticResource SmallBtn}" Margin="0,0,10,0" Click="BtnColumnFilters_Click"/>
+                <TextBlock x:Name="ColumnFiltersSummary" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,16,0"/>
+                <Button x:Name="BtnTemplate" Content="Export Template" Style="{StaticResource SmallBtn}" Margin="0,0,6,0" Click="BtnTemplate_Click"/>
+                <Button x:Name="BtnImportFile" Content="Import Excel File" Style="{StaticResource SmallBtn}" Click="BtnImportFile_Click"/>
+            </StackPanel>
         </Border>
 
         <!-- Step 2 -->
@@ -124,6 +115,8 @@
                         <DataGridTextColumn Header="Vendor" Binding="{Binding Vendor}" MinWidth="120"/>
                         <DataGridTextColumn Header="Remarks" Binding="{Binding Remarks}" MinWidth="140"/>
                         <DataGridTextColumn Header="Employee" Binding="{Binding Employee}" MinWidth="130" Visibility="Collapsed"/>
+                        <DataGridTextColumn Header="Company" Binding="{Binding Company}" MinWidth="120" Visibility="Collapsed"/>
+                        <DataGridTextColumn Header="Branch" Binding="{Binding Branch}" MinWidth="140" Visibility="Collapsed"/>
                         <DataGridTextColumn Header="RowStatus" Binding="{Binding RowStatus}" IsReadOnly="True" MinWidth="80"/>
                         <DataGridTextColumn Header="RowMessage" Binding="{Binding RowMessage}" IsReadOnly="True" Width="*" MinWidth="260"/>
                     </DataGrid.Columns>

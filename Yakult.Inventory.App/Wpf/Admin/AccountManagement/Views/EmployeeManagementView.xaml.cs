@@ -415,6 +415,22 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.Views
 
             if (dlg.ShowDialog() != true) return;
 
+            EmployeeImportColumnMappingDialog.ColumnMappingReport mapping;
+            try
+            {
+                mapping = EmployeeImportColumnMappingDialog.Inspect(dlg.FileName);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to read import file headers:\n{ex.Message}", "Import Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var mappingDialog = new EmployeeImportColumnMappingDialog(Path.GetFileName(dlg.FileName), mapping);
+            SetWpfOwner(mappingDialog);
+            if (mappingDialog.ShowDialog() != true || !mappingDialog.Confirmed) return;
+
             List<EmployeeImportRow> rows;
             try
             {
