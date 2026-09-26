@@ -35,7 +35,8 @@
     <RuntimeIdentifiers>win;win-x86;win-x64</RuntimeIdentifiers>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -47,7 +48,8 @@
     <XamlDebuggingInformation>false</XamlDebuggingInformation>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -436,6 +438,7 @@
     <Compile Include="Helpers\InvoiceReportPdfGenerator.cs" />
     <Compile Include="Helpers\InvoiceSheetRdlHelper.cs" />
     <Compile Include="Helpers\ModernUiHelper.cs" />
+    <Compile Include="Helpers\ModalMinimizeGuard.cs" />
     <Compile Include="Helpers\ReceiptSetPdfGenerator.cs" />
     <Compile Include="Helpers\ReportLauncher.cs" />
     <Compile Include="Helpers\RepairReportBuilder.cs" />

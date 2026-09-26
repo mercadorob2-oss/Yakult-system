@@ -30,6 +30,9 @@ namespace Yakult.Inventory.App
             Application.SetCompatibleTextRenderingDefault(false);
             Application.AddMessageFilter(new DataGridViewSafetyMessageFilter());
 
+            // Minimize on a modal dialog minimizes only that dialog, not the whole app.
+            ModalMinimizeGuard.Install();
+
             // Force WPF to render in software instead of hardware/GPU-accelerated mode, process-wide.
             // Repeatedly opening/closing MediaElement (video evidence playback) can destabilize the
             // GPU composition/render thread on some machines/drivers, which then fails on a later,
