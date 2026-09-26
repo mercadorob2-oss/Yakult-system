@@ -78,7 +78,9 @@ Use `SubType`:
 - **Who sees a pending authorization (desktop and web must match):**
   - The rule lives in desktop `CartridgeAuthorizationRepository.GetPendingByScopeAsync` and web `CartridgeAuthorizationWebRepository.GetPendingForApproverAsync`.
   - **Scope:** the approver's company, branch and department.
-  - **Approver-title requesters** (any active `dbo.ApprovalRoleTitle`: Manager, Supervisor, Coordinator) are visible only to themselves (they self-sign, so nobody waits on an absent manager; this matches the after-submit redirect to the Authorize page, which both portals do for every approver). If that requester has **no active user account**, the request falls back to the other approvers in scope, so it can't get stuck. (Before 2026-09-26 only the 'Manager' role self-signed.)
+  - **Manager-title requesters** (`dbo.ApprovalRoleTitle`, role 'Manager') are visible only to themselves (they self-sign).
+  - **Supervisor / Coordinator requesters** (any other active `dbo.ApprovalRoleTitle` role) are visible to themselves (they can self-sign) **and** to the Managers in scope (who can sign it for them). The after-submit redirect to the Authorize page, which both portals do for every approver, lands on their own request. (Before 2026-09-26 only Managers self-signed and Supervisors' requests went to every other approver.)
+  - If an approver-title requester has **no active user account**, the request falls back to the other approvers in scope, so it can't get stuck.
   - **Everyone else's requests** are visible to all approvers in scope except the requester.
   - Developers / admins see all pending requests.
   - The Approve / Reject actions don't re-check this; the rule only controls what is listed.

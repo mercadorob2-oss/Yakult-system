@@ -224,18 +224,18 @@ namespace Yakult.Inventory.App.Repositories
                        ))
                   AND (@BranchId     IS NULL OR e.BranchId       = @BranchId)
                   AND (@DepartmentId IS NULL OR ca.DepartmentId  = @DepartmentId)
+                  -- Who may see (and sign) a pending request, by the requester's approval role.
+                  -- In every case, if the requester has no active user account (e.g. an IT-Assisted
+                  -- request made on their behalf) they could never self-sign, so it falls back to the
+                  -- other approvers in scope.
+                  -- MATCHES: Inventory.RequestPortal (Web) CartridgeAuthorizationWebRepository.GetPendingForApproverAsync
                   AND (
-                      -- Approver requests (any dbo.ApprovalRoleTitle: Manager, Supervisor,
-                      -- Coordinator): visible only to the requester themselves (they self-sign,
-                      -- so nobody waits on an absent manager). If the requester has no active
-                      -- user account (e.g. an IT-Assisted request made on their behalf) nobody
-                      -- could ever sign it, so it falls back to the other approvers in scope.
-                      -- MATCHES: Inventory.RequestPortal (Web) CartridgeAuthorizationWebRepository.GetPendingForApproverAsync
+                      -- Manager requests: the manager self-signs.
                       (
                           EXISTS (
                               SELECT 1 FROM dbo.ApprovalRoleTitle art
                               WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
-                                AND art.IsActive = 1
+                                AND art.IsActive = 1 AND art.ApprovalRole = 'Manager'
                           )
                           AND (
                                 ca.EmployeeId = @ExcludeEmpId
@@ -245,7 +245,33 @@ namespace Yakult.Inventory.App.Repositories
                           )
                       )
                       OR
-                      -- Everyone else's requests: visible to every approver in scope except the requester
+                      -- Supervisor / Coordinator requests: the requester self-signs, or a Manager
+                      -- in scope signs it for them (so it is never stuck on one person).
+                      (
+                          EXISTS (
+                              SELECT 1 FROM dbo.ApprovalRoleTitle art
+                              WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
+                                AND art.IsActive = 1
+                          )
+                          AND NOT EXISTS (
+                              SELECT 1 FROM dbo.ApprovalRoleTitle art
+                              WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
+                                AND art.IsActive = 1 AND art.ApprovalRole = 'Manager'
+                          )
+                          AND (
+                                ca.EmployeeId = @ExcludeEmpId
+                             OR EXISTS (SELECT 1 FROM dbo.Employee ve
+                                        JOIN dbo.ApprovalRoleTitle vart
+                                          ON UPPER(LTRIM(RTRIM(ve.Position))) = UPPER(LTRIM(RTRIM(vart.PositionTitle)))
+                                         AND vart.IsActive = 1 AND vart.ApprovalRole = 'Manager'
+                                        WHERE ve.EmpId = @ExcludeEmpId)
+                             OR (NOT EXISTS (SELECT 1 FROM dbo.[User] mu
+                                             WHERE mu.EmpId = ca.EmployeeId AND mu.IsActive = 1)
+                                 AND (@ExcludeEmpId IS NULL OR ca.EmployeeId <> @ExcludeEmpId))
+                          )
+                      )
+                      OR
+                      -- Everyone else's requests: every approver in scope except the requester.
                       (
                           NOT EXISTS (
                               SELECT 1 FROM dbo.ApprovalRoleTitle art

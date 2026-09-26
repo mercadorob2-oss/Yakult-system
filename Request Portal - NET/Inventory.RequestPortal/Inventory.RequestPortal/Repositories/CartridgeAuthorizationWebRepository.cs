@@ -130,10 +130,12 @@ namespace Inventory.RequestPortal.Repositories
         /// Pending authorizations an approver may see and sign. Same rules as the desktop
         /// (Yakult.Inventory.App CartridgeAuthorizationRepository.GetPendingByScopeAsync):
         ///   - scope: the approver's company, branch and department (null = no filter);
-        ///   - an approver-title requester's request (any dbo.ApprovalRoleTitle: Manager,
-        ///     Supervisor, Coordinator) is visible only to that requester, who self-signs, unless
-        ///     they have no active user account, in which case the other approvers in scope see
-        ///     it so it can still be signed;
+        ///   - a Manager-title requester's request (dbo.ApprovalRoleTitle) is visible only to that
+        ///     manager, who self-signs;
+        ///   - a Supervisor / Coordinator requester's request is visible to that requester (who can
+        ///     self-sign) and to the Managers in scope (who can sign it for them);
+        ///   - in both cases, if the requester has no active user account, the other approvers in
+        ///     scope see it so it can still be signed;
         ///   - everyone else's requests are visible to every approver in scope except the requester.
         /// </summary>
         public async Task<List<CartridgeAuthorizationViewModel>> GetPendingForApproverAsync(
@@ -158,10 +160,11 @@ namespace Inventory.RequestPortal.Repositories
                   AND (@BranchId     IS NULL OR e.BranchId      = @BranchId)
                   AND (@DepartmentId IS NULL OR ca.DepartmentId = @DepartmentId)
                   AND (
+                      -- Manager requests: the manager self-signs.
                       (
                           EXISTS (SELECT 1 FROM dbo.ApprovalRoleTitle art
                                   WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
-                                    AND art.IsActive = 1)
+                                    AND art.IsActive = 1 AND art.ApprovalRole = 'Manager')
                           AND (
                                 ca.EmployeeId = @ApproverEmpId
                              OR (NOT EXISTS (SELECT 1 FROM dbo.[User] mu
@@ -170,6 +173,29 @@ namespace Inventory.RequestPortal.Repositories
                           )
                       )
                       OR
+                      -- Supervisor / Coordinator requests: the requester self-signs, or a Manager
+                      -- in scope signs it for them.
+                      (
+                          EXISTS (SELECT 1 FROM dbo.ApprovalRoleTitle art
+                                  WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
+                                    AND art.IsActive = 1)
+                          AND NOT EXISTS (SELECT 1 FROM dbo.ApprovalRoleTitle art
+                                          WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
+                                            AND art.IsActive = 1 AND art.ApprovalRole = 'Manager')
+                          AND (
+                                ca.EmployeeId = @ApproverEmpId
+                             OR EXISTS (SELECT 1 FROM dbo.Employee ve
+                                        JOIN dbo.ApprovalRoleTitle vart
+                                          ON UPPER(LTRIM(RTRIM(ve.Position))) = UPPER(LTRIM(RTRIM(vart.PositionTitle)))
+                                         AND vart.IsActive = 1 AND vart.ApprovalRole = 'Manager'
+                                        WHERE ve.EmpId = @ApproverEmpId)
+                             OR (NOT EXISTS (SELECT 1 FROM dbo.[User] mu
+                                             WHERE mu.EmpId = ca.EmployeeId AND mu.IsActive = 1)
+                                 AND (@ApproverEmpId IS NULL OR ca.EmployeeId <> @ApproverEmpId))
+                          )
+                      )
+                      OR
+                      -- Everyone else's requests: every approver in scope except the requester.
                       (
                           NOT EXISTS (SELECT 1 FROM dbo.ApprovalRoleTitle art
                                       WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
