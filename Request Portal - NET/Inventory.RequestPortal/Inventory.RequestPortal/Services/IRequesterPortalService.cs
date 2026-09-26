@@ -69,7 +69,9 @@ namespace Inventory.RequestPortal.Services
         Task<List<ITApproverViewModel>> GetApproversByScope(int comId, int branchId, int deptId);
 
         // Request Status Tracking (Read-Only)
-        List<PortalRequestStatusViewModel> GetPortalRequestsByUser(int userId);
+        List<PortalRequestStatusViewModel> GetPortalRequestsByUser(
+            int userId, int? deptScopeCompanyId = null, int? deptScopeBranchId = null, int? deptScopeDepartmentId = null,
+            bool deptLevelOnly = false, bool includeOwn = true);
         PortalRequestStatusViewModel? GetRequestStatus(int reqId);
     }
 }

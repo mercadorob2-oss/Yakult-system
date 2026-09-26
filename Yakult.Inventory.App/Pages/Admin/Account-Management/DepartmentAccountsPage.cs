@@ -1636,6 +1636,20 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
         public DateTime? AccountDateCreated { get; set; }
         public bool      HasPassword        { get; set; }
 
+        // Stable IDs of this Company / Department / Branch combination. Saved on
+        // dbo.DepartmentAccount so the account survives a rename (login prefers them).
+        public int       ComId              { get; set; }
+        public int       DeptId             { get; set; }
+        public int       BranchId           { get; set; }
+
+        // Request Portal submissions for this department (see DepartmentRequestHistoryRepository).
+        public int       DeptLevelRequestCount { get; set; }
+        public int       EmployeeRequestCount  { get; set; }
+        public int       TotalRequestCount     => DeptLevelRequestCount + EmployeeRequestCount;
+        public string    RequestCountDisplay   => TotalRequestCount == 0
+            ? "—"
+            : DeptLevelRequestCount > 0 ? $"{TotalRequestCount} ({DeptLevelRequestCount} dept.)" : TotalRequestCount.ToString();
+
         // Returns e.g. "YPI_MKT_NCR" from acronyms, falling back to full names if acronym is null.
         public string BuildSuggestedUsername()
         {

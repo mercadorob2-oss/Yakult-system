@@ -50,7 +50,8 @@ window.addEventListener('resize', updateNavTabsScrollableState);
 // (safe here since these scripts sit after all the markup they reference) both on the
 // original full page load and every time this code re-injects the script afterward.
 (function () {
-    var TAB_PATH_RE = /^\/Request\/(Index|MyRequests|AssistedRequest)\/?$/i;
+    // DeptRequests renders the same MyRequests view (My Department History), so it swaps the same way.
+    var TAB_PATH_RE = /^\/Request\/(Index|MyRequests|DeptRequests|AssistedRequest)\/?$/i;
 
     function isSwappableTabLink(a) {
         if (!a || a.target === '_blank') return false;

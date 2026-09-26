@@ -225,16 +225,17 @@ namespace Yakult.Inventory.App.Repositories
                   AND (@BranchId     IS NULL OR e.BranchId       = @BranchId)
                   AND (@DepartmentId IS NULL OR ca.DepartmentId  = @DepartmentId)
                   AND (
-                      -- Manager requests: visible only to the manager themselves (they self-sign).
-                      -- If the manager has no active user account (e.g. an IT-Assisted request
-                      -- made on their behalf) nobody could ever sign it, so it falls back to the
-                      -- other approvers in scope.
+                      -- Approver requests (any dbo.ApprovalRoleTitle: Manager, Supervisor,
+                      -- Coordinator): visible only to the requester themselves (they self-sign,
+                      -- so nobody waits on an absent manager). If the requester has no active
+                      -- user account (e.g. an IT-Assisted request made on their behalf) nobody
+                      -- could ever sign it, so it falls back to the other approvers in scope.
                       -- MATCHES: Inventory.RequestPortal (Web) CartridgeAuthorizationWebRepository.GetPendingForApproverAsync
                       (
                           EXISTS (
                               SELECT 1 FROM dbo.ApprovalRoleTitle art
                               WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
-                                AND art.IsActive = 1 AND art.ApprovalRole = 'Manager'
+                                AND art.IsActive = 1
                           )
                           AND (
                                 ca.EmployeeId = @ExcludeEmpId
@@ -244,12 +245,12 @@ namespace Yakult.Inventory.App.Repositories
                           )
                       )
                       OR
-                      -- Non-manager requests: visible to everyone except the requester themselves
+                      -- Everyone else's requests: visible to every approver in scope except the requester
                       (
                           NOT EXISTS (
                               SELECT 1 FROM dbo.ApprovalRoleTitle art
                               WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
-                                AND art.IsActive = 1 AND art.ApprovalRole = 'Manager'
+                                AND art.IsActive = 1
                           )
                           AND (@ExcludeEmpId IS NULL OR ca.EmployeeId <> @ExcludeEmpId)
                       )

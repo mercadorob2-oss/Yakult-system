@@ -78,7 +78,7 @@ Use `SubType`:
 - **Who sees a pending authorization (desktop and web must match):**
   - The rule lives in desktop `CartridgeAuthorizationRepository.GetPendingByScopeAsync` and web `CartridgeAuthorizationWebRepository.GetPendingForApproverAsync`.
   - **Scope:** the approver's company, branch and department.
-  - **Manager-title requesters** (`dbo.ApprovalRoleTitle`, role 'Manager') are visible only to themselves (they self-sign). If that manager has **no active user account**, the request falls back to the other approvers in scope, so it can't get stuck.
+  - **Approver-title requesters** (any active `dbo.ApprovalRoleTitle`: Manager, Supervisor, Coordinator) are visible only to themselves (they self-sign, so nobody waits on an absent manager; this matches the after-submit redirect to the Authorize page, which both portals do for every approver). If that requester has **no active user account**, the request falls back to the other approvers in scope, so it can't get stuck. (Before 2026-09-26 only the 'Manager' role self-signed.)
   - **Everyone else's requests** are visible to all approvers in scope except the requester.
   - Developers / admins see all pending requests.
   - The Approve / Reject actions don't re-check this; the rule only controls what is listed.
@@ -333,6 +333,10 @@ For csproj conflicts during pull: keep the local fixed version (`git checkout --
 4. Add a `ShowXxxPage()` method in `MainForm.cs` with the appropriate access guard
 
 ---
+
+## WPF List Pages: Row Checkbox Must Be OneWay + Click
+
+Row-selection checkboxes in a `DataGrid` must use `IsChecked="{Binding Selected, Mode=OneWay}"` with a `Click` handler that sets the selection itself, **never** `Mode=TwoWay` with `Checked`/`Unchecked`. The grids use row recycling, and select-all refreshes the page (`Items.Refresh()` or clearing and refilling the collection). With TwoWay, reused rows write their old checked state back, so unchecking the header left the visible page still selected: the "N Selected" badge and review dialog kept the 10 on-screen rows. `Click` fires only on a real user click, so refreshes can't change the selection. All list pages with a Selected badge follow this now (Items, Asset, Branch, Category, Company, Consumable Models, Department, Employee, Vendor, Request, Set, Renewal, Invoice).
 
 ## WPF Overlay Crash on Close — "App Closes Silently When Tour Ends"
 

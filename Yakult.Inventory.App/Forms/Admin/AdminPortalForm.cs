@@ -267,7 +267,7 @@ namespace Yakult.Inventory.App.Forms.Admin
             _accountMgmtPanel = new Panel
             {
                 // Account Management (user accounts) is Super Admin only, so one less button otherwise.
-                Height = (CanOpenUserAccountManagement ? 6 : 5) * 50,
+                Height = (CanOpenUserAccountManagement ? 7 : 6) * 50,
                 Dock = DockStyle.Top,
                 BackColor = Color.FromArgb(250, 250, 250),
                 Visible = false
@@ -276,6 +276,7 @@ namespace Yakult.Inventory.App.Forms.Admin
             AddSubMenuButton(_accountMgmtPanel, "User Positions", (s, e) => { ShowUserPositionsPage(); ToggleMenu(); });
             AddSubMenuButton(_accountMgmtPanel, "User Activity", (s, e) => { ShowUserActivityPage(); ToggleMenu(); });
             AddSubMenuButton(_accountMgmtPanel, "Approver Management", (s, e) => { ShowAccountPermissionsPage(); ToggleMenu(); });
+            AddSubMenuButton(_accountMgmtPanel, "Department Request History", (s, e) => { ShowDepartmentRequestHistoryPage(); ToggleMenu(); });
             AddSubMenuButton(_accountMgmtPanel, "Department Accounts", (s, e) => { ShowDepartmentAccountsPage(); ToggleMenu(); });
             if (CanOpenUserAccountManagement)
                 AddSubMenuButton(_accountMgmtPanel, "Account Management", (s, e) => { ShowUserAccountManagementPage(); ToggleMenu(); });
@@ -536,6 +537,11 @@ namespace Yakult.Inventory.App.Forms.Admin
         private void ShowDepartmentAccountsPage()
         {
             ShowPage(new DepartmentAccountsWpfHost());
+        }
+
+        private void ShowDepartmentRequestHistoryPage()
+        {
+            ShowPage(new DepartmentRequestHistoryWpfHost());
         }
 
         private void ShowAccountPermissionsPage()

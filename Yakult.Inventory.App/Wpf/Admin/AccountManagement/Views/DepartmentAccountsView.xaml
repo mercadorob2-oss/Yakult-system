@@ -389,6 +389,8 @@
                         <ComboBoxItem Content="Has Branch Email"/>
                         <ComboBoxItem Content="No Branch Email"/>
                         <ComboBoxItem Content="No Email (Both Empty)"/>
+                        <ComboBoxItem Content="Has Requests"/>
+                        <ComboBoxItem Content="Has Requests, No Account"/>
                     </ComboBox>
                 </WrapPanel>
 
@@ -520,11 +522,30 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
+                <!-- Request Portal submissions for this department (Dept. Level and employees) -->
+                <DataGridTextColumn Header="Requests" Binding="{Binding RequestCountDisplay}" Width="SizeToHeader" MinWidth="95" IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Padding"             Value="4,6,4,6"/>
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                            <Setter Property="TextWrapping"        Value="Wrap"/>
+                            <Setter Property="ToolTip"             Value="Request Portal submissions for this department. (N dept.) = Dept. Level ones."/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
                 <!-- Row action buttons -->
-                <DataGridTemplateColumn Header="Actions" MinWidth="380" Width="*" IsReadOnly="True">
+                <DataGridTemplateColumn Header="Actions" MinWidth="470" Width="*" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0">
+                                <!-- Always shown, including for departments with no account yet -->
+                                <Button Style="{StaticResource RowActionButton}"
+                                        Width="80"
+                                        Background="#7E57C2"
+                                        Content="History"
+                                        ToolTip="Request history for this department (Dept. Level and employees)"
+                                        Click="BtnHistory_Click" Tag="{Binding}"/>
                                 <Button Style="{StaticResource RowActionButton}"
                                         Width="90"
                                         Background="#4E9AFC"

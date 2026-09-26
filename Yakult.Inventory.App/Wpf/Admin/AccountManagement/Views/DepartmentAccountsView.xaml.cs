@@ -9,6 +9,8 @@ using Yakult.Inventory.App.Pages.Department;
 using Yakult.Inventory.App.Session;
 using Yakult.Inventory.App.WPF.Admin.AccountManagement.Dialogs;
 using Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels;
+using Yakult.Inventory.App.WPF.Admin.DepartmentRequestHistory.ViewModels;
+using Yakult.Inventory.App.WPF.Admin.DepartmentRequestHistory.Views;
 
 namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.Views
 {
@@ -95,6 +97,43 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.Views
                 MessageBox.Show($"Failed to create account:\n{ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void BtnHistory_Click(object sender, RoutedEventArgs e)
+        {
+            var row = ((Button)sender).Tag as DepartmentAccountRowDto;
+            if (row == null) return;
+
+            // Same view as Admin Portal → Department Request History, fixed to this department.
+            var view = new DepartmentRequestHistoryView(
+                new DepartmentRequestHistoryViewModel(row.ComId, row.BranchId, row.DeptId));
+
+            var window = new Window
+            {
+                Title                 = $"Request History: {row.CompanyName} / {row.DepartmentName} / {row.BranchName}",
+                Content               = view,
+                Width                 = 1280,
+                Height                = 720,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ShowInTaskbar         = false
+            };
+            // Own it by the form hosting this page, not Form.ActiveForm (which can be null
+            // and leave the dialog behind a disabled app; see CLAUDE.md WPF interop notes).
+            var hostHandle = GetHostFormHandle();
+            if (hostHandle != IntPtr.Zero)
+                new WindowInteropHelper(window).Owner = hostHandle;
+            window.ShowDialog();
+        }
+
+        private IntPtr GetHostFormHandle()
+        {
+            if (PresentationSource.FromVisual(this) is HwndSource source)
+            {
+                var control = System.Windows.Forms.Control.FromChildHandle(source.Handle);
+                var form    = control?.TopLevelControl;
+                if (form != null) return form.Handle;
+            }
+            return System.Windows.Forms.Form.ActiveForm?.Handle ?? IntPtr.Zero;
         }
 
         private async void BtnChangePwd_Click(object sender, RoutedEventArgs e)

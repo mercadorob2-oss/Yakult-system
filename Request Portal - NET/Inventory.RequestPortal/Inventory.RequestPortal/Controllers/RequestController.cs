@@ -482,20 +482,33 @@ namespace Inventory.RequestPortal.Controllers
         }
 
         [HttpGet]
-        public IActionResult MyRequests(string? search, string? status)
+        public IActionResult MyRequests(string? search, string? status) =>
+            RequestHistoryPage(search, status, deptLevelView: false);
+
+        /// <summary>
+        /// "My Department History": every portal request for the user's department (all its
+        /// employees' requests and the Dept. Level ones), plus the user's own submissions, for
+        /// employee and department accounts alike. Same view as MyRequests.
+        /// MATCHES: Yakult.Inventory.App Request Portal "My Department History" tab.
+        /// </summary>
+        [HttpGet]
+        public IActionResult DeptRequests(string? search, string? status) =>
+            RequestHistoryPage(search, status, deptLevelView: true);
+
+        private IActionResult RequestHistoryPage(string? search, string? status, bool deptLevelView)
         {
             try
             {
                 var currentUser = GetCurrentUser();
-                var model = BuildMyRequestsPageModel(currentUser, search, status);
+                var model = BuildMyRequestsPageModel(currentUser, search, status, deptLevelView);
                 SetCommonViewBag(currentUser);
-                return View(model);
+                return View("MyRequests", model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading request history");
                 TempData["ErrorMessage"] = ex.ToUserMessage(_environment, "Error loading request history");
-                return View(new MyRequestsPageViewModel());
+                return View("MyRequests", new MyRequestsPageViewModel { IsDeptLevelView = deptLevelView });
             }
         }
 
@@ -505,22 +518,27 @@ namespace Inventory.RequestPortal.Controllers
         /// user searches, changes the status filter, clears, or refreshes.
         /// </summary>
         [HttpGet]
-        public IActionResult MyRequestsHistoryPartial(string? search, string? status)
-        {
-            var currentUser = GetCurrentUser();
-            var model = BuildMyRequestsPageModel(currentUser, search, status);
-            return PartialView("_MyRequestsHistoryCard", model);
-        }
+        public IActionResult MyRequestsHistoryPartial(string? search, string? status) =>
+            PartialView("_MyRequestsHistoryCard", BuildMyRequestsPageModel(GetCurrentUser(), search, status, deptLevelView: false));
 
-        private MyRequestsPageViewModel BuildMyRequestsPageModel(UserSessionModel? currentUser, string? search, string? status)
+        /// <summary>AJAX partner to DeptRequests (see MyRequestsHistoryPartial).</summary>
+        [HttpGet]
+        public IActionResult DeptRequestsHistoryPartial(string? search, string? status) =>
+            PartialView("_MyRequestsHistoryCard", BuildMyRequestsPageModel(GetCurrentUser(), search, status, deptLevelView: true));
+
+        private MyRequestsPageViewModel BuildMyRequestsPageModel(UserSessionModel? currentUser, string? search, string? status, bool deptLevelView)
         {
-            var fullHistory = currentUser != null ? BuildMyRequestsHistory(currentUser) : new List<RequestHistoryRowViewModel>();
+            var fullHistory = currentUser != null ? BuildMyRequestsHistory(currentUser, deptLevelView) : new List<RequestHistoryRowViewModel>();
 
             ViewBag.StatusOptions = fullHistory.Select(h => h.Status).Distinct().OrderBy(s => s).ToList();
             ViewBag.SearchText    = search ?? string.Empty;
             ViewBag.StatusFilter  = status ?? string.Empty;
 
-            return new MyRequestsPageViewModel { History = FilterMyRequestsHistory(fullHistory, search, status) };
+            return new MyRequestsPageViewModel
+            {
+                History         = FilterMyRequestsHistory(fullHistory, search, status),
+                IsDeptLevelView = deptLevelView
+            };
         }
 
         /// <summary>
@@ -529,10 +547,18 @@ namespace Inventory.RequestPortal.Controllers
         /// with the same search/status filter applied so the export matches the current view.
         /// </summary>
         [HttpGet]
-        public IActionResult ExportMyRequestsCsv(string? search, string? status)
+        public IActionResult ExportMyRequestsCsv(string? search, string? status) =>
+            ExportRequestHistoryCsv(search, status, deptLevelView: false);
+
+        /// <summary>CSV of the My Department History page (see ExportMyRequestsCsv).</summary>
+        [HttpGet]
+        public IActionResult ExportDeptRequestsCsv(string? search, string? status) =>
+            ExportRequestHistoryCsv(search, status, deptLevelView: true);
+
+        private IActionResult ExportRequestHistoryCsv(string? search, string? status, bool deptLevelView)
         {
             var currentUser = GetCurrentUser();
-            var fullHistory = currentUser != null ? BuildMyRequestsHistory(currentUser) : new List<RequestHistoryRowViewModel>();
+            var fullHistory = currentUser != null ? BuildMyRequestsHistory(currentUser, deptLevelView) : new List<RequestHistoryRowViewModel>();
             var history = FilterMyRequestsHistory(fullHistory, search, status);
 
             var headers = new[]
@@ -548,7 +574,8 @@ namespace Inventory.RequestPortal.Controllers
             });
 
             var csv = CsvExportExtensions.ToCsvBytes(headers, rows);
-            return File(csv, "text/csv", $"my-requests-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv");
+            string prefix = deptLevelView ? "my-department-history" : "my-requests";
+            return File(csv, "text/csv", $"{prefix}-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv");
         }
 
         /// <summary>
@@ -556,10 +583,30 @@ namespace Inventory.RequestPortal.Controllers
         /// Shared by the page itself and ExportMyRequestsCsv so the CSV always matches what's
         /// on screen.
         /// </summary>
-        private List<RequestHistoryRowViewModel> BuildMyRequestsHistory(UserSessionModel currentUser)
+        private List<RequestHistoryRowViewModel> BuildMyRequestsHistory(UserSessionModel currentUser, bool deptLevelView)
         {
             var history = new List<RequestHistoryRowViewModel>();
-            var raw = _portalService.GetPortalRequestsByUser(currentUser.UserId);
+            // MATCHES: Yakult.Inventory.App RequestHistoryViewModel.LoadAsync.
+            // The user's department: the department account's, or the employee's own.
+            bool isDeptAccount = currentUser.IsDepartmentAccountSession;
+            int? comId    = isDeptAccount ? currentUser.DepartmentAccountCompanyId    : currentUser.CompanyId;
+            int? branchId = isDeptAccount ? currentUser.DepartmentAccountBranchId     : currentUser.BranchId;
+            int? deptId   = isDeptAccount ? currentUser.DepartmentAccountDepartmentId : currentUser.DepartmentId;
+
+            List<PortalRequestStatusViewModel> raw;
+            if (deptLevelView)
+                // My Department History page: every portal request for the user's department
+                // (every employee's, including the user's own, and the Dept. Level ones,
+                // highlighted), plus anything the user submitted themselves.
+                raw = _portalService.GetPortalRequestsByUser(currentUser.UserId, comId, branchId, deptId);
+            else if (isDeptAccount)
+                // A Department Account's history: every portal request for its department
+                // (Dept. Level ones and its employees'); Dept. Level rows are highlighted.
+                raw = _portalService.GetPortalRequestsByUser(currentUser.UserId, comId, branchId, deptId);
+            else
+                // An employee's history: their own submissions only. The department's Dept.
+                // Level requests are on the My Department History page.
+                raw = _portalService.GetPortalRequestsByUser(currentUser.UserId);
 
             // Group by SubmissionSessionId (or ReqId if session not set)
             var grouped = raw
@@ -597,7 +644,10 @@ namespace Inventory.RequestPortal.Controllers
                     FulfillmentMethod = first.DistributionMethod ?? "—",
                     DestinationBranch = first.DestinationBranch ?? "—",
                     Status            = status,
-                    EmployeeName      = first.DestinationEmployeeName ?? "—",
+                    // No employee on the Request row = a Dept. Level request.
+                    EmployeeName      = string.IsNullOrWhiteSpace(first.DestinationEmployeeName) || first.DestinationEmployeeName == "—"
+                                        ? "Dept. Level"
+                                        : first.DestinationEmployeeName,
                     Department        = first.DestinationDepartment ?? "—",
                     Company           = first.DestinationCompany ?? "—",
                     Remarks           = items.Select(x => {

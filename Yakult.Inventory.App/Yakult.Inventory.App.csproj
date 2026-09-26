@@ -479,6 +479,7 @@
     <Compile Include="Wpf\Admin\AccountManagement\ViewModels\DepartmentAccountsViewModel.cs" />
     <Compile Include="Wpf\Admin\AccountManagement\ViewModels\ApproverManagementViewModel.cs" />
     <Compile Include="Wpf\Admin\UserPositions\ViewModels\UserPositionsViewModel.cs" />
+    <Compile Include="Wpf\Admin\DepartmentRequestHistory\ViewModels\DepartmentRequestHistoryViewModel.cs" />
     <Compile Include="Wpf\Admin\UserActivity\ViewModels\UserActivityViewModel.cs" />
     <Compile Include="Wpf\Admin\UserActivityInsights\ViewModels\UserActivityInsightsViewModel.cs" />
     <Compile Include="Wpf\Shared\Win32WindowWrapper.cs" />
@@ -512,6 +513,9 @@
     </Compile>
     <Compile Include="Wpf\Admin\UserPositions\Views\UserPositionsView.xaml.cs">
       <DependentUpon>UserPositionsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Admin\DepartmentRequestHistory\Views\DepartmentRequestHistoryView.xaml.cs">
+      <DependentUpon>DepartmentRequestHistoryView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Wpf\Admin\UserActivity\Views\UserActivityView.xaml.cs">
       <DependentUpon>UserActivityView.xaml</DependentUpon>
@@ -1058,6 +1062,7 @@
     </Compile>
     <Compile Include="Repositories\CartridgeApprovalRepository.cs" />
     <Compile Include="Repositories\CartridgeAuthorizationRepository.cs" />
+    <Compile Include="Repositories\DepartmentRequestHistoryRepository.cs" />
     <Compile Include="Repositories\NotificationRepository.cs" />
     <Compile Include="Repositories\ExpiryNotificationRepository.cs" />
     <Compile Include="Repositories\UserNotificationSettingRepository.cs" />
@@ -1154,6 +1159,9 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Forms\Admin\AccountManagement\DepartmentAccountsWpfHost.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Forms\Admin\AccountManagement\DepartmentRequestHistoryWpfHost.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Forms\CartridgeManagement\ClosedCartridgesWpfHost.cs">
@@ -1854,6 +1862,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Wpf\Admin\UserPositions\Views\UserPositionsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Admin\DepartmentRequestHistory\Views\DepartmentRequestHistoryView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

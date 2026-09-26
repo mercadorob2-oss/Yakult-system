@@ -1210,9 +1210,20 @@ namespace Inventory.RequestPortal.Services
         /// Get all requests created via the portal for a specific user.
         /// READ-ONLY view for status tracking.
         /// COPIED FROM: Yakult.Inventory.App/Services/RequesterPortalService.cs
+        ///
+        /// When the Department Account scope is passed (all three IDs), the list also includes
+        /// every portal request in that Company / Branch / Department, whoever created it:
+        /// Dept. Level requests (no employee, e.g. IT Assisted) and employees' own requests.
+        /// With deptLevelOnly, only the department's Dept. Level requests are added, not other
+        /// employees' requests. With includeOwn = false the user's own submissions are left out
+        /// (The "My Department History" page uses deptLevelOnly with the user's own submissions.)
         /// </summary>
-        public List<PortalRequestStatusViewModel> GetPortalRequestsByUser(int userId)
+        public List<PortalRequestStatusViewModel> GetPortalRequestsByUser(
+            int userId, int? deptScopeCompanyId = null, int? deptScopeBranchId = null, int? deptScopeDepartmentId = null,
+            bool deptLevelOnly = false, bool includeOwn = true)
         {
+            bool hasDeptScope = deptScopeCompanyId.HasValue && deptScopeBranchId.HasValue && deptScopeDepartmentId.HasValue;
+
             var requests = new List<PortalRequestStatusViewModel>();
 
             const string sql = @"
@@ -1263,8 +1274,19 @@ namespace Inventory.RequestPortal.Services
                 LEFT JOIN dbo.Company rc      ON r.ComId = rc.ComId
                 LEFT JOIN dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
                 LEFT JOIN dbo.[Set] s ON s.SetId = r.SetId
-                WHERE r.CreatedBy = @UserId
-                  AND r.Description LIKE '[[]PORTAL%'
+                WHERE r.Description LIKE '[[]PORTAL%'
+                  AND (
+                        (@IncludeOwn = 1 AND r.CreatedBy = @UserId)
+                     -- Department scope: every portal request (dept-level or for an employee)
+                     -- whose Company/Branch/Department saved on the Request row at submit
+                     -- time match, falling back to the employee's for old rows without them.
+                     -- MATCHES: Yakult.Inventory.App RequesterPortalService.GetPortalRequestsByUser.
+                     OR (@DeptComId IS NOT NULL
+                         AND (@DeptLevelOnly = 0 OR r.EmpId IS NULL)
+                         AND COALESCE(r.ComId,    e.ComId)    = @DeptComId
+                         AND COALESCE(r.BranchId, e.BranchId) = @DeptBranchId
+                         AND COALESCE(r.DeptId,   e.DeptId)   = @DeptDeptId)
+                  )
                 ORDER BY r.DateCreated DESC";
 
             using (var con = new SqlConnection(_connectionStringProvider.GetConnectionString()))
@@ -1273,6 +1295,11 @@ namespace Inventory.RequestPortal.Services
                 using (var cmd = new SqlCommand(sql, con))
                 {
                     cmd.Parameters.AddWithValue("@UserId", userId);
+                    cmd.Parameters.AddWithValue("@DeptComId",    hasDeptScope ? (object)deptScopeCompanyId!.Value    : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DeptBranchId", hasDeptScope ? (object)deptScopeBranchId!.Value     : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DeptDeptId",   hasDeptScope ? (object)deptScopeDepartmentId!.Value : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DeptLevelOnly", deptLevelOnly);
+                    cmd.Parameters.AddWithValue("@IncludeOwn",    includeOwn);
                     using (var reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())

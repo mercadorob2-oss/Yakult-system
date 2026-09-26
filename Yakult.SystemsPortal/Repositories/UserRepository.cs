@@ -192,9 +192,9 @@ public class UserRepository : IUserRepository
                     d.DeptId,   d.Name AS DeptName,
                     b.BranchId, b.Name AS BranchName
                 FROM dbo.DepartmentAccount da
-                LEFT JOIN dbo.Company    c ON c.Name = da.CompanyName
-                LEFT JOIN dbo.Department d ON d.Name = da.DepartmentName
-                LEFT JOIN dbo.Branch     b ON b.Name = da.BranchName
+                LEFT JOIN dbo.Company    c ON (da.ComId IS NOT NULL AND c.ComId = da.ComId) OR (da.ComId IS NULL AND c.Name = da.CompanyName)
+                LEFT JOIN dbo.Department d ON (da.DeptId IS NOT NULL AND d.DeptId = da.DeptId) OR (da.DeptId IS NULL AND d.Name = da.DepartmentName)
+                LEFT JOIN dbo.Branch     b ON (da.BranchId IS NOT NULL AND b.BranchId = da.BranchId) OR (da.BranchId IS NULL AND b.Name = da.BranchName)
                 WHERE da.Username = @Username";
 
             int accountId;

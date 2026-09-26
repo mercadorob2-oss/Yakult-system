@@ -1,6 +1,10 @@
 @model Inventory.RequestPortal.Models.ViewModels.MyRequestsPageViewModel
 @{
-    ViewData["Title"] = "My Submitted Requests";
+    // Also rendered by DeptRequests (Model.IsDeptLevelView): same page, the department's
+    // Dept. Level requests instead of the user's own.
+    ViewData["Title"] = Model.IsDeptLevelView ? "My Department History" : "My Submitted Requests";
+    string myTabClass   = Model.IsDeptLevelView ? "nav-link" : "nav-link active";
+    string deptTabClass = Model.IsDeptLevelView ? "nav-link active" : "nav-link";
 }
 
 @await Html.PartialAsync("_MasterNav")
@@ -32,7 +36,8 @@
         {
             <ul class="nav nav-tabs">
                 <li class="nav-item"><a class="nav-link" asp-action="Index">New Request</a></li>
-                <li class="nav-item"><a class="nav-link active" asp-action="MyRequests">My Submitted Requests</a></li>
+                <li class="nav-item"><a class="@myTabClass" asp-action="MyRequests">My Submitted Requests</a></li>
+                <li class="nav-item"><a class="@deptTabClass" asp-action="DeptRequests">My Department History</a></li>
                 <li class="nav-item"><a class="nav-link" asp-action="AssistedRequest">IT Assisted Request</a></li>
                 @if (ViewBag.IsDeveloper == true)
                 {
@@ -44,14 +49,16 @@
         {
             <ul class="nav nav-tabs mb-0">
                 <li class="nav-item"><a class="nav-link" asp-action="Index">New Request</a></li>
-                <li class="nav-item"><a class="nav-link active" asp-action="MyRequests">My Submitted Requests</a></li>
+                <li class="nav-item"><a class="@myTabClass" asp-action="MyRequests">My Submitted Requests</a></li>
+                <li class="nav-item"><a class="@deptTabClass" asp-action="DeptRequests">My Department History</a></li>
             </ul>
         }
         else
         {
             <ul class="nav nav-tabs">
                 <li class="nav-item"><a class="nav-link" asp-action="Index">New Request</a></li>
-                <li class="nav-item"><a class="nav-link active" asp-action="MyRequests">My Submitted Requests</a></li>
+                <li class="nav-item"><a class="@myTabClass" asp-action="MyRequests">My Submitted Requests</a></li>
+                <li class="nav-item"><a class="@deptTabClass" asp-action="DeptRequests">My Department History</a></li>
                 <li class="nav-item"><a class="nav-link" asp-controller="Authorization" asp-action="EmployeeStatus">Authorization</a></li>
             </ul>
         }
@@ -371,14 +378,14 @@
 
         let html;
         try {
-            const resp = await fetch('/Request/MyRequestsHistoryPartial' + (query ? '?' + query : ''),
+            const resp = await fetch('@Url.Action(Model.PartialAction, "Request")' + (query ? '?' + query : ''),
                 { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
             if (!resp.ok) throw new Error('Request failed: ' + resp.status);
             html = await resp.text();
         } catch (err) {
             // Fall back to a normal navigation if the AJAX call itself fails (offline,
             // 500, etc.) rather than leaving the user stuck with a stale/broken table.
-            window.location.href = '/Request/MyRequests' + (query ? '?' + query : '');
+            window.location.href = '@Url.Action(Model.PageAction, "Request")' + (query ? '?' + query : '');
             return;
         }
 

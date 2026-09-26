@@ -41,6 +41,9 @@
                     <a class="nav-link" asp-action="MyRequests">My Submitted Requests</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" asp-action="DeptRequests">My Department History</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" asp-action="AssistedRequest">IT Assisted Request</a>
                 </li>
                 @if (ViewBag.IsDeveloper == true)
@@ -61,6 +64,9 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-action="MyRequests">My Submitted Requests</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-action="DeptRequests">My Department History</a>
+                    </li>
                 </ul>
             </div>
         }
@@ -72,6 +78,9 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" asp-action="MyRequests">My Submitted Requests</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-action="DeptRequests">My Department History</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" asp-controller="Authorization" asp-action="EmployeeStatus">Authorization</a>

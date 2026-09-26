@@ -47,6 +47,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
         private NewRequestViewModel _newRequestViewModel;
         private AssistedRequestViewModel _assistedRequestViewModel;
         private RequestHistoryViewModel _requestHistoryViewModel;
+        private RequestHistoryViewModel _deptLevelRequestsViewModel;
         private AuthorizationHistoryViewModel _authHistoryViewModel;
 
         // Guided tour
@@ -89,6 +90,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
         private TabPage tabNewRequest;       // "New Request" — self-request, visible to all
         private TabPage tabAssistedRequest;  // "Assisted Request" — IT staff only
         private TabPage tabMyRequests;       // "Request History" — visible to all
+        private TabPage tabDeptRequests;     // "My Department History" — visible to all
         private TabPage tabApprovals;        // "Approvals" — approver positions only
         private TabPage tabAuthHistory;      // "Authorization History" — visible to all
 
@@ -385,6 +387,21 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                     }
                 }));
 
+            // ── DEPT. LEVEL REQUESTS (all accounts: employee and department) ──
+            // Requests encoded for the user's whole department (no specific employee).
+            _portalSideMenu.Controls.Add(CreateSideMenuItem(
+                "🏢", "My Department History",
+                () =>
+                {
+                    TogglePortalMenu();
+                    if (AppSession.IsApprover && _pnlRequestArea != null)
+                        ShowRequestArea();
+                    if (tabControl != null && tabDeptRequests != null)
+                        tabControl.SelectedTab = tabDeptRequests;
+                },
+                isActive: () => (_pnlRequestArea == null || _pnlRequestArea.Visible)
+                             && tabControl != null && tabControl.SelectedTab == tabDeptRequests));
+
             // ── QUICK NAV (approver mode only — mirrors the landing page's three
             //    module cards) ────────────────────────────────────────────────
             // Approvers can navigate from Home to any of Authorize/Submit/History,
@@ -409,7 +426,8 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                     "📋", "Submit a Request",
                     () => { TogglePortalMenu(); ShowRequestArea(); },
                     isActive: () => _pnlRequestArea != null && _pnlRequestArea.Visible
-                                 && (tabControl == null || tabControl.SelectedTab != tabAuthHistory)));
+                                 && (tabControl == null || (tabControl.SelectedTab != tabAuthHistory
+                                                            && tabControl.SelectedTab != tabDeptRequests))));
 
                 _portalSideMenu.Controls.Add(CreateSideMenuItem(
                     "✏", "Authorize Request",
@@ -704,6 +722,10 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
 
             tabControl.TabPages.Add(tabMyRequests);
 
+            // Requests encoded for the user's whole department (no specific employee).
+            tabDeptRequests = new TabPage("My Department History");
+            tabControl.TabPages.Add(tabDeptRequests);
+
             tabAuthHistory = new TabPage("Authorization History");
             tabControl.TabPages.Add(tabAuthHistory);
 
@@ -711,6 +733,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             if (AppSession.IsITStaff)
                 InitializeAssistedRequestTab();
             InitializeMyRequestsTab();
+            InitializeDeptRequestsTab();
             InitializeAuthHistoryTab();
 
             // Refresh model availability whenever the user navigates back to a request tab
@@ -2126,6 +2149,20 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             tabMyRequests.Controls.Add(host);
         }
 
+        // Same view as Request History: the user's own submissions plus the department's
+        // Dept. Level requests (highlighted). Employee and department accounts alike.
+        private void InitializeDeptRequestsTab()
+        {
+            _deptLevelRequestsViewModel = new RequestHistoryViewModel(RequestHistoryMode.DeptLevel);
+            _deptLevelRequestsViewModel.ShowDetailRequested += items =>
+            {
+                if (InvokeRequired) { BeginInvoke(new Action(() => OpenRequestDetail(items))); return; }
+                OpenRequestDetail(items);
+            };
+            var view = new RequestHistoryView(_deptLevelRequestsViewModel);
+            tabDeptRequests.Controls.Add(new ElementHost { Dock = DockStyle.Fill, Child = view });
+        }
+
         private void OpenRequestDetail(List<PortalRequestStatusDto> items)
         {
             using (var dlg = new RequestDetailDialog(items))
@@ -3500,6 +3537,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             if (_requestHistoryViewModel != null)
             {
                 _ = _requestHistoryViewModel.LoadAsync();
+                _ = _deptLevelRequestsViewModel?.LoadAsync();
                 return;
             }
 
@@ -3507,7 +3545,13 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             if (dgvMyRequests == null) return;
             try
             {
-                var requests = _portalService.GetPortalRequestsByUser(_currentUserId);
+                bool isDeptAccount = AppSession.IsDepartmentAccountSession;
+                var requests = _portalService.GetPortalRequestsByUser(
+                    _currentUserId,
+                    isDeptAccount ? AppSession.DepartmentAccountCompanyId    : AppSession.CurrentCompanyId,
+                    isDeptAccount ? AppSession.DepartmentAccountBranchId     : AppSession.CurrentBranchId,
+                    isDeptAccount ? AppSession.DepartmentAccountDepartmentId : AppSession.CurrentDepartmentId,
+                    deptLevelOnly: !isDeptAccount);
 
                 dgvMyRequests.Rows.Clear();
 

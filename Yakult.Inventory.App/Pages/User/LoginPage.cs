@@ -235,9 +235,9 @@ namespace Yakult.Inventory.App.Pages.User
                             b.BranchId
                         FROM dbo.DepartmentAccount da
                         INNER JOIN dbo.[User] u ON u.UserId = da.UserId
-                        LEFT JOIN dbo.Company    c ON c.Name = da.CompanyName
-                        LEFT JOIN dbo.Department d ON d.Name = da.DepartmentName
-                        LEFT JOIN dbo.Branch     b ON b.Name = da.BranchName
+                        LEFT JOIN dbo.Company    c ON (da.ComId IS NOT NULL AND c.ComId = da.ComId) OR (da.ComId IS NULL AND c.Name = da.CompanyName)
+                        LEFT JOIN dbo.Department d ON (da.DeptId IS NOT NULL AND d.DeptId = da.DeptId) OR (da.DeptId IS NULL AND d.Name = da.DepartmentName)
+                        LEFT JOIN dbo.Branch     b ON (da.BranchId IS NOT NULL AND b.BranchId = da.BranchId) OR (da.BranchId IS NULL AND b.Name = da.BranchName)
                         WHERE da.Username COLLATE Latin1_General_CS_AS = @Username COLLATE Latin1_General_CS_AS
                           AND da.UserId IS NOT NULL";
 
@@ -314,9 +314,9 @@ namespace Yakult.Inventory.App.Pages.User
                             d.DeptId,
                             b.BranchId
                         FROM dbo.DepartmentAccount da
-                        LEFT JOIN dbo.Company    c ON c.Name = da.CompanyName
-                        LEFT JOIN dbo.Department d ON d.Name = da.DepartmentName
-                        LEFT JOIN dbo.Branch     b ON b.Name = da.BranchName
+                        LEFT JOIN dbo.Company    c ON (da.ComId IS NOT NULL AND c.ComId = da.ComId) OR (da.ComId IS NULL AND c.Name = da.CompanyName)
+                        LEFT JOIN dbo.Department d ON (da.DeptId IS NOT NULL AND d.DeptId = da.DeptId) OR (da.DeptId IS NULL AND d.Name = da.DepartmentName)
+                        LEFT JOIN dbo.Branch     b ON (da.BranchId IS NOT NULL AND b.BranchId = da.BranchId) OR (da.BranchId IS NULL AND b.Name = da.BranchName)
                         WHERE da.Username COLLATE Latin1_General_CS_AS = @Username COLLATE Latin1_General_CS_AS
                           AND da.UserId IS NULL";
 
@@ -429,9 +429,9 @@ namespace Yakult.Inventory.App.Pages.User
                             d.DeptId,
                             b.BranchId
                         FROM dbo.DepartmentAccount da
-                        LEFT JOIN dbo.Company    c ON c.Name = da.CompanyName
-                        LEFT JOIN dbo.Department d ON d.Name = da.DepartmentName
-                        LEFT JOIN dbo.Branch     b ON b.Name = da.BranchName
+                        LEFT JOIN dbo.Company    c ON (da.ComId IS NOT NULL AND c.ComId = da.ComId) OR (da.ComId IS NULL AND c.Name = da.CompanyName)
+                        LEFT JOIN dbo.Department d ON (da.DeptId IS NOT NULL AND d.DeptId = da.DeptId) OR (da.DeptId IS NULL AND d.Name = da.DepartmentName)
+                        LEFT JOIN dbo.Branch     b ON (da.BranchId IS NOT NULL AND b.BranchId = da.BranchId) OR (da.BranchId IS NULL AND b.Name = da.BranchName)
                         WHERE da.UserId = @UserId";
 
                     using (var cmd = new SqlCommand(sql, con))
