@@ -199,8 +199,8 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <CheckBox HorizontalAlignment="Center" VerticalAlignment="Center"
-                                          IsChecked="{Binding Selected, Mode=TwoWay}"
-                                          Checked="RowCheckBox_Changed" Unchecked="RowCheckBox_Changed"/>
+                                          IsChecked="{Binding Selected, Mode=OneWay}"
+                                          Click="RowCheckBox_Changed"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

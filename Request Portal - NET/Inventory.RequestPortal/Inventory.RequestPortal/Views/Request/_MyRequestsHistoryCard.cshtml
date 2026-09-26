@@ -10,10 +10,10 @@
 <div class="card shadow-sm" id="requestHistoryCard">
     <div class="card-header d-flex align-items-center py-3 bg-white border-bottom flex-wrap gap-3">
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
-            <span class="fw-bold fs-5" style="color:#1e293b;">Request History</span>
+            <span class="fw-bold fs-5" style="color:#1e293b;">@Model.PageTitle</span>
             <span class="badge rounded-pill" style="background:#e2e8f0; color:#64748b; font-size:.8rem;">@Model.TotalCount</span>
         </div>
-        <form method="get" asp-action="MyRequests" id="requestHistoryFilterForm" class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
+        <form method="get" asp-action="@Model.PageAction" id="requestHistoryFilterForm" class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0;">
             <input type="text" name="search" value="@ViewBag.SearchText" class="form-control form-control-sm" style="max-width:240px;" placeholder="Search set code, item, employee...">
             <select name="status" class="form-select form-select-sm flex-shrink-0" style="width:auto;">
                 <option value="">All statuses</option>
@@ -25,18 +25,18 @@
             <button type="submit" class="btn btn-sm btn-primary flex-shrink-0">Filter</button>
             @if (hasFilter)
             {
-                <a asp-action="MyRequests" class="btn btn-sm flex-shrink-0 js-clear-filter" style="background:#e2e8f0; color:#475569; border:none;">Clear</a>
+                <a asp-action="@Model.PageAction" class="btn btn-sm flex-shrink-0 js-clear-filter" style="background:#e2e8f0; color:#475569; border:none;">Clear</a>
             }
         </form>
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
             @if (Model.History.Count > 0)
             {
-                <a asp-action="ExportMyRequestsCsv" asp-route-search="@ViewBag.SearchText" asp-route-status="@ViewBag.StatusFilter"
+                <a asp-action="@Model.ExportAction" asp-route-search="@ViewBag.SearchText" asp-route-status="@ViewBag.StatusFilter"
                    class="btn btn-sm" style="background:#e2e8f0; color:#475569; border:none;">
                     <i class="bi bi-download me-1"></i> Export CSV
                 </a>
             }
-            <a asp-action="MyRequests" asp-route-search="@ViewBag.SearchText" asp-route-status="@ViewBag.StatusFilter"
+            <a asp-action="@Model.PageAction" asp-route-search="@ViewBag.SearchText" asp-route-status="@ViewBag.StatusFilter"
                id="requestHistoryRefresh" class="btn btn-sm" style="background:#e2e8f0; color:#475569; border:none;">
                 <i class="bi bi-arrow-clockwise me-1"></i> Refresh
             </a>
@@ -48,7 +48,7 @@
         <div class="card-body text-center py-5">
             <i class="bi bi-search display-1 text-muted mb-3 d-block"></i>
             <h5 class="text-muted mb-3">No requests match your filter</h5>
-            <a asp-action="MyRequests" class="btn btn-sm js-clear-filter" style="background:#e2e8f0; color:#475569; border:none;">Clear filter</a>
+            <a asp-action="@Model.PageAction" class="btn btn-sm js-clear-filter" style="background:#e2e8f0; color:#475569; border:none;">Clear filter</a>
         </div>
     }
     else if (Model.History.Count == 0)
@@ -56,10 +56,17 @@
         <div class="card-body text-center py-5">
             <i class="bi bi-inbox display-1 text-muted mb-3 d-block"></i>
             <h5 class="text-muted mb-3">No requests found</h5>
-            <p class="text-muted mb-4">Your submitted requests will appear here.</p>
-            <a asp-action="Index" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-1"></i> Submit New Request
-            </a>
+            @if (Model.IsDeptLevelView)
+            {
+                <p class="text-muted mb-0">Requests from everyone in your department, including Dept. Level ones, will appear here.</p>
+            }
+            else
+            {
+                <p class="text-muted mb-4">Your submitted requests will appear here.</p>
+                <a asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Submit New Request
+                </a>
+            }
         </div>
     }
     else
@@ -70,6 +77,7 @@
                     <tr id="requestHistoryHead">
                         <th class="px-3 py-3 d-none d-md-table-cell" style="color:#64748b; font-weight:600; width:110px;">Set Code</th>
                         <th class="px-3 py-3" style="color:#64748b; font-weight:600; width:110px;">Date</th>
+                        <th class="px-3 py-3 d-none d-md-table-cell" style="color:#64748b; font-weight:600; width:170px;">Requested For</th>
                         <th class="px-3 py-3" style="color:#64748b; font-weight:600;">Cartridge Model(s)</th>
                         <th class="px-3 py-3 text-center" style="color:#64748b; font-weight:600; width:60px;">Qty</th>
                         <th class="px-3 py-3 text-center d-none d-md-table-cell" style="color:#64748b; font-weight:600; width:100px;">Empties</th>
@@ -95,11 +103,15 @@
                             remarks      = row.Remarks,
                             items        = row.Items.Select(i => new { i.CartridgeModel, i.Qty, i.GoodQty, i.DamagedQty })
                         };
-                        <tr class="history-row" style="cursor:pointer;"
+                        // Tint Dept. Level rows, which are mixed in with other rows on both pages.
+                        bool isDeptLevel = row.EmployeeName == "Dept. Level";
+                        <tr class="history-row" style="cursor:pointer;@(isDeptLevel ? " --bs-table-bg:#f4effd;" : "")"
                             data-detail="@JsonSerializer.Serialize(detail, jsonOptions)"
                             data-req-ids="@string.Join(',', row.ReqIds)">
                             <td class="px-3 py-3 fw-semibold align-middle d-none d-md-table-cell">@row.SetCode</td>
                             <td class="px-3 py-3 align-middle">@row.DateDisplay</td>
+                            <td class="px-3 py-3 align-middle d-none d-md-table-cell"
+                                style="@(isDeptLevel ? "color:#6d3fc9; font-weight:600;" : "")">@row.EmployeeName</td>
                             <td class="px-3 py-3 align-middle">@row.CartridgeDisplay</td>
                             <td class="px-3 py-3 text-center fw-bold align-middle">@row.TotalQty</td>
                             <td class="px-3 py-3 text-center align-middle d-none d-md-table-cell" style="color:#64748b; font-size:.88rem;">

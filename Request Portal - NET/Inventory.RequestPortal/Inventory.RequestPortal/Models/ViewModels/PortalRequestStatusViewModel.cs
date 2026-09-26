@@ -107,6 +107,18 @@ namespace Inventory.RequestPortal.Models.ViewModels
         public List<RequestHistoryRowViewModel> History { get; set; } = new();
         public int TotalCount => History.Count;
 
+        /// <summary>
+        /// True on the "My Department History" page (Request/DeptRequests): every portal
+        /// request for the user's department (all employees' and Dept. Level), plus the user's own. Same view and partial as MyRequests.
+        /// </summary>
+        public bool IsDeptLevelView { get; set; }
+
+        // Actions the shared view / partial / scripts post back to for this page.
+        public string PageAction    => IsDeptLevelView ? "DeptRequests"               : "MyRequests";
+        public string PartialAction => IsDeptLevelView ? "DeptRequestsHistoryPartial" : "MyRequestsHistoryPartial";
+        public string ExportAction  => IsDeptLevelView ? "ExportDeptRequestsCsv"      : "ExportMyRequestsCsv";
+        public string PageTitle     => IsDeptLevelView ? "My Department History"       : "Request History";
+
         // [LEGACY]
         public List<PortalRequestStatusViewModel> Requests { get; set; } = new();
     }

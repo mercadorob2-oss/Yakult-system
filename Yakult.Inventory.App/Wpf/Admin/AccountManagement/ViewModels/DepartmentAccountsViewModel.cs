@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Helpers;
 using Yakult.Inventory.App.Pages.Admin.AccountManagement;
+using Yakult.Inventory.App.Repositories;
 using Yakult.Inventory.App.Session;
 using Yakult.Inventory.App.WPF.CartridgeManagement.Infrastructure;
 
@@ -130,12 +131,14 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                             de.EmailAddressId                                    AS DeptEmailAddressId,
                             dea.EmailAddress                                     AS DepartmentEmail,
                             da.EmailAddressId                                    AS BranchEmailAddressId,
-                            bea.EmailAddress                                     AS BranchEmail
+                            bea.EmailAddress                                     AS BranchEmail,
+                            comb.ComId, comb.DeptId, comb.BranchId
                         FROM Combinations comb
+                        -- Same match as login: the saved ID when set, otherwise the name.
                         LEFT JOIN dbo.DepartmentAccount da
-                               ON  da.CompanyName    = comb.CompanyName
-                               AND da.DepartmentName = comb.DepartmentName
-                               AND da.BranchName     = comb.BranchName
+                               ON  (da.ComId    = comb.ComId    OR (da.ComId    IS NULL AND da.CompanyName    = comb.CompanyName))
+                               AND (da.DeptId   = comb.DeptId   OR (da.DeptId   IS NULL AND da.DepartmentName = comb.DepartmentName))
+                               AND (da.BranchId = comb.BranchId OR (da.BranchId IS NULL AND da.BranchName     = comb.BranchName))
                         LEFT JOIN dbo.DepartmentEmail de
                                ON  de.CompanyName    = comb.CompanyName
                                AND de.DepartmentName = comb.DepartmentName
@@ -164,8 +167,22 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                                 DeptEmailAddressId = reader.IsDBNull(11) ? (int?)null : reader.GetInt32(11),
                                 DepartmentEmail    = reader.IsDBNull(12) ? null : reader.GetString(12),
                                 EmailAddressId     = reader.IsDBNull(13) ? (int?)null : reader.GetInt32(13),
-                                BranchEmail        = reader.IsDBNull(14) ? null : reader.GetString(14)
+                                BranchEmail        = reader.IsDBNull(14) ? null : reader.GetString(14),
+                                ComId              = reader.GetInt32(15),
+                                DeptId             = reader.GetInt32(16),
+                                BranchId           = reader.GetInt32(17)
                             });
+                        }
+                    }
+
+                    // Request Portal submission counts per department (Dept. Level + employees).
+                    var counts = await new DepartmentRequestHistoryRepository().GetSubmissionCountsAsync();
+                    foreach (var row in _all)
+                    {
+                        if (counts.TryGetValue((row.ComId, row.BranchId, row.DeptId), out var c))
+                        {
+                            row.DeptLevelRequestCount = c.DeptLevelCount;
+                            row.EmployeeRequestCount  = c.EmployeeCount;
                         }
                     }
 
@@ -226,6 +243,8 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                     case "Has Branch Email":      return r.EmailAddressId.HasValue;
                     case "No Branch Email":       return !r.EmailAddressId.HasValue;
                     case "No Email (Both Empty)": return !r.EmailAddressId.HasValue && !r.DeptEmailAddressId.HasValue;
+                    case "Has Requests":          return r.TotalRequestCount > 0;
+                    case "Has Requests, No Account": return r.TotalRequestCount > 0 && !r.HasAccount;
                     default:                      return true;
                 }
             }).ToList();
@@ -257,6 +276,8 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                 case "Dept Email": return r.DepartmentEmail ?? "";
                 case "Branch Email": return r.BranchEmail ?? "";
                 case "Username":   return r.Username ?? "";
+                // Zero-padded so the string sort orders it numerically.
+                case "Requests":   return r.TotalRequestCount.ToString("D6");
                 case "Status":
                     if (!r.HasAccount)                             return "No Account";
                     if (r.HasAccount && !r.HasPassword)            return "Needs Password";
@@ -420,8 +441,8 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
             if (!row.AccountId.HasValue)
             {
                 const string insert = @"
-                    INSERT INTO dbo.DepartmentAccount (CompanyName, DepartmentName, BranchName)
-                    OUTPUT INSERTED.Id VALUES (@Co, @Dept, @Br)";
+                    INSERT INTO dbo.DepartmentAccount (CompanyName, DepartmentName, BranchName, ComId, DeptId, BranchId)
+                    OUTPUT INSERTED.Id VALUES (@Co, @Dept, @Br, @ComId, @DeptId, @BranchId)";
                 using (var con = new SqlConnection(_cs))
                 {
                     await con.OpenAsync();
@@ -430,6 +451,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                         cmd.Parameters.AddWithValue("@Co",   row.CompanyName);
                         cmd.Parameters.AddWithValue("@Dept", row.DepartmentName);
                         cmd.Parameters.AddWithValue("@Br",   row.BranchName);
+                        AddScopeIdParams(cmd, row);
                         row.AccountId = (int)await cmd.ExecuteScalarAsync();
                     }
                 }
@@ -467,6 +489,14 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
             }
             row.EmailAddressId = null;
             row.BranchEmail    = null;
+        }
+
+        // Pins the account to the combination's IDs (see Migration_DepartmentAccount_AddScopeIds.sql).
+        private static void AddScopeIdParams(SqlCommand cmd, DepartmentAccountRowDto row)
+        {
+            cmd.Parameters.AddWithValue("@ComId",    row.ComId    > 0 ? (object)row.ComId    : DBNull.Value);
+            cmd.Parameters.AddWithValue("@DeptId",   row.DeptId   > 0 ? (object)row.DeptId   : DBNull.Value);
+            cmd.Parameters.AddWithValue("@BranchId", row.BranchId > 0 ? (object)row.BranchId : DBNull.Value);
         }
 
         public async Task<bool> CreateAccountAsync(DepartmentAccountRowDto row, string username, string password)
@@ -517,11 +547,13 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                             const string updateSql = @"
                                 UPDATE dbo.DepartmentAccount
                                 SET Username=@Username, PasswordHash=@Hash, PasswordSalt=@Salt,
-                                    IsActive=1, DateCreated=GETDATE(), UserId=@UserId, PlainPassword=@Plain
+                                    IsActive=1, DateCreated=GETDATE(), UserId=@UserId, PlainPassword=@Plain,
+                                    ComId=@ComId, DeptId=@DeptId, BranchId=@BranchId
                                 WHERE Id=@Id";
                             using (var cmd = new SqlCommand(updateSql, con, tx))
                             {
                                 cmd.Parameters.AddWithValue("@Id",       row.AccountId.Value);
+                                AddScopeIdParams(cmd, row);
                                 cmd.Parameters.AddWithValue("@Username", username);
                                 cmd.Parameters.Add(new SqlParameter("@Hash", SqlDbType.VarBinary, hash.Length) { Value = hash });
                                 cmd.Parameters.Add(new SqlParameter("@Salt", SqlDbType.VarBinary, salt.Length) { Value = salt });
@@ -534,11 +566,14 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                         {
                             const string insertSql = @"
                                 INSERT INTO dbo.DepartmentAccount
-                                    (CompanyName, DepartmentName, BranchName, Username, PasswordHash, PasswordSalt, IsActive, DateCreated, UserId, PlainPassword)
+                                    (CompanyName, DepartmentName, BranchName, Username, PasswordHash, PasswordSalt, IsActive, DateCreated, UserId, PlainPassword,
+                                     ComId, DeptId, BranchId)
                                 OUTPUT INSERTED.Id
-                                VALUES (@Co, @Dept, @Br, @Username, @Hash, @Salt, 1, GETDATE(), @UserId, @Plain)";
+                                VALUES (@Co, @Dept, @Br, @Username, @Hash, @Salt, 1, GETDATE(), @UserId, @Plain,
+                                        @ComId, @DeptId, @BranchId)";
                             using (var cmd = new SqlCommand(insertSql, con, tx))
                             {
+                                AddScopeIdParams(cmd, row);
                                 cmd.Parameters.AddWithValue("@Co",       row.CompanyName);
                                 cmd.Parameters.AddWithValue("@Dept",     row.DepartmentName);
                                 cmd.Parameters.AddWithValue("@Br",       row.BranchName);

@@ -1,0 +1,412 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Admin.DepartmentRequestHistory.Views.DepartmentRequestHistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
+             Background="#F0F2F6"
+             FontFamily="Segoe UI"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter        x:Key="BoolToVis"/>
+        <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Foreground" Value="#1A2333"/>
+        </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="9"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Margin"     Value="0,0,0,3"/>
+        </Style>
+
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius"    Value="8"/>
+            <Setter Property="Padding"         Value="16,10"/>
+            <Setter Property="Margin"          Value="0,0,10,0"/>
+            <Setter Property="MinWidth"        Value="110"/>
+        </Style>
+
+        <!-- Clickable summary card: Tag carries its "active" flag. Click filters, click again clears. -->
+        <Style x:Key="ClickableStatCard" TargetType="Border" BasedOn="{StaticResource StatCard}">
+            <Setter Property="Cursor"  Value="Hand"/>
+            <Setter Property="ToolTip" Value="Click to show only these. Click again to clear."/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background"  Value="#F5F9FF"/>
+                    <Setter Property="BorderBrush" Value="#9CC4FB"/>
+                </Trigger>
+                <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="True">
+                    <Setter Property="Background"      Value="#EBF5FF"/>
+                    <Setter Property="BorderBrush"     Value="#4E9AFC"/>
+                    <Setter Property="BorderThickness" Value="2"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ActionButton" TargetType="Button">
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Padding"         Value="14,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Height"          Value="28"/>
+            <Setter Property="Margin"          Value="0,0,8,8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.87"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.70"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.38"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="FilterCombo" TargetType="ComboBox">
+            <Setter Property="Height"          Value="28"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="BorderBrush"     Value="#B0BAC8"/>
+            <Setter Property="Padding"         Value="8,0"/>
+            <Setter Property="Margin"          Value="0,0,8,8"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="FilterLabel" TargetType="TextBlock">
+            <Setter Property="FontSize"          Value="11"/>
+            <Setter Property="Foreground"        Value="#5A6A7A"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin"            Value="0,0,6,8"/>
+        </Style>
+
+        <Style x:Key="PageButton" TargetType="Button">
+            <Setter Property="Width"           Value="30"/>
+            <Setter Property="Height"          Value="28"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="Background"      Value="White"/>
+            <Setter Property="Foreground"      Value="#3A8EF6"/>
+            <Setter Property="BorderBrush"     Value="#CDD5DE"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor"          Value="Hand"/>
+            <Setter Property="Margin"          Value="2,0"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background"      Value="#4E9AFC"/>
+            <Setter Property="Foreground"      Value="White"/>
+            <Setter Property="FontWeight"      Value="SemiBold"/>
+            <Setter Property="FontSize"        Value="11"/>
+            <Setter Property="Padding"         Value="10,9"/>
+            <Setter Property="BorderBrush"     Value="#3A8EF6"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Cursor"     Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                    <Setter Property="Background" Value="#FAFBFC"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F0F6FF"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#C8DFFE"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground"      Value="#1A2333"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background"  Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Foreground"  Value="#1A2333"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CellText" TargetType="TextBlock">
+            <Setter Property="Padding"           Value="6,6"/>
+            <Setter Property="TextWrapping"      Value="Wrap"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Row 0: header and stat cards -->
+        <Border Grid.Row="0" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="18,14,18,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="Department Request History"
+                               FontSize="18" FontWeight="Bold" Foreground="#4E9AFC"/>
+                    <TextBlock Text="Request Portal submissions per Company, Department and Branch: Dept. Level requests and employees' requests. This is what the department account sees, including departments with no account yet."
+                               FontSize="10" Foreground="#5A6A7A" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding ScopeTitle}" FontSize="12" FontWeight="SemiBold"
+                               Foreground="#1A2333" Margin="0,6,0,0"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Style="{StaticResource ClickableStatCard}" Tag="{Binding IsAllCardActive}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ToggleCardCommand}" CommandParameter="All"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="SUBMISSIONS" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding TotalCount}" FontSize="22" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource ClickableStatCard}" Tag="{Binding IsDeptLevelCardActive}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ToggleCardCommand}" CommandParameter="DeptLevel"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="DEPT. LEVEL" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding DeptLevelCount}" FontSize="22" FontWeight="Bold" Foreground="#4E9AFC"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource ClickableStatCard}" Tag="{Binding IsEmployeeCardActive}">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ToggleCardCommand}" CommandParameter="Employee"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="EMPLOYEES" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding EmployeeCount}" FontSize="22" FontWeight="Bold" Foreground="#26A69A"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource ClickableStatCard}" Tag="{Binding IsNoAccountCardActive}" Margin="0"
+                            ToolTip="Submissions for a department with no department account yet. Click to show only these, click again to clear.">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ToggleCardCommand}" CommandParameter="NoAccount"/>
+                        </Border.InputBindings>
+                        <StackPanel>
+                            <TextBlock Text="NO ACCOUNT YET" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="{Binding NoAccountCount}" FontSize="22" FontWeight="Bold" Foreground="#E08A00"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Row 1: filters -->
+        <Border Grid.Row="1" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="14,10,14,2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <WrapPanel Grid.Column="0" Orientation="Horizontal">
+                    <TextBlock Text="Company:" Style="{StaticResource FilterLabel}"/>
+                    <ComboBox Style="{StaticResource FilterCombo}" Width="150"
+                              ItemsSource="{Binding Companies}" SelectedItem="{Binding SelectedCompany}"
+                              DisplayMemberPath="Name" IsEnabled="{Binding CanChangeScope}"/>
+                    <TextBlock Text="Department:" Style="{StaticResource FilterLabel}"/>
+                    <ComboBox Style="{StaticResource FilterCombo}" Width="200"
+                              ItemsSource="{Binding Departments}" SelectedItem="{Binding SelectedDepartment}"
+                              DisplayMemberPath="Name" IsEnabled="{Binding CanChangeScope}"/>
+                    <TextBlock Text="Branch:" Style="{StaticResource FilterLabel}"/>
+                    <ComboBox Style="{StaticResource FilterCombo}" Width="200"
+                              ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedBranch}"
+                              DisplayMemberPath="Name" IsEnabled="{Binding CanChangeScope}"/>
+                    <TextBlock Text="Show:" Style="{StaticResource FilterLabel}"/>
+                    <ComboBox Style="{StaticResource FilterCombo}" Width="130"
+                              ItemsSource="{Binding RequesterTypes}" SelectedItem="{Binding SelectedRequesterType}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="From:" Style="{StaticResource FilterLabel}"/>
+                        <DatePicker SelectedDate="{Binding FromDate}" Width="115" Height="28" Margin="0,0,8,8" FontSize="11"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="To:" Style="{StaticResource FilterLabel}"/>
+                        <DatePicker SelectedDate="{Binding ToDate}" Width="115" Height="28" Margin="0,0,8,8" FontSize="11"/>
+                    </StackPanel>
+                    <Button Style="{StaticResource ActionButton}" Background="#4E9AFC"
+                            Content="Apply" Command="{Binding LoadCommand}"/>
+                    <Button Style="{StaticResource ActionButton}" Background="#7A8A9A"
+                            Content="Clear" Command="{Binding ClearFiltersCommand}"/>
+                </WrapPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                    <Border Background="#EBF5FF" CornerRadius="4" Padding="8,3" Margin="0,4,8,0"
+                            VerticalAlignment="Top"
+                            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="#4E9AFC"/>
+                    </Border>
+                    <Border Background="White" BorderBrush="#B0BAC8" BorderThickness="1" CornerRadius="5"
+                            Padding="8,0" Height="28" VerticalAlignment="Top">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#7A8A9A"/>
+                            <TextBox BorderThickness="0" Background="Transparent"
+                                     FontSize="11" Width="190" VerticalContentAlignment="Center"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Search set code, requested for, item, encoded by, account"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Row 2: grid (click a row to see its lines) -->
+        <Grid Grid.Row="2">
+            <TextBlock Text="No requests found for this filter."
+                       FontSize="13" Foreground="#7A8A9A"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Visibility="{Binding HasRows, Converter={StaticResource InvBoolToVis}}"/>
+
+            <DataGrid x:Name="HistoryGrid"
+                      Background="White"
+                      BorderThickness="0"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#EEF1F4"
+                      AlternationCount="2"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      CanUserReorderColumns="False"
+                      CanUserResizeRows="False"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="True"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow"
+                      RowHeaderWidth="0"
+                      FontSize="12"
+                      HorizontalScrollBarVisibility="Auto"
+                      RowDetailsVisibilityMode="VisibleWhenSelected"
+                      ItemsSource="{Binding PagedRows}"
+                      SelectedItem="{Binding SelectedRow}"
+                      Visibility="{Binding HasRows, Converter={StaticResource BoolToVis}}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Set Code"      Binding="{Binding SetCode}"            Width="95"  ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTextColumn Header="Date"          Binding="{Binding DateDisplay}"        Width="85"  ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTextColumn Header="Company"       Binding="{Binding CompanyName}"        Width="80"  ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTextColumn Header="Department"    Binding="{Binding DepartmentName}"     Width="130" ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTextColumn Header="Branch"        Binding="{Binding DestinationBranch}"  Width="130" ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTextColumn Header="Requested For" Binding="{Binding RequestedFor}"       Width="140" ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTextColumn Header="Item(s)"       Binding="{Binding CartridgeDisplay}"   Width="*" MinWidth="160" ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTextColumn Header="Qty"           Binding="{Binding TotalQty}"           Width="50"  ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTextColumn Header="Fulfillment"   Binding="{Binding FulfillmentMethod}"  Width="85"  ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTemplateColumn Header="Status" Width="125">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Status}" Foreground="{Binding StatusColorBrush}"
+                                           FontWeight="Bold" FontSize="11" Padding="6,6"
+                                           VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Source"        Binding="{Binding Source}"             Width="80"  ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTextColumn Header="Encoded By"    Binding="{Binding EncodedBy}"          Width="120" ElementStyle="{StaticResource CellText}"/>
+                    <DataGridTemplateColumn Header="Dept. Account" Width="140">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DeptAccountDisplay}" Padding="6,6"
+                                           VerticalAlignment="Center" TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#1A2333"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasDeptAccount}" Value="False">
+                                                    <Setter Property="Foreground" Value="#E08A00"/>
+                                                    <Setter Property="FontWeight" Value="Normal"/>
+                                                    <Setter Property="FontStyle"  Value="Italic"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+
+                <!-- Selected row: its request lines -->
+                <DataGrid.RowDetailsTemplate>
+                    <DataTemplate>
+                        <Border Background="#F7FAFF" BorderBrush="#DDE3EC" BorderThickness="0,1,0,1" Padding="24,8,16,10">
+                            <StackPanel>
+                                <TextBlock Text="REQUEST LINES" Style="{StaticResource FieldLabel}"/>
+                                <ItemsControl ItemsSource="{Binding Lines}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="320"/>
+                                                    <ColumnDefinition Width="70"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Item}" FontSize="11" TextWrapping="Wrap"/>
+                                                <TextBlock Grid.Column="1" FontSize="11" FontWeight="SemiBold">
+                                                    <Run Text="Qty "/><Run Text="{Binding Qty, Mode=OneWay}"/>
+                                                </TextBlock>
+                                                <TextBlock Grid.Column="2" Text="{Binding Empties}" FontSize="11" Foreground="#5A6A7A"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding Status}" FontSize="11" Foreground="#5A6A7A"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock FontSize="11" Foreground="#5A6A7A" Margin="0,6,0,0" TextWrapping="Wrap">
+                                    <Run Text="Remarks: " FontWeight="SemiBold"/><Run Text="{Binding Remarks, Mode=OneWay, TargetNullValue='None'}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </DataGrid.RowDetailsTemplate>
+            </DataGrid>
+        </Grid>
+
+        <!-- Row 3: pagination -->
+        <Border Grid.Row="3" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="14,8">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="‹" Style="{StaticResource PageButton}"
+                            Command="{Binding PreviousPageCommand}" IsEnabled="{Binding CanGoPrev}"/>
+                    <TextBlock Text="{Binding PageInfo}" FontSize="11" Foreground="#5A6A7A"
+                               VerticalAlignment="Center" Margin="8,0"/>
+                    <Button Content="›" Style="{StaticResource PageButton}"
+                            Command="{Binding NextPageCommand}" IsEnabled="{Binding CanGoNext}"/>
+                    <Border Width="1" Height="18" Background="#DDE3EC" Margin="12,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding RowInfo}" FontSize="11" FontWeight="SemiBold" Foreground="#1A2333"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock DockPanel.Dock="Right" Text="{Binding StatusMessage}"
+                           FontSize="11" Foreground="#5A6A7A" VerticalAlignment="Center" TextWrapping="Wrap"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

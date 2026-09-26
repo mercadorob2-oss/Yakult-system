@@ -1191,9 +1191,22 @@ namespace Yakult.Inventory.App.Services
         /// <summary>
         /// Get all requests created via the portal for a specific user.
         /// READ-ONLY view for status tracking.
+        ///
+        /// When the Department Account scope is passed (all three IDs), the list also includes
+        /// every portal request in that Company / Branch / Department, whoever created it:
+        /// Dept. Level requests (no employee, e.g. an IT Assisted Request for
+        /// YPI / CREDIT AND COLLECTION / MANILA LIAISON OFFICE) and employees' own requests.
+        /// With deptLevelOnly, only the department's Dept. Level requests are added, not other
+        /// employees' requests. With includeOwn = false the user's own submissions are left out
+        /// (The "My Department History" tab/page uses deptLevelOnly with the user's own submissions.).
+        /// MATCHES: Inventory.RequestPortal (Web) GetPortalRequestsByUser.
         /// </summary>
-        public List<PortalRequestStatusDto> GetPortalRequestsByUser(int userId)
+        public List<PortalRequestStatusDto> GetPortalRequestsByUser(
+            int userId, int? deptScopeCompanyId = null, int? deptScopeBranchId = null, int? deptScopeDepartmentId = null,
+            bool deptLevelOnly = false, bool includeOwn = true)
         {
+            bool hasDeptScope = deptScopeCompanyId.HasValue && deptScopeBranchId.HasValue && deptScopeDepartmentId.HasValue;
+
             var requests = new List<PortalRequestStatusDto>();
 
             const string sql = @"
@@ -1221,10 +1234,12 @@ namespace Yakult.Inventory.App.Services
                     r.DateCreated,
                     i.Name AS ItemName,
                     i.ModelNumber,
+                    -- Department-level requests (EmpId NULL) carry ComId/BranchId/DeptId directly
+                    -- on the Request row instead of an Employee, so fall back to those.
                     e.Name AS DestinationEmployeeName,
-                    b.Name AS DestinationBranch,
-                    d.Name AS DestinationDepartment,
-                    c.Name AS DestinationCompany,
+                    ISNULL(b.Name, rb.Name) AS DestinationBranch,
+                    ISNULL(d.Name, rd.Name) AS DestinationDepartment,
+                    ISNULL(c.Name, rc.Name) AS DestinationCompany,
                     ISNULL(crm.GoodEmptyQty, 0) AS GoodEmptyQty,
                     ISNULL(crm.DamagedEmptyQty, 0) AS DamagedEmptyQty,
                     crm.CartridgeModel AS CartridgeName,
@@ -1234,15 +1249,32 @@ namespace Yakult.Inventory.App.Services
                     recv.Name AS ReceivedByName
                 FROM dbo.Request r
                 INNER JOIN dbo.Item i ON r.ItemId = i.ItemId
-                INNER JOIN dbo.Employee e ON r.EmpId = e.EmpId
-                INNER JOIN dbo.Branch b ON e.BranchId = b.BranchId
-                INNER JOIN dbo.Department d ON e.DeptId = d.DeptId
-                INNER JOIN dbo.Company c ON e.ComId = c.ComId
+                LEFT JOIN dbo.Employee e ON r.EmpId = e.EmpId
+                LEFT JOIN dbo.Branch b ON e.BranchId = b.BranchId
+                LEFT JOIN dbo.Department d ON e.DeptId = d.DeptId
+                LEFT JOIN dbo.Company c ON e.ComId = c.ComId
+                LEFT JOIN dbo.Branch rb ON r.BranchId = rb.BranchId
+                LEFT JOIN dbo.Department rd ON r.DeptId = rd.DeptId
+                LEFT JOIN dbo.Company rc ON r.ComId = rc.ComId
                 LEFT JOIN dbo.CartridgeRequestModel crm ON crm.ReqId = r.ReqId
                 LEFT JOIN dbo.[Set] s ON s.SetId = r.SetId
                 LEFT JOIN dbo.Employee recv ON r.ReceivedById = recv.EmpId
-                WHERE r.CreatedBy = @UserId
-                  AND r.Description LIKE '[[]PORTAL]%' -- Filter portal requests only
+                -- Portal requests only: '[PORTAL]' (self / desktop assisted) and '[PORTAL_ASSISTED]'
+                -- (web assisted). MATCHES: Inventory.RequestPortal (Web) GetPortalRequestsByUser.
+                WHERE r.Description LIKE '[[]PORTAL%'
+                  AND (
+                        (@IncludeOwn = 1 AND r.CreatedBy = @UserId)
+                     -- Department scope: every portal request (dept-level or for an employee)
+                     -- whose Company/Branch/Department saved on the Request row at submit
+                     -- time match, falling back to the employee's for old rows without them.
+                     -- Using the saved values keeps history with the department when an
+                     -- employee later transfers.
+                     OR (@DeptComId IS NOT NULL
+                         AND (@DeptLevelOnly = 0 OR r.EmpId IS NULL)
+                         AND COALESCE(r.ComId,    e.ComId)    = @DeptComId
+                         AND COALESCE(r.BranchId, e.BranchId) = @DeptBranchId
+                         AND COALESCE(r.DeptId,   e.DeptId)   = @DeptDeptId)
+                  )
                 ORDER BY r.DateCreated DESC";
 
             using (var con = new SqlConnection(_connectionString))
@@ -1251,6 +1283,11 @@ namespace Yakult.Inventory.App.Services
                 using (var cmd = new SqlCommand(sql, con))
                 {
                     cmd.Parameters.AddWithValue("@UserId", userId);
+                    cmd.Parameters.AddWithValue("@DeptComId",    hasDeptScope ? (object)deptScopeCompanyId.Value    : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DeptBranchId", hasDeptScope ? (object)deptScopeBranchId.Value     : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DeptDeptId",   hasDeptScope ? (object)deptScopeDepartmentId.Value : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@DeptLevelOnly", deptLevelOnly);
+                    cmd.Parameters.AddWithValue("@IncludeOwn",    includeOwn);
                     using (var reader = cmd.ExecuteReader())
                     {
                         while (reader.Read())
@@ -1277,10 +1314,10 @@ namespace Yakult.Inventory.App.Services
                                 DateCreated = reader.GetDateTime(6),
                                 ItemName = reader.GetString(7),
                                 ItemModelNumber = reader.IsDBNull(8) ? null : reader.GetString(8),
-                                DestinationEmployeeName = reader.GetString(9),
-                                DestinationBranch = reader.GetString(10),
-                                DestinationDepartment = reader.GetString(11),
-                                DestinationCompany = reader.GetString(12)
+                                DestinationEmployeeName = reader.IsDBNull(9) ? "—" : reader.GetString(9),
+                                DestinationBranch = reader.IsDBNull(10) ? "—" : reader.GetString(10),
+                                DestinationDepartment = reader.IsDBNull(11) ? "—" : reader.GetString(11),
+                                DestinationCompany = reader.IsDBNull(12) ? "—" : reader.GetString(12)
                             });
                         }
                     }

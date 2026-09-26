@@ -142,6 +142,15 @@
                         <span>My Submitted Requests</span>
                     </a>
                 </li>
+                @* Requests encoded for the user's whole department (no specific employee);
+                   employee and department accounts alike. *@
+                <li>
+                    <a class="@LinkClass("Request", "DeptRequests")" style="@LinkStyle("Request", "DeptRequests")"
+                       asp-controller="Request" asp-action="DeptRequests">
+                        <i class="bi bi-building fs-5"></i>
+                        <span>My Department History</span>
+                    </a>
+                </li>
                 @if (ViewBag.IsITStaff == true)
                 {
                     <li>

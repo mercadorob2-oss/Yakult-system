@@ -52,7 +52,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Request History"
+                    <TextBlock Text="{Binding Title}"
                                FontSize="18" FontWeight="Bold" Foreground="#2272D9"
                                VerticalAlignment="Center"/>
                     <Border Background="#D6E8FF"
@@ -106,7 +106,7 @@
                                        FontSize="14" FontWeight="SemiBold"
                                        Foreground="{StaticResource TextMuted}"
                                        HorizontalAlignment="Center" Margin="0,10,0,0"/>
-                            <TextBlock Text="Your submitted requests will appear here."
+                            <TextBlock Text="{Binding EmptySubtitle}"
                                        FontSize="12" Foreground="{StaticResource TextMuted}"
                                        HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
@@ -145,6 +145,12 @@
                                 <Style TargetType="DataGridRow">
                                     <Setter Property="Cursor" Value="Hand"/>
                                     <Style.Triggers>
+                                        <!-- Dept. Level request among other requests: light purple tint.
+                                             Listed first so the notification, hover and selected
+                                             states below still win. -->
+                                        <DataTrigger Binding="{Binding HighlightDeptLevel}" Value="True">
+                                            <Setter Property="Background" Value="#F4EFFD"/>
+                                        </DataTrigger>
                                         <!-- Notification highlight -->
                                         <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
                                             <Setter Property="Background" Value="#FFF8E1"/>
@@ -185,6 +191,22 @@
                                         <Style TargetType="TextBlock">
                                             <Setter Property="VerticalAlignment" Value="Center"/>
                                             <Setter Property="Padding" Value="6,0"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+
+                                <DataGridTextColumn Header="Requested For" Binding="{Binding RequestedFor}" Width="150">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="VerticalAlignment" Value="Center"/>
+                                            <Setter Property="TextWrapping" Value="Wrap"/>
+                                            <Setter Property="Padding" Value="6,4"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDeptLevel}" Value="True">
+                                                    <Setter Property="Foreground" Value="#6D3FC9"/>
+                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>

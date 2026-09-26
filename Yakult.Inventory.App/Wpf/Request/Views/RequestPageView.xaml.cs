@@ -193,10 +193,8 @@ namespace Yakult.Inventory.App.WPF.Request.Views
 
         private void RowSelectCheckBox_Changed(object sender, RoutedEventArgs e)
         {
-            // Set explicitly from the checkbox's own (guaranteed-current) IsChecked rather than
-            // trusting the TwoWay binding already pushed it by the time this event fires — in
-            // this ElementHost-hosted WPF surface that push isn't reliably synchronous, which was
-            // undercounting SelectedCount (only the first-checked row ever got counted).
+            // Wired to Click (user clicks only) with a OneWay binding, so recycled rows re-binding
+            // during a select-all refresh can never write a stale checked state back into the data.
             if (sender is CheckBox cb && cb.DataContext is RequestRow row)
                 row.Selected = cb.IsChecked == true;
 

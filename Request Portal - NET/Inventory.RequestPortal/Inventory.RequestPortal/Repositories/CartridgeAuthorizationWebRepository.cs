@@ -130,9 +130,10 @@ namespace Inventory.RequestPortal.Repositories
         /// Pending authorizations an approver may see and sign. Same rules as the desktop
         /// (Yakult.Inventory.App CartridgeAuthorizationRepository.GetPendingByScopeAsync):
         ///   - scope: the approver's company, branch and department (null = no filter);
-        ///   - a Manager-title requester's request (dbo.ApprovalRoleTitle) is visible only to that
-        ///     manager, who self-signs, unless the manager has no active user account, in which
-        ///     case the other approvers in scope see it so it can still be signed;
+        ///   - an approver-title requester's request (any dbo.ApprovalRoleTitle: Manager,
+        ///     Supervisor, Coordinator) is visible only to that requester, who self-signs, unless
+        ///     they have no active user account, in which case the other approvers in scope see
+        ///     it so it can still be signed;
         ///   - everyone else's requests are visible to every approver in scope except the requester.
         /// </summary>
         public async Task<List<CartridgeAuthorizationViewModel>> GetPendingForApproverAsync(
@@ -160,7 +161,7 @@ namespace Inventory.RequestPortal.Repositories
                       (
                           EXISTS (SELECT 1 FROM dbo.ApprovalRoleTitle art
                                   WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
-                                    AND art.IsActive = 1 AND art.ApprovalRole = 'Manager')
+                                    AND art.IsActive = 1)
                           AND (
                                 ca.EmployeeId = @ApproverEmpId
                              OR (NOT EXISTS (SELECT 1 FROM dbo.[User] mu
@@ -172,7 +173,7 @@ namespace Inventory.RequestPortal.Repositories
                       (
                           NOT EXISTS (SELECT 1 FROM dbo.ApprovalRoleTitle art
                                       WHERE UPPER(LTRIM(RTRIM(e.Position))) = UPPER(LTRIM(RTRIM(art.PositionTitle)))
-                                        AND art.IsActive = 1 AND art.ApprovalRole = 'Manager')
+                                        AND art.IsActive = 1)
                           AND (@ApproverEmpId IS NULL OR ca.EmployeeId <> @ApproverEmpId)
                       )
                   )

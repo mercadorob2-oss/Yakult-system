@@ -11,9 +11,29 @@ using Yakult.Inventory.App.WPF.CartridgeManagement.Infrastructure;
 
 namespace Yakult.Inventory.App.WPF.RequestPortal.RequestHistory.ViewModels
 {
+    /// <summary>Which list a Request History view shows.</summary>
+    public enum RequestHistoryMode
+    {
+        /// <summary>"Request History": the user's own submissions. A department account also
+        /// sees every request for its department (Dept. Level rows are highlighted).</summary>
+        MyRequests,
+
+        /// <summary>"My Department History": every portal request for the user's department
+        /// (the department account's, or the employee's own): all its employees' requests and
+        /// the Dept. Level ones (highlighted), plus the user's own submissions.</summary>
+        DeptLevel
+    }
+
     public class RequestHistoryViewModel : ViewModelBase
     {
         private const int PageSize = 10;
+
+        public RequestHistoryMode Mode { get; }
+        public bool   IsDeptLevelMode => Mode == RequestHistoryMode.DeptLevel;
+        public string Title           => IsDeptLevelMode ? "My Department History" : "Request History";
+        public string EmptySubtitle   => IsDeptLevelMode
+            ? "Requests from everyone in your department, including Dept. Level ones, will appear here."
+            : "Your submitted requests will appear here.";
 
         private readonly RequesterPortalService _service;
         private List<RequestHistoryRowViewModel> _allRows = new List<RequestHistoryRowViewModel>();
@@ -92,8 +112,11 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.RequestHistory.ViewModels
         public ICommand NextPageCommand     { get; }
         public RelayCommand<RequestHistoryRowViewModel> ShowDetailCommand { get; }
 
-        public RequestHistoryViewModel()
+        public RequestHistoryViewModel() : this(RequestHistoryMode.MyRequests) { }
+
+        public RequestHistoryViewModel(RequestHistoryMode mode)
         {
+            Mode                = mode;
             _service            = new RequesterPortalService();
             LoadCommand         = new RelayCommand(async () => await LoadAsync(), () => !_isLoading);
             RefreshCommand      = new RelayCommand(async () => await LoadAsync(), () => !_isLoading);
@@ -140,7 +163,28 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.RequestHistory.ViewModels
             StatusMessage = "Loading...";
             try
             {
-                var raw = await Task.Run(() => _service.GetPortalRequestsByUser(AppSession.CurrentUserId));
+                // The user's department: the department account's, or the employee's own.
+                bool isDeptAccount = AppSession.IsDepartmentAccountSession;
+                int? comId    = isDeptAccount ? AppSession.DepartmentAccountCompanyId    : AppSession.CurrentCompanyId;
+                int? branchId = isDeptAccount ? AppSession.DepartmentAccountBranchId     : AppSession.CurrentBranchId;
+                int? deptId   = isDeptAccount ? AppSession.DepartmentAccountDepartmentId : AppSession.CurrentDepartmentId;
+
+                List<PortalRequestStatusDto> raw;
+                if (IsDeptLevelMode)
+                    // My Department History tab: every portal request for the user's
+                    // department (every employee's, including the user's own, and the Dept.
+                    // Level ones), plus anything the user submitted themselves.
+                    raw = await Task.Run(() => _service.GetPortalRequestsByUser(
+                        AppSession.CurrentUserId, comId, branchId, deptId));
+                else if (isDeptAccount)
+                    // A Department Account's Request History: every portal request for its
+                    // department (Dept. Level ones and its employees'); Dept. Level rows highlighted.
+                    raw = await Task.Run(() => _service.GetPortalRequestsByUser(
+                        AppSession.CurrentUserId, comId, branchId, deptId));
+                else
+                    // An employee's Request History: their own submissions only. The department's
+                    // Dept. Level requests are on the My Department History tab.
+                    raw = await Task.Run(() => _service.GetPortalRequestsByUser(AppSession.CurrentUserId));
 
                 _allRows = raw
                     .GroupBy(x => x.SubmissionSessionId.HasValue
@@ -149,6 +193,10 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.RequestHistory.ViewModels
                     .Select(g => BuildRow(g.ToList()))
                     .OrderByDescending(r => r.DateRequested)
                     .ToList();
+
+                // Highlight Dept. Level rows, which are mixed in with the user's own rows.
+                foreach (var r in _allRows)
+                    r.HighlightDeptLevel = r.IsDeptLevel;
 
                 TotalCount = _allRows.Count;
                 TotalPages = Math.Max(1, (int)Math.Ceiling(_allRows.Count / (double)PageSize));
@@ -204,6 +252,10 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.RequestHistory.ViewModels
             {
                 SetCode           = !string.IsNullOrWhiteSpace(first.SetCode) ? first.SetCode : "—",
                 DateRequested     = (DateTime?)first.DateRequested,
+                // No employee on the Request row = a Dept. Level request.
+                RequestedFor      = string.IsNullOrWhiteSpace(first.DestinationEmployeeName) || first.DestinationEmployeeName == "—"
+                                    ? "Dept. Level"
+                                    : first.DestinationEmployeeName,
                 CartridgeDisplay  = cartridgeDisplay,
                 TotalQty          = items.Sum(x => x.Quantity),
                 ReturnInfo        = returnInfo,
@@ -214,16 +266,23 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.RequestHistory.ViewModels
             };
         }
 
-        private static string AggregateGroupStatus(List<PortalRequestStatusDto> items)
+        private static string AggregateGroupStatus(List<PortalRequestStatusDto> items) =>
+            AggregateGroupStatus(items.Select(x => x.Status).ToList());
+
+        /// <summary>
+        /// One status for a whole submission from its lines' statuses. Shared with the admin
+        /// Department Request History page so both show the same status.
+        /// </summary>
+        internal static string AggregateGroupStatus(List<string> statuses)
         {
-            var upper = items.Select(x => x.Status?.ToUpperInvariant() ?? "").ToList();
+            var upper = statuses.Select(s => s?.ToUpperInvariant() ?? "").ToList();
             bool anyUnfulfilled = upper.Any(s => s == "UNFULFILLED" || s.Contains("PARTIALLY"));
             bool anyFulfilled   = upper.Any(s => s == "FULFILLED" || s == "COMPLETED" || s == "REPLACED");
             bool anyActive      = upper.Any(s => s == "UNDER REVIEW" || s == "PROCESSING");
             if (anyUnfulfilled && (anyFulfilled || anyActive)) return "Partially Fulfilled";
             if (anyUnfulfilled) return "Unfulfilled";
             if (anyFulfilled)   return "Fulfilled";
-            return items[0].Status ?? string.Empty;
+            return statuses.Count > 0 ? statuses[0] ?? string.Empty : string.Empty;
         }
 
         // ── Tour dummy data ───────────────────────────────────────────────────
@@ -275,6 +334,10 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.RequestHistory.ViewModels
     {
         public string SetCode           { get; set; }
         public DateTime? DateRequested  { get; set; }
+        public string RequestedFor      { get; set; }
+        public bool   IsDeptLevel       => RequestedFor == "Dept. Level";
+        /// <summary>Tint the row: a Dept. Level request shown among other requests.</summary>
+        public bool   HighlightDeptLevel { get; set; }
         public string CartridgeDisplay  { get; set; }
         public int TotalQty             { get; set; }
         public string ReturnInfo        { get; set; }
