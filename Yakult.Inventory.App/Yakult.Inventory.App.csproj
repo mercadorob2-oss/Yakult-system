@@ -553,6 +553,9 @@
       <DependentUpon>ColumnFilterWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Wpf\Admin\AccountManagement\Dialogs\EmployeeImportRow.cs" />
+    <Compile Include="Wpf\Admin\AccountManagement\Dialogs\EmployeeImportColumnMappingDialog.xaml.cs">
+      <DependentUpon>EmployeeImportColumnMappingDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Wpf\Admin\AccountManagement\Dialogs\EmployeeImportPreviewWindow.xaml.cs">
       <DependentUpon>EmployeeImportPreviewWindow.xaml</DependentUpon>
     </Compile>
@@ -618,6 +621,12 @@
     </Compile>
     <Compile Include="Wpf\Set\BulkDeploy\BulkDeployWindow.xaml.cs">
       <DependentUpon>BulkDeployWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Set\BulkDeploy\ColumnFiltersDialog.xaml.cs">
+      <DependentUpon>ColumnFiltersDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Set\BulkDeploy\ImportColumnMappingDialog.xaml.cs">
+      <DependentUpon>ImportColumnMappingDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Wpf\Set\BulkDeploy\BulkDeployParser.cs" />
     <Compile Include="Wpf\Set\BulkDeploy\BulkDeployRow.cs" />
@@ -1920,6 +1929,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Wpf\Admin\AccountManagement\Dialogs\EmployeeImportColumnMappingDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Wpf\Admin\AccountManagement\Dialogs\EmployeeImportSummaryWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -1993,6 +2006,14 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Wpf\Set\BulkDeploy\BulkDeployWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Set\BulkDeploy\ColumnFiltersDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Set\BulkDeploy\ImportColumnMappingDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

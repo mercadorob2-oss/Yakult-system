@@ -297,6 +297,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private readonly ComboBox _priorityCombo;
         private readonly TextBox _temporaryTicketContactEmailBox;
         private readonly CheckBox _linkCallerEmailToProfileCheckBox;
+        private readonly CheckBox _useOrgFallbackCheckBox;
 
         public CreationAction SelectedAction { get; private set; } = CreationAction.Cancel;
         public string SelectedPriority => (_priorityCombo.SelectedItem as string) ?? "Medium";
@@ -305,7 +306,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             // Never link the organization fallback as a personal email: the
             // link is only honored when the operator actually typed an address.
             public bool ShouldLinkTicketContactEmailToCaller => _linkCallerEmailToProfileCheckBox?.IsChecked == true
-                && !string.IsNullOrWhiteSpace(_temporaryTicketContactEmailBox?.Text);
+                && !string.IsNullOrWhiteSpace(_temporaryTicketContactEmailBox?.Text)
+                && _useOrgFallbackCheckBox?.IsChecked != true;
+
+            public bool UseOrganizationalFallback => !_model.RequiresCallerEmail
+                || _useOrgFallbackCheckBox?.IsChecked == true;
         public WpfConfirmTicketCreationDialog(TicketCreationModel model)
         {
             if (model == null) throw new ArgumentNullException(nameof(model));
@@ -426,9 +431,21 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 AddDetail(contactStack, "Organization fallback", string.IsNullOrWhiteSpace(model.TicketContactEmail) ? "No branch or department email found" : model.TicketContactEmail);
                 if (!string.IsNullOrWhiteSpace(model.TicketContactEmailSource))
                     AddDetail(contactStack, "Fallback source", model.TicketContactEmailSource);
+                var hasFallback = !string.IsNullOrWhiteSpace(model.TicketContactEmail)
+                    && EmailAddressValidator.TryNormalize(model.TicketContactEmail, out _);
+                _useOrgFallbackCheckBox = new CheckBox
+                {
+                    Content = "Use organizational fallback above",
+                    IsChecked = hasFallback,
+                    IsEnabled = hasFallback,
+                    Margin = new Thickness(0, 8, 0, 3),
+                    Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42)
+                };
+                contactStack.Children.Add(_useOrgFallbackCheckBox);
                 contactStack.Children.Add(CreateLabel("Caller personal email (optional)"));
                 _temporaryTicketContactEmailBox = WpfItcmDialogService.CreateTextBox(string.Empty, 38);
                 _temporaryTicketContactEmailBox.MaxLength = 255;
+                _temporaryTicketContactEmailBox.IsEnabled = !hasFallback;
                 contactStack.Children.Add(_temporaryTicketContactEmailBox);
                 if (model.CanLinkTicketContactEmailToCaller)
                 {
@@ -436,7 +453,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     {
                         Content = "Link this as the caller's active primary employee email",
                         Margin = new Thickness(0, 8, 0, 3),
-                        Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42)
+                        Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42),
+                        IsEnabled = !hasFallback
                     };
                     contactStack.Children.Add(_linkCallerEmailToProfileCheckBox);
                 }
@@ -444,6 +462,18 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 {
                     _linkCallerEmailToProfileCheckBox = null;
                 }
+                _useOrgFallbackCheckBox.Checked += (_, __) =>
+                {
+                    _temporaryTicketContactEmailBox.IsEnabled = false;
+                    if (_linkCallerEmailToProfileCheckBox != null)
+                        _linkCallerEmailToProfileCheckBox.IsEnabled = false;
+                };
+                _useOrgFallbackCheckBox.Unchecked += (_, __) =>
+                {
+                    _temporaryTicketContactEmailBox.IsEnabled = true;
+                    if (_linkCallerEmailToProfileCheckBox != null)
+                        _linkCallerEmailToProfileCheckBox.IsEnabled = true;
+                };
                 contactStack.Children.Add(WpfItcmDialogService.CreateMutedText("Leave blank to use the organization fallback above. A typed address saves only on this ticket unless linked; selecting the option also updates the caller's employee profile."));
             }
             else if (model.RequiresTemporaryTicketContactEmail)
@@ -455,6 +485,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _temporaryTicketContactEmailBox.MaxLength = 255;
                 contactStack.Children.Add(_temporaryTicketContactEmailBox);
                 _linkCallerEmailToProfileCheckBox = null;
+                _useOrgFallbackCheckBox = null;
                 contactStack.Children.Add(WpfItcmDialogService.CreateMutedText("This address is saved only on this ticket and does not change shared email settings."));
             }
             else
@@ -464,6 +495,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 AddDetail(contactStack, "Source", model.TicketContactEmailSource);
                 _temporaryTicketContactEmailBox = null;
                 _linkCallerEmailToProfileCheckBox = null;
+                _useOrgFallbackCheckBox = null;
             }
             var contactCard = WpfItcmDialogService.CreateCard();
             contactCard.Background = needsContactInput
@@ -564,12 +596,15 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 if (action != CreationAction.Cancel)
                 {
-                    // Optional caller email: blank falls back to the resolved
-                    // organization address. The temporary-contact path has no
+                    // Optional caller email: checked fallback box (or blank) uses the
+                    // resolved organization address. The temporary-contact path has no
                     // fallback, so blank still blocks there.
-                    var typed = (_model.RequiresCallerEmail || _model.RequiresTemporaryTicketContactEmail)
-                        ? _temporaryTicketContactEmailBox?.Text
-                        : null;
+                    var useFallback = _model.RequiresCallerEmail && _useOrgFallbackCheckBox?.IsChecked == true;
+                    var typed = useFallback
+                        ? null
+                        : (_model.RequiresCallerEmail || _model.RequiresTemporaryTicketContactEmail)
+                            ? _temporaryTicketContactEmailBox?.Text
+                            : null;
                     var contactEmail = string.IsNullOrWhiteSpace(typed) ? _model.TicketContactEmail : typed;
                     if (!EmailAddressValidator.TryNormalize(contactEmail, out var normalizedContactEmail))
                     {

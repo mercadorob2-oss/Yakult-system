@@ -17,36 +17,94 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
     public partial class BulkDeployWindow : Window
     {
         private readonly BulkDeployViewModel _viewModel = new BulkDeployViewModel();
+        private readonly ColumnFiltersDialog _filters = new ColumnFiltersDialog();
 
         public ObservableCollection<BulkDeployRow> Rows => _viewModel.Rows;
 
-        private bool IsDateOn => ChkDate.IsChecked == true;
-        private bool IsPcOn => ChkPc.IsChecked == true;
-        private bool IsIpOn => ChkIp.IsChecked == true;
-        private bool IsDeptOn => ChkDept.IsChecked == true;
-        private bool IsFaOn => ChkFa.IsChecked == true;
-        private bool IsEmpOn => ChkEmp.IsChecked == true;
-        private bool IsCatOn => ChkCat.IsChecked == true;
-        private bool IsDropdownOn => ChkDropdown.IsChecked == true;
+        private bool IsDateOn => _filters.IsDateOn;
+        private bool IsPcOn => _filters.IsPcOn;
+        private bool IsIpOn => _filters.IsIpOn;
+        private bool IsDeptOn => _filters.IsDeptOn;
+        private bool IsFaOn => _filters.IsFaOn;
+        private bool IsEmpOn => _filters.IsEmpOn;
+        private bool IsComOn => _filters.IsComOn;
+        private bool IsBranchOn => _filters.IsBranchOn;
+        private bool IsCatOn => _filters.IsCatOn;
+        private bool IsDropdownOn => _filters.IsDropdownOn;
 
         public BulkDeployWindow()
         {
             InitializeComponent();
             DataContext = _viewModel;
             _viewModel.EnsureSeeded(300);
+            _filters.OptionChanged += Filters_OptionChanged;
+            _filters.DropdownChanged += Filters_DropdownChanged;
             ApplyColumnVisibility();
+            UpdateColumnFiltersSummary();
             Loaded += BulkDeployWindow_Loaded;
+            Closing += BulkDeployWindow_Closing;
+        }
+
+        private void BulkDeployWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // Let the owned ColumnFiltersDialog's HWND actually be destroyed
+            // now that this window (its permanent owner) is closing too -
+            // otherwise it would stay alive forever as a hidden window since
+            // BtnDone_Click/ColumnFiltersDialog_Closing normally just Hide()
+            // it for reuse across multiple "Column Filters..." clicks.
+            _filters.AllowRealClose();
+            _filters.Close();
+        }
+
+        private void BtnColumnFilters_Click(object sender, RoutedEventArgs e)
+        {
+            if (_filters.IsVisible)
+            {
+                _filters.Activate();
+                return;
+            }
+            _filters.Show();
+        }
+
+        private async void Filters_OptionChanged(object sender, EventArgs e)
+        {
+            UpdateColumnFiltersSummary();
+            await OptionCheck_ChangedAsync();
+        }
+
+        private void Filters_DropdownChanged(object sender, EventArgs e)
+        {
+            UpdateColumnFiltersSummary();
+            RebuildDropdownColumns();
+        }
+
+        private void UpdateColumnFiltersSummary()
+        {
+            if (ColumnFiltersSummary == null) return;
+            var on = new List<string>();
+            if (IsDateOn) on.Add("Date");
+            if (IsPcOn) on.Add("PC");
+            if (IsIpOn) on.Add("IP");
+            if (IsFaOn) on.Add("FixedAsset");
+            if (IsEmpOn) on.Add("Employee");
+            if (IsComOn) on.Add("Company");
+            if (IsBranchOn) on.Add("Branch");
+            if (IsCatOn) on.Add("Category");
+            if (IsDropdownOn) on.Add("Dropdowns");
+            ColumnFiltersSummary.Text = on.Count == 0 ? "No optional columns enabled." : string.Join(" \u2022 ", on);
         }
 
         private async void BulkDeployWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            await _viewModel.LoadCategoryOptionsAsync();
-            RebuildDropdownColumns();
-        }
+            // Owner can only be set once this window has actually been shown
+            // (ShowDialog() from SetPageView) - setting it in the constructor
+            // throws InvalidOperationException("Cannot set Owner property to
+            // a Window that has not been shown previously").
+            if (_filters.Owner == null)
+                _filters.Owner = this;
 
-        private void DropdownCheck_Changed(object sender, RoutedEventArgs e)
-        {
-            if (!IsLoaded) return;
+            await _viewModel.LoadCategoryOptionsAsync();
+            await _viewModel.LoadCompanyAndBranchOptionsAsync();
             RebuildDropdownColumns();
         }
 
@@ -55,7 +113,7 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
         // ModelNumber, FixedAssetNumber) are intentionally excluded.
         private static readonly string[] DropdownableHeaders =
         {
-            "Department", "Category", "ItemRole", "Condition"
+            "Department", "Category", "ItemRole", "Condition", "Company", "Branch"
         };
 
         private void RebuildDropdownColumns()
@@ -108,6 +166,8 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
                 case "Category": options = _viewModel.CategoryOptions; break;
                 case "ItemRole": options = _viewModel.RoleOptions; break;
                 case "Condition": options = _viewModel.ConditionOptions; break;
+                case "Company": options = _viewModel.CompanyOptions; break;
+                case "Branch": options = _viewModel.BranchOptions; break;
                 default: options = Enumerable.Empty<string>(); break;
             }
 
@@ -216,7 +276,7 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
             anchorColumn = editableColumns[startEditableIndex];
 
             List<BulkDeployRow> parsed = BulkDeployParser.ParseClipboardText(
-                text, IsDateOn, IsPcOn, IsIpOn, IsDeptOn, IsFaOn, IsEmpOn, null, false, false, IsCatOn);
+                text, IsDateOn, IsPcOn, IsIpOn, IsDeptOn, IsFaOn, IsEmpOn, null, IsComOn, IsBranchOn, IsCatOn);
             if (parsed.Count == 0) return;
 
             for (int i = 0; i < parsed.Count; i++)
@@ -242,6 +302,8 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
             target.SerialNumber = parsed.SerialNumber;
             if (IsFaOn) target.FixedAssetNumber = parsed.FixedAssetNumber;
             if (IsEmpOn) target.Employee = parsed.Employee;
+            if (IsComOn) target.Company = parsed.Company;
+            if (IsBranchOn) target.Branch = parsed.Branch;
             target.Category = parsed.Category;
             if (IsCatOn) target.Category = parsed.Category;
             else target.Category = BulkDeployParser.AutoCategoryFromRole(parsed.ItemRole);
@@ -309,6 +371,8 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
                 case nameof(BulkDeployRow.Vendor): row.Vendor = text; break;
                 case nameof(BulkDeployRow.Remarks): row.Remarks = text; break;
                 case nameof(BulkDeployRow.Employee): row.Employee = text; break;
+                case nameof(BulkDeployRow.Company): row.Company = text; break;
+                case nameof(BulkDeployRow.Branch): row.Branch = text; break;
                 default: break;
             }
         }
@@ -367,11 +431,37 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
             if (dlg.ShowDialog(this) != true) return;
             try
             {
+                var report = BulkDeployExcelImporter.InspectColumns(dlg.FileName);
+                var mapping = new ImportColumnMappingDialog(System.IO.Path.GetFileName(dlg.FileName), report)
+                {
+                    Owner = this
+                };
+                if (mapping.ShowDialog() != true || !mapping.Confirmed)
+                {
+                    AppendLog($"Import cancelled: {System.IO.Path.GetFileName(dlg.FileName)}.");
+                    return;
+                }
+
                 ChkErrorsOnly.IsChecked = false;
                 var loaded = BulkDeployExcelImporter.LoadRows(
-                    dlg.FileName, IsDateOn, IsPcOn, IsIpOn, IsDeptOn, IsFaOn, IsEmpOn);
+                    dlg.FileName, IsDateOn, IsPcOn, IsIpOn, IsDeptOn, IsFaOn, IsEmpOn, IsComOn, IsBranchOn, IsCatOn);
+
+                // Drop every blank seed row (regardless of where it sits in the
+                // collection) before inserting imported data, so:
+                //  1. imported rows always land visibly at the top instead of
+                //     being appended after ~300 empty rows, and
+                //  2. importing a second file in the same session doesn't leave
+                //     stray blank rows interleaved between the first and second
+                //     import's real rows (EnsureSeeded always re-appends fresh
+                //     blanks at the very end, after this removal).
+                var blanks = Rows.Where(BulkDeployViewModel.IsBlankRow).ToList();
+                foreach (var blank in blanks)
+                    Rows.Remove(blank);
+
                 foreach (var row in loaded)
                     Rows.Add(row);
+                _viewModel.EnsureSeeded(Math.Max(300, Rows.Count + 50));
+
                 if (ChkAutoValidate.IsChecked == true)
                     await _viewModel.ValidateAllAsync();
                 RefreshGrid();
@@ -593,7 +683,7 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
             AppendLog("Grid cleared.");
         }
 
-        private async void OptionCheck_Changed(object sender, RoutedEventArgs e)
+        private async Task OptionCheck_ChangedAsync()
         {
             ApplyColumnVisibility();
             if (!IsLoaded) return;
@@ -610,6 +700,8 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
             SetColumnVisible("Department", IsDeptOn);
             SetColumnVisible("FixedAssetNumber", IsFaOn);
             SetColumnVisible("Employee", IsEmpOn);
+            SetColumnVisible("Company", IsComOn);
+            SetColumnVisible("Branch", IsBranchOn);
         }
 
         private void SetColumnVisible(string header, bool visible)
@@ -617,22 +709,6 @@ namespace Yakult.Inventory.App.Wpf.Set.BulkDeploy
             var col = BulkGrid.Columns
                 .FirstOrDefault(c => string.Equals(c.Header as string, header, StringComparison.Ordinal));
             if (col != null) col.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        private void PresetYpi_Click(object sender, RoutedEventArgs e)
-        {
-            ChkDate.IsChecked = true;
-            ChkPc.IsChecked = true;
-            ChkIp.IsChecked = true;
-            ChkFa.IsChecked = true;
-        }
-
-        private void PresetMinimal_Click(object sender, RoutedEventArgs e)
-        {
-            ChkDate.IsChecked = false;
-            ChkPc.IsChecked = true;
-            ChkIp.IsChecked = false;
-            ChkFa.IsChecked = false;
         }
 
         private void AppendLog(string line)

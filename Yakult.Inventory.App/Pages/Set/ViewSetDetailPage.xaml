@@ -432,7 +432,7 @@
                                        FontWeight="Bold" FontSize="10" Foreground="#3A4A5A" Margin="0,0,0,4"/>
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Computer Name:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
                             <TextBox   Grid.Row="1" Grid.Column="1" x:Name="TxtComputerName" Style="{StaticResource EditField}" Margin="0,3,8,3"/>
-                            <TextBlock Grid.Row="1" Grid.Column="2" Text="IP Address:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
+                            <TextBlock Grid.Row="1" Grid.Column="2" x:Name="LblIPAddress" Text="IP Address:" Style="{StaticResource FL}" Margin="0,3,6,3"/>
                             <TextBox   Grid.Row="1" Grid.Column="3" x:Name="TxtIPAddress" Style="{StaticResource EditField}" Width="190" Margin="0,3,8,3"/>
                             <Button    Grid.Row="1" Grid.Column="4" x:Name="BtnSaveHardwareInfo"
                                        Content="💾 Save Hardware Info" Style="{StaticResource ActionBtn}"

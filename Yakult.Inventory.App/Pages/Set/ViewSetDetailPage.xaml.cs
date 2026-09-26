@@ -313,15 +313,18 @@ namespace Yakult.Inventory.App.Pages.Set
 
                 _currentSetType = setDto.SetType;
                 bool isHardwareSet = string.Equals(setDto.SetType, "Hardware", StringComparison.OrdinalIgnoreCase);
-                bool hasCpu = requests != null && requests.Any(r =>
-                    r != null && string.Equals(r.Category, "CPU", StringComparison.OrdinalIgnoreCase));
+                bool hasComputerNameCategory = requests != null && requests.Any(r =>
+                    r != null && IsComputerNameCategory(r.Category));
+                bool hasIpAddressCategory = requests != null && requests.Any(r =>
+                    r != null && IsIpAddressCategory(r.Category));
 
-                SetHardwareInfoVisibility(isHardwareSet && hasCpu);
-                ConfigureCpuInfoColumns(isHardwareSet && hasCpu);
+                SetHardwareInfoVisibility(isHardwareSet && hasComputerNameCategory);
+                SetIpAddressFieldVisibility(isHardwareSet && hasIpAddressCategory);
+                ConfigureCpuInfoColumns(isHardwareSet && hasComputerNameCategory, isHardwareSet && hasIpAddressCategory);
 
                 TxtComputerName.Text = setDto.ComputerName ?? string.Empty;
                 TxtIPAddress.Text    = setDto.IPAddress    ?? string.Empty;
-                BtnSaveHardwareInfo.IsEnabled = isHardwareSet && hasCpu;
+                BtnSaveHardwareInfo.IsEnabled = isHardwareSet && hasComputerNameCategory;
 
                 ApplyCpuInfoToGrid(setDto.ComputerName, setDto.IPAddress);
 
@@ -440,20 +443,40 @@ namespace Yakult.Inventory.App.Pages.Set
             HwSectionPanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private void ConfigureCpuInfoColumns(bool visible)
+        // IP Address label/textbox get their own visibility separate from the rest of the
+        // Hardware Assignment panel: a Laptop-only Set still shows Computer Name (laptops
+        // are still identifiable by hostname) but hides IP Address entirely, since a static
+        // IP recorded here would go stale the moment the laptop changes networks.
+        private void SetIpAddressFieldVisibility(bool visible)
         {
             var vis = visible ? Visibility.Visible : Visibility.Collapsed;
-            ColComputerName.Visibility = vis;
-            ColIPAddress.Visibility    = vis;
+            LblIPAddress.Visibility = vis;
+            TxtIPAddress.Visibility = vis;
         }
+
+        private void ConfigureCpuInfoColumns(bool showComputerName, bool showIpAddress)
+        {
+            ColComputerName.Visibility = showComputerName ? Visibility.Visible : Visibility.Collapsed;
+            ColIPAddress.Visibility    = showIpAddress    ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // Categories whose Set can carry a ComputerName (shown/edited in the Hardware
+        // Info panel and mirrored onto matching grid rows). CPU keeps IPAddress too;
+        // Laptop gets a ComputerName but intentionally no IP (laptops roam networks,
+        // so a static IP recorded here would go stale immediately).
+        private static bool IsComputerNameCategory(string category)
+            => string.Equals(category, "CPU", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(category, "Laptop", StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsIpAddressCategory(string category)
+            => string.Equals(category, "CPU", StringComparison.OrdinalIgnoreCase);
 
         private void ApplyCpuInfoToGrid(string computerName, string ipAddress)
         {
             foreach (var row in _displayRows)
             {
-                bool isCpu = string.Equals(row.Category, "CPU", StringComparison.OrdinalIgnoreCase);
-                row.ComputerName = isCpu ? (computerName ?? string.Empty) : string.Empty;
-                row.IPAddress    = isCpu ? (ipAddress    ?? string.Empty) : string.Empty;
+                row.ComputerName = IsComputerNameCategory(row.Category) ? (computerName ?? string.Empty) : string.Empty;
+                row.IPAddress    = IsIpAddressCategory(row.Category)    ? (ipAddress    ?? string.Empty) : string.Empty;
             }
             DgvRequests.Items.Refresh();
         }
@@ -819,7 +842,12 @@ namespace Yakult.Inventory.App.Pages.Set
                 Mouse.OverrideCursor = WinCursor.Wait;
 
                 string computerName = NormalizeHardwareValue(TxtComputerName.Text);
-                string ipAddress    = NormalizeHardwareValue(TxtIPAddress.Text);
+                // IP Address is only persisted when the field is actually applicable
+                // (CPU-category Sets) - Laptop-only Sets hide this field, and any leftover
+                // text in a hidden TextBox should never be written back to the Set.
+                string ipAddress = TxtIPAddress.Visibility == Visibility.Visible
+                    ? NormalizeHardwareValue(TxtIPAddress.Text)
+                    : null;
 
                 await _repository.UpdateSetHardwareInfoAsync(_setId, computerName, ipAddress);
                 ApplyCpuInfoToGrid(computerName, ipAddress);

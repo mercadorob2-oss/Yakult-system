@@ -1,0 +1,73 @@
+<Window x:Class="Yakult.Inventory.App.Wpf.Set.BulkDeploy.ImportColumnMappingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Confirm Column Mapping"
+        Width="560" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#F0F2F6"
+        FontFamily="Segoe UI"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="MapCard" TargetType="Border">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush1}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Padding" Value="16,14"/>
+                <Setter Property="Margin" Value="0,0,0,12"/>
+            </Style>
+            <Style x:Key="MapListText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Margin" Value="0,0,0,4"/>
+                <Setter Property="TextWrapping" Value="Wrap"/>
+            </Style>
+        </ResourceDictionary>
+    </Window.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+            <TextBlock Text="Confirm Column Mapping" FontSize="15" FontWeight="Bold" Foreground="#1A2333"/>
+            <TextBlock x:Name="SubtitleText" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Style="{StaticResource MapCard}">
+            <StackPanel>
+                <TextBlock Text="Matched columns (will import data)" FontWeight="Bold" FontSize="12" Foreground="#1E7B34" Margin="0,0,0,8"/>
+                <TextBlock x:Name="MatchedText" Style="{StaticResource MapListText}"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource MapCard}">
+            <StackPanel>
+                <TextBlock Text="Missing columns (will import blank)" FontWeight="Bold" FontSize="12" Foreground="#B8860B" Margin="0,0,0,8"/>
+                <TextBlock x:Name="MissingText" Style="{StaticResource MapListText}"/>
+                <TextBlock Text="These columns were not found in your file by name. Rows will still import, with these fields left blank - you can fill them in manually in the grid afterward." FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" x:Name="UnrecognizedCard" Style="{StaticResource MapCard}" Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock Text="Unrecognized columns in your file (ignored)" FontWeight="Bold" FontSize="12" Foreground="#8A8A8A" Margin="0,0,0,8"/>
+                <TextBlock x:Name="UnrecognizedText" Style="{StaticResource MapListText}"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
+            <Button x:Name="BtnCancel" Content="Cancel" Style="{StaticResource SmallBtn}" Margin="0,0,6,0" Click="BtnCancel_Click"/>
+            <Button x:Name="BtnImport" Content="Import" Style="{StaticResource PrimaryBtn}" Click="BtnImport_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -217,6 +217,76 @@ namespace Yakult.Inventory.App.Repositories
             return result;
         }
 
+        // Company -> Branch cascade (feature 6/8). dbo.Branch has no direct
+        // ComId column - the relationship is resolved through the
+        // dbo.BranchDepartmentCompany junction table (confirmed live against
+        // YIMS_PROD: 171 rows, BranchID/CompanyID both populated). Matches
+        // the company by exact dbo.Company.Name, same convention as
+        // GetCompanyIdsAsync/GetBranchIdsAsync above.
+        public async Task<List<string>> GetBranchNamesByCompanyAsync(string companyName)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrWhiteSpace(companyName))
+                return result;
+
+            const string sql = @"
+SELECT DISTINCT b.Name
+FROM dbo.BranchDepartmentCompany bdc
+INNER JOIN dbo.Company c ON bdc.CompanyID = c.ComId
+INNER JOIN dbo.Branch b ON bdc.BranchID = b.BranchId
+WHERE c.Name = @CompanyName
+ORDER BY b.Name";
+
+            using (var con = new SqlConnection(GetConnectionString()))
+            using (var cmd = new SqlCommand(sql, con))
+            {
+                cmd.Parameters.AddWithValue("@CompanyName", companyName.Trim());
+                await con.OpenAsync().ConfigureAwait(false);
+                using (var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                {
+                    while (await reader.ReadAsync().ConfigureAwait(false))
+                    {
+                        string name = reader.IsDBNull(0) ? null : reader.GetString(0);
+                        if (!string.IsNullOrWhiteSpace(name))
+                            result.Add(name.Trim());
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        // Company <-> Branch pairing check (feature 8): returns the set of
+        // (CompanyID, BranchID) pairs that are actually linked in
+        // dbo.BranchDepartmentCompany, so ValidateAllAsync can flag rows
+        // where the typed Company and Branch don't belong together (e.g.
+        // a YPI company paired with a branch that's actually under a
+        // different company).
+        public async Task<HashSet<(int ComId, int BranchId)>> GetCompanyBranchPairsAsync()
+        {
+            var result = new HashSet<(int ComId, int BranchId)>();
+            const string sql = @"
+SELECT DISTINCT CompanyID, BranchID
+FROM dbo.BranchDepartmentCompany
+WHERE CompanyID IS NOT NULL AND BranchID IS NOT NULL";
+
+            using (var con = new SqlConnection(GetConnectionString()))
+            using (var cmd = new SqlCommand(sql, con))
+            {
+                await con.OpenAsync().ConfigureAwait(false);
+                using (var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false))
+                {
+                    while (await reader.ReadAsync().ConfigureAwait(false))
+                    {
+                        if (!reader.IsDBNull(0) && !reader.IsDBNull(1))
+                            result.Add((reader.GetInt32(0), reader.GetInt32(1)));
+                    }
+                }
+            }
+
+            return result;
+        }
+
         public async Task<List<string>> GetCategoryNamesAsync()
         {
             var result = new List<string>();
@@ -968,6 +1038,8 @@ VALUES
             if (string.IsNullOrEmpty(category))
                 category = null;
 
+            int conditionId = await ResolveConditionIdAsync(con, tx, row.Condition).ConfigureAwait(false);
+
             const string sql = @"
 INSERT INTO dbo.Item
     (Name, Description, ModelNumber, Active, CategoryId, Category,
@@ -1002,7 +1074,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
                 cmd.Parameters.AddWithValue("@DateModified", now);
                 cmd.Parameters.AddWithValue("@ModifiedBy", createdByUserId);
                 cmd.Parameters.AddWithValue("@ItemType", "Hardware");
-                cmd.Parameters.AddWithValue("@ConditionID", 1);
+                cmd.Parameters.AddWithValue("@ConditionID", conditionId);
                 cmd.Parameters.AddWithValue("@AffectsInventory", 1);
                 cmd.Parameters.AddWithValue("@AcquisitionType", "Both");
                 cmd.Parameters.AddWithValue("@IsTrackedAsset", 0);
@@ -1011,6 +1083,44 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
                 object scalar = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
                 return Convert.ToInt32(scalar);
             }
+        }
+
+        // Maps the Excel "Condition" column (free text, e.g. "Good", "Damaged")
+        // to a real dbo.Condition.ConditionID. Previously this was hardcoded to
+        // 1, which does not exist in dbo.Condition (valid IDs: 9=BrandNew,
+        // 2=Damaged, 7=Good, 10=Refilled) and always violated FK_Item_Condition.
+        // Falls back to "Good" when the row's Condition is blank or unrecognized
+        // (BulkDeployValidator.ValidConditions already restricts free-text entry
+        // to "Good"/"Damaged", so an unmatched value here means the condition
+        // name itself was renamed/removed from dbo.Condition since that list was
+        // last reviewed).
+        private static async Task<int> ResolveConditionIdAsync(
+            SqlConnection con, SqlTransaction tx, string conditionName)
+        {
+            string name = string.IsNullOrWhiteSpace(conditionName) ? "Good" : conditionName.Trim();
+
+            const string sql = "SELECT TOP 1 ConditionID FROM dbo.Condition WHERE ConditionName = @N";
+            using (var cmd = new SqlCommand(sql, con, tx))
+            {
+                cmd.Parameters.AddWithValue("@N", name);
+                object found = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+                if (found != null && found != DBNull.Value)
+                    return Convert.ToInt32(found);
+            }
+
+            if (!string.Equals(name, "Good", StringComparison.OrdinalIgnoreCase))
+            {
+                using (var cmd = new SqlCommand(sql, con, tx))
+                {
+                    cmd.Parameters.AddWithValue("@N", "Good");
+                    object found = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
+                    if (found != null && found != DBNull.Value)
+                        return Convert.ToInt32(found);
+                }
+            }
+
+            throw new InvalidOperationException(
+                "No 'Good' row found in dbo.Condition - cannot resolve a default ConditionID.");
         }
 
         private static async Task InsertBaselineInventoryAsync(
@@ -1023,6 +1133,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
         {
             string itemName = row.ItemName != null ? row.ItemName.Trim() : "";
             int quantity = row.Quantity < 1 ? 1 : row.Quantity;
+            int conditionId = await ResolveConditionIdAsync(con, tx, row.Condition).ConfigureAwait(false);
 
             const string sql = @"
 INSERT INTO dbo.Inventory
@@ -1038,7 +1149,7 @@ VALUES
                 cmd.Parameters.AddWithValue("@DatePosted", now);
                 cmd.Parameters.AddWithValue("@PostedBy", createdByUserId);
                 cmd.Parameters.AddWithValue("@Description", itemName);
-                cmd.Parameters.AddWithValue("@ConditionID", 1);
+                cmd.Parameters.AddWithValue("@ConditionID", conditionId);
                 await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
             }
         }
