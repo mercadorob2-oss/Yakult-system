@@ -204,7 +204,7 @@ namespace Yakult.Inventory.App.Pages.Item
         {
             try { if (e.ChangedButton == MouseButton.Left && e.ClickCount == 1) DragMove(); } catch { }
         }
-        private void OnMinimizeClick(object sender, MouseButtonEventArgs e) { e.Handled = true; try { WindowState = WindowState.Minimized; } catch { } }
+        private void OnMinimizeClick(object sender, MouseButtonEventArgs e) { e.Handled = true; try { Yakult.Inventory.App.Helpers.ModalMinimizeGuard.Minimize(this); } catch { } }
         private void OnCloseClick(object sender, MouseButtonEventArgs e) { e.Handled = true; try { Close(); } catch { } }
         private void OnCancelClick(object sender, RoutedEventArgs e) { try { DialogResult = false; Close(); } catch { } }
         private void OnOkClick(object sender, RoutedEventArgs e) { try { if (!BtnOk.IsEnabled) return; DialogResult = true; Close(); } catch (Exception ex) { try { System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "YakultDialogErrors.log"), $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] MarkAction OnOk {ex}\r\n"); } catch { } } }

@@ -128,7 +128,7 @@ namespace Yakult.Inventory.App.Pages.Company
         private void OnMinimizeClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            WindowState = WindowState.Minimized;
+            Yakult.Inventory.App.Helpers.ModalMinimizeGuard.Minimize(this);
         }
 
         private void OnMaximizeClick(object sender, MouseButtonEventArgs e)

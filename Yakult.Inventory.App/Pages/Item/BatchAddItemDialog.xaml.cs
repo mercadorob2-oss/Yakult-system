@@ -228,93 +228,9 @@ namespace Yakult.Inventory.App.Pages.Item
         private void OnMinimizeClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-
-            // An owned window that is minimized drags its owner (the whole app) with it.
-            // Detach the Win32 owner and give the dialog its own taskbar button so it
-            // minimizes alone; the owner is re-attached when the dialog is restored.
-            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
-            if (hwnd != IntPtr.Zero && _savedOwnerHandle == IntPtr.Zero)
-            {
-                _savedOwnerHandle = GetWindowLongPtr(hwnd, GWLP_HWNDPARENT);
-                if (_savedOwnerHandle != IntPtr.Zero)
-                {
-                    SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, IntPtr.Zero);
-                    ShowInTaskbar = true;
-                }
-            }
-
-            // Windows may still minimize the rest of the app along with the dialog (the owner
-            // chain differs per launch site). Remember which app windows are currently open and
-            // un-minimized, then put back any that got minimized with the dialog.
-            var appWindows = GetRestoredAppWindows(hwnd);
-            WindowState = WindowState.Minimized;
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                foreach (var w in appWindows)
-                    if (IsIconic(w))
-                        ShowWindow(w, SW_SHOWNOACTIVATE);
-            }), System.Windows.Threading.DispatcherPriority.Background);
-        }
-
-        private const int SW_SHOWNOACTIVATE = 4;
-
-        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
-
-        [DllImport("user32.dll")] private static extern bool EnumWindows(EnumWindowsProc cb, IntPtr lParam);
-        [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
-        [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hWnd);
-        [DllImport("user32.dll")] private static extern bool IsIconic(IntPtr hWnd);
-        [DllImport("user32.dll")] private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-        private static System.Collections.Generic.List<IntPtr> GetRestoredAppWindows(IntPtr exclude)
-        {
-            var list = new System.Collections.Generic.List<IntPtr>();
-            uint myPid = (uint)System.Diagnostics.Process.GetCurrentProcess().Id;
-            EnumWindows((h, _) =>
-            {
-                if (h != exclude && IsWindowVisible(h) && !IsIconic(h))
-                {
-                    GetWindowThreadProcessId(h, out uint pid);
-                    if (pid == myPid) list.Add(h);
-                }
-                return true;
-            }, IntPtr.Zero);
-            return list;
-        }
-
-        private const int GWLP_HWNDPARENT = -8;
-        private IntPtr _savedOwnerHandle = IntPtr.Zero;
-
-        // The *LongPtr exports exist only in 64-bit user32.dll; 32-bit processes must use the
-        // plain GetWindowLong/SetWindowLong entry points.
-        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
-        private static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
-
-        [DllImport("user32.dll", EntryPoint = "GetWindowLongW")]
-        private static extern int GetWindowLong32(IntPtr hWnd, int nIndex);
-
-        [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
-        private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
-
-        [DllImport("user32.dll", EntryPoint = "SetWindowLongW")]
-        private static extern int SetWindowLong32(IntPtr hWnd, int nIndex, int dwNewLong);
-
-        private static IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex) =>
-            IntPtr.Size == 8 ? GetWindowLongPtr64(hWnd, nIndex) : new IntPtr(GetWindowLong32(hWnd, nIndex));
-
-        private static IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong) =>
-            IntPtr.Size == 8
-                ? SetWindowLongPtr64(hWnd, nIndex, dwNewLong)
-                : new IntPtr(SetWindowLong32(hWnd, nIndex, dwNewLong.ToInt32()));
-
-        private void RestoreOwnerAfterMinimize()
-        {
-            if (_savedOwnerHandle == IntPtr.Zero) return;
-            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
-            if (hwnd != IntPtr.Zero)
-                SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, _savedOwnerHandle);
-            _savedOwnerHandle = IntPtr.Zero;
-            ShowInTaskbar = false;
+            // Minimizes without handing activation to another program (which is what made
+            // the whole app look minimized); see ModalMinimizeGuard.
+            Yakult.Inventory.App.Helpers.ModalMinimizeGuard.Minimize(this);
         }
 
         private void OnMaximizeClick(object sender, MouseButtonEventArgs e)
@@ -329,8 +245,6 @@ namespace Yakult.Inventory.App.Pages.Item
         protected override void OnStateChanged(EventArgs e)
         {
             base.OnStateChanged(e);
-            if (WindowState != WindowState.Minimized)
-                RestoreOwnerAfterMinimize();
             BtnMaximizeGlyph.Text = WindowState == WindowState.Maximized ? "❐" : "□";
         }
 

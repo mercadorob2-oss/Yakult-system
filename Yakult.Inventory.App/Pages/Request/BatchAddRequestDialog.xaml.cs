@@ -152,7 +152,7 @@ namespace Yakult.Inventory.App.Pages.Request
             e.Handled = true;
             // Minimize only this window. ShowInTaskbar="True" (set in XAML) ensures it
             // remains accessible from the taskbar; the main app is not affected.
-            WindowState = WindowState.Minimized;
+            Yakult.Inventory.App.Helpers.ModalMinimizeGuard.Minimize(this);
         }
 
         private void OnMaximizeClick(object sender, MouseButtonEventArgs e)

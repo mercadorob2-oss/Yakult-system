@@ -73,7 +73,7 @@ namespace Yakult.Inventory.App.Wpf.RepairPortal.Table.Views
         private void OnMinimizeClick(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            WindowState = WindowState.Minimized;
+            Yakult.Inventory.App.Helpers.ModalMinimizeGuard.Minimize(this);
         }
 
         private void OnMaximizeClick(object sender, MouseButtonEventArgs e)

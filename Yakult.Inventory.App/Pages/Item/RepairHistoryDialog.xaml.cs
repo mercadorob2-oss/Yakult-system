@@ -217,7 +217,7 @@ FROM dbo.ItemRepairHistory WHERE SerialNumber = @SerialNumber ORDER BY CreatedAt
         private void OnCloseClickBtn(object sender, RoutedEventArgs e) => Close();
 
         private void OnHeaderDrag(object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left && e.ClickCount == 1) DragMove(); }
-        private void OnMinimizeClick(object sender, MouseButtonEventArgs e) { e.Handled = true; WindowState = WindowState.Minimized; }
+        private void OnMinimizeClick(object sender, MouseButtonEventArgs e) { e.Handled = true; Yakult.Inventory.App.Helpers.ModalMinimizeGuard.Minimize(this); }
         private void OnMaximizeClick(object sender, MouseButtonEventArgs e) { e.Handled = true; WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; }
         private void OnCloseClick(object sender, MouseButtonEventArgs e) { e.Handled = true; Close(); }
 
