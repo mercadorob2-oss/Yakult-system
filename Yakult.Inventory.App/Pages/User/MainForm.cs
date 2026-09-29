@@ -298,16 +298,27 @@ namespace Yakult.Inventory.App.Pages.User
         }
 
         private DevStealthKeyFilter _stealthKeyFilter;
+#if REQUESTS
+        private Yakult.Inventory.App.Security.Requests.RequestsKeyFilter _requestsKeyFilter;
+#endif
 
         private void MainForm_Load(object sender, EventArgs e)
         {
             _stealthKeyFilter = new DevStealthKeyFilter();
             Application.AddMessageFilter(_stealthKeyFilter);
 
+#if REQUESTS
+            _requestsKeyFilter = new Yakult.Inventory.App.Security.Requests.RequestsKeyFilter();
+            Application.AddMessageFilter(_requestsKeyFilter);
+#endif
+
             // Show login/register dialog until user successfully logs in
             if (!ShowAuthenticationDialog())
             {
                 Application.RemoveMessageFilter(_stealthKeyFilter);
+#if REQUESTS
+                Application.RemoveMessageFilter(_requestsKeyFilter);
+#endif
                 Application.Exit();
                 return;
             }

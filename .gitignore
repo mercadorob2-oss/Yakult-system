@@ -50,7 +50,7 @@ FodyWeavers.xsd
 /DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_SP_RequestPrivilegeChange_Create.sql
 /DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_AddApproverDevice.sql
 /DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_AddPendingPairingToken.sql
-/Yakult.Inventory.App/Security/PrivilegeApproval/
+/Yakult.Inventory.App/Security/Requests/
 /Latest_sys/YakultPrivilegeApprover/
 /docs/db mig
 /.claude/settings.local.json

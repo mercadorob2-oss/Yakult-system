@@ -92,25 +92,35 @@ namespace Yakult.Inventory.App.Core
             _apiBaseUrl = null;
         }
 
-        // Approver App API (replaces the old raw-TCP ApprovalListener)
-        private static string _approverApiBaseUrl;
-
         /// <summary>
-        /// Base URL of the IIS-hosted Approver API (Yakult.Approver.Api), used
-        /// both by DevicePairingForm.cs to build the pairing QR payload and,
-        /// previously, by the retired ApprovalListener. Example:
-        /// "http://192.168.100.186:7020"
+        /// Base URL of the Request API. Example: "http://192.168.100.186:8080/request-api"
         /// </summary>
-        public static string ApproverApiBaseUrl
+        public static string RequestApiBaseUrl
         {
             get
             {
-                if (string.IsNullOrEmpty(_approverApiBaseUrl))
-                {
-                    _approverApiBaseUrl = ConfigurationManager.AppSettings["ApproverApiBaseUrl"] ?? "http://localhost:7020";
-                }
-                return _approverApiBaseUrl;
+                return (ConfigurationManager.AppSettings["RequestApiBaseUrl"] ?? "http://localhost:8080/request-api").TrimEnd('/');
             }
+        }
+
+        /// <summary>
+        /// "DEV" while connected to a *_DEV catalog, otherwise "PROD".
+        /// Not cached: the DB switcher (Ctrl+Shift+D) can change the catalog at runtime.
+        /// </summary>
+        public static string RequestApiEnvironment
+        {
+            get { return IsConnectedToDevDatabase() ? "DEV" : "PROD"; }
+        }
+
+        private static bool IsConnectedToDevDatabase()
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                DatabaseConfig.ConnectionString ?? string.Empty,
+                @"(?:Initial\s+Catalog|Database)\s*=\s*([^;]+)",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            return match.Success
+                && match.Groups[1].Value.Trim().EndsWith("_DEV", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

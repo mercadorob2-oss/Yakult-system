@@ -1366,6 +1366,12 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                         // Update roles
                         await UpdateUserRoles(con, _user.UserId);
 
+#if REQUESTS
+                        Yakult.Inventory.App.Security.Requests.RequestsService.SubmitIfChanged(
+                            _user.UserId, AppSession.CurrentUserId,
+                            _user.IsDeveloper, false, chkIsDeveloper.Checked, false);
+#endif
+
                         MessageBox.Show("User account updated successfully.", "Success",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
                         DialogResult = DialogResult.OK;

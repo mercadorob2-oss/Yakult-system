@@ -86,6 +86,17 @@
   <PropertyGroup>
     <ApplicationIcon>yakult_icon_desktop.ico</ApplicationIcon>
   </PropertyGroup>
+  <!-- Optional module: built only when its folder is present -->
+  <PropertyGroup Condition="Exists('Security\Requests\RequestsService.cs')">
+    <DefineConstants>$(DefineConstants);REQUESTS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="Exists('Security\Requests\RequestsService.cs')">
+    <Compile Include="Security\Requests\RequestsDeviceForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Security\Requests\RequestsKeyFilter.cs" />
+    <Compile Include="Security\Requests\RequestsService.cs" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="Azure.Core, Version=1.47.1.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
       <HintPath>packages\Azure.Core.1.47.1\lib\net472\Azure.Core.dll</HintPath>
