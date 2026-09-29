@@ -216,6 +216,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
                             ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS Roles
                         FROM [User] u
                         LEFT JOIN Employee e ON u.EmpId = e.EmpId
+                        WHERE u.IsSuperAdmin = 0
                         ORDER BY u.Name";
 
                     using (var cmd = new SqlCommand(sql, con) { CommandTimeout = 120 })
@@ -384,7 +385,6 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.ViewModels
         public static string GetStatusText(LegacyUserAccountDto user)
         {
             if (!user.IsActive)           return "Inactive";
-            if (user.IsDeveloper)         return "Developer";
             if (user.MustChangePassword)  return "Reset Req'd";
             return "Active";
         }

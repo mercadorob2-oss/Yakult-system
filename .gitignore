@@ -50,6 +50,10 @@ FodyWeavers.xsd
 /DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_SP_RequestPrivilegeChange_Create.sql
 /DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_AddApproverDevice.sql
 /DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_AddPendingPairingToken.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_Login_CreateRequestApiUser.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_UpdateTrigger_PrivilegeFlagsGuard_OriginalLoginGate.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_CreateTrigger_PrivilegeFlagsInsertGuard.sql
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_User_UpdateTrigger_PrivilegeFlagsAudit_RecognizeApiLogin.sql
 /Yakult.Inventory.App/Security/Requests/
 /Latest_sys/YakultPrivilegeApprover/
 /docs/db mig
@@ -67,3 +71,4 @@ Yakult.SystemsPortal/App_Data/DataProtection-Keys/
 
 # yt-dlp binary -- too large for git; ships via csproj from the local tools folder
 Yakult.SystemsPortal/tools/yt-dlp.exe
+/DATABASES/Yakult-DB-Production/dbo/Scripts/Migration_Login_CreateAppUser.sql

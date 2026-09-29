@@ -91,6 +91,9 @@
     <DefineConstants>$(DefineConstants);REQUESTS</DefineConstants>
   </PropertyGroup>
   <ItemGroup Condition="Exists('Security\Requests\RequestsService.cs')">
+    <Compile Include="Security\Requests\RequestsDeveloperRequestDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Security\Requests\RequestsDeviceForm.cs">
       <SubType>Form</SubType>
     </Compile>

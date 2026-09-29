@@ -244,6 +244,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                             ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS Roles
                         FROM [User] u
                         LEFT JOIN Employee e ON u.EmpId = e.EmpId
+                        WHERE u.IsSuperAdmin = 0
                         ORDER BY u.Name";
 
                     using (var cmd = new SqlCommand(sql, con) { CommandTimeout = 120 })
@@ -416,7 +417,6 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
         private string GetStatusText(LegacyUserAccountDto user)
         {
             if (!user.IsActive) return "Inactive";
-            if (user.IsDeveloper) return "Developer";
             if (user.MustChangePassword) return "Reset Req'd";
             return "Active";
         }
@@ -869,7 +869,6 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
             get
             {
                 if (!IsActive)          return "Inactive";
-                if (IsDeveloper)        return "Developer";
                 if (MustChangePassword) return "Reset Req'd";
                 return "Active";
             }
@@ -888,7 +887,6 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
         private Label   _lblSelectedEmployee;
         private Button  _btnBrowseEmployee;
         private Button  _btnClearEmployee;
-        private CheckBox chkIsDeveloper;
         private CheckBox chkIsActive;
         private CheckBox chkMustChangePassword;
         private Panel _pnlRoles;
@@ -914,7 +912,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
         private void InitializeDialog()
         {
             Text = _isEdit ? "Edit User Account" : "Create New User Account";
-            Size = new Size(580, 570);
+            Size = new Size(580, 540);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -980,22 +978,6 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
             yPos += 35;
 
             // ── Flags ─────────────────────────────────────────────────────────
-            // Only a Super Admin may grant/revoke Developer access — a Developer
-            // who is not also a Super Admin must not be able to promote themselves
-            // or anyone else. The checkbox is shown read-only (disabled) so a
-            // non-Super Admin can still see whether an account is a Developer.
-            chkIsDeveloper = new CheckBox
-            {
-                Text     = AppSession.IsSuperAdmin
-                    ? "Developer (Full System Access)"
-                    : "Developer (Full System Access) — Super Admin only",
-                Location = new Point(controlLeft, yPos),
-                Width    = controlWidth,
-                Enabled  = AppSession.IsSuperAdmin
-            };
-            Controls.Add(chkIsDeveloper);
-            yPos += 30;
-
             chkIsActive = new CheckBox { Text = "Active", Location = new Point(controlLeft, yPos), Width = controlWidth, Checked = true };
             Controls.Add(chkIsActive);
             yPos += 30;
@@ -1241,7 +1223,6 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
         {
             txtUsername.Text              = _user.Username;
             txtEmail.Text                 = _user.Email ?? "";
-            chkIsDeveloper.Checked        = _user.IsDeveloper;
             chkIsActive.Checked           = _user.IsActive;
             chkMustChangePassword.Checked = _user.MustChangePassword;
 
@@ -1365,12 +1346,6 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
 
                         // Update roles
                         await UpdateUserRoles(con, _user.UserId);
-
-#if REQUESTS
-                        Yakult.Inventory.App.Security.Requests.RequestsService.SubmitIfChanged(
-                            _user.UserId, AppSession.CurrentUserId,
-                            _user.IsDeveloper, false, chkIsDeveloper.Checked, false);
-#endif
 
                         MessageBox.Show("User account updated successfully.", "Success",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
