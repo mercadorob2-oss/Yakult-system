@@ -477,7 +477,7 @@ namespace Yakult.Inventory.App.Forms.Portal
 
         private void HandleDeveloperDatabaseReset()
         {
-            using (var form = new Yakult.Inventory.App.Pages.Admin.DBConn.DatabaseSetupForm())
+            using (var form = Yakult.Inventory.App.Pages.Admin.DBConn.DatabaseSetupForm.CreateSwitcher())
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {

@@ -653,7 +653,8 @@ namespace Yakult.Inventory.App.WPF.Branch.ViewModels
                         failedItems.Add($"• {branch.Name} - Unknown error");
                     }
                 }
-                catch (SqlException ex)
+                // SqlException in direct mode; in gateway mode the same SQL message arrives in a GatewayException.
+                catch (Exception ex) when (ex is SqlException || Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.IsForeignKeyViolation(ex))
                 {
                     failureCount++;
                     string reason = Yakult.Inventory.App.Helpers.ForeignKeyErrorHelper.IsForeignKeyViolation(ex)

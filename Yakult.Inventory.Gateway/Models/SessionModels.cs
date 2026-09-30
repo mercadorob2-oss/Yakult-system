@@ -4,6 +4,19 @@ public sealed class LoginRequest
 {
     public string? UserName { get; set; }
     public string? Password { get; set; }
+
+    /// <summary>Environment name from GET /api/environments. Blank = the default (Production).</summary>
+    public string? Environment { get; set; }
+}
+
+public sealed class EnvironmentInfo
+{
+    public string Name { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+
+    /// <summary>"Production", "Test" or "Unknown". The database name itself is not exposed.</summary>
+    public string Kind { get; set; } = "";
+    public bool IsDefault { get; set; }
 }
 
 /// <summary>
@@ -14,6 +27,7 @@ public sealed class LoginResponse
 {
     public string AccessToken { get; set; } = "";
     public DateTimeOffset ExpiresAt { get; set; }
+    public EnvironmentInfo Environment { get; set; } = new();
     public GatewaySession Session { get; set; } = new();
 }
 

@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Globalization;
+using System.Linq;
 using Yakult.Inventory.App.Core;
+using Yakult.Inventory.App.Services.Gateway;
 
 namespace Yakult.Inventory.App.Repositories
 {
@@ -30,6 +33,9 @@ namespace Yakult.Inventory.App.Repositories
 
         public List<HolidayDto> GetAll()
         {
+            if (GatewayClient.UseForData)
+                return GatewayClient.Get<List<HolidayDto>>("api/holidays") ?? new List<HolidayDto>();
+
             var result = new List<HolidayDto>();
             using (var con = new SqlConnection(_conn))
             {
@@ -53,6 +59,14 @@ namespace Yakult.Inventory.App.Repositories
         // Returns all active holiday dates (including expanded recurring) within [start, end].
         public HashSet<DateTime> GetActiveDatesInRange(DateTime start, DateTime end)
         {
+            if (GatewayClient.UseForData)
+            {
+                var path = "api/holidays/active-dates?start=" + Uri.EscapeDataString(start.ToString("s", CultureInfo.InvariantCulture))
+                         + "&end=" + Uri.EscapeDataString(end.ToString("s", CultureInfo.InvariantCulture));
+                var list = GatewayClient.Get<List<DateTime>>(path) ?? new List<DateTime>();
+                return new HashSet<DateTime>(list.Select(d => d.Date));
+            }
+
             var dates = new HashSet<DateTime>();
             using (var con = new SqlConnection(_conn))
             {
@@ -95,6 +109,9 @@ namespace Yakult.Inventory.App.Repositories
 
         public int Insert(HolidayDto dto)
         {
+            if (GatewayClient.UseForData)
+                return GatewayClient.Post<int>("api/holidays", dto);
+
             using (var con = new SqlConnection(_conn))
             {
                 con.Open();
@@ -120,6 +137,12 @@ namespace Yakult.Inventory.App.Repositories
 
         public void Update(HolidayDto dto)
         {
+            if (GatewayClient.UseForData)
+            {
+                GatewayClient.Put<object>($"api/holidays/{dto.HolidayId}", dto);
+                return;
+            }
+
             using (var con = new SqlConnection(_conn))
             {
                 con.Open();
@@ -149,6 +172,12 @@ namespace Yakult.Inventory.App.Repositories
 
         public void Delete(int holidayId)
         {
+            if (GatewayClient.UseForData)
+            {
+                GatewayClient.Delete<object>($"api/holidays/{holidayId}");
+                return;
+            }
+
             using (var con = new SqlConnection(_conn))
             {
                 con.Open();

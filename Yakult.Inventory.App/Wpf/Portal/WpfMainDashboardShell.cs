@@ -923,7 +923,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
 
         private void HandleDeveloperDatabaseReset()
         {
-            using (var form = new Pages.Admin.DBConn.DatabaseSetupForm())
+            using (var form = Pages.Admin.DBConn.DatabaseSetupForm.CreateSwitcher())
             {
                 if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {

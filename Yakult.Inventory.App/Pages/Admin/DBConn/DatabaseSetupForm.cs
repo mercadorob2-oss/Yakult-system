@@ -23,6 +23,16 @@ namespace Yakult.Inventory.App.Pages.Admin.DBConn
 
         private bool _lastTestSuccessful;
 
+        /// <summary>
+        /// The Ctrl+Shift+D switcher. With a GatewayUrl the connection comes from the
+        /// gateway after sign-in, so a connection typed here would be ignored; show the
+        /// gateway's database list instead. OK from either form means "restart".
+        /// </summary>
+        public static Form CreateSwitcher()
+        {
+            return AppConfig.UseGateway ? (Form)new GatewayEnvironmentForm() : new DatabaseSetupForm();
+        }
+
         public DatabaseSetupForm()
         {
             InitializeUi();

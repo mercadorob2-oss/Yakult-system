@@ -9,7 +9,21 @@ namespace Yakult.Inventory.App.Services.Gateway
     {
         public string AccessToken { get; set; }
         public DateTimeOffset ExpiresAt { get; set; }
+        public GatewayEnvironmentInfo Environment { get; set; }
         public GatewaySession Session { get; set; }
+    }
+
+    /// <summary>A database the gateway can sign into (listed by the Ctrl+Shift+D switcher).</summary>
+    public sealed class GatewayEnvironmentInfo
+    {
+        public string Name { get; set; }
+        public string DisplayName { get; set; }
+
+        /// <summary>"Production", "Test" (YIMS_PROD, the dummy database) or "Unknown".</summary>
+        public string Kind { get; set; }
+        public bool IsDefault { get; set; }
+
+        public override string ToString() => DisplayName ?? Name;
     }
 
     public sealed class GatewaySession
@@ -55,6 +69,13 @@ namespace Yakult.Inventory.App.Services.Gateway
         public Dictionary<string, bool> UserPortals { get; set; }
         public Dictionary<string, Dictionary<string, Dictionary<string, bool>>> RoleItems { get; set; }
         public Dictionary<string, Dictionary<string, bool>> UserItems { get; set; }
+    }
+
+    /// <summary>The (Success, Message) result several delete endpoints return.</summary>
+    public sealed class GatewayOperationResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
     }
 
     /// <summary>Thrown for any non-success gateway response; StatusCode is 0 when the server could not be reached.</summary>

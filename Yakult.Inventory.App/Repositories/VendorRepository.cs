@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Yakult.Inventory.App.Pages;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Services;
+using Yakult.Inventory.App.Services.Gateway;
 using Yakult.Inventory.App.Models;
 using Yakult.Inventory.App.Session;
 
@@ -32,6 +33,9 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<List<VendorDto>> GetAllVendorsAsync()
         {
+            if (GatewayClient.UseForData)
+                return await GatewayClient.GetAsync<List<VendorDto>>("api/vendors") ?? new List<VendorDto>();
+
             var vendors = new List<VendorDto>();
 
             const string sql = @"
@@ -126,6 +130,13 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<int> AddVendorAsync(VendorDto vendor)
         {
+            if (GatewayClient.UseForData)
+            {
+                int newId = await GatewayClient.PostAsync<int>("api/vendors", vendor);
+                ActivityLogger.Log(ActivityLogger.Actions.Create, "Vendor", newId, $"Vendor '{vendor.VendorName}' created");
+                return newId;
+            }
+
             const string sql = @"
                 INSERT INTO dbo.Vendor (VendorName, Address, IsActive, IsRefiller, IsDisposer, IsBuyer, CreatedDate, TIN)
                 VALUES (@VendorName, @Address, @IsActive, @IsRefiller, @IsDisposer, @IsBuyer, @CreatedDate, @TIN);
@@ -156,6 +167,14 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<bool> UpdateVendorAsync(VendorDto vendor)
         {
+            if (GatewayClient.UseForData)
+            {
+                bool updated = await GatewayClient.PutAsync<bool>($"api/vendors/{vendor.VendorId}", vendor);
+                if (updated)
+                    ActivityLogger.Log(ActivityLogger.Actions.Update, "Vendor", vendor.VendorId, $"Vendor '{vendor.VendorName}' updated");
+                return updated;
+            }
+
             const string sql = @"
                 UPDATE dbo.Vendor
                 SET VendorName = @VendorName,
@@ -187,6 +206,8 @@ namespace Yakult.Inventory.App.Repositories
             }
         }
 
+        // Still direct SQL in gateway mode: it changes dbo.Item and writes the item
+        // audit trail, so it moves with the Items module (phase 4).
         public async Task<bool> UpdateItemVendorAsync(int itemId, int? vendorId)
         {
             const string sql = @"
@@ -272,6 +293,15 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<bool> ArchiveVendorAsync(int vendorId, string archivedBy, string reason)
         {
+            // Gateway mode records the signed-in user as ArchivedBy; archivedBy is ignored.
+            if (GatewayClient.UseForData)
+            {
+                bool archived = await GatewayClient.PostAsync<bool>($"api/vendors/{vendorId}/archive", new { reason });
+                if (archived)
+                    ActivityLogger.Log(ActivityLogger.Actions.Delete, "Vendor", vendorId, $"Vendor ID {vendorId} archived");
+                return archived;
+            }
+
             const string sql = @"
                 INSERT INTO ArchiveStatus (EntityType, EntityId, IsArchived, ArchivedAt, ArchivedBy, ArchiveReason)
                 VALUES ('Vendor', @VendorId, 1, GETDATE(), @ArchivedBy, @Reason)";
@@ -297,6 +327,14 @@ namespace Yakult.Inventory.App.Repositories
         {
             try
             {
+                if (GatewayClient.UseForData)
+                {
+                    var result = await GatewayClient.DeleteAsync<GatewayOperationResult>($"api/vendors/{vendorId}");
+                    if (result.Success)
+                        ActivityLogger.Log(ActivityLogger.Actions.Delete, "Vendor", vendorId, $"Vendor ID {vendorId} permanently deleted");
+                    return (result.Success, result.Message);
+                }
+
                 using (var con = new SqlConnection(GetConnectionString()))
                 {
                     await con.OpenAsync();

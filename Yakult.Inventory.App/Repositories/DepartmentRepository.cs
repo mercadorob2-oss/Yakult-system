@@ -3,6 +3,7 @@ using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Pages;
+using Yakult.Inventory.App.Services.Gateway;
 
 namespace Yakult.Inventory.App.Repositories
 {
@@ -16,6 +17,13 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<int> CreateAsync(DepartmentDto department)
         {
+            if (GatewayClient.UseForData)
+            {
+                int newId = await GatewayClient.PostAsync<int>("api/departments", department);
+                Logger.LogInfo($"Department created successfully: {department.Name} (ID: {newId})");
+                return newId;
+            }
+
             using (var con = new SqlConnection(DatabaseConfig.ConnectionString))
             {
                 await con.OpenAsync();

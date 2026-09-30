@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Pages;
+using Yakult.Inventory.App.Services.Gateway;
 
 namespace Yakult.Inventory.App.Repositories
 {
@@ -288,6 +289,14 @@ namespace Yakult.Inventory.App.Repositories
         {
             try
             {
+                if (GatewayClient.UseForData)
+                {
+                    var result = await GatewayClient.DeleteAsync<GatewayOperationResult>($"api/companies/{comId}");
+                    if (result.Success)
+                        Logger.LogInfo($"Company deleted permanently: ID {comId}");
+                    return (result.Success, result.Message);
+                }
+
                 using (var con = new SqlConnection(GetConnectionString()))
                 {
                     await con.OpenAsync();

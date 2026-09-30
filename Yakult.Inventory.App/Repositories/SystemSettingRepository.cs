@@ -2,6 +2,7 @@ using System;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Yakult.Inventory.App.Core;
+using Yakult.Inventory.App.Services.Gateway;
 
 namespace Yakult.Inventory.App.Repositories
 {
@@ -21,6 +22,9 @@ namespace Yakult.Inventory.App.Repositories
         {
             try
             {
+                if (GatewayClient.UseForData)
+                    return await GatewayClient.GetAsync<bool>("api/settings/smtp-enabled");
+
                 using (var con = new SqlConnection(DatabaseConfig.ConnectionString))
                 {
                     await con.OpenAsync();
@@ -54,6 +58,13 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task SetSmtpEnabledAsync(bool enabled, int modifiedByUserId)
         {
+            // Gateway mode records the signed-in user; modifiedByUserId is ignored.
+            if (GatewayClient.UseForData)
+            {
+                await GatewayClient.PutAsync<object>("api/settings/smtp-enabled", new { enabled });
+                return;
+            }
+
             using (var con = new SqlConnection(DatabaseConfig.ConnectionString))
             {
                 await con.OpenAsync();

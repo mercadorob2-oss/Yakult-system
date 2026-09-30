@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Pages;
+using Yakult.Inventory.App.Services.Gateway;
 
 namespace Yakult.Inventory.App.Repositories
 {
@@ -13,6 +14,9 @@ namespace Yakult.Inventory.App.Repositories
     {
         public IList<ConditionDto> GetAll()
         {
+            if (GatewayClient.UseForData)
+                return GatewayClient.Get<List<ConditionDto>>("api/conditions") ?? new List<ConditionDto>();
+
             var results = new List<ConditionDto>();
             using (var con = new SqlConnection(DatabaseConfig.ConnectionString))
             using (var cmd = new SqlCommand(@"

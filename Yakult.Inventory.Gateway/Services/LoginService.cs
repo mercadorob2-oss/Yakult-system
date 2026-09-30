@@ -25,9 +25,10 @@ public sealed class LoginService
         _logger = logger;
     }
 
-    public async Task<GatewaySession?> SignInAsync(string userName, string password, CancellationToken ct)
+    public async Task<GatewaySession?> SignInAsync(GatewayEnvironment environment, string userName, string password, CancellationToken ct)
     {
-        await using var con = await _db.OpenAsync(ct);
+        // Each environment has its own users: the password is checked against the chosen database.
+        await using var con = await _db.OpenAsync(environment, ct);
 
         var session = await TryUserLoginAsync(con, userName, password, ct)
                    ?? await TryLinkedDeptAccountLoginAsync(con, userName, password, ct)

@@ -143,6 +143,10 @@ namespace Yakult.Inventory.App.Pages.User
 
             this.FormClosing += MainForm_FormClosing;
 
+            // Gateway mode: if the server rejects the session, ask for the password
+            // again instead of failing every screen that reads through the gateway.
+            Yakult.Inventory.App.Services.Gateway.GatewaySessionGuard.Install(this);
+
             // Home dashboard toasts for the same expiry/mobile-update data the bell already
             // shows on demand — see HomeNotificationPoller for the check cadence/dedup rules.
             _homeNotifPoller = new HomeNotificationPoller();
@@ -5072,7 +5076,7 @@ private void UpdateAdminMenuVisibility()
 
         private void HandleDeveloperDatabaseReset()
         {
-            using (var form = new Pages.Admin.DBConn.DatabaseSetupForm())
+            using (var form = Pages.Admin.DBConn.DatabaseSetupForm.CreateSwitcher())
             {
                 if (form.ShowDialog() == DialogResult.OK)
                 {

@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Pages;
+using Yakult.Inventory.App.Services.Gateway;
 using Yakult.Inventory.App.Session;
 
 namespace Yakult.Inventory.App.Repositories
@@ -19,6 +20,13 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<int> CreateAsync(BranchDto branch)
         {
+            if (GatewayClient.UseForData)
+            {
+                int newId = await GatewayClient.PostAsync<int>("api/branches", branch);
+                Logger.LogInfo($"Branch created successfully: {branch.Name} (ID: {newId})");
+                return newId;
+            }
+
             using (var con = new SqlConnection(DatabaseConfig.ConnectionString))
             {
                 await con.OpenAsync();
@@ -71,6 +79,9 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<BranchDto> GetByIdAsync(int branchId)
         {
+            if (GatewayClient.UseForData)
+                return await GatewayClient.GetAsync<BranchDto>($"api/branches/{branchId}");
+
             using (var con = new SqlConnection(DatabaseConfig.ConnectionString))
             {
                 await con.OpenAsync();
@@ -145,6 +156,14 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<bool> UpdateAsync(BranchDto branch)
         {
+            if (GatewayClient.UseForData)
+            {
+                bool updated = await GatewayClient.PutAsync<bool>($"api/branches/{branch.BranchId}", branch);
+                if (updated)
+                    Logger.LogInfo($"Branch updated successfully: {branch.Name} (ID: {branch.BranchId})");
+                return updated;
+            }
+
             using (var con = new SqlConnection(DatabaseConfig.ConnectionString))
             {
                 await con.OpenAsync();
@@ -231,6 +250,16 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<bool> DeleteAsync(int branchId)
         {
+            // Gateway mode: a foreign-key conflict arrives as a GatewayException carrying
+            // SQL's message, which ForeignKeyErrorHelper.IsForeignKeyViolation recognizes.
+            if (GatewayClient.UseForData)
+            {
+                bool deleted = await GatewayClient.DeleteAsync<bool>($"api/branches/{branchId}");
+                if (deleted)
+                    Logger.LogInfo($"Branch deleted successfully (ID: {branchId})");
+                return deleted;
+            }
+
             try
             {
                 using (var con = new SqlConnection(DatabaseConfig.ConnectionString))
@@ -289,6 +318,14 @@ namespace Yakult.Inventory.App.Repositories
         {
             if (branchIds == null || branchIds.Count == 0)
                 throw new ArgumentException("At least one BranchId is required.", nameof(branchIds));
+
+            if (GatewayClient.UseForData)
+            {
+                int assigned = await GatewayClient.PostAsync<int>("api/branches/bulk-assign-department",
+                    new { branchIds, targetDeptId });
+                Logger.LogInfo($"BulkAssignDepartment: {assigned} branch(es) assigned to DeptId {targetDeptId} by UserId {AppSession.CurrentUserId}.");
+                return assigned;
+            }
 
             var idTable = new DataTable();
             idTable.Columns.Add("Id", typeof(int));

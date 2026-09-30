@@ -53,7 +53,7 @@ namespace Yakult.Inventory.App.Pages.User
             // IsDeveloper + IsSuperAdmin — revert to returning true once done testing.
             if (keyData == (Keys.Control | Keys.Shift | Keys.D))
             {
-                using (var form = new Pages.Admin.DBConn.DatabaseSetupForm())
+                using (var form = Pages.Admin.DBConn.DatabaseSetupForm.CreateSwitcher())
                 {
                     if (form.ShowDialog() == DialogResult.OK)
                     {

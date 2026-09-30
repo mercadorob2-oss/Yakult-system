@@ -1805,6 +1805,9 @@
     <Compile Include="Wpf\RepairPortal\PartIntake\Views\AddPartDialog.xaml.cs">
       <DependentUpon>AddPartDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Pages\User\GatewayReauthDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Pages\User\LoginPage.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -1837,6 +1840,7 @@
     <Compile Include="Services\EmailReceiptService.cs" />
     <Compile Include="Services\Gateway\GatewayClient.cs" />
     <Compile Include="Services\Gateway\GatewayModels.cs" />
+    <Compile Include="Services\Gateway\GatewaySessionGuard.cs" />
     <Compile Include="Services\InventoryService.cs" />
     <Compile Include="Services\ConsumableStockReconciliationService.cs" />
     <Compile Include="Services\CallEmailNotificationService.cs" />
@@ -2828,6 +2832,9 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Pages\Admin\DBConn\DatabaseSetupForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Pages\Admin\DBConn\GatewayEnvironmentForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Pages\Admin\Email-Management\BranchEmailBindingPage.cs">

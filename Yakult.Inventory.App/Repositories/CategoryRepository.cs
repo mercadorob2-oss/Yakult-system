@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Pages;
 using Yakult.Inventory.App.Services;
+using Yakult.Inventory.App.Services.Gateway;
 
 namespace Yakult.Inventory.App.Repositories
 {
@@ -33,6 +34,9 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<List<ItemCategoryDto>> GetAllAsync()
         {
+            if (GatewayClient.UseForData)
+                return await GatewayClient.GetAsync<List<ItemCategoryDto>>("api/categories") ?? new List<ItemCategoryDto>();
+
             var categories = new List<ItemCategoryDto>();
 
             string query = @"
@@ -90,6 +94,14 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<int> CreateAsync(ItemCategoryDto category)
         {
+            if (GatewayClient.UseForData)
+            {
+                int newId = await GatewayClient.PostAsync<int>("api/categories", category);
+                Logger.LogInfo($"ItemCategory created successfully: {category.Name} (ID: {newId})");
+                ActivityLogger.Log(ActivityLogger.Actions.Create, "Category", newId, $"Category '{category.Name}' created");
+                return newId;
+            }
+
             using (var con = new SqlConnection(GetConnectionString()))
             {
                 await con.OpenAsync();
@@ -119,6 +131,17 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<bool> UpdateAsync(ItemCategoryDto category)
         {
+            if (GatewayClient.UseForData)
+            {
+                bool updated = await GatewayClient.PutAsync<bool>($"api/categories/{category.CategoryId}", category);
+                if (updated)
+                {
+                    Logger.LogInfo($"ItemCategory updated successfully: {category.Name} (ID: {category.CategoryId})");
+                    ActivityLogger.Log(ActivityLogger.Actions.Update, "Category", category.CategoryId, $"Category '{category.Name}' updated");
+                }
+                return updated;
+            }
+
             using (var con = new SqlConnection(GetConnectionString()))
             {
                 await con.OpenAsync();
@@ -156,6 +179,17 @@ namespace Yakult.Inventory.App.Repositories
         {
             try
             {
+                if (GatewayClient.UseForData)
+                {
+                    var result = await GatewayClient.DeleteAsync<GatewayOperationResult>($"api/categories/{categoryId}");
+                    if (result.Success)
+                    {
+                        Logger.LogInfo($"ItemCategory deleted permanently: ID {categoryId}");
+                        ActivityLogger.Log(ActivityLogger.Actions.Delete, "Category", categoryId, $"Category ID {categoryId} permanently deleted");
+                    }
+                    return (result.Success, result.Message);
+                }
+
                 using (var con = new SqlConnection(GetConnectionString()))
                 {
                     await con.OpenAsync();
@@ -257,6 +291,9 @@ namespace Yakult.Inventory.App.Repositories
         /// </summary>
         public async Task<List<CategoryItemLocationDto>> GetItemsByCategoryAsync(int categoryId)
         {
+            if (GatewayClient.UseForData)
+                return await GatewayClient.GetAsync<List<CategoryItemLocationDto>>($"api/categories/{categoryId}/items") ?? new List<CategoryItemLocationDto>();
+
             var items = new List<CategoryItemLocationDto>();
 
             string query = @"

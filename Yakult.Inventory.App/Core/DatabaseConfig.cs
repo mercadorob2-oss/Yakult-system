@@ -45,6 +45,9 @@ namespace Yakult.Inventory.App.Core
             _bootstrapConnectionString = connectionString;
         }
 
+        /// <summary>True in console hosts (ITCM scheduler) that set their own connection; they never use the gateway.</summary>
+        public static bool IsBootstrapped => !string.IsNullOrWhiteSpace(_bootstrapConnectionString);
+
         /// <summary>
         /// Sets the default connection string loaded from appsettings JSON files.
         /// Used by the WinForms app at startup. User-saved settings (via Ctrl+Shift+D)
