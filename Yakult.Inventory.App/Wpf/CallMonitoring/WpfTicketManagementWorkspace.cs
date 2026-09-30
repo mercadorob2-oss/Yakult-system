@@ -113,6 +113,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private string _caseBrowserView = "Cases";
         private string _tableSortColumn = "Needs Attention";
         private bool _tableSortDescending = true;
+        private bool _myWorkOnly;
+        private Button _myWorkToggleButton;
+        private int _casePageIndex = 1;
+        private const int CasePageSize = 6;
+        private TextBlock _casePagerLabel;
+        private Button _casePagerPrevButton;
+        private Button _casePagerNextButton;
 
         // Backdate controls for backlog ticket creation
         private readonly CheckBox _backdateCheck;
@@ -453,12 +460,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 _pendingPageIndex = 1;
                 _solvedPageIndex = 1;
+                _casePageIndex = 1;
                 await ReloadTicketsAsync(resetPending: false, resetSolved: false);
             };
 
             _statusFilter.SelectionChanged += async (_, __) =>
             {
                 _pendingPageIndex = 1;
+                _casePageIndex = 1;
                 await ReloadTicketsAsync(resetPending: false, resetSolved: false);
             };
 
@@ -466,6 +475,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 _pendingPageIndex = 1;
                 _solvedPageIndex = 1;
+                _casePageIndex = 1;
                 await ReloadTicketsAsync(resetPending: false, resetSolved: false);
             };
 
@@ -473,6 +483,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 _pendingPageIndex = 1;
                 _solvedPageIndex = 1;
+                _casePageIndex = 1;
                 await ReloadTicketsAsync(resetPending: false, resetSolved: false);
             };
 
@@ -2583,10 +2594,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var browser = new Border { Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(20, 18, 20, 20), MinHeight = 460 };
             var content = new StackPanel();
             var browserHeader = new Grid { Margin = new Thickness(0, 0, 0, 15) };
-            browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var title = new StackPanel(); title.Children.Add(new TextBlock { Text = "Cases", FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(15, 23, 42) }); _queueSummaryText = new TextBlock { Text = "Loading cases…", FontSize = 11.5, Foreground = BrushFromRgb(100, 116, 139), Margin = new Thickness(0, 3, 0, 0) }; title.Children.Add(_queueSummaryText); browserHeader.Children.Add(title);
-            var switcher = BuildCaseViewSwitcher(); Grid.SetColumn(switcher, 1); browserHeader.Children.Add(switcher);
-            var hint = new TextBlock { Text = "Table is a temporary alternate view", FontSize = 11, Foreground = BrushFromRgb(100, 116, 139), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 0, 0) }; Grid.SetColumn(hint, 2); browserHeader.Children.Add(hint); content.Children.Add(browserHeader);
+            _myWorkToggleButton = CreatePrimaryButton("My work", Brushes.White);
+            _myWorkToggleButton.FontSize = 11.5; _myWorkToggleButton.FontWeight = FontWeights.SemiBold; _myWorkToggleButton.Padding = new Thickness(13, 6, 13, 6); _myWorkToggleButton.Margin = new Thickness(0, 0, 8, 0); _myWorkToggleButton.VerticalAlignment = VerticalAlignment.Center;
+            _myWorkToggleButton.Click += async (_, __) => await ToggleMyWorkAsync();
+            Grid.SetColumn(_myWorkToggleButton, 1); browserHeader.Children.Add(_myWorkToggleButton); UpdateMyWorkToggle();
+            var switcher = BuildCaseViewSwitcher(); Grid.SetColumn(switcher, 2); browserHeader.Children.Add(switcher);
+            var hint = new TextBlock { Text = "Table is a temporary alternate view", FontSize = 11, Foreground = BrushFromRgb(100, 116, 139), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 0, 0) }; Grid.SetColumn(hint, 3); browserHeader.Children.Add(hint); content.Children.Add(browserHeader);
 
             var views = new Grid();
             _caseCardsPanel = new StackPanel();
@@ -2594,6 +2609,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _caseTablePanel = new StackPanel { MinWidth = 1120 };
             _tableViewHost = new Border { Visibility = Visibility.Collapsed, Child = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = _caseTablePanel } };
             views.Children.Add(_casesViewHost); views.Children.Add(_tableViewHost); content.Children.Add(views);
+            var casePager = BuildPager(out _casePagerLabel, out _casePagerPrevButton, out _casePagerNextButton);
+            casePager.Margin = new Thickness(0, 12, 0, 0); content.Children.Add(casePager);
+            _casePagerPrevButton.Click += (_, __) => { if (_casePageIndex > 1) { _casePageIndex--; RefreshCaseCards(); } };
+            _casePagerNextButton.Click += (_, __) => { if (_casePageIndex * CasePageSize < _lifecycleRows.Count) { _casePageIndex++; RefreshCaseCards(); } };
             _lifecycleStateText = CreateGridStateText(); _lifecycleStateText.Margin = new Thickness(0, 12, 0, 0); content.Children.Add(_lifecycleStateText); browser.Child = content;
 
             var body = new Grid { Height = 620 };
@@ -2648,12 +2667,26 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _casesViewButton.Foreground = cases ? Brushes.White : BrushFromRgb(15, 118, 110);
             _tableViewButton.Background = cases ? Brushes.White : BrushFromRgb(13, 148, 136);
             _tableViewButton.Foreground = cases ? BrushFromRgb(15, 118, 110) : Brushes.White;
-        }        private Button CreateLifecycleChip(string scope)
+        }
+        private async Task ToggleMyWorkAsync()
+        {
+            _myWorkOnly = !_myWorkOnly;
+            _casePageIndex = 1;
+            UpdateMyWorkToggle();
+            await ReloadTicketsAsync(false, false);
+        }
+        private void UpdateMyWorkToggle()
+        {
+            if (_myWorkToggleButton == null) return;
+            _myWorkToggleButton.Background = _myWorkOnly ? BrushFromRgb(13, 148, 136) : Brushes.White;
+            _myWorkToggleButton.Foreground = _myWorkOnly ? Brushes.White : BrushFromRgb(15, 118, 110);
+        }
+        private Button CreateLifecycleChip(string scope)
         {
             var chip = new Button { Content = scope == "All Tickets" ? "All" : scope, Tag = scope, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand, BorderThickness = new Thickness(1), Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 7, 0) };
             ApplyModernButtonTemplate(chip, new Thickness(12, 6, 12, 6)); return chip;
         }
-        private async Task SetLifecycleScopeAsync(string scope) { _lifecycleScope = scope ?? "All Tickets"; UpdateLifecycleChipButtons(); await ReloadTicketsAsync(false, false); }
+        private async Task SetLifecycleScopeAsync(string scope) { _lifecycleScope = scope ?? "All Tickets"; _casePageIndex = 1; UpdateLifecycleChipButtons(); await ReloadTicketsAsync(false, false); }
         private void UpdateLifecycleChipButtons()
         {
             foreach (var chip in _lifecycleChipButtons) { var active = string.Equals(chip.Tag as string, _lifecycleScope, StringComparison.OrdinalIgnoreCase); chip.Background = active ? BrushFromRgb(13, 148, 136) : Brushes.White; chip.Foreground = active ? Brushes.White : BrushFromRgb(15, 118, 110); chip.BorderBrush = active ? BrushFromRgb(13, 148, 136) : BrushFromRgb(167, 243, 208); }
@@ -2747,12 +2780,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private void RefreshCaseCards()
         {
+            var page = GetCasePage();
             if (_caseCardsPanel != null)
             {
                 _caseCardsPanel.Children.Clear();
                 foreach (var group in new[] { "Active", "Waiting", "Temporary", "Resolved", "Closed" })
                 {
-                    var rows = _lifecycleRows.Where(row => row.LifecycleGroup == group).ToList();
+                    var rows = page.Where(row => row.LifecycleGroup == group).ToList();
                     if (rows.Count == 0) continue;
                     var section = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
                     var sectionHeader = new Grid { Margin = new Thickness(0, 0, 0, 8) };
@@ -2763,6 +2797,21 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 }
             }
             RefreshCaseTable();
+            UpdateCasePager();
+        }
+
+        private List<LifecycleTicketRow> GetCasePage()
+        {
+            var totalPages = Math.Max(1, (int)Math.Ceiling(_lifecycleRows.Count / (double)CasePageSize));
+            if (_casePageIndex > totalPages) _casePageIndex = totalPages;
+            if (_casePageIndex < 1) _casePageIndex = 1;
+            return _lifecycleRows.Skip((_casePageIndex - 1) * CasePageSize).Take(CasePageSize).ToList();
+        }
+
+        private void UpdateCasePager()
+        {
+            if (_casePagerLabel == null || _casePagerPrevButton == null || _casePagerNextButton == null) return;
+            UpdatePager(_casePagerLabel, _casePagerPrevButton, _casePagerNextButton, _casePageIndex, CasePageSize, _lifecycleRows.Count, _casePageIndex * CasePageSize < _lifecycleRows.Count);
         }
 
         private void RefreshCaseTable()
@@ -2770,11 +2819,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (_caseTablePanel == null) return;
             _caseTablePanel.Children.Clear();
             _caseTablePanel.Children.Add(CreateCaseTableHeader());
+            var page = GetCasePage();
             foreach (var group in new[] { "Active", "Waiting", "Temporary", "Resolved", "Closed" })
             {
-                var rows = SortTableRows(_lifecycleRows.Where(row => row.LifecycleGroup == group)).ToList();
+                var rows = SortTableRows(page.Where(row => row.LifecycleGroup == group)).ToList();
                 if (rows.Count > 0) _caseTablePanel.Children.Add(CreateCaseTableGroup(group, rows));
             }
+            UpdateCasePager();
         }
 
         private FrameworkElement CreateCaseTableHeader()
@@ -3038,10 +3089,26 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 if (assignee != null && assignee.Id == 0) filtered = filtered.Where(ticket => !ticket.AssignedToEmpId.HasValue && string.IsNullOrWhiteSpace(ticket.ResponsiblePerson));
                 else if (assignee != null && assignee.Id > 0) filtered = filtered.Where(ticket => ticket.AssignedToEmpId == assignee.Id || string.Equals(ticket.ResponsiblePerson, assignee.Name, StringComparison.OrdinalIgnoreCase));
                 if (branch != null && branch.Id > 0) filtered = filtered.Where(ticket => ticket.BranchId == branch.Id);
-                _lifecycleRows.Clear(); _lifecycleRows.AddRange(ApplyLifecycleScope(filtered).Select(t => CreateLifecycleRow(t, fieldVisitStatusMap)).OrderBy(row => row.LifecycleOrder).ThenBy(row => row.PriorityOrder).ThenByDescending(row => row.LastActivityUtc).ThenByDescending(row => row.Source.TicketId)); _queueSummaryText.Text = _lifecycleRows.Count + " case" + (_lifecycleRows.Count == 1 ? string.Empty : "s") + " • Active → Waiting → Temporary → Resolved → Closed"; SetLifecycleState(_lifecycleRows.Count == 0 ? "No cases match the current filters." : string.Empty, false); RefreshCaseCards();
+                if (_myWorkOnly) filtered = filtered.Where(IsMyWorkTicket);
+                _lifecycleRows.Clear(); _lifecycleRows.AddRange(ApplyLifecycleScope(filtered).Select(t => CreateLifecycleRow(t, fieldVisitStatusMap)).OrderBy(row => row.LifecycleOrder).ThenBy(row => row.PriorityOrder).ThenByDescending(row => row.LastActivityUtc).ThenByDescending(row => row.Source.TicketId)); _queueSummaryText.Text = _lifecycleRows.Count + " case" + (_lifecycleRows.Count == 1 ? string.Empty : "s") + " • Active → Waiting → Temporary → Resolved → Closed" + (_myWorkOnly ? " • My work" : ""); SetLifecycleState(_lifecycleRows.Count == 0 ? "No cases match the current filters." : string.Empty, false); RefreshCaseCards();
                 var target = preferredTicketId.HasValue ? _lifecycleRows.FirstOrDefault(row => row.Source.TicketId == preferredTicketId.Value) : _selectedTicket == null ? null : _lifecycleRows.FirstOrDefault(row => row.Source.TicketId == _selectedTicket.TicketId); if (target != null) await SelectTicketInternalAsync(target.Source); else if (_lifecycleRows.Count > 0) await SelectTicketInternalAsync(_lifecycleRows[0].Source); else UpdateSelection(null);
             }
             catch (Exception ex) { _lifecycleRows.Clear(); RefreshCaseCards(); _queueSummaryText.Text = "Cases unavailable"; SetLifecycleState("Unable to load cases. " + ex.GetBaseException().Message, true); UpdateSelection(null); }
+        }
+        private bool IsMyWorkTicket(CallTicketListItem ticket)
+        {
+            if (ticket == null) return false;
+            // NOTE: AppSession.CurrentUserId is dbo.[User].UserId, but ticket assignment
+            // lives in Employee key space (AssignedToEmpId / ResponsiblePerson). The
+            // employee identity resolved at login must be used here, not the user id.
+            var empId = AppSession.CurrentEmployeeId;
+            if (!empId.HasValue || empId.Value <= 0) return false;
+            var me = _assignees.FirstOrDefault(a => a != null && a.Id == empId.Value);
+            if (me != null && me.Id > 0)
+                return ticket.AssignedToEmpId == me.Id || string.Equals(ticket.ResponsiblePerson, me.Name, StringComparison.OrdinalIgnoreCase);
+            if (ticket.AssignedToEmpId == empId.Value) return true;
+            return !string.IsNullOrWhiteSpace(AppSession.CurrentEmployeeName)
+                && string.Equals(ticket.ResponsiblePerson, AppSession.CurrentEmployeeName, StringComparison.OrdinalIgnoreCase);
         }
         private IEnumerable<CallTicketListItem> ApplyLifecycleScope(IEnumerable<CallTicketListItem> tickets)
         {

@@ -3,10 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Yakult.Inventory.App.Core;
+using Yakult.Inventory.App.Models;
 using Yakult.Inventory.App.WPF.EDocs.Gatepass.Models;
 using Yakult.Inventory.App.WPF.EDocs.Gatepass.ViewModels;
 using Yakult.Inventory.App.WPF.EDocs.Gatepass.Views;
@@ -49,10 +52,14 @@ namespace Yakult.Inventory.App.WPF.EDocs.ViewModels
                 ApprovedByPosition  = "Comptroller"
             };
             ReqItems = new ObservableCollection<RequisitionFormItem>();
+            Distributors = new ObservableCollection<DistributorDto>();
+            LoadDistributorsAsync();
 
             NewGatepassCommand = new RelayCommand(() => SelectedTabIndex = 1);
             OpenTransmittalCommand = new RelayCommand(() => SelectedTabIndex = 0);
             OpenRequisitionCommand = new RelayCommand(() => SelectedTabIndex = 2);
+            ShowCompanyModeCommand = new RelayCommand(() => IsDistributorMode = false);
+            ShowDistributorModeCommand = new RelayCommand(() => IsDistributorMode = true);
             PrintTransmittalCommand = new RelayCommand(PrintTransmittal);
             PrintGatepassCommand = new RelayCommand(PrintGatepass);
             PrintRequisitionCommand = new RelayCommand(PrintRequisition);
@@ -98,6 +105,73 @@ namespace Yakult.Inventory.App.WPF.EDocs.ViewModels
         public RequisitionFormViewModel RequisitionInput { get; }
 
         public ObservableCollection<RequisitionFormItem> ReqItems { get; }
+
+        // ── E-Docs Requisition company/distributor toggle ──────────────
+        // False shows the legacy company radios, true shows the distributor
+        // dropdown sourced from dbo.Distributor.
+        private bool _isDistributorMode;
+
+        public bool IsDistributorMode
+        {
+            get { return _isDistributorMode; }
+            set
+            {
+                if (_isDistributorMode == value)
+                    return;
+                _isDistributorMode = value;
+                OnPropertyChanged("IsDistributorMode");
+            }
+        }
+
+        public ICommand ShowCompanyModeCommand { get; }
+
+        public ICommand ShowDistributorModeCommand { get; }
+
+        // ── E-Docs Requisition distributor picker ───────────────────────
+        // Sourced from dbo.Distributor, same catalog the Invoice Set dialog uses.
+        public ObservableCollection<DistributorDto> Distributors { get; }
+
+        private DistributorDto _selectedDistributor;
+
+        public DistributorDto SelectedDistributor
+        {
+            get { return _selectedDistributor; }
+            set
+            {
+                if (_selectedDistributor == value)
+                    return;
+                _selectedDistributor = value;
+                OnPropertyChanged("SelectedDistributor");
+            }
+        }
+
+        private async void LoadDistributorsAsync()
+        {
+            try
+            {
+                var cs = DatabaseConfig.ConnectionString;
+                if (string.IsNullOrWhiteSpace(cs))
+                    return;
+                using (var con = new SqlConnection(cs))
+                {
+                    await con.OpenAsync();
+                    using (var cmd = new SqlCommand(
+                        "IF OBJECT_ID('dbo.Distributor', 'U') IS NOT NULL SELECT DistributorId, Name FROM dbo.Distributor WHERE IsActive = 1 ORDER BY SortOrder, Name", con))
+                    using (var r = await cmd.ExecuteReaderAsync())
+                    {
+                        var items = new List<DistributorDto>();
+                        while (await r.ReadAsync())
+                            items.Add(new DistributorDto { DistributorId = r.GetInt32(0), Name = r.GetString(1) });
+                        foreach (var item in items)
+                            Distributors.Add(item);
+                    }
+                }
+            }
+            catch
+            {
+                // Distributor catalog unavailable, keep the list empty.
+            }
+        }
 
         // ── Signatory pick-lists, shared by the Transmittal and Gatepass tabs.
         // "-" represents leaving the field blank on the printed form.
@@ -276,8 +350,13 @@ namespace Yakult.Inventory.App.WPF.EDocs.ViewModels
 
         private void PrintRequisition()
         {
-            // Standalone print document: every field is optional. Blank cells
-            // print blank, exactly like the paper pad — nothing is required.
+            // Distributor mode requires a selection. Company mode keeps the
+            // legacy behavior where every field is optional.
+            if (IsDistributorMode && SelectedDistributor == null)
+            {
+                MessageBox.Show("Select a distributor first.", "Requisition", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             BuildRequisitionItems();
             var dialog = new PrintRequisitionDialog(RequisitionInput);
             SetDialogOwner(dialog);
@@ -290,6 +369,16 @@ namespace Yakult.Inventory.App.WPF.EDocs.ViewModels
 
         private void BuildRequisitionItems()
         {
+            if (IsDistributorMode && SelectedDistributor != null)
+            {
+                RequisitionInput.DistributorId = SelectedDistributor.DistributorId;
+                RequisitionInput.DistributorName = SelectedDistributor.Name;
+            }
+            else
+            {
+                RequisitionInput.DistributorId = null;
+                RequisitionInput.DistributorName = null;
+            }
             RequisitionInput.Items = ReqItems
                 .Where(r => r != null &&
                     (!string.IsNullOrWhiteSpace(r.Quantity) ||
@@ -306,6 +395,11 @@ namespace Yakult.Inventory.App.WPF.EDocs.ViewModels
 
         private void SaveRequisitionPdf()
         {
+            if (IsDistributorMode && SelectedDistributor == null)
+            {
+                MessageBox.Show("Select a distributor first.", "Requisition", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             BuildRequisitionItems();
             // Microsoft Print to PDF prompts for the file location itself.
             // Legal, matching the paper this section prints on.
