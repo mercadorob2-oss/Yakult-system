@@ -385,11 +385,16 @@ namespace Yakult.Inventory.App.Pages
                 return;
             }
 
+            int? selectedSize = ShowQrPrintSizeDialog();
+            if (!selectedSize.HasValue)
+                return;
+
+            int printSize = selectedSize.Value;
             using (var printDocument = new PrintDocument())
             {
                 printDocument.DocumentName = string.IsNullOrWhiteSpace(_displayName) ? "Image" : _displayName;
                 // Print the original full-resolution image, not the current on-screen zoom level.
-                printDocument.PrintPage += (s, e) => PrintDocument_PrintPage(e, pictureBox.Image);
+                printDocument.PrintPage += (s, e) => PrintDocument_PrintPage(e, pictureBox.Image, printSize);
 
                 using (var printDialog = new PrintDialog { Document = printDocument, AllowSomePages = false, AllowSelection = false })
                 {
@@ -409,17 +414,87 @@ namespace Yakult.Inventory.App.Pages
             }
         }
 
-        // Fixed physical print size (2x2 in), independent of the image's pixel dimensions and the
-        // viewer's on-screen zoom level -- suited to a QR code meant for a label/sticker.
-        // PrintPageEventArgs coordinates are in hundredths of an inch, so 200 units = 2 inches.
-        private const int PrintSizeHundredthsInch = 200;
+        // QR sticker sizes, in hundredths of an inch (PrintPage units: 100 = 1 inch).
+        // Legacy fixed size was 2.0in. Desktop keeps the new 20 percent reduction
+        // (1.6in); Laptop is half size (1.0in) for smaller chassis stickers.
+        private const int PrintSizeDesktopHundredthsInch = 160;
+        private const int PrintSizeLaptopHundredthsInch = 100;
 
-        private static void PrintDocument_PrintPage(PrintPageEventArgs e, Image image)
+        /// <summary>
+        /// Lets the user pick which physical QR sticker size to print.
+        /// Returns the size in hundredths of an inch, or null when cancelled.
+        /// </summary>
+        private int? ShowQrPrintSizeDialog()
+        {
+            using (var dlg = new Form())
+            {
+                dlg.Text = "Print QR";
+                dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.MaximizeBox = false;
+                dlg.MinimizeBox = false;
+                dlg.ShowInTaskbar = false;
+                dlg.ClientSize = new Size(330, 168);
+
+                var lbl = new Label
+                {
+                    Text = "Choose sticker size:",
+                    Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                    Location = new Point(16, 12),
+                    AutoSize = true
+                };
+
+                var rbDesktop = new RadioButton
+                {
+                    Text = "Desktop  (1.6 in, 80%)",
+                    Font = new Font("Segoe UI", 10F),
+                    Location = new Point(20, 42),
+                    Size = new Size(290, 24),
+                    Checked = true
+                };
+
+                var rbLaptop = new RadioButton
+                {
+                    Text = "Laptop  (1.0 in, 50%)",
+                    Font = new Font("Segoe UI", 10F),
+                    Location = new Point(20, 70),
+                    Size = new Size(290, 24)
+                };
+
+                var btnPrint = new Button
+                {
+                    Text = "Print",
+                    DialogResult = DialogResult.OK,
+                    Location = new Point(158, 112),
+                    Size = new Size(78, 32)
+                };
+                var btnCancel = new Button
+                {
+                    Text = "Cancel",
+                    DialogResult = DialogResult.Cancel,
+                    Location = new Point(242, 112),
+                    Size = new Size(72, 32)
+                };
+
+                dlg.Controls.AddRange(new Control[] { lbl, rbDesktop, rbLaptop, btnPrint, btnCancel });
+                dlg.AcceptButton = btnPrint;
+                dlg.CancelButton = btnCancel;
+
+                if (dlg.ShowDialog(this) != DialogResult.OK)
+                    return null;
+
+                return rbLaptop.Checked
+                    ? PrintSizeLaptopHundredthsInch
+                    : PrintSizeDesktopHundredthsInch;
+            }
+        }
+
+        private static void PrintDocument_PrintPage(PrintPageEventArgs e, Image image, int sizeHundredthsInch)
         {
             var printable = e.MarginBounds;
-            int x = printable.X + (printable.Width - PrintSizeHundredthsInch) / 2;
-            int y = printable.Y + (printable.Height - PrintSizeHundredthsInch) / 2;
-            e.Graphics.DrawImage(image, x, y, PrintSizeHundredthsInch, PrintSizeHundredthsInch);
+            int x = printable.X + (printable.Width - sizeHundredthsInch) / 2;
+            int y = printable.Y + (printable.Height - sizeHundredthsInch) / 2;
+            e.Graphics.DrawImage(image, x, y, sizeHundredthsInch, sizeHundredthsInch);
         }
 
         private void SaveAsJpeg(string path)

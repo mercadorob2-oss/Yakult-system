@@ -21,6 +21,13 @@ namespace Yakult.Inventory.App.WPF.Set.RequisitionForm.ViewModels
         public bool IsYakultMarketing   { get; set; }
         public bool IsYakultElSalvador  { get; set; }
 
+        // ── E-Docs standalone distributor header ──────────────────────────────
+        // Set only by the E-Docs Requisition tab. When DistributorName is set,
+        // the print view shows it instead of the company checkboxes above.
+        // Null/blank preserves the legacy company path used by FromSet.
+        public int? DistributorId { get; set; }
+        public string DistributorName { get; set; }
+
         // ── Header fields ─────────────────────────────────────────────────────────
         public string Department { get; set; }
         public string Date       { get; set; }

@@ -446,11 +446,40 @@
                                             <Ellipse Style="{StaticResource StepBadge}"/>
                                             <TextBlock Text="1" Style="{StaticResource StepNumber}"/>
                                         </Grid>
-                                        <TextBlock Grid.Column="1" Text="Company" Style="{StaticResource SectionTitle}"/>
+                                        <TextBlock Grid.Column="1" Text="Company / Distributor" Style="{StaticResource SectionTitle}"/>
                                     </Grid>
-                                    <RadioButton Content="Yakult Philippines Inc." GroupName="ReqCompany" IsChecked="{Binding RequisitionInput.IsYakultPhilippines}" Margin="0,0,0,4"/>
-                                    <RadioButton Content="Yakult Marketing Corp." GroupName="ReqCompany" IsChecked="{Binding RequisitionInput.IsYakultMarketing}" Margin="0,0,0,4"/>
-                                    <RadioButton Content="Yakult El Salvador Manufacturing Corp." GroupName="ReqCompany" IsChecked="{Binding RequisitionInput.IsYakultElSalvador}"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <Button Content="Company" Command="{Binding ShowCompanyModeCommand}" Padding="14,4,14,4" Margin="0,0,8,0"/>
+                                        <Button Content="Distributor" Command="{Binding ShowDistributorModeCommand}" Padding="14,4,14,4"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsDistributorMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <RadioButton Content="Yakult Philippines Inc." GroupName="ReqCompany" IsChecked="{Binding RequisitionInput.IsYakultPhilippines}" Margin="0,0,0,4"/>
+                                        <RadioButton Content="Yakult Marketing Corp." GroupName="ReqCompany" IsChecked="{Binding RequisitionInput.IsYakultMarketing}" Margin="0,0,0,4"/>
+                                        <RadioButton Content="Yakult El Salvador Manufacturing Corp." GroupName="ReqCompany" IsChecked="{Binding RequisitionInput.IsYakultElSalvador}"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsDistributorMode}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <ComboBox ItemsSource="{Binding Distributors}" SelectedItem="{Binding SelectedDistributor, Mode=TwoWay}" DisplayMemberPath="Name" IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True" TextSearch.TextPath="Name"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource SectionCard}">

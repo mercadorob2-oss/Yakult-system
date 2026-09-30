@@ -31,8 +31,10 @@ namespace Yakult.Inventory.App.Helpers
 
         /// <summary>
         /// Generates a QR code image for a Set.
-        /// Branded: Yakult bottle icon in the center; set computer name as caption
-        /// below the QR when one is saved on the set (dbo.Set.ComputerName).
+        /// Branded: black Yakult wordmark overlaid in the center with a tight white
+        /// halo (no giant white square, so the code stays scannable); set computer
+        /// name as caption flush below the QR when saved on the set (dbo.Set.ComputerName).
+        /// Base image is 20 percent smaller than the legacy 5px modules (now 4px).
         /// Payload stays yakult:set:v1:{GUID}; caption sits outside the quiet zone.
         /// </summary>
         /// <param name="setDto">The Set information</param>
@@ -50,27 +52,40 @@ namespace Yakult.Inventory.App.Helpers
 
             // Empty-token fallback encodes the full dispatch JSON (large payload):
             // keep it plain so CreateQrCode never throws on capacity.
+            // Pixels-per-module 4 (was 5) = 20% smaller base image.
             if (!hasToken)
             {
                 using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
                 using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q))
                 using (QRCode qrCode = new QRCode(qrCodeData))
                 {
-                    return qrCode.GetGraphic(5);
+                    return qrCode.GetGraphic(4);
                 }
             }
 
-            Bitmap icon = LoadBottleIcon();
+            Bitmap logo = LoadQrCenterIcon();
             try
             {
                 Bitmap qrCodeImage;
                 using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
-                using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q))
+                using (QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.H))
                 using (QRCode qrCode = new QRCode(qrCodeData))
                 {
-                    qrCodeImage = (icon != null)
-                        ? qrCode.GetGraphic(5, Color.Black, Color.White, icon, 24, 6, true)
-                        : qrCode.GetGraphic(5);
+                    // Pixels-per-module 4 (was 5) = 20% smaller base image.
+                    // Plain QR on purpose: the logo is painted manually below with a
+                    // tight halo, damaging far fewer modules than QRCoder's square
+                    // center icon (which blanked a ~1/3-width block and broke scanning).
+                    // ECC H restores up to 30% damaged codewords as extra margin.
+                    qrCodeImage = qrCode.GetGraphic(4);
+                }
+
+                if (logo != null)
+                {
+                    try { OverlayCenterLogo(qrCodeImage, logo); }
+                    catch
+                    {
+                        // Logo failure must never block generation.
+                    }
                 }
 
                 // Caption is the saved set computer name (Set Details header textbox,
@@ -93,27 +108,47 @@ namespace Yakult.Inventory.App.Helpers
             }
             finally
             {
-                if (icon != null)
-                    icon.Dispose();
+                if (logo != null)
+                    logo.Dispose();
             }
         }
 
         /// <summary>
-        /// Loads the square Yakult bottle icon; returns null when the asset is missing
-        /// so generation degrades to a plain QR instead of throwing.
+        /// Loads the QR center logo. Prefers the black Yakult wordmark
+        /// (Images\Yakult_logo_QR_new.png); falls back to the legacy square bottle
+        /// icon; returns null when neither asset is present so generation degrades
+        /// to a plain QR instead of throwing.
         /// </summary>
-        private static Bitmap LoadBottleIcon()
+        private static Bitmap LoadQrCenterIcon()
         {
             try
             {
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory ?? string.Empty;
-                string[] candidates = new[]
+                string[] wordmarkCandidates = new[]
+                {
+                    Path.Combine(baseDir, "Images", "Yakult_logo_QR_new.png"),
+                    Path.Combine(baseDir, "Yakult.Inventory.App", "Images", "Yakult_logo_QR_new.png")
+                };
+
+                foreach (var path in wordmarkCandidates)
+                {
+                    if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                    {
+                        try { return new Bitmap(path); }
+                        catch
+                        {
+                            // Corrupt wordmark file, try next candidate.
+                        }
+                    }
+                }
+
+                string[] bottleCandidates = new[]
                 {
                     Path.Combine(baseDir, "Images", "yakult_bottle_qr_icon.png"),
                     Path.Combine(baseDir, "Yakult.Inventory.App", "Images", "yakult_bottle_qr_icon.png")
                 };
 
-                foreach (var path in candidates)
+                foreach (var path in bottleCandidates)
                 {
                     if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
                         return new Bitmap(path);
@@ -128,19 +163,58 @@ namespace Yakult.Inventory.App.Helpers
         }
 
         /// <summary>
+        /// Paints the logo centered on the QR with only a thin white halo behind it.
+        /// The strip is at most 30% of the QR width and 14% of its height, so the
+        /// damaged modules stay well within what ECC H can recover. Any aspect is
+        /// accepted and preserved; the halo keeps dark modules from touching the art.
+        /// </summary>
+        private static void OverlayCenterLogo(Bitmap qr, Bitmap logo)
+        {
+            if (qr == null || logo == null || logo.Width <= 0 || logo.Height <= 0)
+                return;
+
+            double aspect = (double)logo.Width / logo.Height;
+
+            int maxW = (int)(qr.Width * 0.36);
+            int maxH = (int)(qr.Height * 0.17);
+
+            int drawW = maxW;
+            int drawH = (int)(drawW / aspect);
+            if (drawH > maxH)
+            {
+                drawH = maxH;
+                drawW = (int)(drawH * aspect);
+            }
+            if (drawW <= 0 || drawH <= 0)
+                return;
+
+            int x = (qr.Width - drawW) / 2;
+            int y = (qr.Height - drawH) / 2;
+            int pad = Math.Max(5, (int)(qr.Width * 0.04));
+
+            using (Graphics g = Graphics.FromImage(qr))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.FillRectangle(Brushes.White, x - pad, y - pad, drawW + pad * 2, drawH + pad * 2);
+                g.DrawImage(logo, x, y, drawW, drawH);
+            }
+        }
+
+        /// <summary>
         /// Appends a white footer strip with the centered model caption below the QR.
         /// Footer is outside the QR quiet zone so it cannot affect decoding.
+        /// The text is flush against the QR with no top pad.
         /// </summary>
         private static Bitmap ComposeCaptionFooter(Bitmap qrImage, string caption)
         {
-            int footerHeight = Math.Max(28, (int)(qrImage.Width * 0.18));
+            int footerHeight = Math.Max(28, (int)(qrImage.Width * 0.16));
             Bitmap composed = new Bitmap(qrImage.Width, qrImage.Height + footerHeight);
             using (Graphics g = Graphics.FromImage(composed))
             {
                 g.Clear(Color.White);
                 g.DrawImage(qrImage, 0, 0, qrImage.Width, qrImage.Height);
 
-                float fontSize = Math.Max(8f, footerHeight * 0.52f);
+                float fontSize = Math.Max(8f, footerHeight * 0.82f);
                 using (Font font = new Font("Arial", fontSize, FontStyle.Bold, GraphicsUnit.Pixel))
                 {
                     SizeF measured = g.MeasureString(caption, font);
@@ -152,11 +226,13 @@ namespace Yakult.Inventory.App.Helpers
                         var format = new StringFormat
                         {
                             Alignment = StringAlignment.Center,
-                            LineAlignment = StringAlignment.Center,
+                            LineAlignment = StringAlignment.Near,
                             Trimming = StringTrimming.EllipsisCharacter,
                             FormatFlags = StringFormatFlags.NoWrap
                         };
-                        var footerRect = new RectangleF(0, qrImage.Height, qrImage.Width, footerHeight);
+                        // 18px overlap: clears the full bottom quiet zone so the name
+                        // semi-sticks to the code modules (ECC H recovers the graze).
+                        var footerRect = new RectangleF(0, qrImage.Height - 18, qrImage.Width, footerHeight);
                         using (Brush brush = new SolidBrush(Color.Black))
                         {
                             g.DrawString(caption, fitted, brush, footerRect, format);
