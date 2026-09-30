@@ -219,6 +219,42 @@ namespace Yakult.Inventory.App.Security
         }
 
         /// <summary>
+        /// Gateway sign-in: fills the same maps from the snapshot the gateway returned,
+        /// replacing whatever a previous user left. The per-user maps only hold this
+        /// user's rows. An unloaded snapshot leaves the hardcoded fallback in place.
+        /// </summary>
+        public static void ApplySnapshot(int userId, Services.Gateway.GatewayPermissionSnapshot snapshot)
+        {
+            Invalidate();
+            if (snapshot == null || !snapshot.Loaded) return;
+
+            var ci = StringComparer.OrdinalIgnoreCase;
+
+            _dbMap = (snapshot.RolePortals ?? new Dictionary<string, List<string>>())
+                .ToDictionary(kv => kv.Key, kv => new HashSet<string>(kv.Value ?? new List<string>(), ci), ci);
+
+            _userPortalMap = new Dictionary<int, Dictionary<string, bool>>
+            {
+                [userId] = new Dictionary<string, bool>(snapshot.UserPortals ?? new Dictionary<string, bool>(), ci)
+            };
+
+            _userItemOverrides = new Dictionary<int, Dictionary<string, Dictionary<string, bool>>>
+            {
+                [userId] = CopyByType(snapshot.UserItems)
+            };
+
+            _roleItemOverrides = (snapshot.RoleItems ?? new Dictionary<string, Dictionary<string, Dictionary<string, bool>>>())
+                .ToDictionary(kv => kv.Key, kv => CopyByType(kv.Value), ci);
+        }
+
+        private static Dictionary<string, Dictionary<string, bool>> CopyByType(Dictionary<string, Dictionary<string, bool>> source)
+        {
+            var ci = StringComparer.OrdinalIgnoreCase;
+            return (source ?? new Dictionary<string, Dictionary<string, bool>>())
+                .ToDictionary(kv => kv.Key, kv => new Dictionary<string, bool>(kv.Value ?? new Dictionary<string, bool>(), ci), ci);
+        }
+
+        /// <summary>
         /// Clears the cached map so the next LoadAsync call re-reads from DB.
         /// Call after modifying dbo.RolePortalAccess in an admin UI.
         /// </summary>

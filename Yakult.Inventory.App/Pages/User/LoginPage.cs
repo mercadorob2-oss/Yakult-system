@@ -9,6 +9,7 @@ using Yakult.Inventory.App.Data;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Repositories;
 using Yakult.Inventory.App.Security;
+using Yakult.Inventory.App.Services.Gateway;
 using Yakult.Inventory.App.Session;
 
 namespace Yakult.Inventory.App.Pages.User
@@ -137,6 +138,18 @@ namespace Yakult.Inventory.App.Pages.User
 
             try
             {
+                // Gateway mode: the server checks the password and loads the session.
+                // Same three account paths as below, run on the gateway.
+                if (AppConfig.UseGateway)
+                {
+                    if (await LoginThroughGatewayAsync(name, password))
+                    {
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
+                    return;
+                }
+
                 // Try normal user account first
                 var (userId, fullName, emailAddr, isDeveloper, isSuperAdmin) =
                     await _userRepo.AuthenticateByName_VarBinaryConvertAsync(name, password);
@@ -204,6 +217,100 @@ namespace Yakult.Inventory.App.Pages.User
                 NameLoginField.Enabled = true;
                 PassLoginField.Enabled = true;
             }
+        }
+
+        /// <summary>
+        /// Signs in through Yakult.Inventory.Gateway and fills AppSession / PermissionResolver
+        /// from its response, then takes the database connection the gateway hands over
+        /// (memory only) for the screens that still query SQL directly.
+        /// </summary>
+        private async System.Threading.Tasks.Task<bool> LoginThroughGatewayAsync(string name, string password)
+        {
+            GatewaySession session;
+            string connectionString;
+            try
+            {
+                session = await GatewayClient.LoginAsync(name, password);
+                connectionString = await GatewayClient.GetClientConnectionStringAsync();
+            }
+            catch (GatewayException ex)
+            {
+                GatewayClient.SignOut();
+
+                if (ex.StatusCode == 401)
+                {
+                    MessageBox.Show("Invalid name or password.", "Login Failed",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else if (ex.StatusCode == 429)
+                {
+                    MessageBox.Show("Too many sign-in attempts. Please wait a minute and try again.", "Login Failed",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show(ex.Message, "Sign-in Server",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                return false;
+            }
+
+            if (session == null || string.IsNullOrWhiteSpace(connectionString))
+            {
+                GatewayClient.SignOut();
+                MessageBox.Show("The sign-in server did not return a database connection. Please contact IT.",
+                    "Sign-in Server", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            DatabaseConfig.SetGatewayConnection(connectionString);
+
+            AppSession.CurrentUserId    = session.UserId;
+            AppSession.CurrentUserName  = session.UserName;
+            AppSession.CurrentEmail     = session.Email;
+            AppSession.LoginTime        = DateTime.Now;
+            AppSession.IsDeveloper      = session.IsDeveloper;
+            AppSession.IsSuperAdmin     = session.IsSuperAdmin;
+            AppSession.CurrentUserRoles = session.Roles != null && session.Roles.Count > 0
+                ? session.Roles
+                : new List<string> { "Requester" };
+            AppSession.NotificationsEnabled = session.NotificationsEnabled;
+
+            var emp = session.Employee;
+            if (emp != null)
+            {
+                AppSession.CurrentEmployeeId       = emp.EmployeeId;
+                AppSession.CurrentEmployeeName     = emp.Name;
+                AppSession.CurrentEmployeePosition = emp.Position;
+                AppSession.CurrentCompanyId        = emp.CompanyId;
+                AppSession.CurrentCompanyName      = emp.CompanyName;
+                AppSession.CurrentBranchId         = emp.BranchId;
+                AppSession.CurrentBranchName       = emp.BranchName;
+                AppSession.CurrentDepartmentId     = emp.DepartmentId;
+                AppSession.CurrentDepartmentName   = emp.DepartmentName;
+            }
+
+            var da = session.DepartmentAccount;
+            if (da != null)
+            {
+                AppSession.IsDepartmentAccountSession    = true;
+                AppSession.DepartmentAccountId           = da.AccountId;
+                AppSession.DepartmentAccountCompanyId    = da.CompanyId;
+                AppSession.DepartmentAccountDepartmentId = da.DepartmentId;
+                AppSession.DepartmentAccountBranchId     = da.BranchId;
+            }
+
+            PermissionResolver.ApplySnapshot(session.UserId, session.Permissions);
+
+            if (!session.IsDepartmentAccountLogin)
+            {
+                MessageBox.Show(
+                    $"Welcome, {session.UserName}!",
+                    "Login Successful",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            return true;
         }
 
         /// <summary>

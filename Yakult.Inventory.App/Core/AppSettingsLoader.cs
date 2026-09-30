@@ -9,15 +9,22 @@ namespace Yakult.Inventory.App.Core
     /// mirroring the ASP.NET Core appsettings pattern.
     ///
     /// Load order (first non-empty value wins):
+    ///   0. appsettings.Local.json                  (gitignored; the only place a password may go)
     ///   1. appsettings.{DOTNET_ENVIRONMENT}.json  (e.g. appsettings.Development.json)
     ///   2. appsettings.Development.json           (present on dev machines, absent in production)
     ///   3. appsettings.json                        (base / production config)
+    ///
+    /// Not used when App.config has a GatewayUrl: the gateway supplies the connection.
     /// </summary>
     internal static class AppSettingsLoader
     {
         internal static string LoadConnectionString()
         {
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+
+            // 0. Per-machine secrets, never committed (see **/appsettings.Local.json in .gitignore)
+            var localConn = TryRead(Path.Combine(baseDir, "appsettings.Local.json"));
+            if (localConn != null) return localConn;
 
             // 1. Environment-variable-driven override (mirrors ASP.NET Core convention)
             var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")

@@ -46,6 +46,13 @@ Use `SubType`:
 - `DATABASES\Yakult-DB-Production\` — SQL schema (CREATE TABLE definitions, migration scripts)
 - `DATABASES-PROTOTYPE\` — prototype DB schema mirror
 
+## Database Connection & Inventory Gateway
+
+- **Never commit a database password.** Desktop `appsettings.json` / `appsettings.Development.json` keep `DefaultConnection` empty. Per-machine connections go in a gitignored `appsettings.Local.json` (read first by `Core\AppSettingsLoader`; see `appsettings.Local.example.json`).
+- `Yakult.Inventory.Gateway\` (ASP.NET Core, net8.0) holds the connection on the server, like `Yakult.ITCM.Server`. When App.config `GatewayUrl` is set, `LoginPage.LoginThroughGatewayAsync` signs in via `POST /api/auth/login`, fills `AppSession` and `PermissionResolver.ApplySnapshot` from the response, and gets the SQL connection for not-yet-migrated screens from `/api/session/db-connection` (memory only, via `DatabaseConfig.SetGatewayConnection`; cleared on logout). Empty `GatewayUrl` = old direct sign-in.
+- The gateway's `LoginService` is a port of the desktop login (`UserRepository.AuthenticateByName_VarBinaryConvertAsync` + `LoginPage`'s department-account paths). **Change both together.**
+- Migration is phased: new or reworked data access should go through a gateway endpoint (`GatewayClient.GetAsync/PostAsync`) and enforce permissions server-side. See `Yakult.Inventory.Gateway\README.md`.
+
 ## Database Migrations
 
 - Migration scripts live in `DATABASES\Yakult-DB-Production\dbo\Scripts\`

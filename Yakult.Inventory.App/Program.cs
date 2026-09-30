@@ -110,7 +110,8 @@ namespace Yakult.Inventory.App
 
             // Only show the manual setup form if no config was found at all
             // (no JSON files and no previously saved user settings).
-            if (!DatabaseConfig.IsConfigured)
+            // In gateway mode the connection arrives after sign-in, so skip it.
+            if (!AppConfig.UseGateway && !DatabaseConfig.IsConfigured)
             {
                 using (var setupForm = new DatabaseSetupForm())
                 {

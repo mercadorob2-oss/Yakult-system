@@ -21,6 +21,9 @@ namespace Yakult.Inventory.App.Core
         // For non-WinForms hosts (e.g. Yakult.ITCM.Scheduler console) — highest priority.
         private static string _bootstrapConnectionString;
 
+        // Handed over by Yakult.Inventory.Gateway after sign-in. Memory only, cleared on logout.
+        private static string _gatewayConnectionString;
+
         // Loaded from appsettings.json / appsettings.Development.json at startup.
         // Acts as the default for the WinForms app; overridden by user-saved settings.
         private static string _jsonDefaultConnectionString;
@@ -53,10 +56,19 @@ namespace Yakult.Inventory.App.Core
         }
 
         /// <summary>
+        /// Sets the connection received from the gateway at sign-in. Pass null on logout.
+        /// </summary>
+        public static void SetGatewayConnection(string connectionString)
+        {
+            _gatewayConnectionString = connectionString;
+        }
+
+        /// <summary>
         /// Gets the current connection string. Priority order:
         ///   1. Bootstrap (non-WinForms console hosts only)
-        ///   2. User-saved settings (set via the DB switcher, Ctrl+Shift+D)
-        ///   3. JSON config default (appsettings.json / appsettings.Development.json)
+        ///   2. Gateway (handed over after sign-in when GatewayUrl is set)
+        ///   3. User-saved settings (set via the DB switcher, Ctrl+Shift+D)
+        ///   4. JSON config default (appsettings.Local.json / appsettings.json)
         /// Returns empty string if nothing is configured (never throws).
         /// </summary>
         public static string ConnectionString
@@ -66,6 +78,11 @@ namespace Yakult.Inventory.App.Core
                 // Bootstrap overrides everything — for the scheduler console, not WinForms
                 if (!string.IsNullOrWhiteSpace(_bootstrapConnectionString))
                     return _bootstrapConnectionString;
+
+                // In gateway mode the gateway decides the database; a stale saved
+                // switcher value must not win, and nothing works before sign-in.
+                if (AppConfig.UseGateway)
+                    return _gatewayConnectionString ?? string.Empty;
 
                 // User-saved override wins over JSON default (developer explicitly switched)
                 try

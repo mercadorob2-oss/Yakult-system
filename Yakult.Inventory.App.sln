@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yakult.ITCM.Scheduler", "Ya
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yakult.ITCM.Server", "Yakult.ITCM.Server\Yakult.ITCM.Server.csproj", "{52348618-6C24-47A3-8593-79D2AB8A6A5B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yakult.Inventory.Gateway", "Yakult.Inventory.Gateway\Yakult.Inventory.Gateway.csproj", "{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{52348618-6C24-47A3-8593-79D2AB8A6A5B}.Release|x64.Build.0 = Release|Any CPU
 		{52348618-6C24-47A3-8593-79D2AB8A6A5B}.Release|x86.ActiveCfg = Release|Any CPU
 		{52348618-6C24-47A3-8593-79D2AB8A6A5B}.Release|x86.Build.0 = Release|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Debug|x64.Build.0 = Debug|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Debug|x86.Build.0 = Debug|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Release|x64.ActiveCfg = Release|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Release|x64.Build.0 = Release|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Release|x86.ActiveCfg = Release|Any CPU
+		{C8D5BEFA-DD7D-4BAB-BAEC-737A02A16CE2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

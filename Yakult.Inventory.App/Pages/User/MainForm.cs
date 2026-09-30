@@ -3041,8 +3041,14 @@ private void UpdateAdminMenuVisibility()
 
         private void LogOutOnMenu_Click(object sender, EventArgs e)
         {
-            // 1. Clear the current session
+            // 1. Clear the current session (and, in gateway mode, the token and the
+            //    database connection the gateway handed over at sign-in)
             Yakult.Inventory.App.Session.AppSession.Clear();
+            if (AppConfig.UseGateway)
+            {
+                Yakult.Inventory.App.Services.Gateway.GatewayClient.SignOut();
+                DatabaseConfig.SetGatewayConnection(null);
+            }
 
             // 2. Clear the content panel to remove any displayed page
             if (ContentPanel != null)

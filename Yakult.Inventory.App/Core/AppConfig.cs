@@ -26,6 +26,16 @@ namespace Yakult.Inventory.App.Core
             }
         }
 
+        // Yakult.Inventory.Gateway. When set, sign-in goes through the gateway and the
+        // database connection is handed over after login instead of shipping with the app.
+        // Leave empty to keep the old direct-SQL sign-in (appsettings.Local.json).
+        public static string GatewayUrl
+        {
+            get { return (ConfigurationManager.AppSettings["GatewayUrl"] ?? string.Empty).Trim().TrimEnd('/'); }
+        }
+
+        public static bool UseGateway => GatewayUrl.Length > 0;
+
         // ITCM scheduler ownership. When true (default), Yakult.ITCM.Server is
         // the single scheduler owner and the in-app fallback timers stay off.
         // Set ItcmServerOwned=false in App.config only as a temporary fallback
