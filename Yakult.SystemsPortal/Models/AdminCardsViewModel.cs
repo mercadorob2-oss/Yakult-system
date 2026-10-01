@@ -10,6 +10,8 @@ public sealed class AdminDashboardViewModel
     public IReadOnlyList<AdminPortalCardViewModel> Cards { get; init; } = Array.Empty<AdminPortalCardViewModel>();
     public IReadOnlyList<PortalAuditLogItem> RecentEvents { get; init; } = Array.Empty<PortalAuditLogItem>();
     public PortalNoticeSettings Notice { get; init; } = new();
+    public int CompanyFaqCount { get; init; }
+    public int CompanyPolicyCount { get; init; }
 }
 
 public sealed class AdminAuditViewModel

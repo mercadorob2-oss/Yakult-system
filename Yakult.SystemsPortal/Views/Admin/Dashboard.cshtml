@@ -244,6 +244,12 @@
                     </span>
                     <span><strong>Learning Content</strong><small>Create articles, guides, and video links.</small></span>
                 </a>
+                <a class="admin-quick-action" asp-controller="CompanyInfoAdmin" asp-action="Index" data-page-item>
+                    <span class="admin-quick-action__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    </span>
+                    <span><strong>FAQ &amp; Company Policy</strong><small>@Model.CompanyFaqCount FAQs · @Model.CompanyPolicyCount policies. Create and publish answers.</small></span>
+                </a>
             }
             <a class="admin-quick-action" asp-controller="Admin" asp-action="Settings" data-page-item>
                 <span class="admin-quick-action__icon" aria-hidden="true">

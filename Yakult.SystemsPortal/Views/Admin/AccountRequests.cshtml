@@ -56,6 +56,7 @@
                 var requestSearch = $"{item.EmployeeName} {item.EmployeeNumber} {item.WorkEmail} {item.Position} {item.Department} {item.Username} {item.Company} {item.Branch}".ToLowerInvariant();
                 <article class="request-card" data-status="@item.Status.ToLowerInvariant()" data-department="@item.Department" data-request-search="@requestSearch">
                     <div class="request-card__person">
+                        <span class="request-card__avatar request-card__avatar--blank" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5v.5H4v-.5z" /></svg></span>
                         <strong>@item.EmployeeName</strong>
                         <span>Employee #@item.EmployeeNumber &middot; @item.WorkEmail</span>
                         <span>@item.Position &middot; @item.Department</span>
@@ -82,6 +83,12 @@
                 </article>
             }
         </div>
+        <div class="pager" id="requestPager" aria-label="Registration requests pages">
+            <button type="button" class="pager__btn" id="requestPrev">Previous</button>
+            <span class="pager__numbers" id="requestPageNumbers"></span>
+            <span class="pager__status" id="requestPageStatus"></span>
+            <button type="button" class="pager__btn" id="requestNext">Next</button>
+        </div>
     }
 </section>
 
@@ -89,7 +96,7 @@
     <header class="account-panel__head">
         <div>
             <h2>User account management</h2>
-            <p>Manage active status, primary role, and password resets.</p>
+            <p>Manage status, roles, portal-admin access, and password resets.</p>
         </div>
     </header>
     <div class="account-toolbar" aria-label="Filter managed accounts">
@@ -106,42 +113,76 @@
                 <option value="@role">@role</option>
             }
         </select>
+        <div class="account-switcher view-toggle" role="group" aria-label="User accounts layout">
+            <button type="button" data-users-view="card" class="is-active">Card</button>
+            <button type="button" data-users-view="table">Table</button>
+        </div>
     </div>
-    <div class="account-table-wrap">
-        <table class="account-table">
-            <thead>
-                <tr><th>User</th><th>Employee</th><th>Current roles</th><th>Primary role</th><th>Active</th><th>Password</th><th></th></tr>
-            </thead>
-            <tbody>
-            @foreach (var user in Model.Users)
-            {
-                var selectedRole = user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? "Requester";
-                var userSearch = $"{user.Username} {user.Email} {user.EmployeeName} {user.Roles}".ToLowerInvariant();
-                <tr data-user-id="@user.UserId" data-user-search="@userSearch" data-user-active="@user.IsActive.ToString().ToLowerInvariant()" data-user-role="@selectedRole">
-                    <td><strong>@user.Username</strong><br><span class="account-table__muted">@user.Email</span></td>
-                    <td>@(string.IsNullOrWhiteSpace(user.EmployeeName) ? "-" : user.EmployeeName)</td>
-                    <td>@(string.IsNullOrWhiteSpace(user.Roles) ? "-" : user.Roles)</td>
-                    <td><select data-user-role disabled="@user.IsDeveloper">@foreach(var role in Model.Roles){<option value="@role" selected="@(role == selectedRole)">@role</option>}</select></td>
-                    <td><input type="checkbox" data-user-active checked="@user.IsActive" disabled="@user.IsDeveloper" /></td>
-                    <td>
+    <div class="user-card-grid">
+        @foreach (var user in Model.Users)
+        {
+            var selectedRole = user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? "Requester";
+            var roleList = user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+            var isPortalAdmin = roleList.Any(r => r.Equals("PortalAdmin", StringComparison.OrdinalIgnoreCase));
+            var userSearch = $"{user.Username} {user.Email} {user.EmployeeName} {user.Roles}".ToLowerInvariant();
+            var displayName = string.IsNullOrWhiteSpace(user.EmployeeName) ? user.Username : user.EmployeeName;
+            <article class="user-card" data-user-id="@user.UserId" data-user-search="@userSearch" data-user-active="@user.IsActive.ToString().ToLowerInvariant()" data-user-role="@selectedRole">
+                <header class="user-card__head">
+                    <span class="user-card__avatar user-card__avatar--blank" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5v.5H4v-.5z" /></svg></span>
+                    <div class="user-card__identity">
+                        <strong>@user.Username</strong>
+                        <span class="account-table__muted">@user.Email</span>
+                    </div>
+                    <span class="user-card__status @(user.IsActive ? "is-active" : "is-inactive")">@(user.IsActive ? "Active" : "Inactive")</span>
+                </header>
+                <p class="user-card__employee">@(string.IsNullOrWhiteSpace(user.EmployeeName) ? "No linked employee" : user.EmployeeName)@if(user.IsDeveloper){<span class="account-table__muted"> · Developer protected</span>}</p>
+                <div class="user-card__chips" aria-label="Current roles">
+                    @if (roleList.Count == 0)
+                    {
+                        <span class="role-chip">Requester</span>
+                    }
+                    else
+                    {
+                        @foreach (var roleName in roleList)
+                        {
+                            <span class="role-chip@(roleName.Equals("PortalAdmin", StringComparison.OrdinalIgnoreCase) ? " role-chip--admin" : "")">@roleName</span>
+                        }
+                    }
+                </div>
+                <div class="user-card__controls">
+                    <label class="user-card__field">
+                        <span>Primary role</span>
+                        <select data-user-role disabled="@user.IsDeveloper">@foreach(var role in Model.Roles){<option value="@role" selected="@(role == selectedRole)">@role</option>}</select>
+                    </label>
+                    <label class="switch-field" title="Portal-only admin: admin dashboard without developer rights">
+                        <span>Portal admin</span>
+                        <span class="switch"><input type="checkbox" data-user-portaladmin checked="@isPortalAdmin" disabled="@user.IsDeveloper" /><span class="switch__track" aria-hidden="true"></span></span>
+                    </label>
+                    <label class="switch-field">
+                        <span>Active</span>
+                        <span class="switch"><input type="checkbox" data-user-active checked="@user.IsActive" disabled="@user.IsDeveloper" /><span class="switch__track" aria-hidden="true"></span></span>
+                    </label>
+                </div>
+                <footer class="user-card__foot">
+                    <div class="user-card__pw">
                         <span class="account-table__muted">@(user.MustChangePassword ? "Change required" : "Configured")</span>
                         <div class="request-actions request-actions--inline">
                             <button type="button" class="account-btn" data-reset-password="temporary" disabled="@(user.IsDeveloper || !user.IsActive)">Temporary</button>
                             <button type="button" class="account-btn" data-reset-password="manual" disabled="@(user.IsDeveloper || !user.IsActive)">Manual</button>
                         </div>
-                    </td>
-                    <td>
-                        <button type="button" class="account-btn" data-save-user disabled="@user.IsDeveloper">Save access</button>
-                        @if(user.IsDeveloper)
-                        {
-                            <span class="account-table__muted"> Developer protected</span>
-                        }
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
+                    </div>
+                    <button type="button" class="account-btn account-btn--approve" data-save-user disabled="@user.IsDeveloper">Save access</button>
+                </footer>
+            </article>
+        }
     </div>
+    <div class="pager" id="userPager" aria-label="User accounts pages">
+        <button type="button" class="pager__btn" id="userPrev">Previous</button>
+        <span class="pager__numbers" id="userPageNumbers"></span>
+        <span class="pager__status" id="userPageStatus"></span>
+        <button type="button" class="pager__btn" id="userNext">Next</button>
+    </div>
+    <div class="account-empty" id="userNoResults" hidden>No user accounts match the current filters.</div>
 </section>
 
 <div class="account-modal-backdrop" id="accountModal" hidden>
@@ -219,40 +260,140 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    function applyRequestFilters() {
+    var requestPage = 0;
+    var requestPageSize = 6;
+    var requestPager = document.getElementById('requestPager');
+    var requestPrev = document.getElementById('requestPrev');
+    var requestNext = document.getElementById('requestNext');
+    var requestPageNumbers = document.getElementById('requestPageNumbers');
+    var requestPageStatus = document.getElementById('requestPageStatus');
+
+    function renderRequestPager(totalPages) {
+        if (requestPrev) requestPrev.disabled = requestPage <= 0;
+        if (requestNext) requestNext.disabled = requestPage >= totalPages - 1;
+        if (requestPageStatus) requestPageStatus.textContent = totalPages <= 1 ? '' : ('Page ' + (requestPage + 1) + ' of ' + totalPages);
+        if (!requestPageNumbers) return;
+        requestPageNumbers.innerHTML = '';
+        if (totalPages <= 1) return;
+        var windowSize = 5;
+        var start = Math.max(0, Math.min(requestPage - Math.floor(windowSize / 2), totalPages - windowSize));
+        var end = Math.min(totalPages, start + windowSize);
+        for (var i = start; i < end; i++) {
+            (function(index) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = String(index + 1);
+                btn.className = 'pager__number' + (index === requestPage ? ' is-current' : '');
+                btn.setAttribute('aria-label', 'Go to page ' + (index + 1));
+                if (index === requestPage) btn.setAttribute('aria-current', 'page');
+                btn.addEventListener('click', function() { requestPage = index; applyRequestFilters(false); });
+                requestPageNumbers.appendChild(btn);
+            })(i);
+        }
+    }
+
+    function applyRequestFilters(resetPage) {
+        if (resetPage) requestPage = 0;
         var term = (requestSearch?.value || '').toLowerCase().trim();
         var status = requestStatusFilter?.value || 'all';
         var department = requestDepartmentFilter?.value || 'all';
+        var matched = [];
         document.querySelectorAll('.request-card').forEach(function(card) {
             var matchesTerm = !term || (card.dataset.requestSearch || '').includes(term);
             var matchesStatus = status === 'all' || card.dataset.status === status;
             var matchesDepartment = department === 'all' || String(card.dataset.department || '').toLowerCase() === department.toLowerCase();
-            card.hidden = !(matchesTerm && matchesStatus && matchesDepartment);
+            if (matchesTerm && matchesStatus && matchesDepartment) matched.push(card);
         });
+        var totalPages = Math.max(Math.ceil(matched.length / requestPageSize), 1);
+        requestPage = Math.min(Math.max(requestPage, 0), totalPages - 1);
+        var visible = new Set(matched.slice(requestPage * requestPageSize, requestPage * requestPageSize + requestPageSize));
+        document.querySelectorAll('.request-card').forEach(function(card) { card.hidden = !visible.has(card); });
+        if (requestPager) requestPager.hidden = matched.length <= requestPageSize;
+        renderRequestPager(totalPages);
     }
 
-    function applyUserFilters() {
+    var userPage = 0;
+    var userPageSize = 6;
+    var userPager = document.getElementById('userPager');
+    var userPrev = document.getElementById('userPrev');
+    var userNext = document.getElementById('userNext');
+    var userPageNumbers = document.getElementById('userPageNumbers');
+    var userPageStatus = document.getElementById('userPageStatus');
+    var userNoResults = document.getElementById('userNoResults');
+
+    function renderUserPager(totalPages) {
+        if (userPrev) userPrev.disabled = userPage <= 0;
+        if (userNext) userNext.disabled = userPage >= totalPages - 1;
+        if (userPageStatus) userPageStatus.textContent = totalPages <= 1 ? '' : ('Page ' + (userPage + 1) + ' of ' + totalPages);
+        if (!userPageNumbers) return;
+        userPageNumbers.innerHTML = '';
+        if (totalPages <= 1) return;
+        var windowSize = 5;
+        var start = Math.max(0, Math.min(userPage - Math.floor(windowSize / 2), totalPages - windowSize));
+        var end = Math.min(totalPages, start + windowSize);
+        for (var i = start; i < end; i++) {
+            (function(index) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = String(index + 1);
+                btn.className = 'pager__number' + (index === userPage ? ' is-current' : '');
+                btn.setAttribute('aria-label', 'Go to page ' + (index + 1));
+                if (index === userPage) btn.setAttribute('aria-current', 'page');
+                btn.addEventListener('click', function() { userPage = index; applyUserFilters(false); });
+                userPageNumbers.appendChild(btn);
+            })(i);
+        }
+    }
+
+    function applyUserFilters(resetPage) {
+        if (resetPage) userPage = 0;
         var term = (userSearch?.value || '').toLowerCase().trim();
         var status = userStatusFilter?.value || 'all';
         var role = userRoleFilter?.value || 'all';
+        var matched = [];
         document.querySelectorAll('[data-user-id]').forEach(function(row) {
             var matchesTerm = !term || (row.dataset.userSearch || '').includes(term);
             var matchesStatus = status === 'all' || row.dataset.userActive === (status === 'active' ? 'true' : 'false');
             var matchesRole = role === 'all' || String(row.dataset.userRole || '').toLowerCase() === role.toLowerCase();
-            row.hidden = !(matchesTerm && matchesStatus && matchesRole);
+            if (matchesTerm && matchesStatus && matchesRole) matched.push(row);
         });
+        var totalPages = Math.max(Math.ceil(matched.length / userPageSize), 1);
+        userPage = Math.min(Math.max(userPage, 0), totalPages - 1);
+        var visible = new Set(matched.slice(userPage * userPageSize, userPage * userPageSize + userPageSize));
+        document.querySelectorAll('[data-user-id]').forEach(function(row) { row.hidden = !visible.has(row); });
+        if (userNoResults) userNoResults.hidden = matched.length !== 0;
+        if (userPager) userPager.hidden = matched.length <= userPageSize;
+        renderUserPager(totalPages);
     }
 
     [requestSearch, requestStatusFilter, requestDepartmentFilter].forEach(function(control) {
-        control?.addEventListener('input', applyRequestFilters);
-        control?.addEventListener('change', applyRequestFilters);
+        control?.addEventListener('input', function() { applyRequestFilters(true); });
+        control?.addEventListener('change', function() { applyRequestFilters(true); });
     });
+    requestPrev?.addEventListener('click', function() { requestPage -= 1; applyRequestFilters(false); });
+    requestNext?.addEventListener('click', function() { requestPage += 1; applyRequestFilters(false); });
     [userSearch, userStatusFilter, userRoleFilter].forEach(function(control) {
-        control?.addEventListener('input', applyUserFilters);
-        control?.addEventListener('change', applyUserFilters);
+        control?.addEventListener('input', function() { applyUserFilters(true); });
+        control?.addEventListener('change', function() { applyUserFilters(true); });
     });
+    userPrev?.addEventListener('click', function() { userPage -= 1; applyUserFilters(false); });
+    userNext?.addEventListener('click', function() { userPage += 1; applyUserFilters(false); });
+    var userGrid = document.querySelector('.user-card-grid');
+    var viewButtons = document.querySelectorAll('[data-users-view]');
+    function setUsersView(mode) {
+        var isTable = mode === 'table';
+        userGrid?.classList.toggle('table-mode', isTable);
+        viewButtons.forEach(function(btn) { btn.classList.toggle('is-active', btn.dataset.usersView === mode); });
+        try { localStorage.setItem('yakultUsersView', mode); } catch (e) {}
+    }
+    viewButtons.forEach(function(btn) {
+        btn.addEventListener('click', function() { setUsersView(btn.dataset.usersView); });
+    });
+    try {
+        if (localStorage.getItem('yakultUsersView') === 'table') setUsersView('table');
+    } catch (e) {}
     applyRequestFilters();
-    applyUserFilters();
+    applyUserFilters(true);
 
     async function post(url, body) {
         var response = await fetch(url, {
@@ -395,7 +536,8 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 var result = await post('@Url.Action("UpdateManagedUser", "Admin")', {
                     userId:Number(row.dataset.userId), isActive:row.querySelector('[data-user-active]').checked,
-                    roleName:row.querySelector('[data-user-role]').value
+                    roleName:row.querySelector('[data-user-role]').value,
+                    isPortalAdmin:row.querySelector('[data-user-portaladmin]').checked
                 });
                 window.yakultToast(result.message, 'success');
                 window.location.reload();

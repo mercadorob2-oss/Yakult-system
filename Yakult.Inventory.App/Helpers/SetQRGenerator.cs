@@ -201,7 +201,9 @@ namespace Yakult.Inventory.App.Helpers
         }
 
         /// <summary>
-        /// Appends a white footer strip with the centered model caption below the QR.
+        /// Appends a white footer strip with the caption stretched end-to-end below the QR.
+        /// First character's left edge aligns with the QR left edge, last character's
+        /// right edge aligns with the QR right edge (tracking is expanded to fill).
         /// Footer is outside the QR quiet zone so it cannot affect decoding.
         /// The text is flush against the QR with no top pad.
         /// </summary>
@@ -213,36 +215,96 @@ namespace Yakult.Inventory.App.Helpers
             {
                 g.Clear(Color.White);
                 g.DrawImage(qrImage, 0, 0, qrImage.Width, qrImage.Height);
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+
+                // Inset the caption span so ink stays INSIDE the black code edges.
+                // Full-bleed (target = Width) overshoots: GDI+ DrawString ink extends
+                // past the layout origin by side bearings, and per-char MeasureString
+                // under-measures the drawn glyphs, so the last char lands beyond the
+                // right edge (see GA18 screenshot). 10% pad each side lines G / 8 up
+                // with the finder squares (the black code), not the white quiet-zone
+                // border, which is the true visual end-to-end.
+                float sidePad = Math.Max(12f, qrImage.Width * 0.10f);
+                float targetWidth = qrImage.Width - sidePad * 2f;
+                float startX = sidePad;
+                // 18px overlap: clears the full bottom quiet zone so the name
+                // semi-sticks to the code modules (ECC H recovers the graze).
+                float top = qrImage.Height - 18;
 
                 float fontSize = Math.Max(8f, footerHeight * 0.82f);
-                using (Font font = new Font("Arial", fontSize, FontStyle.Bold, GraphicsUnit.Pixel))
+                using (Font baseFont = new Font("Arial", fontSize, FontStyle.Bold, GraphicsUnit.Pixel))
+                using (var measureFormat = (StringFormat)StringFormat.GenericTypographic.Clone())
                 {
-                    SizeF measured = g.MeasureString(caption, font);
-                    float maxWidth = qrImage.Width * 0.92f;
-                    using (Font fitted = measured.Width > maxWidth
-                        ? new Font(font.FontFamily, Math.Max(8f, fontSize * maxWidth / measured.Width), FontStyle.Bold, GraphicsUnit.Pixel)
-                        : new Font(font.FontFamily, font.Size, font.Style, font.Unit))
+                    measureFormat.FormatFlags |= StringFormatFlags.MeasureTrailingSpaces | StringFormatFlags.NoWrap;
+                    measureFormat.Alignment = StringAlignment.Near;
+                    measureFormat.LineAlignment = StringAlignment.Near;
+                    measureFormat.Trimming = StringTrimming.None;
+
+                    Font font = baseFont;
+                    float[] charWidths = MeasureCaptionChars(g, caption, font, measureFormat);
+                    float natural = 0f;
+                    foreach (float w in charWidths) natural += w;
+
+                    // Long caption: shrink to fit the full width, same as before but
+                    // against targetWidth (not 92%) since we now use the full edge span.
+                    if (natural > targetWidth && natural > 0)
                     {
-                        var format = new StringFormat
-                        {
-                            Alignment = StringAlignment.Center,
-                            LineAlignment = StringAlignment.Near,
-                            Trimming = StringTrimming.EllipsisCharacter,
-                            FormatFlags = StringFormatFlags.NoWrap
-                        };
-                        // 18px overlap: clears the full bottom quiet zone so the name
-                        // semi-sticks to the code modules (ECC H recovers the graze).
-                        var footerRect = new RectangleF(0, qrImage.Height - 18, qrImage.Width, footerHeight);
+                        float shrunk = Math.Max(8f, fontSize * targetWidth / natural);
+                        font = new Font(baseFont.FontFamily, shrunk, FontStyle.Bold, GraphicsUnit.Pixel);
+                        charWidths = MeasureCaptionChars(g, caption, font, measureFormat);
+                        natural = 0f;
+                        foreach (float w in charWidths) natural += w;
+                    }
+
+                    try
+                    {
                         using (Brush brush = new SolidBrush(Color.Black))
                         {
-                            g.DrawString(caption, fitted, brush, footerRect, format);
+                            // Single char, empty, or still overflowing: fall back to centered.
+                            if (caption.Length <= 1 || natural <= 0 || natural >= targetWidth)
+                            {
+                                using (var centerFormat = new StringFormat
+                                {
+                                    Alignment = StringAlignment.Center,
+                                    LineAlignment = StringAlignment.Near,
+                                    Trimming = StringTrimming.EllipsisCharacter,
+                                    FormatFlags = StringFormatFlags.NoWrap
+                                })
+                                {
+                                    var footerRect = new RectangleF(startX, top, targetWidth, footerHeight);
+                                    g.DrawString(caption, font, brush, footerRect, centerFormat);
+                                }
+                            }
+                            else
+                            {
+                                float gap = (targetWidth - natural) / (caption.Length - 1);
+                                float x = startX;
+                                for (int i = 0; i < caption.Length; i++)
+                                {
+                                    string ch = caption[i].ToString();
+                                    g.DrawString(ch, font, brush, x, top, measureFormat);
+                                    x += charWidths[i] + gap;
+                                }
+                            }
                         }
-                        format.Dispose();
+                    }
+                    finally
+                    {
+                        if (!ReferenceEquals(font, baseFont))
+                            font.Dispose();
                     }
                 }
             }
 
             return composed;
+        }
+
+        private static float[] MeasureCaptionChars(Graphics g, string caption, Font font, StringFormat format)
+        {
+            var widths = new float[caption.Length];
+            for (int i = 0; i < caption.Length; i++)
+                widths[i] = g.MeasureString(caption[i].ToString(), font, PointF.Empty, format).Width;
+            return widths;
         }
 
         /// <summary>

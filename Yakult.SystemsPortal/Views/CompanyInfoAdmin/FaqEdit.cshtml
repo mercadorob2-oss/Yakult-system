@@ -1,0 +1,39 @@
+@model SaveCompanyFaqRequest
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = Model.FaqId is > 0 ? "Edit FAQ" : "New FAQ";
+}
+
+<div class="admin-list-panel admin-ops-panel">
+    <div class="admin-panel-header">
+        <div>
+            <h2>@ViewData["Title"]</h2>
+            <p>Drafts stay hidden until published by a developer.</p>
+        </div>
+        <a class="admin-button admin-button--ghost" asp-action="Index">Back to list</a>
+    </div>
+    <div class="admin-panel-body">
+        <form class="admin-form" asp-action="FaqSave" method="post">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary()
+            <input type="hidden" asp-for="FaqId" />
+            <div>
+                <label asp-for="Question">Question</label>
+                <input type="text" asp-for="Question" maxlength="300" autocomplete="off" />
+            </div>
+            <div>
+                <label asp-for="Answer">Answer</label>
+                <textarea asp-for="Answer" rows="6"></textarea>
+            </div>
+            <div>
+                <label asp-for="Category">Topic</label>
+                <input type="text" asp-for="Category" maxlength="100" autocomplete="off" />
+            </div>
+            <div>
+                <label asp-for="SortOrder">Sort order</label>
+                <input type="number" asp-for="SortOrder" />
+            </div>
+            <button type="submit" class="admin-button admin-button--primary">Save draft</button>
+        </form>
+    </div>
+</div>

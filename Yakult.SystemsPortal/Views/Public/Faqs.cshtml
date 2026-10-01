@@ -1,0 +1,174 @@
+@model FaqPageViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Frequently Asked Questions";
+    var q = Context.Request.Query["q"].ToString();
+    var faqCategory = Model.ActiveTab == "faq" ? Context.Request.Query["category"].ToString() : null;
+    var policyCategory = Model.ActiveTab == "policies" ? Context.Request.Query["category"].ToString() : null;
+}
+
+<header class="faq-hero">
+    <div class="portal-container faq-hero__inner">
+        <div>
+            <span class="portal-eyebrow">Help &amp; answers</span>
+            <h1>Frequently asked questions</h1>
+            <p>Quick answers to common questions about accounts, systems, policies, and support.</p>
+            <form class="faq-search" asp-controller="Public" asp-action="Faqs" method="get" role="search">
+                <input type="hidden" name="tab" value="@Model.ActiveTab" />
+                <label class="sr-only" for="faqSearch">Search FAQs and policies</label>
+                <input id="faqSearch" name="q" type="search" autocomplete="off" placeholder="Search questions, answers, and policies" value="@q" />
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <aside class="faq-hero__summary" aria-label="FAQ summary">
+            <span><strong>@Model.Items.Count</strong>Answers</span>
+            <span><strong>@Model.Policies.Count</strong>Policies</span>
+        </aside>
+    </div>
+</header>
+
+<main class="faq-library">
+    <div class="portal-container">
+        @if (Model.IsDemoData)
+        {
+            <p><span class="dummy-data-badge">DUMMY DATA · FRONTEND SAMPLE</span></p>
+        }
+        <div class="faq-tabs" role="tablist" aria-label="FAQ and Company Policy">
+            <button type="button" role="tab" id="tabFaq" aria-selected="@(Model.ActiveTab == "faq" ? "true" : "false")" aria-controls="panelFaq" data-tab="faq">FAQs</button>
+            <button type="button" role="tab" id="tabPolicies" aria-selected="@(Model.ActiveTab == "policies" ? "true" : "false")" aria-controls="panelPolicies" data-tab="policies">Company Policies</button>
+        </div>
+
+        <section id="panelFaq" role="tabpanel" aria-labelledby="tabFaq" @(Model.ActiveTab == "faq" ? null : "hidden")>
+            @if (Model.Categories.Count > 1)
+            {
+                <nav class="faq-filter" aria-label="Filter FAQs by topic">
+                    <a asp-action="Faqs" asp-route-q="@q" class="@(string.IsNullOrWhiteSpace(faqCategory) ? "is-active" : null)">All topics</a>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <a asp-action="Faqs" asp-route-q="@q" asp-route-category="@category" class="@(string.Equals(category, faqCategory, StringComparison.OrdinalIgnoreCase) ? "is-active" : null)">@category</a>
+                    }
+                </nav>
+            }
+
+            @if (Model.Items.Count == 0)
+            {
+                <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No answers found</h2><p>Try a different search, or browse all FAQs.</p><a asp-action="Faqs">Browse all FAQs</a></div>
+            }
+            else
+            {
+                <div class="faq-list" id="faqList">
+                    @foreach (var item in Model.Items)
+                    {
+                        <details class="faq-card" name="faq">
+                            <summary>
+                                <span class="faq-card__question">@item.Question</span>
+                                <span class="faq-card__meta"><small>@item.Category</small><span class="faq-card__chevron" aria-hidden="true">＋</span></span>
+                            </summary>
+                            <div class="faq-card__answer">
+                                <p>@item.Answer</p>
+                                @if (item.IsDemo)
+                                {
+                                    <span class="dummy-data-badge">DUMMY DATA · FRONTEND SAMPLE</span>
+                                }
+                            </div>
+                        </details>
+                    }
+                </div>
+                <p class="faq-count" id="faqCount" role="status" aria-live="polite"></p>
+            }
+        </section>
+
+        <section id="panelPolicies" role="tabpanel" aria-labelledby="tabPolicies" @(Model.ActiveTab == "policies" ? null : "hidden")>
+            @if (Model.PolicyCategories.Count > 1)
+            {
+                <nav class="faq-filter" aria-label="Filter policies by topic">
+                    <a asp-action="Faqs" asp-route-q="@q" asp-route-tab="policies" class="@(string.IsNullOrWhiteSpace(policyCategory) ? "is-active" : null)">All topics</a>
+                    @foreach (var category in Model.PolicyCategories)
+                    {
+                        <a asp-action="Faqs" asp-route-q="@q" asp-route-tab="policies" asp-route-category="@category" class="@(string.Equals(category, policyCategory, StringComparison.OrdinalIgnoreCase) ? "is-active" : null)">@category</a>
+                    }
+                </nav>
+            }
+
+            @if (Model.Policies.Count == 0)
+            {
+                <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No policies found</h2><p>Try a different search, or browse all policies.</p><a asp-action="Faqs" asp-route-tab="policies">Browse all policies</a></div>
+            }
+            else
+            {
+                <div class="policy-grid" id="policyGrid">
+                    @foreach (var item in Model.Policies)
+                    {
+                        <a class="policy-card" asp-controller="Public" asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">
+                            <small>@item.Category@(item.EffectiveDate.HasValue ? $" · Effective {item.EffectiveDate.Value:MMM d, yyyy}" : null)</small>
+                            <strong>@item.Title</strong>
+                            <span>@item.Summary</span>
+                            <em>Read policy <span aria-hidden="true">→</span></em>
+                        </a>
+                    }
+                </div>
+                <p class="faq-count" id="policyCount" role="status" aria-live="polite"></p>
+            }
+        </section>
+
+        <aside class="faq-cta">
+            <div>
+                <strong>Still need help?</strong>
+                <p>Browse employee resources or reach the IT Help Center for account and device support.</p>
+            </div>
+            <div class="faq-cta__actions">
+                <a asp-controller="Public" asp-action="Help">IT Help Center</a>
+            </div>
+        </aside>
+    </div>
+</main>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var search = document.getElementById('faqSearch');
+        var cards = Array.from(document.querySelectorAll('.faq-card'));
+        var count = document.getElementById('faqCount');
+        var policyCards = Array.from(document.querySelectorAll('#policyGrid .policy-card'));
+        var policyCount = document.getElementById('policyCount');
+        var tabs = Array.from(document.querySelectorAll('.faq-tabs [role="tab"]'));
+        var panels = { faq: document.getElementById('panelFaq'), policies: document.getElementById('panelPolicies') };
+
+        function applyFilter() {
+            var term = (search && search.value || '').trim().toLowerCase();
+            var shown = 0;
+            cards.forEach(function (card) {
+                var show = !term || card.textContent.toLowerCase().includes(term);
+                card.hidden = !show;
+                if (!show && card.open) card.open = false;
+                if (show) shown++;
+            });
+            if (count) count.textContent = term ? shown + ' result' + (shown === 1 ? '' : 's') + ' found.' : '';
+            var pShown = 0;
+            policyCards.forEach(function (card) {
+                var show = !term || card.textContent.toLowerCase().includes(term);
+                card.style.display = show ? '' : 'none';
+                if (show) pShown++;
+            });
+            if (policyCount) policyCount.textContent = term ? pShown + ' polic' + (pShown === 1 ? 'y' : 'ies') + ' found.' : '';
+        }
+        if (search) search.addEventListener('input', applyFilter);
+
+        function selectTab(name, push) {
+            tabs.forEach(function (t) { t.setAttribute('aria-selected', t.dataset.tab === name ? 'true' : 'false'); });
+            if (panels.faq) panels.faq.hidden = name !== 'faq';
+            if (panels.policies) panels.policies.hidden = name !== 'policies';
+            var hidden = document.querySelector('input[name="tab"]');
+            if (hidden) hidden.value = name;
+            if (push && window.history && window.history.replaceState) {
+                var url = new URL(window.location.href);
+                url.searchParams.set('tab', name);
+                window.history.replaceState(null, '', url.toString());
+            }
+        }
+        tabs.forEach(function (t) {
+            t.addEventListener('click', function () { selectTab(t.dataset.tab, true); });
+        });
+    });
+</script>
+}

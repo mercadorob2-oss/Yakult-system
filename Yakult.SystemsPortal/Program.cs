@@ -50,6 +50,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPortalCardRepository, PortalCardRepository>();
 builder.Services.AddScoped<IPortalContentRepository, PortalContentRepository>();
 builder.Services.AddScoped<IEmployeeResourceRepository, EmployeeResourceRepository>();
+builder.Services.AddScoped<ICompanyInfoRepository, CompanyInfoRepository>();
 builder.Services.AddSingleton<IEmployeeResourceCatalog, EmployeeResourceDemoCatalog>();
 builder.Services.AddScoped<IDemoModeService, DemoModeService>();
 builder.Services.AddScoped<IAccountAdministrationRepository, AccountAdministrationRepository>();
@@ -68,10 +69,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("ContentEditor", policy => policy.RequireAssertion(context =>
-        context.User.IsInRole("ContentEditor") || context.User.HasClaim("IsDeveloper", "true")));
+        context.User.IsInRole("ContentEditor") || context.User.IsInRole("PortalAdmin") || context.User.HasClaim("IsDeveloper", "true")));
     options.AddPolicy("ContentPublisher", policy => policy.RequireClaim("IsDeveloper", "true"));
     options.AddPolicy("EmployeeResourceEditor", policy => policy.RequireAssertion(context =>
         context.User.HasClaim("IsDeveloper", "true")
+        || context.User.IsInRole("PortalAdmin")
         || context.User.IsInRole("ContentEditor")
         || context.User.IsInRole("EmployeeResourceEditor")
         || context.User.IsInRole("EmployeeResourcePublisher")));

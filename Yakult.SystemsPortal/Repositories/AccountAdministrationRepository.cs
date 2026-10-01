@@ -15,6 +15,7 @@ namespace Yakult.SystemsPortal.Repositories;
 public sealed class AccountAdministrationRepository : IAccountAdministrationRepository
 {
     private const string RequesterRoleName = "Requester";
+    public const string PortalAdminRoleName = "PortalAdmin";
 
     private readonly IConnectionStringProvider _connectionStringProvider;
     private readonly ILogger<AccountAdministrationRepository> _logger;
@@ -33,6 +34,8 @@ public sealed class AccountAdministrationRepository : IAccountAdministrationRepo
         await con.OpenAsync();
 
         await EnsureRequesterRoleSeededAsync(con, transaction: null);
+        await EnsureRoleSeededAsync(con, transaction: null, PortalAdminRoleName,
+            "Portal-only administrator. Grants the Systems Portal admin dashboard without developer rights.");
 
         var requests = await LoadRequestsAsync(con);
         var users = await LoadUsersAsync(con);
@@ -240,9 +243,33 @@ public sealed class AccountAdministrationRepository : IAccountAdministrationRepo
                 await cmd.ExecuteNonQueryAsync();
             }
 
+            // Portal-only admin is additive and independent of the primary role,
+            // so any regular account (even a plain Requester) can hold it.
+            var primaryIsPortalAdmin = string.Equals(request.RoleName.Trim(), PortalAdminRoleName, StringComparison.OrdinalIgnoreCase);
+            if (request.IsPortalAdmin && !primaryIsPortalAdmin)
+            {
+                var portalAdminRoleId = await EnsureRoleSeededAsync(con, tx, PortalAdminRoleName,
+                    "Portal-only administrator. Grants the Systems Portal admin dashboard without developer rights.");
+                using var cmd = new SqlCommand(
+                    "IF NOT EXISTS (SELECT 1 FROM dbo.UserRole WHERE UserId = @UserId AND RoleId = @RoleId) " +
+                    "INSERT INTO dbo.UserRole (UserId, RoleId, DateAssigned) VALUES (@UserId, @RoleId, GETDATE());", con, tx);
+                cmd.Parameters.AddWithValue("@UserId", request.UserId);
+                cmd.Parameters.AddWithValue("@RoleId", portalAdminRoleId);
+                await cmd.ExecuteNonQueryAsync();
+            }
+            else if (!request.IsPortalAdmin && !primaryIsPortalAdmin)
+            {
+                using var cmd = new SqlCommand(
+                    "DELETE ur FROM dbo.UserRole ur INNER JOIN dbo.Role r ON ur.RoleId = r.RoleId " +
+                    "WHERE ur.UserId = @UserId AND r.RoleName = @RoleName;", con, tx);
+                cmd.Parameters.AddWithValue("@UserId", request.UserId);
+                cmd.Parameters.AddWithValue("@RoleName", PortalAdminRoleName);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
             await tx.CommitAsync();
-            _logger.LogInformation("Updated managed UserId {UserId}: IsActive={IsActive}, Role={RoleName}.",
-                request.UserId, request.IsActive, request.RoleName);
+            _logger.LogInformation("Updated managed UserId {UserId}: IsActive={IsActive}, Role={RoleName}, IsPortalAdmin={IsPortalAdmin}.",
+                request.UserId, request.IsActive, request.RoleName, request.IsPortalAdmin);
         }
         catch
         {
@@ -416,10 +443,16 @@ public sealed class AccountAdministrationRepository : IAccountAdministrationRepo
     /// </summary>
     private async Task<int> EnsureRequesterRoleSeededAsync(SqlConnection con, SqlTransaction? transaction)
     {
+        return await EnsureRoleSeededAsync(con, transaction, RequesterRoleName,
+            "Default access for approved employee accounts.");
+    }
+
+    private async Task<int> EnsureRoleSeededAsync(SqlConnection con, SqlTransaction? transaction, string roleName, string description)
+    {
         const string selectSql = "SELECT RoleId FROM dbo.Role WHERE RoleName = @RoleName;";
         using (var cmd = new SqlCommand(selectSql, con, transaction))
         {
-            cmd.Parameters.AddWithValue("@RoleName", RequesterRoleName);
+            cmd.Parameters.AddWithValue("@RoleName", roleName);
             var result = await cmd.ExecuteScalarAsync();
             if (result != null)
                 return Convert.ToInt32(result);
@@ -427,10 +460,11 @@ public sealed class AccountAdministrationRepository : IAccountAdministrationRepo
 
         const string insertSql = @"
             INSERT INTO dbo.Role (RoleName, Description, IsActive, DateCreated)
-            VALUES (@RoleName, 'Default access for approved employee accounts.', 1, GETDATE());
+            VALUES (@RoleName, @Description, 1, GETDATE());
             SELECT CAST(SCOPE_IDENTITY() AS INT);";
         using var insertCmd = new SqlCommand(insertSql, con, transaction);
-        insertCmd.Parameters.AddWithValue("@RoleName", RequesterRoleName);
+        insertCmd.Parameters.AddWithValue("@RoleName", roleName);
+        insertCmd.Parameters.AddWithValue("@Description", description);
         return Convert.ToInt32(await insertCmd.ExecuteScalarAsync());
     }
 
