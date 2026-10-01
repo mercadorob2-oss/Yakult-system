@@ -186,6 +186,11 @@
 
             <article class="system-card @themeClass" style="--card-delay: @delay" data-card-id="@cardId" data-status="@status.ToLowerInvariant()" data-card-text="@($"{system.Name} {system.Badge} {system.Description} {status}".ToLowerInvariant())">
                 <div class="card-visual">
+                    @{
+                        var thumbImages = new[] { "web-banner-vft1.png", "banner-2.jpg" };
+                        var thumb = thumbImages[cardIndex % thumbImages.Length];
+                    }
+                    <img class="system-card__thumb" src="@Url.Content("~/images/" + thumb)" alt="" loading="lazy" onerror="this.style.display='none'" />
                     <div class="card-icon">
                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             @Html.Raw(iconSvg)
@@ -274,12 +279,17 @@
             <div class="section-line"></div>
         </div>
         <div class="mini-cards-row">
+            @{
+                var miniIndex = 0;
+                var miniThumbs = new[] { "epr-banner.jpg", "poster-web-banner.png" };
+            }
             @foreach (var mini in Model.MiniCards)
             {
                 var miniThemeClass = string.IsNullOrWhiteSpace(mini.Theme) ? string.Empty : $"theme-{mini.Theme.ToLowerInvariant()}";
                 var miniIconSvg = GetIconSvg(mini.Icon);
 
                 <article class="mini-card @miniThemeClass">
+                    <img class="mini-card__thumb" src="@Url.Content("~/images/" + miniThumbs[miniIndex % miniThumbs.Length])" alt="" loading="lazy" onerror="this.style.display='none'" />
                     <div class="mini-card-icon">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             @Html.Raw(miniIconSvg)
@@ -316,6 +326,7 @@
                         }
                     </div>
                 </article>
+                miniIndex++;
             }
         </div>
     </div>

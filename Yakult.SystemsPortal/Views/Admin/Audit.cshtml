@@ -59,7 +59,7 @@
             </select>
         </div>
 
-        <div class="admin-audit-timeline" id="auditTimeline" data-page-size="24">
+        <div class="admin-audit-timeline" id="auditTimeline" data-page-size="6">
             @if (Model.Items.Count == 0)
             {
                 <div class="admin-empty-state admin-empty-state--action">
@@ -79,8 +79,10 @@
                             {
                                 var action = item.Action.ToLowerInvariant();
                                 var actionClass = $"admin-status-pill audit-action-{action}";
+                                var actionGlyph = action switch { "create" => "+", "update" => "~", "archive" => "■", "download" => "↓", _ => "•" };
                                 var searchText = $"{item.Action} {item.EntityType} {item.UserName} {item.Notes} {item.IpAddress}".ToLowerInvariant();
                                 <article class="admin-audit-row admin-audit-row--timeline" data-audit-row data-audit-text="@searchText" data-audit-action="@action" data-audit-timestamp="@(item.Timestamp.ToUniversalTime().ToString("o"))">
+                                    <span class="audit-emblem audit-emblem--@action" aria-hidden="true">@actionGlyph</span>
                                     <div class="admin-audit-row__main">
                                         <span class="admin-audit-row__title"><span class="@actionClass">@item.Action</span> @item.EntityType</span>
                                         <span class="admin-audit-row__desc">@(string.IsNullOrWhiteSpace(item.Notes) ? "No notes recorded." : item.Notes)</span>
@@ -106,9 +108,22 @@
         </div>
 
         <div class="admin-panel-pager admin-audit-pager" id="auditPager">
-            <button type="button" id="auditPrev">Previous</button>
-            <span id="auditPageStatus">Page 1 of 1</span>
-            <button type="button" id="auditNext">Next</button>
+            <div class="pager__group">
+                <button type="button" id="auditPrev">Previous</button>
+                <span id="auditPageNumbers" class="pager__numbers"></span>
+                <button type="button" id="auditNext">Next</button>
+            </div>
+            <div class="pager__meta">
+                <span id="auditPageStatus">Page 1 of 1</span>
+                <label class="pager__size">Per page
+                    <select id="auditPageSize">
+                        <option value="6" selected>6</option>
+                        <option value="12">12</option>
+                        <option value="24">24</option>
+                        <option value="48">48</option>
+                    </select>
+                </label>
+            </div>
         </div>
     </div>
 </section>
@@ -125,8 +140,29 @@
             const prev = document.getElementById('auditPrev');
             const next = document.getElementById('auditNext');
             const status = document.getElementById('auditPageStatus');
-            const pageSize = Math.max(parseInt(timeline?.dataset.pageSize || '24', 10) || 24, 1);
+            const numbers = document.getElementById('auditPageNumbers');
+            const sizeSelect = document.getElementById('auditPageSize');
+            let pageSize = Math.max(parseInt(sizeSelect?.value || timeline?.dataset.pageSize || '6', 10) || 6, 1);
             let page = 0;
+
+            function renderAuditNumbers(totalPages) {
+                if (!numbers) return;
+                numbers.innerHTML = '';
+                if (totalPages <= 1) return;
+                const windowSize = 5;
+                const start = Math.max(0, Math.min(page - Math.floor(windowSize / 2), totalPages - windowSize));
+                const end = Math.min(totalPages, start + windowSize);
+                for (let i = start; i < end; i++) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = String(i + 1);
+                    btn.className = 'pager__number' + (i === page ? ' is-current' : '');
+                    btn.setAttribute('aria-label', 'Go to page ' + (i + 1));
+                    if (i === page) btn.setAttribute('aria-current', 'page');
+                    btn.addEventListener('click', () => { page = i; applyAuditFilters(false); });
+                    numbers.appendChild(btn);
+                }
+            }
 
             function rows() {
                 return Array.from(document.querySelectorAll('[data-audit-row]'));
@@ -175,11 +211,16 @@
                 if (status) status.textContent = matched.length === 0 ? 'No pages' : `Page ${page + 1} of ${totalPages}`;
                 if (prev) prev.disabled = page <= 0;
                 if (next) next.disabled = page >= totalPages - 1;
+                renderAuditNumbers(totalPages);
             }
 
             search?.addEventListener('input', () => applyAuditFilters(true));
             filter?.addEventListener('change', () => applyAuditFilters(true));
             period?.addEventListener('change', () => applyAuditFilters(true));
+            sizeSelect?.addEventListener('change', () => {
+                pageSize = Math.max(parseInt(sizeSelect.value || '6', 10) || 6, 1);
+                applyAuditFilters(true);
+            });
             prev?.addEventListener('click', () => { page -= 1; applyAuditFilters(false); });
             next?.addEventListener('click', () => { page += 1; applyAuditFilters(false); });
             applyAuditFilters(true);

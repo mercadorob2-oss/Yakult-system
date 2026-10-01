@@ -49,6 +49,7 @@ public sealed class UpdateManagedUserRequest
     public int UserId { get; init; }
     public bool IsActive { get; init; }
     public string RoleName { get; init; } = string.Empty;
+    public bool IsPortalAdmin { get; init; }
 }
 
 public sealed class ResetManagedUserPasswordRequest

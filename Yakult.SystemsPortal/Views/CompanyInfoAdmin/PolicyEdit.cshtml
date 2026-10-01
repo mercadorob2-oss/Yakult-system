@@ -1,0 +1,47 @@
+@model SaveCompanyPolicyRequest
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = Model.PolicyId is > 0 ? "Edit Policy" : "New Policy";
+}
+
+<div class="admin-list-panel admin-ops-panel">
+    <div class="admin-panel-header">
+        <div>
+            <h2>@ViewData["Title"]</h2>
+            <p>Drafts stay hidden until published by a developer. The URL slug is generated from the title.</p>
+        </div>
+        <a class="admin-button admin-button--ghost" asp-action="Index">Back to list</a>
+    </div>
+    <div class="admin-panel-body">
+        <form class="admin-form" asp-action="PolicySave" method="post">
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary()
+            <input type="hidden" asp-for="PolicyId" />
+            <div>
+                <label asp-for="Title">Title</label>
+                <input type="text" asp-for="Title" maxlength="180" autocomplete="off" />
+            </div>
+            <div>
+                <label asp-for="Summary">Summary</label>
+                <textarea asp-for="Summary" rows="2" maxlength="500"></textarea>
+            </div>
+            <div>
+                <label asp-for="Body">Body (Markdown supported)</label>
+                <textarea asp-for="Body" rows="12"></textarea>
+            </div>
+            <div>
+                <label asp-for="Category">Topic</label>
+                <input type="text" asp-for="Category" maxlength="100" autocomplete="off" />
+            </div>
+            <div>
+                <label asp-for="EffectiveDate">Effective date</label>
+                <input type="date" asp-for="EffectiveDate" />
+            </div>
+            <div>
+                <label asp-for="SortOrder">Sort order</label>
+                <input type="number" asp-for="SortOrder" />
+            </div>
+            <button type="submit" class="admin-button admin-button--primary">Save draft</button>
+        </form>
+    </div>
+</div>

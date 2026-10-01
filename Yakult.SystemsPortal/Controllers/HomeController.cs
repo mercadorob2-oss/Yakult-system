@@ -71,7 +71,7 @@ public sealed class HomeController : Controller
 
     private IActionResult RedirectToHome()
     {
-        return User.HasClaim("IsDeveloper", "true")
+        return User.HasClaim("IsDeveloper", "true") || User.IsInRole("PortalAdmin")
             ? RedirectToAction("Dashboard", "Admin")
             : RedirectToAction("Index", "Public");
     }

@@ -28,13 +28,14 @@ public sealed class PublicController : Controller
     private readonly IPortalCardRepository _cards;
     private readonly IEmployeeResourceCatalog _employeeResources;
     private readonly IEmployeeResourceRepository _employeeResourceRepository;
+    private readonly ICompanyInfoRepository _companyInfo;
     private readonly IDemoModeService _demoMode;
     private readonly IWebHostEnvironment _environment;
     private readonly PortalOptions _options;
     private readonly ILogger<PublicController> _logger;
 
-    public PublicController(IPortalContentRepository content, IPortalCardRepository cards, IEmployeeResourceCatalog employeeResources, IEmployeeResourceRepository employeeResourceRepository, IDemoModeService demoMode, IOptions<PortalOptions> options, ILogger<PublicController> logger, IWebHostEnvironment environment)
-    { _content = content; _cards = cards; _employeeResources = employeeResources; _employeeResourceRepository = employeeResourceRepository; _demoMode = demoMode; _options = options.Value; _logger = logger; _environment = environment; }
+    public PublicController(IPortalContentRepository content, IPortalCardRepository cards, IEmployeeResourceCatalog employeeResources, IEmployeeResourceRepository employeeResourceRepository, ICompanyInfoRepository companyInfo, IDemoModeService demoMode, IOptions<PortalOptions> options, ILogger<PublicController> logger, IWebHostEnvironment environment)
+    { _content = content; _cards = cards; _employeeResources = employeeResources; _employeeResourceRepository = employeeResourceRepository; _companyInfo = companyInfo; _demoMode = demoMode; _options = options.Value; _logger = logger; _environment = environment; }
 
     public async Task<IActionResult> Index()
     {
@@ -180,7 +181,104 @@ public sealed class PublicController : Controller
     public Task<IActionResult> Help(string? type = null) => ContentSection("IT Help Center", "Get assistance", "Support guides, account help, troubleshooting information, and service contacts.", HelpCategories, type);
 
     public IActionResult Cybersecurity(string? type = null) => RedirectToAction(nameof(Learning), new { type, track = "cybersecurity" });
-    public IActionResult Faqs() => RedirectToAction(nameof(Resources), new { type = "FAQ" });
+
+    public async Task<IActionResult> Faqs(string? q = null, string? category = null, string? tab = null)
+    {
+        var query = string.IsNullOrWhiteSpace(q) ? null : q.Trim();
+        var selectedCategory = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
+        var activeTab = string.Equals(tab, "policies", StringComparison.OrdinalIgnoreCase) ? "policies" : "faq";
+        var items = new List<CompanyFaqItem>();
+        var policies = new List<CompanyPolicyItem>();
+        var demoModeEnabled = _demoMode.IsEnabled(HttpContext);
+        try
+        {
+            items.AddRange(await _companyInfo.GetPublishedFaqsAsync(query));
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "Public FAQ loaded without database content."); }
+        try
+        {
+            policies.AddRange(await _companyInfo.GetPublishedPoliciesAsync(query));
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "Public FAQ policy tab loaded without database content."); }
+        if (demoModeEnabled)
+        {
+            items.AddRange(FilterDemoFaqs(query, null));
+            policies.AddRange(FilterDemoPolicies(query, null));
+        }
+        if (!string.IsNullOrWhiteSpace(selectedCategory))
+        {
+            if (activeTab == "policies")
+                policies = policies.Where(x => x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
+            else
+                items = items.Where(x => x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+        return View(new FaqPageViewModel
+        {
+            Items = items,
+            Categories = items.Select(x => x.Category).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList(),
+            Policies = policies,
+            PolicyCategories = policies.Select(x => x.Category).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList(),
+            ActiveTab = activeTab,
+            IsDemoData = demoModeEnabled && (items.Any(x => x.IsDemo) || policies.Any(x => x.IsDemo))
+        });
+    }
+
+    public async Task<IActionResult> CompanyPolicies(string? q = null, string? category = null)
+    {
+        var query = string.IsNullOrWhiteSpace(q) ? null : q.Trim();
+        var selectedCategory = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
+        var items = new List<CompanyPolicyItem>();
+        var demoModeEnabled = _demoMode.IsEnabled(HttpContext);
+        try
+        {
+            items.AddRange(await _companyInfo.GetPublishedPoliciesAsync(query));
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "Public Company Policy list loaded without database content."); }
+        if (demoModeEnabled)
+            items.AddRange(FilterDemoPolicies(query, selectedCategory));
+        if (!string.IsNullOrWhiteSpace(selectedCategory))
+            items = items.Where(x => x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
+        return View(new CompanyPolicyListViewModel
+        {
+            Items = items,
+            Categories = items.Select(x => x.Category).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList(),
+            IsDemoData = demoModeEnabled && items.Any(x => x.IsDemo)
+        });
+    }
+
+    [Route("company-policies/{slug}")]
+    public async Task<IActionResult> CompanyPolicyDetails(string slug)
+    {
+        CompanyPolicyItem? item = _demoMode.IsEnabled(HttpContext)
+            ? CompanyInfoSamples.Policies.FirstOrDefault(x => x.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
+            : null;
+        if (item is null)
+        {
+            try { item = await _companyInfo.GetPublishedPolicyBySlugAsync(slug); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Published company policy lookup failed for {Slug}.", slug); }
+        }
+        return item is null ? NotFound() : View("CompanyPolicyDetails", item);
+    }
+
+    private static IEnumerable<CompanyFaqItem> FilterDemoFaqs(string? query, string? category)
+    {
+        var items = CompanyInfoSamples.Faqs.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(query))
+            items = items.Where(x => $"{x.Question} {x.Answer} {x.Category}".Contains(query, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(category))
+            items = items.Where(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
+        return items;
+    }
+
+    private static IEnumerable<CompanyPolicyItem> FilterDemoPolicies(string? query, string? category)
+    {
+        var items = CompanyInfoSamples.Policies.AsEnumerable();
+        if (!string.IsNullOrWhiteSpace(query))
+            items = items.Where(x => $"{x.Title} {x.Summary} {x.Body} {x.Category}".Contains(query, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(category))
+            items = items.Where(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
+        return items;
+    }
 
     [Route("content/{slug}")]
     public async Task<IActionResult> ContentDetails(string slug)
@@ -476,10 +574,11 @@ public sealed class PublicController : Controller
     private static IReadOnlyList<PortalSectionLink> GetSections() =>
     [
         new() { Label="01", Name="Company", Description="Learn about Yakult, its organization, and company-wide information.", Action=nameof(Company) },
-        new() { Label="02", Name="Employee Resources", Description="Find IT policies, access forms, cybersecurity FAQs, and technology references.", Action=nameof(EmployeeResources) },
-        new() { Label="03", Name="Learning & Awareness", Description="Watch cybersecurity videos and access employee learning resources.", Action=nameof(Learning) },
-        new() { Label="04", Name="Services & Portals", Description="Open Yakult business systems and employee service portals.", Action=nameof(Services) },
-        new() { Label="05", Name="IT Help Center", Description="Get support, account guidance, and troubleshooting information.", Action=nameof(Help) }
+        new() { Label="02", Name="FAQ", Description="Quick answers to common employee questions about accounts, systems, and support.", Action=nameof(Faqs) },
+        new() { Label="03", Name="Employee Resources", Description="Find IT policies, access forms, cybersecurity FAQs, and technology references.", Action=nameof(EmployeeResources) },
+        new() { Label="04", Name="Learning & Awareness", Description="Watch cybersecurity videos and access employee learning resources.", Action=nameof(Learning) },
+        new() { Label="05", Name="Services & Portals", Description="Open Yakult business systems and employee service portals.", Action=nameof(Services) },
+        new() { Label="06", Name="IT Help Center", Description="Get support, account guidance, and troubleshooting information.", Action=nameof(Help) }
     ];
 
     private IReadOnlyList<PortalSystemLink> ApplyPublicCardRules(IEnumerable<PortalSystemLink> cards)

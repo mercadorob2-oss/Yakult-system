@@ -938,3 +938,129 @@ a.app-launcher-tile:hover { transform: translateY(-4px); border-color: #b9c5d0; 
     .article-print--hero, .course-stage__chrome, .course-player__yt-note { display: none !important; }
     .course-stage .course-status { border-color: var(--portal-line); background: #fff; }
 }
+
+/* ── FAQ + Company Policy ─────────────────────────────────────────── */
+.faq-hero { padding: 44px 0 34px; border-bottom: 1px solid var(--portal-line); background: linear-gradient(120deg, #eef4ff 0%, #fff 60%, #fff7ed 100%); }
+.faq-hero--policy { background: linear-gradient(120deg, #eef7ee 0%, #fff 60%, #eef4ff 100%); }
+.faq-hero__inner { display: flex; justify-content: space-between; gap: 34px; align-items: flex-end; }
+.faq-hero h1 { margin: 0; color: var(--portal-navy); font-size: 3rem; line-height: 1.02; }
+.faq-hero__inner p { color: var(--portal-muted); max-width: 44rem; }
+.faq-hero__summary { display: flex; gap: 22px; padding: 14px 20px; border: 1px solid var(--portal-line); border-radius: 14px; background: rgba(255,255,255,.82); backdrop-filter: blur(6px); }
+.faq-hero__summary span { display: flex; flex-direction: column; }
+.faq-hero__summary strong { font-size: 1.6rem; color: var(--portal-navy); }
+.faq-search { display: flex; gap: 8px; margin-top: 16px; max-width: 34rem; }
+.faq-search input { flex: 1; padding: 12px 16px; border: 1px solid var(--portal-line); border-radius: 999px; font-size: 1rem; }
+.faq-search button { padding: 12px 22px; border: 0; border-radius: 999px; background: var(--portal-navy); color: #fff; font-weight: 700; cursor: pointer; }
+.faq-library { padding: 30px 0 60px; }
+.faq-filter { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+.faq-filter a { padding: 8px 16px; border: 1px solid var(--portal-line); border-radius: 999px; font-size: .9rem; background: #fff; }
+.faq-filter a.is-active { background: var(--portal-navy); border-color: var(--portal-navy); color: #fff; }
+.faq-list { display: grid; gap: 12px; }
+.faq-card { border: 1px solid var(--portal-line); border-radius: 14px; background: #fff; overflow: hidden; transition: box-shadow .18s ease, border-color .18s ease; }
+.faq-card:hover { border-color: #c3d4f5; }
+.faq-card[open] { border-color: var(--portal-navy); box-shadow: 0 10px 28px rgba(11,21,34,.10); }
+.faq-card summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 20px; cursor: pointer; list-style: none; font-weight: 700; color: var(--portal-navy); }
+.faq-card summary::-webkit-details-marker { display: none; }
+.faq-card__question { flex: 1; font-size: 1.05rem; }
+.faq-card__meta { display: flex; align-items: center; gap: 10px; }
+.faq-card__meta small { padding: 4px 12px; border-radius: 999px; background: #eef4ff; color: #3457a8; font-weight: 700; white-space: nowrap; }
+.faq-card__chevron { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--portal-navy); color: #fff; font-size: 1rem; transition: transform .2s ease; }
+.faq-card[open] .faq-card__chevron { transform: rotate(45deg); }
+.faq-card__answer { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .22s ease; }
+.faq-card[open] .faq-card__answer { grid-template-rows: 1fr; }
+.faq-card__answer > p { overflow: hidden; margin: 0; padding: 0 20px; color: #33415c; line-height: 1.65; }
+.faq-card[open] .faq-card__answer > p { padding: 0 20px 20px; }
+.faq-card__answer .dummy-data-badge { margin: 0 20px 18px; align-self: start; justify-self: start; }
+.faq-count { color: var(--portal-muted); margin-top: 14px; }
+.faq-cta { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-top: 30px; padding: 22px 24px; border-radius: 16px; background: #0b1522; color: #fff; }
+.faq-cta p { color: #b9c4d6; margin: 4px 0 0; }
+.faq-cta__actions { display: flex; gap: 10px; }
+.faq-cta__actions a { padding: 10px 20px; border-radius: 999px; background: #fff; color: #0b1522; font-weight: 700; white-space: nowrap; }
+.policy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.policy-card { display: flex; flex-direction: column; gap: 8px; padding: 22px; border: 1px solid var(--portal-line); border-radius: 16px; background: #fff; transition: box-shadow .18s ease, transform .18s ease; }
+.policy-card:hover { box-shadow: 0 12px 30px rgba(11,21,34,.10); transform: translateY(-2px); }
+.policy-card small { color: var(--portal-muted); font-weight: 700; }
+.policy-card strong { font-size: 1.2rem; color: var(--portal-navy); }
+.policy-card span { color: #33415c; flex: 1; }
+.policy-card em { font-style: normal; font-weight: 700; color: #3457a8; }
+@media (max-width: 860px) {
+    .faq-hero__inner { flex-direction: column; align-items: stretch; }
+    .faq-hero h1 { font-size: 2.2rem; }
+    .faq-cta { flex-direction: column; align-items: stretch; }
+}
+
+
+/* ── FAQ internal tabs ────────────────────────────────────────────── */
+.faq-tabs { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 22px; border: 1px solid var(--portal-line); border-radius: 999px; background: #f4f7fb; }
+.faq-tabs [role="tab"] { padding: 10px 26px; border: 0; border-radius: 999px; background: transparent; font-size: .95rem; font-weight: 700; color: var(--portal-muted); cursor: pointer; }
+.faq-tabs [role="tab"][aria-selected="true"] { background: var(--portal-navy); color: #fff; box-shadow: 0 6px 16px rgba(11,21,34,.18); }
+
+
+/* ── Yakult brand hero (yakult.com.ph family look) ─────────────────── */
+.portal-hero { background: linear-gradient(100deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.94) 42%, rgba(255,255,255,.35) 68%, rgba(255,255,255,.05) 100%), url('../images/Yakult_background.jpg') right center / cover no-repeat; }
+.portal-hero__panel { background: rgba(255,255,255,.88); backdrop-filter: blur(8px); }
+@media (max-width: 960px) {
+    .portal-hero { background: linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.88) 60%, rgba(255,255,255,.55) 100%), url('../images/Yakult_background.jpg') center 30% / cover no-repeat; }
+    .portal-hero__grid { min-height: 0; }
+}
+
+
+/* ── Yakult banner on section heroes ──────────────────────────────── */
+.learning-hero { background: linear-gradient(100deg, rgba(248,250,252,.98) 0%, rgba(255,255,255,.94) 50%, rgba(255,255,255,.30) 78%, rgba(255,255,255,.05) 100%), url('../images/Yakult_background.jpg') right 20% center / cover no-repeat; }
+.faq-hero { background: linear-gradient(100deg, rgba(238,244,255,.97) 0%, rgba(255,255,255,.93) 52%, rgba(255,255,255,.30) 78%, rgba(255,255,255,.05) 100%), url('../images/Yakult_background.jpg') right 25% center / cover no-repeat; }
+.faq-hero--policy { background: linear-gradient(100deg, rgba(238,247,238,.97) 0%, rgba(255,255,255,.93) 52%, rgba(255,255,255,.30) 78%, rgba(255,255,255,.05) 100%), url('../images/Yakult_background.jpg') right 25% center / cover no-repeat; }
+@media (max-width: 960px) {
+    .learning-hero, .faq-hero { background: linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.85) 65%, rgba(255,255,255,.55) 100%), url('../images/Yakult_background.jpg') center 25% / cover no-repeat; }
+}
+
+
+/* ── Yakult banner on Services, section pages, Employee Resources ─── */
+.launcher-heading { background: linear-gradient(100deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.93) 52%, rgba(255,255,255,.30) 78%, rgba(255,255,255,.05) 100%), url('../images/Yakult_background.jpg') right 25% center / cover no-repeat; }
+.section-hero { background: linear-gradient(100deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.93) 52%, rgba(255,255,255,.30) 78%, rgba(255,255,255,.05) 100%), url('../images/Yakult_background.jpg') right 25% center / cover no-repeat; }
+.employee-resources-hero { background: linear-gradient(100deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.93) 52%, rgba(255,255,255,.30) 78%, rgba(255,255,255,.05) 100%), url('../images/Yakult_background.jpg') right 25% center / cover no-repeat; }
+@media (max-width: 960px) {
+    .launcher-heading, .section-hero, .employee-resources-hero { background: linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.85) 65%, rgba(255,255,255,.55) 100%), url('../images/Yakult_background.jpg') center 25% / cover no-repeat; }
+}
+
+
+/* ── Friendlier long-form reading ─────────────────────────────────── */
+.article-header__inner h1 { text-wrap: balance; max-width: 22ch; }
+.article-body { overflow-wrap: break-word; }
+.article-body h2 { padding-left: 14px; border-left: 4px solid var(--portal-red); scroll-margin-top: 90px; }
+.policy-anchor { scroll-margin-top: 90px; }
+.article-body blockquote { margin: 0 0 1.15em; padding: 12px 18px; border-left: 4px solid var(--portal-navy); background: #f4f7fb; border-radius: 0 10px 10px 0; }
+.article-body table { width: 100%; border-collapse: collapse; margin: 0 0 1.25em; font-size: .88rem; }
+.article-body th, .article-body td { padding: 10px 12px; border: 1px solid var(--portal-line); text-align: left; }
+.article-body th { background: #f4f7fb; color: var(--portal-navy); }
+.article-body hr { margin: 2em 0; border: 0; border-top: 1px solid var(--portal-line); }
+.policy-toc { margin-bottom: 18px; }
+.policy-toc ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.policy-toc a { font-size: .88rem; font-weight: 600; }
+@media print {
+    .policy-toc, .article-print { display: none !important; }
+}
+
+/* ── Homepage image utilization (2026-10-01) ── */
+.portal-hero { position: relative; }
+.portal-carousel__slide {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; opacity: 0; transition: opacity 1s ease; z-index: 0;
+}
+.portal-carousel__slide.is-active { opacity: 1; }
+.portal-hero__grid, .portal-hero__panel { position: relative; z-index: 1; }
+.portal-hero::after {
+    content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background: linear-gradient(100deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.94) 42%, rgba(255,255,255,.35) 68%, rgba(255,255,255,.05) 100%);
+}
+.portal-carousel__dots { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 2; }
+.portal-carousel__dots button { width: 10px; height: 10px; border-radius: 50%; border: 0; background: rgba(11,21,34,.25); cursor: pointer; padding: 0; }
+.portal-carousel__dots button.is-active { background: var(--portal-red, #a90f16); }
+.portal-priority-card__thumb { display: block; width: 100%; height: 120px; object-fit: cover; border-radius: 8px 8px 0 0; }
+.portal-section--navy .learning-grid { position: relative; }
+.portal-help-banner { position: relative; overflow: hidden; }
+.portal-help-banner::before {
+    content: ""; position: absolute; inset: 0; z-index: 0; opacity: .14;
+    background: url('../images/epr-banner.jpg') center / cover no-repeat;
+}
+.portal-help-banner > * { position: relative; z-index: 1; }
+

@@ -2,6 +2,20 @@
 @{ Layout = "_PublicLayout"; ViewData["Title"] = "Home"; }
 
 <section class="portal-hero">
+    <div class="portal-carousel" aria-hidden="true">
+        <img class="portal-carousel__slide is-active" src="@Url.Content("~/images/banner-2.jpg")" alt="" onerror="this.style.display='none'" />
+        <img class="portal-carousel__slide" src="@Url.Content("~/images/epr-banner.jpg")" alt="" loading="lazy" onerror="this.style.display='none'" />
+        <img class="portal-carousel__slide" src="@Url.Content("~/images/poster-web-banner.png")" alt="" loading="lazy" onerror="this.style.display='none'" />
+        <img class="portal-carousel__slide" src="@Url.Content("~/images/web-banner-vft1.png")" alt="" loading="lazy" onerror="this.style.display='none'" />
+        <img class="portal-carousel__slide" src="@Url.Content("~/images/Yakult_background.jpg")" alt="" loading="lazy" onerror="this.style.display='none'" />
+    </div>
+    <div class="portal-carousel__dots" aria-hidden="true">
+        <button type="button" data-slide="0" class="is-active" tabindex="-1"></button>
+        <button type="button" data-slide="1" tabindex="-1"></button>
+        <button type="button" data-slide="2" tabindex="-1"></button>
+        <button type="button" data-slide="3" tabindex="-1"></button>
+        <button type="button" data-slide="4" tabindex="-1"></button>
+    </div>
     <div class="portal-container portal-hero__grid">
         <div class="portal-hero__content">
             <span class="portal-eyebrow">Official employee intranet</span>
@@ -59,18 +73,21 @@
     </header>
     <div class="portal-priority-grid">
         <a class="portal-priority-card" asp-action="Services">
+            <img class="portal-priority-card__thumb" src="@Url.Content("~/images/services-portal-thumbnail.png")" alt="" loading="lazy" onerror="this.style.display='none'" />
             <span class="portal-priority-card__label">Services &amp; portals</span>
             <strong>Open system access instructions</strong>
             <p>Find Yakult Inventory, Cadena, YDS, and other employee systems in one directory.</p>
             <em>View services <span aria-hidden="true">→</span></em>
         </a>
         <a class="portal-priority-card" asp-route="EmployeeResourcesIndex">
+            <img class="portal-priority-card__thumb" src="@Url.Content("~/images/employee-resources-thumbnail.png")" alt="" loading="lazy" onerror="this.style.display='none'" />
             <span class="portal-priority-card__label">Employee resources</span>
             <strong>Find policies, forms, and references</strong>
             <p>Use published IT resources for support, system access, cybersecurity, and technology policy needs.</p>
             <em>Browse resources <span aria-hidden="true">→</span></em>
         </a>
         <a class="portal-priority-card" asp-action="Help">
+            <img class="portal-priority-card__thumb" src="@Url.Content("~/images/it-help-thumbnail.png")" alt="" loading="lazy" onerror="this.style.display='none'" />
             <span class="portal-priority-card__label">IT Help Center</span>
             <strong>Get account and device support</strong>
             <p>Start troubleshooting or find the right support path for access issues.</p>
@@ -108,7 +125,8 @@
     </div>
 </section>
 
-<section class="portal-section portal-section--navy">
+<section class="portal-section portal-section--navy" style="position:relative;">
+    <img src="@Url.Content("~/images/web-banner-vft1.png")" alt="" loading="lazy" aria-hidden="true" style="position:absolute;right:0;top:0;height:100%;opacity:.12;object-fit:cover;pointer-events:none;" onerror="this.style.display='none'" />
     <div class="portal-container">
         <header class="portal-section__header"><div><span class="portal-eyebrow">Learning &amp; awareness</span><h2>Build knowledge. Work safely.</h2><p>Watch cybersecurity lessons and access practical employee learning material.</p></div><a asp-action="Learning">Browse learning resources <span aria-hidden="true">→</span></a></header>
         @if (Model.Learning.Count > 0)
@@ -173,3 +191,30 @@
     <div><span class="portal-eyebrow">Need assistance?</span><h2>Start with the IT Help Center</h2><p>Find account guidance, support instructions, and troubleshooting resources.</p></div>
     <a class="portal-button" asp-action="Help">Get IT help <span aria-hidden="true">→</span></a>
 </section>
+<script>
+(() => {
+    const slides = Array.from(document.querySelectorAll('.portal-carousel__slide'));
+    const dots = Array.from(document.querySelectorAll('.portal-carousel__dots button'));
+    if (slides.length < 2) return;
+    let current = 0, timer = null;
+    const show = (i) => {
+        slides[current].classList.remove('is-active');
+        if (dots[current]) dots[current].classList.remove('is-active');
+        current = (i + slides.length) % slides.length;
+        slides[current].classList.add('is-active');
+        if (dots[current]) dots[current].classList.add('is-active');
+    };
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!reduceMotion) {
+        timer = setInterval(() => show(current + 1), 4000);
+    }
+    dots.forEach((d, i) => d.addEventListener('click', () => { show(i); }));
+    const hero = document.querySelector('.portal-hero');
+    if (hero) {
+        hero.addEventListener('mouseenter', () => { if (timer) { clearInterval(timer); timer = null; } });
+        hero.addEventListener('mouseleave', () => {
+            if (!reduceMotion && !timer) timer = setInterval(() => show(current + 1), 4000);
+        });
+    }
+})();
+</script>

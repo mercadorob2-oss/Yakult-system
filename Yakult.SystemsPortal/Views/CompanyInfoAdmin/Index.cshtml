@@ -1,0 +1,133 @@
+@model CompanyInfoAdminViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Company Info";
+    var publishedFaqs = Model.Faqs.Count(x => x.IsPublished);
+    var publishedPolicies = Model.Policies.Count(x => x.IsPublished);
+}
+
+<div class="ci-page">
+    <div class="ci-stats">
+        <div class="ci-stat">
+            <span class="ci-stat__number">@Model.Faqs.Count</span>
+            <span class="ci-stat__label">FAQs · @publishedFaqs published</span>
+        </div>
+        <div class="ci-stat">
+            <span class="ci-stat__number">@Model.Policies.Count</span>
+            <span class="ci-stat__label">Policies · @publishedPolicies published</span>
+        </div>
+        <a class="ci-stat ci-stat--link" asp-controller="Public" asp-action="Faqs" target="_blank" rel="noopener noreferrer">
+            <span class="ci-stat__number" aria-hidden="true">↗</span>
+            <span class="ci-stat__label">Preview public FAQ page</span>
+        </a>
+    </div>
+
+    @if (TempData["CompanyInfoMessage"] is string ok)
+    {
+        <p class="admin-notice admin-notice--ok" role="status">@ok</p>
+    }
+    @if (TempData["CompanyInfoError"] is string err)
+    {
+        <p class="admin-notice admin-notice--error" role="alert">@err</p>
+    }
+
+    <div class="ci-grid">
+        <section class="ci-panel" aria-labelledby="ciFaqHeading">
+            <header class="ci-panel__header">
+                <div>
+                    <h2 id="ciFaqHeading">FAQs</h2>
+                    <p>@Model.Faqs.Count total · @publishedFaqs visible to employees</p>
+                </div>
+                <a class="admin-button admin-button--primary" asp-action="FaqEdit">+ New FAQ</a>
+            </header>
+            <div class="ci-panel__body">
+                @if (Model.Faqs.Count == 0)
+                {
+                    <div class="ci-empty">
+                        <span aria-hidden="true">?</span>
+                        <strong>No FAQs yet</strong>
+                        <p>Create the first question employees will see on the public FAQ page.</p>
+                        <a class="admin-button admin-button--primary" asp-action="FaqEdit">Create FAQ</a>
+                    </div>
+                }
+                else
+                {
+                    foreach (var faq in Model.Faqs)
+                    {
+                        <article class="ci-row">
+                            <div class="ci-row__main">
+                                <span class="admin-status-pill @(faq.IsPublished ? "is-operational" : "is-offline")">@(faq.IsPublished ? "Published" : "Draft")</span>
+                                <strong>@faq.Question</strong>
+                                <small>@faq.Category · Order @faq.SortOrder</small>
+                            </div>
+                            <div class="ci-row__actions">
+                                <a class="admin-button admin-button--ghost" asp-action="FaqEdit" asp-route-id="@faq.FaqId">Edit</a>
+                                @if (Model.CanPublish)
+                                {
+                                    @if (faq.IsPublished)
+                                    {
+                                        <form asp-action="FaqUnpublish" asp-route-id="@faq.FaqId" method="post">@Html.AntiForgeryToken()<button type="submit" class="admin-button admin-button--ghost">Unpublish</button></form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="FaqPublish" asp-route-id="@faq.FaqId" method="post">@Html.AntiForgeryToken()<button type="submit" class="admin-button admin-button--ghost">Publish</button></form>
+                                        <form asp-action="FaqDelete" asp-route-id="@faq.FaqId" method="post" onsubmit="return confirm('Delete this FAQ?');">@Html.AntiForgeryToken()<button type="submit" class="admin-button admin-button--ghost">Delete</button></form>
+                                    }
+                                }
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        </section>
+
+        <section class="ci-panel" aria-labelledby="ciPolicyHeading">
+            <header class="ci-panel__header">
+                <div>
+                    <h2 id="ciPolicyHeading">Company Policies</h2>
+                    <p>@Model.Policies.Count total · @publishedPolicies visible to employees</p>
+                </div>
+                <a class="admin-button admin-button--primary" asp-action="PolicyEdit">+ New Policy</a>
+            </header>
+            <div class="ci-panel__body">
+                @if (Model.Policies.Count == 0)
+                {
+                    <div class="ci-empty">
+                        <span aria-hidden="true">§</span>
+                        <strong>No policies yet</strong>
+                        <p>Publish the first policy. It appears on the FAQ Company Policies tab.</p>
+                        <a class="admin-button admin-button--primary" asp-action="PolicyEdit">Create Policy</a>
+                    </div>
+                }
+                else
+                {
+                    foreach (var policy in Model.Policies)
+                    {
+                        <article class="ci-row">
+                            <div class="ci-row__main">
+                                <span class="admin-status-pill @(policy.IsPublished ? "is-operational" : "is-offline")">@(policy.IsPublished ? "Published" : "Draft")</span>
+                                <strong>@policy.Title</strong>
+                                <small>@policy.Category · /company-policies/@policy.Slug</small>
+                            </div>
+                            <div class="ci-row__actions">
+                                <a class="admin-button admin-button--ghost" asp-action="PolicyEdit" asp-route-id="@policy.PolicyId">Edit</a>
+                                @if (Model.CanPublish)
+                                {
+                                    @if (policy.IsPublished)
+                                    {
+                                        <form asp-action="PolicyUnpublish" asp-route-id="@policy.PolicyId" method="post">@Html.AntiForgeryToken()<button type="submit" class="admin-button admin-button--ghost">Unpublish</button></form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="PolicyPublish" asp-route-id="@policy.PolicyId" method="post">@Html.AntiForgeryToken()<button type="submit" class="admin-button admin-button--ghost">Publish</button></form>
+                                        <form asp-action="PolicyDelete" asp-route-id="@policy.PolicyId" method="post" onsubmit="return confirm('Delete this policy?');">@Html.AntiForgeryToken()<button type="submit" class="admin-button admin-button--ghost">Delete</button></form>
+                                    }
+                                }
+                            </div>
+                        </article>
+                    }
+                }
+            </div>
+        </section>
+    </div>
+</div>

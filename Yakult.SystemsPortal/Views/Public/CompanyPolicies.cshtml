@@ -1,0 +1,62 @@
+@model CompanyPolicyListViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Company Policy";
+}
+
+<header class="faq-hero faq-hero--policy">
+    <div class="portal-container faq-hero__inner">
+        <div>
+            <span class="portal-eyebrow">Governance</span>
+            <h1>Company Policy</h1>
+            <p>Official company policies and workplace guidelines for employees.</p>
+            <form class="faq-search" asp-controller="Public" asp-action="CompanyPolicies" method="get" role="search">
+                <label class="sr-only" for="policySearch">Search policies</label>
+                <input id="policySearch" name="q" type="search" autocomplete="off" placeholder="Search policies" value="@Context.Request.Query["q"]" />
+                <button type="submit">Search</button>
+            </form>
+        </div>
+        <aside class="faq-hero__summary" aria-label="Policy summary">
+            <span><strong>@Model.Items.Count</strong>Policies</span>
+            <span><strong>@Model.Categories.Count</strong>Topics</span>
+        </aside>
+    </div>
+</header>
+
+<main class="faq-library">
+    <div class="portal-container">
+        @if (Model.IsDemoData)
+        {
+            <p><span class="dummy-data-badge">DUMMY DATA · FRONTEND SAMPLE</span></p>
+        }
+        @if (Model.Categories.Count > 1)
+        {
+            <nav class="faq-filter" aria-label="Filter policies by topic">
+                <a asp-action="CompanyPolicies" asp-route-q="@Context.Request.Query["q"]" class="@(string.IsNullOrWhiteSpace(Context.Request.Query["category"]) ? "is-active" : null)">All topics</a>
+                @foreach (var category in Model.Categories)
+                {
+                    <a asp-action="CompanyPolicies" asp-route-q="@Context.Request.Query["q"]" asp-route-category="@category" class="@(string.Equals(category, Context.Request.Query["category"], StringComparison.OrdinalIgnoreCase) ? "is-active" : null)">@category</a>
+                }
+            </nav>
+        }
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No policies found</h2><p>Try a different search, or browse all policies.</p><a asp-action="CompanyPolicies">Browse all policies</a></div>
+        }
+        else
+        {
+            <div class="policy-grid">
+                @foreach (var item in Model.Items)
+                {
+                    <a class="policy-card" asp-controller="Public" asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">
+                        <small>@item.Category@(item.EffectiveDate.HasValue ? $" · Effective {item.EffectiveDate.Value:MMM d, yyyy}" : null)</small>
+                        <strong>@item.Title</strong>
+                        <span>@item.Summary</span>
+                        <em>Read policy <span aria-hidden="true">→</span></em>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</main>

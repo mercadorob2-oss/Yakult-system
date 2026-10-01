@@ -1,0 +1,66 @@
+@model CompanyPolicyItem
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = Model.Title;
+}
+
+<article class="article-page">
+    <header class="article-header">
+        <div class="portal-container article-header__inner">
+            <nav class="article-breadcrumb" aria-label="Breadcrumb">
+                <a asp-controller="Public" asp-action="Index">Home</a>
+                <span aria-hidden="true">/</span>
+                <a asp-controller="Public" asp-action="CompanyPolicies">Company Policy</a>
+                <span aria-hidden="true">/</span>
+                <span>@Model.Category</span>
+            </nav>
+            <span class="portal-eyebrow">Policy · @Model.Category</span>
+            <h1>@Model.Title</h1>
+            @if (Model.IsDemo)
+            {
+                <span class="dummy-data-badge">DUMMY DATA · FRONTEND SAMPLE</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Summary)) { <p>@Model.Summary</p> }
+            <div class="article-header__meta">
+                <span>@(Model.EffectiveDate.HasValue ? $"Effective {Model.EffectiveDate.Value:MMMM d, yyyy}" : "Company policy")</span>
+                <span>Updated @Model.UpdatedAtUtc.ToLocalTime().ToString("MMMM d, yyyy")</span>
+                <button type="button" class="article-print" id="articlePrint">Print or save as PDF</button>
+            </div>
+        </div>
+    </header>
+    <div class="portal-container article-layout">
+        <div class="article-content">
+            <div class="article-body">@Html.SafeMarkdown(Model.Body)</div>
+        </div>
+        <aside class="article-sidebar">
+            <div class="policy-toc" id="policyToc" hidden><span class="portal-eyebrow">On this page</span><nav aria-label="Policy sections"><ul id="policyTocList"></ul></nav></div>
+            <div><span class="portal-eyebrow">Resource details</span><dl><dt>Type</dt><dd>Company Policy</dd><dt>Section</dt><dd>@Model.Category</dd><dt>Last updated</dt><dd>@Model.UpdatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</dd></dl></div>
+            <div><h2>More policies</h2><a asp-controller="Public" asp-action="CompanyPolicies">Browse all policies <span aria-hidden="true">→</span></a><a asp-controller="Public" asp-action="Faqs" asp-route-tab="policies">Policy tab on FAQ page <span aria-hidden="true">→</span></a></div>
+        </aside>
+    </div>
+</article>
+
+@section Scripts {
+<script>
+    document.getElementById('articlePrint')?.addEventListener('click', function () { window.print(); });
+    document.addEventListener('DOMContentLoaded', function () {
+        var body = document.querySelector('.article-body');
+        var box = document.getElementById('policyToc');
+        var list = document.getElementById('policyTocList');
+        if (!body || !box || !list) return;
+        var heads = body.querySelectorAll('h2');
+        if (heads.length < 2) return;
+        heads.forEach(function (h, i) {
+            if (!h.id) h.id = 'policy-section-' + (i + 1);
+            h.classList.add('policy-anchor');
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            a.href = '#' + h.id;
+            a.textContent = h.textContent;
+            li.appendChild(a);
+            list.appendChild(li);
+        });
+        box.hidden = false;
+    });
+</script>
+}

@@ -19,6 +19,7 @@ public sealed class AdminController : Controller
     private readonly IAccountAdministrationRepository _accountAdministrationRepository;
     private readonly IConnectionStringProvider _connectionStringProvider;
     private readonly IConnectionPageAccessGate _connectionPageAccessGate;
+    private readonly ICompanyInfoRepository _companyInfo;
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<AdminController> _logger;
 
@@ -28,6 +29,7 @@ public sealed class AdminController : Controller
         IAccountAdministrationRepository accountAdministrationRepository,
         IConnectionStringProvider connectionStringProvider,
         IConnectionPageAccessGate connectionPageAccessGate,
+        ICompanyInfoRepository companyInfo,
         IWebHostEnvironment environment,
         ILogger<AdminController> logger)
     {
@@ -36,6 +38,7 @@ public sealed class AdminController : Controller
         _accountAdministrationRepository = accountAdministrationRepository;
         _connectionStringProvider = connectionStringProvider;
         _connectionPageAccessGate = connectionPageAccessGate;
+        _companyInfo = companyInfo;
         _environment = environment;
         _logger = logger;
     }
@@ -45,9 +48,18 @@ public sealed class AdminController : Controller
         return RedirectToAction(nameof(Dashboard));
     }
 
+    /// <summary>
+    /// Portal administration access: developers plus holders of the portal-only
+    /// "PortalAdmin" role (must match the role seeded in AccountAdministrationRepository).
+    /// Destructive/system actions (settings, notices, export, connection profile,
+    /// installer upload) keep the stricter IsDeveloper check at their own call sites.
+    /// </summary>
+    private bool CanUsePortalAdmin() =>
+        User.HasClaim("IsDeveloper", "true") || User.IsInRole("PortalAdmin");
+
     public async Task<IActionResult> Dashboard()
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -58,17 +70,30 @@ public sealed class AdminController : Controller
 
         await Task.WhenAll(cardsTask, auditTask, noticeTask);
 
+        var faqCount = 0;
+        var policyCount = 0;
+        try
+        {
+            var faqs = await _companyInfo.GetManagedFaqsAsync();
+            var policies = await _companyInfo.GetManagedPoliciesAsync();
+            faqCount = faqs.Count;
+            policyCount = policies.Count;
+        }
+        catch (Exception ex) { _logger.LogWarning(ex, "Admin dashboard loaded without company info counts."); }
+
         return View(new AdminDashboardViewModel
         {
             Cards = cardsTask.Result,
             RecentEvents = auditTask.Result,
-            Notice = noticeTask.Result
+            Notice = noticeTask.Result,
+            CompanyFaqCount = faqCount,
+            CompanyPolicyCount = policyCount
         });
     }
 
     public async Task<IActionResult> Cards()
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -80,7 +105,7 @@ public sealed class AdminController : Controller
 
     public async Task<IActionResult> Audit()
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -91,7 +116,7 @@ public sealed class AdminController : Controller
 
     public async Task<IActionResult> Health()
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -104,7 +129,7 @@ public sealed class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CheckHealth()
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -458,7 +483,7 @@ public sealed class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveCard([FromBody] SavePortalCardRequest request)
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -566,7 +591,7 @@ public sealed class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ArchiveCard([FromBody] ArchivePortalCardRequest request)
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -606,7 +631,7 @@ public sealed class AdminController : Controller
 
     public async Task<IActionResult> AccountRequests()
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -619,7 +644,7 @@ public sealed class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ApproveAccountRequest([FromBody] ReviewAccountRequest request)
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -649,7 +674,7 @@ public sealed class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RejectAccountRequest([FromBody] ReviewAccountRequest request)
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -685,7 +710,7 @@ public sealed class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateManagedUser([FromBody] UpdateManagedUserRequest request)
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }
@@ -717,7 +742,7 @@ public sealed class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ResetManagedUserPassword([FromBody] ResetManagedUserPasswordRequest request)
     {
-        if (!User.HasClaim("IsDeveloper", "true"))
+        if (!CanUsePortalAdmin())
         {
             return Forbid();
         }

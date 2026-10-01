@@ -41,6 +41,7 @@
             </button>
             <nav class="portal-navigation" id="portalNavigation" aria-label="Main navigation">
                 <a asp-controller="Public" asp-action="Company" aria-current="@Current("Company")">Company</a>
+                <a asp-controller="Public" asp-action="Faqs" aria-current="@Current("Faqs")">FAQ</a>
                 <a href="/EmployeeResources" aria-current="@Current("Resources", "Faqs", "EmployeeResources", "EmployeeResourceDetails")">Employee Resources</a>
                 <details class="portal-navigation__group">
                     <summary class="@(Current("Learning", "Cybersecurity") == "page" ? "is-current" : null)">Learning</summary>
@@ -77,7 +78,7 @@
                         </summary>
                         <div class="portal-account-menu__panel">
                             <a asp-controller="Public" asp-action="MyLearning">My Learning</a>
-                            @if (User.HasClaim("IsDeveloper", "true"))
+                            @if (User.HasClaim("IsDeveloper", "true") || User.IsInRole("PortalAdmin"))
                             {
                                 <a asp-controller="Admin" asp-action="Dashboard">Admin dashboard</a>
                             }
@@ -107,7 +108,7 @@
                 </a>
                 <p>A central source for employee information, workplace resources, learning, and Yakult business systems.</p>
             </section>
-            <section><h2>Employee information</h2><a asp-controller="Public" asp-action="Company">Company</a><a href="/EmployeeResources">Employee resources</a></section>
+            <section><h2>Employee information</h2><a asp-controller="Public" asp-action="Company">Company</a><a asp-controller="Public" asp-action="Faqs">FAQ</a><a asp-controller="Public" asp-action="CompanyPolicies">Company Policy</a><a href="/EmployeeResources">Employee resources</a></section>
             <section><h2>Services and support</h2><a asp-controller="Public" asp-action="Services">Services &amp; portals</a><a asp-controller="Public" asp-action="Learning">Learning &amp; awareness</a><a asp-controller="Public" asp-action="Help">IT Help Center</a><a asp-controller="Home" asp-action="Register">Request an account</a></section>
         </div>
         <div class="portal-footer__bottom"><div class="portal-container"><span>&copy; @DateTime.Now.Year Yakult Philippines Incorporated</span><span>For authorized employee use</span></div></div>
