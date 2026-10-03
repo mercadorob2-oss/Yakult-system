@@ -206,6 +206,8 @@ namespace Yakult.Inventory.App.Helpers
         /// right edge aligns with the QR right edge (tracking is expanded to fill).
         /// Footer is outside the QR quiet zone so it cannot affect decoding.
         /// The text is flush against the QR with no top pad.
+        /// Never truncates with "...": long captions shrink the font until the full
+        /// name fits (short names get tracking expanded to fill the width).
         /// </summary>
         private static Bitmap ComposeCaptionFooter(Bitmap qrImage, string caption)
         {
@@ -240,16 +242,26 @@ namespace Yakult.Inventory.App.Helpers
                     measureFormat.LineAlignment = StringAlignment.Near;
                     measureFormat.Trimming = StringTrimming.None;
 
+                    // Shrink-to-fit loop: keep scaling the font down until the natural
+                    // (un-tracked) width fits targetWidth. No minimum clamp at 8px and
+                    // no "..." fallback — a long computer name just renders smaller so
+                    // the whole name is always visible.
+                    const float minFontSize = 4f;
                     Font font = baseFont;
                     float[] charWidths = MeasureCaptionChars(g, caption, font, measureFormat);
                     float natural = 0f;
                     foreach (float w in charWidths) natural += w;
 
-                    // Long caption: shrink to fit the full width, same as before but
-                    // against targetWidth (not 92%) since we now use the full edge span.
-                    if (natural > targetWidth && natural > 0)
+                    int guard = 0;
+                    while (natural > targetWidth && natural > 0 && font.Size > minFontSize && guard < 5)
                     {
-                        float shrunk = Math.Max(8f, fontSize * targetWidth / natural);
+                        guard++;
+                        float shrunk = Math.Max(minFontSize, font.Size * targetWidth / natural);
+                        // Break if already at the floor to avoid an infinite loop when
+                        // even the smallest size still overflows (handled below with gap = 0).
+                        if (shrunk >= font.Size) break;
+                        if (!ReferenceEquals(font, baseFont))
+                            font.Dispose();
                         font = new Font(baseFont.FontFamily, shrunk, FontStyle.Bold, GraphicsUnit.Pixel);
                         charWidths = MeasureCaptionChars(g, caption, font, measureFormat);
                         natural = 0f;
@@ -260,19 +272,33 @@ namespace Yakult.Inventory.App.Helpers
                     {
                         using (Brush brush = new SolidBrush(Color.Black))
                         {
-                            // Single char, empty, or still overflowing: fall back to centered.
-                            if (caption.Length <= 1 || natural <= 0 || natural >= targetWidth)
+                            // Single char: center it (no ellipsis, no truncation).
+                            if (caption.Length <= 1)
                             {
                                 using (var centerFormat = new StringFormat
                                 {
                                     Alignment = StringAlignment.Center,
                                     LineAlignment = StringAlignment.Near,
-                                    Trimming = StringTrimming.EllipsisCharacter,
+                                    Trimming = StringTrimming.None,
                                     FormatFlags = StringFormatFlags.NoWrap
                                 })
                                 {
                                     var footerRect = new RectangleF(startX, top, targetWidth, footerHeight);
                                     g.DrawString(caption, font, brush, footerRect, centerFormat);
+                                }
+                            }
+                            else if (natural <= 0 || natural >= targetWidth)
+                            {
+                                // Even at the minimum font size the text is still wider
+                                // than the target (extremely long name): draw it
+                                // left-to-right with no extra tracking so every
+                                // character is still rendered instead of cutting to "...".
+                                float x = startX;
+                                for (int i = 0; i < caption.Length; i++)
+                                {
+                                    string ch = caption[i].ToString();
+                                    g.DrawString(ch, font, brush, x, top, measureFormat);
+                                    x += charWidths[i];
                                 }
                             }
                             else

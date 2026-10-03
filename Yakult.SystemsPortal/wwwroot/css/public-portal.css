@@ -48,6 +48,12 @@ body.employee-portal { margin: 0; min-height: 100vh; background: #fff; color: va
 .portal-navigation .portal-admin-link:hover { border-color: var(--portal-red); background: #fff8f8; color: var(--portal-red-dark); }
 .portal-navigation .portal-account-link { margin-left: 5px; padding-inline: 14px; background: var(--portal-red); color: #fff; }
 .portal-navigation .portal-account-link:hover { background: var(--portal-red-dark); color: #fff; }
+/* Header auth pair: outline Login + solid red Register (matches brand button design). */
+.portal-navigation .portal-auth-btn { margin-left: 8px; padding: 9px 22px; border-radius: 10px; font-size: .8rem; font-weight: 700; }
+.portal-navigation .portal-auth-btn--login { border: 1px solid #d7dee6; background: #fff; color: #334155; }
+.portal-navigation .portal-auth-btn--login:hover { border-color: #94a3b8; background: #f8fafc; color: #0f172a; }
+.portal-navigation .portal-auth-btn--register { border: 1px solid var(--portal-red); background: var(--portal-red); color: #fff; }
+.portal-navigation .portal-auth-btn--register:hover { border-color: var(--portal-red-dark); background: var(--portal-red-dark); color: #fff; }
 .portal-logout-form { display: inline-flex; margin: 0; }
 .portal-logout-button { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 8px 12px; border: 1px solid #f0c7c9; border-radius: 7px; background: #fff; color: var(--portal-red-dark); font: inherit; font-size: .74rem; font-weight: 850; cursor: pointer; }
 .portal-logout-button:hover { border-color: var(--portal-red); background: var(--portal-red-soft); }
@@ -423,7 +429,7 @@ a.app-launcher-tile:hover { transform: translateY(-4px); border-color: #b9c5d0; 
     .portal-navigation { position: absolute; top: 73px; right: 0; left: 0; display: none; align-items: stretch; margin: 0; padding: 12px; border: 1px solid var(--portal-line); border-top: 0; border-radius: 0 0 12px 12px; background: #fff; box-shadow: 0 22px 35px rgba(20,38,60,.16); flex-direction: column; }
     .portal-navigation.is-open { display: flex; }
     .portal-navigation > a, .portal-navigation summary { padding: 12px; }
-    .portal-navigation .portal-account-link, .portal-navigation .portal-admin-link, .portal-account-menu { width: 100%; margin: 5px 0 0; text-align: center; }
+    .portal-navigation .portal-account-link, .portal-navigation .portal-admin-link, .portal-navigation .portal-auth-btn, .portal-account-menu { width: 100%; margin: 5px 0 0; text-align: center; }
     .portal-navigation .portal-account-menu summary { width: 100%; max-width: none; justify-content: center; }
     .portal-account-menu__panel { position: static; width: 100%; margin-top: 5px; box-shadow: none; }
     .portal-navigation__group { width: 100%; }
