@@ -257,7 +257,21 @@ public sealed class PublicController : Controller
             try { item = await _companyInfo.GetPublishedPolicyBySlugAsync(slug); }
             catch (Exception ex) { _logger.LogWarning(ex, "Published company policy lookup failed for {Slug}.", slug); }
         }
-        return item is null ? NotFound() : View("CompanyPolicyDetails", item);
+        if (item is null) return NotFound();
+        try
+        {
+            var siblings = _demoMode.IsEnabled(HttpContext)
+                ? CompanyInfoSamples.Policies.Where(x => !x.Slug.Equals(item.Slug, StringComparison.OrdinalIgnoreCase)).ToList()
+                : (await _companyInfo.GetPublishedPoliciesAsync(take: 100)).ToList();
+            ViewBag.RelatedPolicies = siblings
+                .Where(x => !x.Slug.Equals(item.Slug, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(x => x.Category.Equals(item.Category, StringComparison.OrdinalIgnoreCase))
+                .ThenBy(x => x.SortOrder)
+                .Take(3)
+                .ToList();
+        }
+        catch (Exception ex) { _logger.LogDebug(ex, "Related policies could not be loaded for {Slug}.", slug); }
+        return View("CompanyPolicyDetails", item);
     }
 
     private static IEnumerable<CompanyFaqItem> FilterDemoFaqs(string? query, string? category)

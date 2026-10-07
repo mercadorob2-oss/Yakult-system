@@ -2,11 +2,16 @@
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = Model.Title;
+    var displayTitle = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase((Model.Title ?? string.Empty).ToLowerInvariant());
+    var bodyText = Model.Body ?? string.Empty;
+    var wordCount = bodyText.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+    var readMinutes = Math.Max(1, (int)Math.Ceiling(wordCount / 200.0));
 }
 
-<article class="article-page">
-    <header class="article-header">
+<article class="article-page policy-article">
+    <header class="article-header policy-header">
         <div class="portal-container article-header__inner">
+            <a class="article-back" asp-controller="Public" asp-action="CompanyPolicies">← Back to Company Policy</a>
             <nav class="article-breadcrumb" aria-label="Breadcrumb">
                 <a asp-controller="Public" asp-action="Index">Home</a>
                 <span aria-hidden="true">/</span>
@@ -14,28 +19,60 @@
                 <span aria-hidden="true">/</span>
                 <span>@Model.Category</span>
             </nav>
-            <span class="portal-eyebrow">Policy · @Model.Category</span>
-            <h1>@Model.Title</h1>
+            <div class="policy-header__chips" aria-label="Policy facts">
+                <span class="policy-chip">Policy</span>
+                <span class="policy-chip">@Model.Category</span>
+                @if (Model.EffectiveDate.HasValue) { <span class="policy-chip">Effective @Model.EffectiveDate.Value.ToString("MMM d, yyyy")</span> }
+            </div>
+            <h1 class="policy-title">@displayTitle</h1>
             @if (Model.IsDemo)
             {
                 <span class="dummy-data-badge">DUMMY DATA · FRONTEND SAMPLE</span>
             }
-            @if (!string.IsNullOrWhiteSpace(Model.Summary)) { <p>@Model.Summary</p> }
-            <div class="article-header__meta">
-                <span>@(Model.EffectiveDate.HasValue ? $"Effective {Model.EffectiveDate.Value:MMMM d, yyyy}" : "Company policy")</span>
+            @if (!string.IsNullOrWhiteSpace(Model.Summary)) { <p class="policy-summary">@Model.Summary</p> }
+            <div class="article-header__meta policy-meta">
                 <span>Updated @Model.UpdatedAtUtc.ToLocalTime().ToString("MMMM d, yyyy")</span>
-                <button type="button" class="article-print" id="articlePrint">Print or save as PDF</button>
+                <span aria-hidden="true">·</span>
+                <span>@readMinutes min read</span>
+                <span aria-hidden="true">·</span>
+                <span><span id="policySectionCount">–</span> sections</span>
+                <button type="button" class="article-print policy-print" id="articlePrint">Print or save as PDF</button>
             </div>
         </div>
     </header>
     <div class="portal-container article-layout">
         <div class="article-content">
+            <div class="policy-takeaways" id="policyTakeaways" hidden aria-label="Key takeaways">
+                <strong>Key takeaways</strong>
+                <ul id="policyTakeawaysList"></ul>
+            </div>
             <div class="article-body">@Html.SafeMarkdown(Model.Body)</div>
+            @if (ViewBag.RelatedPolicies is IReadOnlyList<CompanyPolicyItem> related && related.Count > 0)
+            {
+                <section class="policy-related" aria-labelledby="relatedPoliciesHeading">
+                    <h2 id="relatedPoliciesHeading">Related policies</h2>
+                    <div class="policy-grid">
+                        @foreach (var rel in related)
+                        {
+                            <a class="policy-card" asp-controller="Public" asp-action="CompanyPolicyDetails" asp-route-slug="@rel.Slug">
+                                <small>@rel.Category@(rel.EffectiveDate.HasValue ? $" · Effective {rel.EffectiveDate.Value:MMM d, yyyy}" : null)</small>
+                                <strong>@rel.Title</strong>
+                                <span>@rel.Summary</span>
+                                <em>Read policy <span aria-hidden="true">→</span></em>
+                            </a>
+                        }
+                    </div>
+                </section>
+            }
         </div>
-        <aside class="article-sidebar">
+        <aside class="article-sidebar policy-sidebar">
             <div class="policy-toc" id="policyToc" hidden><span class="portal-eyebrow">On this page</span><nav aria-label="Policy sections"><ul id="policyTocList"></ul></nav></div>
-            <div><span class="portal-eyebrow">Resource details</span><dl><dt>Type</dt><dd>Company Policy</dd><dt>Section</dt><dd>@Model.Category</dd><dt>Last updated</dt><dd>@Model.UpdatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</dd></dl></div>
-            <div><h2>More policies</h2><a asp-controller="Public" asp-action="CompanyPolicies">Browse all policies <span aria-hidden="true">→</span></a><a asp-controller="Public" asp-action="Faqs" asp-route-tab="policies">Policy tab on FAQ page <span aria-hidden="true">→</span></a></div>
+            <div class="policy-help-card">
+                <h2>Need help?</h2>
+                <p>Questions about this policy? Start with the FAQ or reach IT support.</p>
+                <a asp-controller="Public" asp-action="Faqs">Browse FAQs <span aria-hidden="true">→</span></a>
+                <a asp-controller="Public" asp-action="Help">IT Help Center <span aria-hidden="true">→</span></a>
+            </div>
         </aside>
     </div>
 </article>
@@ -47,20 +84,72 @@
         var body = document.querySelector('.article-body');
         var box = document.getElementById('policyToc');
         var list = document.getElementById('policyTocList');
+        var sectionCount = document.getElementById('policySectionCount');
         if (!body || !box || !list) return;
+        // Fallback: upgrade "1. SCOPE"-style paragraphs into real sections so
+        // legacy flat docs still get anchors, TOC entries, and red-bar styling.
+        var paras = Array.from(body.querySelectorAll('p'));
+        var promoted = 0;
+        paras.forEach(function (p) {
+            var text = (p.textContent || '').trim();
+            if (!/^\d+\.\s+[A-Z][A-Z\s&/-]{2,60}$/.test(text)) return;
+            if (p.querySelector('a, strong, em, code')) return;
+            var h = document.createElement('h2');
+            h.textContent = text.replace(/^\d+\.\s*/, '').toLowerCase().replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+            h.dataset.promoted = 'true';
+            p.replaceWith(h);
+            promoted++;
+        });
         var heads = body.querySelectorAll('h2');
-        if (heads.length < 2) return;
+        if (sectionCount) sectionCount.textContent = heads.length;
         heads.forEach(function (h, i) {
             if (!h.id) h.id = 'policy-section-' + (i + 1);
             h.classList.add('policy-anchor');
+        });
+        // Key takeaways: first 3 section titles as a warm entry point.
+        try {
+            var takeaways = document.getElementById('policyTakeaways');
+            var takeawaysList = document.getElementById('policyTakeawaysList');
+            if (takeaways && takeawaysList && heads.length >= 2) {
+                Array.from(heads).slice(0, 3).forEach(function (h) {
+                    var li = document.createElement('li');
+                    var a = document.createElement('a');
+                    a.href = '#' + h.id;
+                    a.textContent = h.textContent;
+                    a.style.cssText = 'color:inherit;text-decoration:none;';
+                    li.appendChild(a);
+                    takeawaysList.appendChild(li);
+                });
+                takeaways.hidden = false;
+            }
+        } catch (_) { }
+        if (heads.length < 2) return;
+        heads.forEach(function (h) {
             var li = document.createElement('li');
             var a = document.createElement('a');
             a.href = '#' + h.id;
             a.textContent = h.textContent;
+            a.dataset.target = h.id;
             li.appendChild(a);
             list.appendChild(li);
         });
         box.hidden = false;
+        var links = Array.from(list.querySelectorAll('a'));
+        if ('IntersectionObserver' in window) {
+            var activeLink = null;
+            var observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) return;
+                    var id = entry.target.id;
+                    var link = links.find(function (l) { return l.dataset.target === id; });
+                    if (!link) return;
+                    if (activeLink) activeLink.classList.remove('is-active');
+                    link.classList.add('is-active');
+                    activeLink = link;
+                });
+            }, { rootMargin: '-20% 0px -65% 0px', threshold: 0 });
+            heads.forEach(function (h) { observer.observe(h); });
+        }
     });
 </script>
 }

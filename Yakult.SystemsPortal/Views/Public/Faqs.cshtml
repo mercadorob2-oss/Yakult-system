@@ -52,7 +52,7 @@
 
             @if (Model.Items.Count == 0)
             {
-                <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No answers found</h2><p>Try a different search, or browse all FAQs.</p><a asp-action="Faqs">Browse all FAQs</a></div>
+                <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No answers found</h2><p>Try a different search, or browse all FAQs.</p><p><a asp-action="Faqs">Browse all FAQs</a> <button type="button" class="portal-button portal-button--outline" data-clear-faq-search>Clear search</button></p></div>
             }
             else
             {
@@ -68,7 +68,7 @@
                                 <p>@item.Answer</p>
                                 @if (item.IsDemo)
                                 {
-                                    <span class="dummy-data-badge">DUMMY DATA · FRONTEND SAMPLE</span>
+                                    <span class="dummy-data-badge dummy-data-badge--compact" title="Demo content for preview">DEMO</span>
                                 }
                             </div>
                         </details>
@@ -92,7 +92,7 @@
 
             @if (Model.Policies.Count == 0)
             {
-                <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No policies found</h2><p>Try a different search, or browse all policies.</p><a asp-action="Faqs" asp-route-tab="policies">Browse all policies</a></div>
+                <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No policies found</h2><p>Try a different search, or browse all policies.</p><p><a asp-action="Faqs" asp-route-tab="policies">Browse all policies</a> <button type="button" class="portal-button portal-button--outline" data-clear-faq-search>Clear search</button></p></div>
             }
             else
             {
@@ -168,6 +168,36 @@
         }
         tabs.forEach(function (t) {
             t.addEventListener('click', function () { selectTab(t.dataset.tab, true); });
+        });
+        Array.from(document.querySelectorAll('[data-clear-faq-search]')).forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (search) {
+                    search.value = '';
+                    applyFilter();
+                    search.focus();
+                }
+            });
+        });
+        cards.forEach(function (card) {
+            card.addEventListener('toggle', function () {
+                if (card.open) {
+                    try { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { }
+                }
+            });
+        });
+        tabs.forEach(function (t, index) {
+            t.addEventListener('keydown', function (event) {
+                var nextIndex = -1;
+                if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+                else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+                else if (event.key === 'Home') nextIndex = 0;
+                else if (event.key === 'End') nextIndex = tabs.length - 1;
+                if (nextIndex >= 0) {
+                    event.preventDefault();
+                    tabs[nextIndex].focus();
+                    selectTab(tabs[nextIndex].dataset.tab, true);
+                }
+            });
         });
     });
 </script>

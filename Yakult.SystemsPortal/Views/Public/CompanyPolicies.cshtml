@@ -29,24 +29,13 @@
         {
             <p><span class="dummy-data-badge">DUMMY DATA · FRONTEND SAMPLE</span></p>
         }
-        @if (Model.Categories.Count > 1)
-        {
-            <nav class="faq-filter" aria-label="Filter policies by topic">
-                <a asp-action="CompanyPolicies" asp-route-q="@Context.Request.Query["q"]" class="@(string.IsNullOrWhiteSpace(Context.Request.Query["category"]) ? "is-active" : null)">All topics</a>
-                @foreach (var category in Model.Categories)
-                {
-                    <a asp-action="CompanyPolicies" asp-route-q="@Context.Request.Query["q"]" asp-route-category="@category" class="@(string.Equals(category, Context.Request.Query["category"], StringComparison.OrdinalIgnoreCase) ? "is-active" : null)">@category</a>
-                }
-            </nav>
-        }
-
         @if (Model.Items.Count == 0)
         {
-            <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No policies found</h2><p>Try a different search, or browse all policies.</p><a asp-action="CompanyPolicies">Browse all policies</a></div>
+            <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No policies found</h2><p>Try a different search, or browse all policies.</p><p><a asp-action="CompanyPolicies">Browse all policies</a> <button type="button" class="portal-button portal-button--outline" id="policyClearSearch">Clear search</button></p></div>
         }
         else
         {
-            <div class="policy-grid">
+            <div class="policy-grid" id="policyGrid">
                 @foreach (var item in Model.Items)
                 {
                     <a class="policy-card" asp-controller="Public" asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">
@@ -57,6 +46,34 @@
                     </a>
                 }
             </div>
+            <p class="faq-count" id="policyCount" role="status" aria-live="polite"></p>
         }
     </div>
 </main>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var search = document.getElementById('policySearch');
+        var cards = Array.from(document.querySelectorAll('#policyGrid .policy-card'));
+        var count = document.getElementById('policyCount');
+        var clearBtn = document.getElementById('policyClearSearch');
+        function applyPolicyFilter() {
+            var term = (search && search.value || '').trim().toLowerCase();
+            var shown = 0;
+            cards.forEach(function (card) {
+                var show = !term || card.textContent.toLowerCase().includes(term);
+                card.style.display = show ? '' : 'none';
+                if (show) shown++;
+            });
+            if (count) count.textContent = term ? shown + ' polic' + (shown === 1 ? 'y' : 'ies') + ' found.' : '';
+        }
+        if (search) search.addEventListener('input', applyPolicyFilter);
+        if (clearBtn && search) clearBtn.addEventListener('click', function () {
+            search.value = '';
+            applyPolicyFilter();
+            search.focus();
+        });
+    });
+</script>
+}
