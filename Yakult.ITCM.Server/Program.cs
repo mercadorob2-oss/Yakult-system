@@ -298,6 +298,60 @@ app.MapPost("/api/itcm/tickets/{ticketId}/assign", async (
     });
 }).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
 
+// ── Ticket Bulk Assign (triage queue clearing) ───────────────────────────
+app.MapPost("/api/itcm/tickets/bulk-assign", async (
+    HttpContext context,
+    IAntiforgery antiforgery,
+    ItcmAuditService audit,
+    IItcmRepository repo,
+    EmailService emailService,
+    TicketBulkAssignRequest req) =>
+{
+    if (!await ValidateCsrfAsync(context, antiforgery, audit, "TicketBulkAssign"))
+        return Results.BadRequest(new { Message = "Invalid request token." });
+
+    var ids = (req.TicketIds ?? new List<int>()).Where(i => i > 0).Distinct().Take(100).ToList();
+    if (ids.Count == 0)
+    {
+        audit.Record(context, "TicketBulkAssign", false, "validation-error");
+        return Results.BadRequest(new { Message = "TicketIds must contain at least one positive ticket id (max 100)." });
+    }
+    if (req.AssignedToEmpId.HasValue)
+    {
+        if (req.AssignedToEmpId.Value <= 0)
+        {
+            audit.Record(context, "TicketBulkAssign", false, "validation-error");
+            return Results.BadRequest(new { Message = "AssignedToEmpId must be a positive employee id, or omitted to unassign." });
+        }
+        if (!await repo.IsItEmployeeAsync(req.AssignedToEmpId.Value))
+        {
+            audit.Record(context, "TicketBulkAssign", false, "validation-error");
+            return Results.BadRequest(new { Message = "AssignedToEmpId must reference an active IT employee." });
+        }
+    }
+
+    var userId = GetUserId(context.User);
+    var results = new List<object>();
+    var assigned = 0;
+    var skipped = 0;
+    foreach (var ticketId in ids)
+    {
+        var ticket = await repo.GetTicketNotificationDataAsync(ticketId);
+        if (ticket is null) { skipped++; results.Add(new { ticketId, ok = false, message = "Ticket not found." }); continue; }
+        if (IsFinalTicketStatus(ticket.Status)) { skipped++; results.Add(new { ticketId, ok = false, message = "Final ticket; reopen first." }); continue; }
+        if (ticket.AssignedToEmpId == req.AssignedToEmpId) { results.Add(new { ticketId, ok = true, message = "Already assigned." }); continue; }
+        var prev = ticket.AssignedToEmpId;
+        var prevName = ticket.AssignedTo;
+        await repo.AssignTicketEmployeeAsync(ticketId, req.AssignedToEmpId, userId);
+        if (req.AssignedToEmpId.HasValue)
+            await emailService.NotifyAssignmentAsync(ticketId, req.AssignedToEmpId.Value, userId, prev, prevName);
+        assigned++;
+        results.Add(new { ticketId, ok = true, message = req.AssignedToEmpId.HasValue ? "Assigned." : "Unassigned." });
+    }
+    audit.Record(context, "TicketBulkAssign", true, $"assignee={req.AssignedToEmpId?.ToString() ?? "unassigned"};assigned={assigned};skipped={skipped};total={ids.Count}");
+    return Results.Ok(new { success = true, assigned, skipped, total = ids.Count, results });
+}).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
+
 // ── Ticket Escalate (manual escalation from the dashboard) ─────────────────────
 app.MapPost("/api/itcm/tickets/{ticketId}/escalate", async (
     string ticketId,
@@ -841,6 +895,8 @@ app.Run();
 record PresenceBeatRequest(string? MachineName, string? UserName, string? Module, string? ClientVersion);
 
 record TicketAssignRequest(int? AssignedToEmpId);
+
+record TicketBulkAssignRequest(List<int>? TicketIds, int? AssignedToEmpId);
 
 record TicketEscalateRequest(string? Note);
 
