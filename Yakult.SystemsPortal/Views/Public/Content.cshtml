@@ -8,6 +8,8 @@
     var isMediaCourse = isCourse || isVideo;
     var hasPlayerMedia = Model.Media.Kind == "YouTube" || Model.Media.Kind == "HostedVideo";
     var isTracked = isCourse || (isVideo && User.Identity?.IsAuthenticated == true);
+    var bodyWordCount = (item.Body ?? string.Empty).Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+    var learnMinutes = Math.Max(1, (int)Math.Ceiling(bodyWordCount / 200.0));
 }
 @functions {
     private static string CourseChipState(PortalCourseProgress? course) =>
@@ -37,9 +39,10 @@
     }
 }
 
-<article class="article-page @(isMediaCourse ? "article-page--course" : null)">
-    <header class="article-header">
+<article class="article-page learning-article @(isMediaCourse ? "article-page--course" : null)">
+    <header class="article-header policy-header learning-header">
         <div class="portal-container article-header__inner">
+            <a class="article-back" asp-controller="Public" asp-action="Learning">← Back to Learning</a>
             <nav class="article-breadcrumb" aria-label="Breadcrumb">
                 <a asp-controller="Public" asp-action="Index">Home</a>
                 <span aria-hidden="true">/</span>
@@ -50,6 +53,14 @@
                 }
                 <span>@item.CategoryName</span>
             </nav>
+            <div class="policy-header__chips" aria-label="Content facts">
+                <span class="policy-chip">@item.ContentType</span>
+                <span class="policy-chip">@item.CategoryName</span>
+                @if (Model.Progress is { DurationSec: > 0 })
+                {
+                    <span class="policy-chip">~@(Math.Max(1, (int)Math.Round(Model.Progress.DurationSec / 60.0))) min video</span>
+                }
+            </div>
             @if (isMediaCourse)
             {
                 <button type="button" class="article-print article-print--hero" id="articlePrint">Print or save as PDF</button>
@@ -58,16 +69,12 @@
             {
                 <span class="portal-eyebrow course-hero-eyebrow"><span class="course-hero-glyph" aria-hidden="true">▶</span>@item.ContentType · @item.CategoryName</span>
             }
-            else
-            {
-                <span class="portal-eyebrow">@item.ContentType · @item.CategoryName</span>
-            }
-            <h1>@item.Title</h1>
+            <h1 class="policy-title">@item.Title</h1>
             @if (item.IsDemo)
             {
                 <span class="dummy-data-badge">DUMMY DATA · FRONTEND SAMPLE</span>
             }
-            @if(!string.IsNullOrWhiteSpace(item.Summary)){<p>@item.Summary</p>}
+            @if(!string.IsNullOrWhiteSpace(item.Summary)){<p class="policy-summary">@item.Summary</p>}
             @if (isMediaCourse)
             {
                 <div class="course-cta-row">
@@ -95,9 +102,13 @@
             }
             else
             {
-                <div class="article-header__meta">
+                <div class="article-header__meta policy-meta">
                     <span>Updated @item.UpdatedAtUtc.ToLocalTime().ToString("MMMM d, yyyy")</span>
-                    <button type="button" class="article-print" id="articlePrint">Print or save as PDF</button>
+                    <span aria-hidden="true">·</span>
+                    <span>@learnMinutes min read</span>
+                    <span aria-hidden="true">·</span>
+                    <span><span id="learningSectionCount">–</span> sections</span>
+                    <button type="button" class="article-print policy-print" id="articlePrint">Print or save as PDF</button>
                 </div>
             }
         </div>
@@ -105,6 +116,10 @@
     <div class="portal-container article-layout">
         <div class="article-content">
             @if (!isMediaCourse && !string.IsNullOrWhiteSpace(item.ThumbnailUrl)) { <img class="article-image" src="@item.ThumbnailUrl" alt="" /> }
+            <div class="policy-takeaways" id="learningTakeaways" hidden aria-label="Key takeaways">
+                <strong>Key takeaways</strong>
+                <ul id="learningTakeawaysList"></ul>
+            </div>
             <div class="course-stage" id="courseStage" hidden="@(isMediaCourse && hasPlayerMedia ? false : true)">
             @if (isTracked)
             {
@@ -198,8 +213,8 @@
                     }
                 </div>
             }
-            <div><span class="portal-eyebrow">Resource details</span><dl><dt>Type</dt><dd>@item.ContentType</dd><dt>Section</dt><dd>@item.CategoryName</dd><dt>Last updated</dt><dd>@item.UpdatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</dd></dl></div>
             @if(item.Links.Count>0){<div><h2>Related resources</h2>@foreach(var link in item.Links){<a data-track="ContentLink" data-track-key="@link.LinkId" href="@link.Url" target="_blank" rel="noopener noreferrer">@link.Label <span aria-hidden="true">↗</span></a>}</div>}
+            <div><span class="portal-eyebrow">Resource details</span><dl><dt>Type</dt><dd>@item.ContentType</dd><dt>Section</dt><dd>@item.CategoryName</dd><dt>Last updated</dt><dd>@item.UpdatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</dd></dl></div>
         </aside>
     </div>
 
@@ -242,6 +257,32 @@
 
 <script>
     document.getElementById('articlePrint')?.addEventListener('click', function () { window.print(); });
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            var body = document.querySelector('.learning-article .article-body');
+            var count = document.getElementById('learningSectionCount');
+            var box = document.getElementById('learningTakeaways');
+            var list = document.getElementById('learningTakeawaysList');
+            if (body) {
+                var heads = body.querySelectorAll('h2');
+                if (count) count.textContent = heads.length;
+                if (box && list && heads.length >= 2) {
+                    Array.from(heads).slice(0, 3).forEach(function (h) {
+                        if (!h.id) h.id = 'learning-section-' + Math.random().toString(36).slice(2, 7);
+                        h.classList.add('policy-anchor');
+                        var li = document.createElement('li');
+                        var a = document.createElement('a');
+                        a.href = '#' + h.id;
+                        a.textContent = h.textContent;
+                        a.style.cssText = 'color:inherit;text-decoration:none;';
+                        li.appendChild(a);
+                        list.appendChild(li);
+                    });
+                    box.hidden = false;
+                }
+            }
+        } catch (_) { }
+    });
     @if (item.ContentType.Equals("Video", StringComparison.OrdinalIgnoreCase) || isCourse)
     {
         <text>
