@@ -176,14 +176,19 @@ namespace Yakult.Inventory.App.WPF.EDocs.Transmittal.Views
         }
 
         // A value centred over its underline, the rule sitting on the row's
-        // bottom edge.
+        // bottom edge. Long values shrink (10pt down to a 7.5pt floor) before
+        // any ellipsis is applied, so full signatory names print instead of
+        // being cut to "RODOLFO L. AN…".
         private static void RuledValue(DrawingContext dc, string value, double x1, double x2, double ruleY, Pen pen)
         {
             dc.DrawLine(pen, new Point(x1, ruleY), new Point(x2, ruleY));
             if (string.IsNullOrWhiteSpace(value)) return;
             double avail = x2 - x1 - 4;
-            string text = Ellipsize(value, avail, FormBold, 10);
-            var ft = FT(text, FormBold, 10);
+            double size = 10.0;
+            while (size > 7.5 && MeasureW(value, FormBold, size) > avail)
+                size -= 0.5;
+            string text = Ellipsize(value, avail, FormBold, size);
+            var ft = FT(text, FormBold, size);
             dc.DrawText(ft, new Point((x1 + x2) / 2.0 - ft.Width / 2.0, ruleY - 2.5 - ft.Baseline));
         }
 
