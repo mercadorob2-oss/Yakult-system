@@ -353,6 +353,70 @@ app.MapPost("/api/itcm/tickets/{ticketId}/escalate", async (
     return Results.Ok(new { success = true, message = "Ticket escalated." });
 }).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
 
+// ── Ticket Resolve / Reopen (manual close-the-loop from the dashboard) ──
+app.MapPost("/api/itcm/tickets/{ticketId}/resolve", async (
+    string ticketId,
+    HttpContext context,
+    IAntiforgery antiforgery,
+    ItcmAuditService audit,
+    IItcmRepository repo,
+    EmailService emailService,
+    TicketResolveRequest req) =>
+{
+    if (!await ValidateCsrfAsync(context, antiforgery, audit, "TicketResolve"))
+        return Results.BadRequest(new { Message = "Invalid request token." });
+
+    var id = await ResolveTicketIdAsync(repo, ticketId);
+    if (!id.HasValue)
+    {
+        audit.Record(context, "TicketResolve", false, "not-found");
+        return Results.NotFound(new { Message = "Ticket not found." });
+    }
+    var ticket = await repo.GetTicketNotificationDataAsync(id.Value);
+    if (ticket is null)
+    {
+        audit.Record(context, "TicketResolve", false, "not-found");
+        return Results.NotFound(new { Message = "Ticket not found." });
+    }
+    var newStatus = (req.NewStatus ?? string.Empty).Trim();
+    var allowed = new[] { "Solved", "Resolved (Temporary)", "Closed", "Reopened" };
+    if (!allowed.Any(a => string.Equals(a, newStatus, StringComparison.OrdinalIgnoreCase)))
+    {
+        audit.Record(context, "TicketResolve", false, "validation-error");
+        return Results.BadRequest(new { Message = "NewStatus must be Solved, Resolved (Temporary), Closed, or Reopened." });
+    }
+    var note = (req.Note ?? string.Empty).Trim();
+    var current = ticket.Status ?? string.Empty;
+    var targetIsFinal = !string.Equals(newStatus, "Reopened", StringComparison.OrdinalIgnoreCase);
+    if (targetIsFinal)
+    {
+        if (IsFinalTicketStatus(current))
+        {
+            audit.Record(context, "TicketResolve", false, "already-final");
+            return Results.Conflict(new { Message = "Ticket is already in a final state." });
+        }
+        if (string.IsNullOrWhiteSpace(note))
+        {
+            audit.Record(context, "TicketResolve", false, "validation-error");
+            return Results.BadRequest(new { Message = "A resolution note is required (desktop Mark-As parity)." });
+        }
+    }
+    else
+    {
+        if (!IsFinalTicketStatus(current))
+        {
+            audit.Record(context, "TicketResolve", false, "nothing-to-reopen");
+            return Results.Conflict(new { Message = "Only a Solved / Resolved (Temporary) / Closed ticket can be reopened." });
+        }
+    }
+
+    var userId = GetUserId(context.User);
+    await repo.SetTicketStatusAsync(id.Value, newStatus, userId, string.IsNullOrWhiteSpace(note) ? null : note);
+    await emailService.NotifyStatusChangeAsync(id.Value, current, newStatus, note, userId);
+    audit.Record(context, "TicketResolve", true, $"status={newStatus}");
+    return Results.Ok(new { success = true, message = $"Ticket marked as {newStatus}." });
+}).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
+
 // ── Run Now ────────────────────────────────────────────────────────────────────────
 app.MapPost("/api/itcm/scheduler/run-now", async (
     HttpContext context,
@@ -779,6 +843,8 @@ record PresenceBeatRequest(string? MachineName, string? UserName, string? Module
 record TicketAssignRequest(int? AssignedToEmpId);
 
 record TicketEscalateRequest(string? Note);
+
+record TicketResolveRequest(string? NewStatus, string? Note);
 
 record EmailSettingsSaveRequest(
     string? SmtpServer,
