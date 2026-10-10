@@ -18,7 +18,17 @@ namespace Yakult.Inventory.App.WPF.Renewal.RenewalDetail.Views
             _vm.RequestInfo  += (title, msg) => MessageBox.Show(this, msg, title, MessageBoxButton.OK, MessageBoxImage.Information);
             _vm.RequestError += (title, msg) => MessageBox.Show(this, msg, title, MessageBoxButton.OK, MessageBoxImage.Error);
 
-            Loaded += async (_, __) => await _vm.LoadAsync();
+            Loaded += async (_, __) =>
+            {
+                await _vm.LoadAsync();
+                await BacklogHistory.LoadAsync(setId);
+            };
+        }
+
+        private async void OnPreviousRenewals(object sender, RoutedEventArgs e)
+        {
+            HistoryTab.IsSelected = true;
+            await BacklogHistory.OpenAddPeriodAsync();
         }
 
         private void OnNavigateToSet(object sender, int targetSetId)
