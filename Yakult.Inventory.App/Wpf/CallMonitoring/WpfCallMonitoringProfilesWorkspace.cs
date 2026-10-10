@@ -54,6 +54,16 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private readonly TabControl _tabControl;
         private readonly DataGrid _openGrid;
         private readonly DataGrid _handledGrid;
+        // Pagination (client-side, mirrors WpfCallMonitoringReportsWorkspace)
+        private const int ProfilesPageSize = 14;
+        private int _openPageIndex = 1;
+        private int _handledPageIndex = 1;
+        private readonly TextBlock _openPagerText;
+        private readonly Button _openPrevButton;
+        private readonly Button _openNextButton;
+        private readonly TextBlock _handledPagerText;
+        private readonly Button _handledPrevButton;
+        private readonly Button _handledNextButton;
         // Profile panel
         private readonly TextBlock _profileTicketText;
         private readonly TextBlock _profileStatusText;
@@ -284,14 +294,20 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             _openGrid = CreateReportGrid();
             SetupOpenColumns(_openGrid);
+            _openPagerText = CreatePagerText();
+            _openPrevButton = CreatePagerButton("Prev");
+            _openNextButton = CreatePagerButton("Next");
             var openTab = new TabItem { Header = "Assigned (Open)" };
-            openTab.Content = new Border { Padding = new Thickness(10), Child = _openGrid };
+            openTab.Content = BuildGridTabContent(_openGrid, _openPagerText, _openPrevButton, _openNextButton);
             _tabControl.Items.Add(openTab);
 
             _handledGrid = CreateReportGrid();
             SetupHandledColumns(_handledGrid);
+            _handledPagerText = CreatePagerText();
+            _handledPrevButton = CreatePagerButton("Prev");
+            _handledNextButton = CreatePagerButton("Next");
             var handledTab = new TabItem { Header = "Handled (Solved / Closed)" };
-            handledTab.Content = new Border { Padding = new Thickness(10), Child = _handledGrid };
+            handledTab.Content = BuildGridTabContent(_handledGrid, _handledPagerText, _handledPrevButton, _handledNextButton);
             _tabControl.Items.Add(handledTab);
 
             var splitter = new GridSplitter
@@ -415,6 +431,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _handledGrid.MouseDoubleClick += HandleGridDoubleClick;
             _openGrid.ContextMenu = BuildGridContextMenu(true);
             _handledGrid.ContextMenu = BuildGridContextMenu(false);
+            _openPrevButton.Click += (_, __) => { if (_openPageIndex > 1) { _openPageIndex--; UpdateOpenPage(); } };
+            _openNextButton.Click += (_, __) => { _openPageIndex++; UpdateOpenPage(); };
+            _handledPrevButton.Click += (_, __) => { if (_handledPageIndex > 1) { _handledPageIndex--; UpdateHandledPage(); } };
+            _handledNextButton.Click += (_, __) => { _handledPageIndex++; UpdateHandledPage(); };
         }
         // ── Context menus ────────────────────────────────────────────────────────
         private void HandleGridDoubleClick(object sender, MouseButtonEventArgs e)
@@ -755,11 +775,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 if (token.IsCancellationRequested || version != _applyFiltersVersion) return;
                 _openTicketsFiltered = result.Open;
                 _handledTicketsFiltered = result.Handled;
+                _openPageIndex = 1;
+                _handledPageIndex = 1;
                 _suppressSelectionChanged = true;
                 try
                 {
-                    _openGrid.ItemsSource = result.Open.Select(r => new OpenTicketVm(r)).ToList();
-                    _handledGrid.ItemsSource = result.Handled.Select(r => new HandledTicketVm(r)).ToList();
+                    UpdateOpenPage();
+                    UpdateHandledPage();
                     SetTicketProfileEmpty("Select a ticket");
                 }
                 finally { _suppressSelectionChanged = false; }
@@ -778,6 +800,98 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 if (branchOnly && _departmentCombo.Items.Count > 0) _departmentCombo.SelectedIndex = 0;
             }
             catch { }
+        }
+
+        // ── Pagination ────────────────────────────────────────────────────────────
+        private void UpdateOpenPage()
+        {
+            var rows = _openTicketsFiltered ?? new List<CallTechOpenTicketRow>();
+            var totalPages = NormalizeProfilesPageIndex(ref _openPageIndex, rows.Count);
+            _openGrid.ItemsSource = rows
+                .Skip((_openPageIndex - 1) * ProfilesPageSize)
+                .Take(ProfilesPageSize)
+                .Select(r => new OpenTicketVm(r))
+                .ToList();
+            _openPagerText.Text = $"Page {_openPageIndex} of {totalPages}";
+            _openPrevButton.IsEnabled = _openPageIndex > 1;
+            _openNextButton.IsEnabled = _openPageIndex < totalPages;
+        }
+
+        private void UpdateHandledPage()
+        {
+            var rows = _handledTicketsFiltered ?? new List<CallTechHandledTicketRow>();
+            var totalPages = NormalizeProfilesPageIndex(ref _handledPageIndex, rows.Count);
+            _handledGrid.ItemsSource = rows
+                .Skip((_handledPageIndex - 1) * ProfilesPageSize)
+                .Take(ProfilesPageSize)
+                .Select(r => new HandledTicketVm(r))
+                .ToList();
+            _handledPagerText.Text = $"Page {_handledPageIndex} of {totalPages}";
+            _handledPrevButton.IsEnabled = _handledPageIndex > 1;
+            _handledNextButton.IsEnabled = _handledPageIndex < totalPages;
+        }
+
+        private static int NormalizeProfilesPageIndex(ref int pageIndex, int itemCount)
+        {
+            var totalPages = Math.Max(1, (int)Math.Ceiling(itemCount / (double)ProfilesPageSize));
+            if (pageIndex < 1) pageIndex = 1;
+            if (pageIndex > totalPages) pageIndex = totalPages;
+            return totalPages;
+        }
+
+        private static Border BuildGridTabContent(DataGrid grid, TextBlock pagerText, Button prevButton, Button nextButton)
+        {
+            var layout = new Grid();
+            layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var gridHost = new Border { Padding = new Thickness(10), Child = grid };
+            Grid.SetRow(gridHost, 0);
+            layout.Children.Add(gridHost);
+
+            var pagerButtons = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 4, 10, 10)
+            };
+            pagerButtons.Children.Add(prevButton);
+            pagerButtons.Children.Add(pagerText);
+            pagerButtons.Children.Add(nextButton);
+            Grid.SetRow(pagerButtons, 1);
+            layout.Children.Add(pagerButtons);
+
+            return new Border { Child = layout };
+        }
+
+        private static TextBlock CreatePagerText()
+        {
+            return new TextBlock
+            {
+                Margin = new Thickness(12, 0, 12, 0),
+                FontSize = 11.5,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = BrushFromRgb(71, 85, 105),
+                VerticalAlignment = VerticalAlignment.Center,
+                Text = "Page 1 of 1"
+            };
+        }
+
+        private static Button CreatePagerButton(string text)
+        {
+            return new Button
+            {
+                Content = text,
+                Margin = new Thickness(0, 0, 8, 0),
+                Padding = new Thickness(14, 6, 14, 6),
+                FontSize = 11.5,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = BrushFromRgb(51, 65, 85),
+                Background = Brushes.White,
+                BorderBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
+                BorderThickness = new Thickness(1),
+                Cursor = Cursors.Hand
+            };
         }
 
         // ── Ticket profile panel ──────────────────────────────────────────────────

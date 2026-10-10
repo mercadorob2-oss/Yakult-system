@@ -298,6 +298,60 @@ app.MapPost("/api/itcm/tickets/{ticketId}/assign", async (
     });
 }).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
 
+// ── Ticket Bulk Assign (triage queue clearing) ───────────────────────────
+app.MapPost("/api/itcm/tickets/bulk-assign", async (
+    HttpContext context,
+    IAntiforgery antiforgery,
+    ItcmAuditService audit,
+    IItcmRepository repo,
+    EmailService emailService,
+    TicketBulkAssignRequest req) =>
+{
+    if (!await ValidateCsrfAsync(context, antiforgery, audit, "TicketBulkAssign"))
+        return Results.BadRequest(new { Message = "Invalid request token." });
+
+    var ids = (req.TicketIds ?? new List<int>()).Where(i => i > 0).Distinct().Take(100).ToList();
+    if (ids.Count == 0)
+    {
+        audit.Record(context, "TicketBulkAssign", false, "validation-error");
+        return Results.BadRequest(new { Message = "TicketIds must contain at least one positive ticket id (max 100)." });
+    }
+    if (req.AssignedToEmpId.HasValue)
+    {
+        if (req.AssignedToEmpId.Value <= 0)
+        {
+            audit.Record(context, "TicketBulkAssign", false, "validation-error");
+            return Results.BadRequest(new { Message = "AssignedToEmpId must be a positive employee id, or omitted to unassign." });
+        }
+        if (!await repo.IsItEmployeeAsync(req.AssignedToEmpId.Value))
+        {
+            audit.Record(context, "TicketBulkAssign", false, "validation-error");
+            return Results.BadRequest(new { Message = "AssignedToEmpId must reference an active IT employee." });
+        }
+    }
+
+    var userId = GetUserId(context.User);
+    var results = new List<object>();
+    var assigned = 0;
+    var skipped = 0;
+    foreach (var ticketId in ids)
+    {
+        var ticket = await repo.GetTicketNotificationDataAsync(ticketId);
+        if (ticket is null) { skipped++; results.Add(new { ticketId, ok = false, message = "Ticket not found." }); continue; }
+        if (IsFinalTicketStatus(ticket.Status)) { skipped++; results.Add(new { ticketId, ok = false, message = "Final ticket; reopen first." }); continue; }
+        if (ticket.AssignedToEmpId == req.AssignedToEmpId) { results.Add(new { ticketId, ok = true, message = "Already assigned." }); continue; }
+        var prev = ticket.AssignedToEmpId;
+        var prevName = ticket.AssignedTo;
+        await repo.AssignTicketEmployeeAsync(ticketId, req.AssignedToEmpId, userId);
+        if (req.AssignedToEmpId.HasValue)
+            await emailService.NotifyAssignmentAsync(ticketId, req.AssignedToEmpId.Value, userId, prev, prevName);
+        assigned++;
+        results.Add(new { ticketId, ok = true, message = req.AssignedToEmpId.HasValue ? "Assigned." : "Unassigned." });
+    }
+    audit.Record(context, "TicketBulkAssign", true, $"assignee={req.AssignedToEmpId?.ToString() ?? "unassigned"};assigned={assigned};skipped={skipped};total={ids.Count}");
+    return Results.Ok(new { success = true, assigned, skipped, total = ids.Count, results });
+}).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
+
 // ── Ticket Escalate (manual escalation from the dashboard) ─────────────────────
 app.MapPost("/api/itcm/tickets/{ticketId}/escalate", async (
     string ticketId,
@@ -351,6 +405,70 @@ app.MapPost("/api/itcm/tickets/{ticketId}/escalate", async (
     await emailService.NotifyStatusChangeAsync(id.Value, ticket.Status ?? string.Empty, "Escalated", note, userId);
     audit.Record(context, "TicketEscalate", true, null);
     return Results.Ok(new { success = true, message = "Ticket escalated." });
+}).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
+
+// ── Ticket Resolve / Reopen (manual close-the-loop from the dashboard) ──
+app.MapPost("/api/itcm/tickets/{ticketId}/resolve", async (
+    string ticketId,
+    HttpContext context,
+    IAntiforgery antiforgery,
+    ItcmAuditService audit,
+    IItcmRepository repo,
+    EmailService emailService,
+    TicketResolveRequest req) =>
+{
+    if (!await ValidateCsrfAsync(context, antiforgery, audit, "TicketResolve"))
+        return Results.BadRequest(new { Message = "Invalid request token." });
+
+    var id = await ResolveTicketIdAsync(repo, ticketId);
+    if (!id.HasValue)
+    {
+        audit.Record(context, "TicketResolve", false, "not-found");
+        return Results.NotFound(new { Message = "Ticket not found." });
+    }
+    var ticket = await repo.GetTicketNotificationDataAsync(id.Value);
+    if (ticket is null)
+    {
+        audit.Record(context, "TicketResolve", false, "not-found");
+        return Results.NotFound(new { Message = "Ticket not found." });
+    }
+    var newStatus = (req.NewStatus ?? string.Empty).Trim();
+    var allowed = new[] { "Solved", "Resolved (Temporary)", "Closed", "Reopened" };
+    if (!allowed.Any(a => string.Equals(a, newStatus, StringComparison.OrdinalIgnoreCase)))
+    {
+        audit.Record(context, "TicketResolve", false, "validation-error");
+        return Results.BadRequest(new { Message = "NewStatus must be Solved, Resolved (Temporary), Closed, or Reopened." });
+    }
+    var note = (req.Note ?? string.Empty).Trim();
+    var current = ticket.Status ?? string.Empty;
+    var targetIsFinal = !string.Equals(newStatus, "Reopened", StringComparison.OrdinalIgnoreCase);
+    if (targetIsFinal)
+    {
+        if (IsFinalTicketStatus(current))
+        {
+            audit.Record(context, "TicketResolve", false, "already-final");
+            return Results.Conflict(new { Message = "Ticket is already in a final state." });
+        }
+        if (string.IsNullOrWhiteSpace(note))
+        {
+            audit.Record(context, "TicketResolve", false, "validation-error");
+            return Results.BadRequest(new { Message = "A resolution note is required (desktop Mark-As parity)." });
+        }
+    }
+    else
+    {
+        if (!IsFinalTicketStatus(current))
+        {
+            audit.Record(context, "TicketResolve", false, "nothing-to-reopen");
+            return Results.Conflict(new { Message = "Only a Solved / Resolved (Temporary) / Closed ticket can be reopened." });
+        }
+    }
+
+    var userId = GetUserId(context.User);
+    await repo.SetTicketStatusAsync(id.Value, newStatus, userId, string.IsNullOrWhiteSpace(note) ? null : note);
+    await emailService.NotifyStatusChangeAsync(id.Value, current, newStatus, note, userId);
+    audit.Record(context, "TicketResolve", true, $"status={newStatus}");
+    return Results.Ok(new { success = true, message = $"Ticket marked as {newStatus}." });
 }).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
 
 // ── Run Now ────────────────────────────────────────────────────────────────────────
@@ -645,6 +763,112 @@ app.MapPost("/api/itcm/email/rules/save", async (
     }
 }).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
 
+// ── Email Templates (admin editor backing) ─────────────────────────────
+app.MapGet("/api/itcm/email/templates", async (IItcmRepository repo) =>
+{
+    var items = await repo.GetAllEmailTemplatesAsync();
+    return Results.Ok(items.Select(t => new
+    {
+        templateType = t.TemplateType,
+        subject = t.Subject,
+        body = t.Body,
+        isActive = t.IsActive,
+        updatedAt = t.UpdatedAt
+    }));
+}).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
+
+app.MapPost("/api/itcm/email/templates/save", async (
+    HttpContext context,
+    IAntiforgery antiforgery,
+    ItcmAuditService audit,
+    IItcmRepository repo,
+    EmailTemplateSaveRequest req) =>
+{
+    if (!await ValidateCsrfAsync(context, antiforgery, audit, "EmailTemplateSave"))
+        return Results.BadRequest(new { success = false, message = "Invalid request token." });
+
+    var allowed = new[] { "Reminder", "Escalation", "StatusUpdate", "Assignment", "Reassignment" };
+    var type = (req.TemplateType ?? string.Empty).Trim();
+    if (!allowed.Any(a => string.Equals(a, type, StringComparison.OrdinalIgnoreCase)))
+    {
+        audit.Record(context, "EmailTemplateSave", false, "validation-error");
+        return Results.BadRequest(new { success = false, message = "Unknown template type." });
+    }
+    try
+    {
+        await repo.SaveEmailTemplateAsync(new CallEmailTemplateItem
+        {
+            TemplateType = type,
+            Subject = req.Subject ?? string.Empty,
+            Body = req.Body ?? string.Empty,
+            IsActive = req.IsActive,
+            UpdatedByUserId = GetUserId(context.User)
+        });
+        audit.Record(context, "EmailTemplateSave", true, $"type={type}");
+        return Results.Ok(new { success = true, message = $"{type} template saved." });
+    }
+    catch (Exception ex)
+    {
+        audit.Record(context, "EmailTemplateSave", false, "save-failed");
+        return Results.Problem($"Could not save template: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+    }
+}).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
+
+// ── Per-ticket email log + resend ──────────────────────────────────────
+app.MapGet("/api/itcm/tickets/{ticketId}/emails", async (string ticketId, IItcmRepository repo, int maxRows = 50) =>
+{
+    var id = await ResolveTicketIdAsync(repo, ticketId);
+    if (!id.HasValue)
+        return Results.NotFound(new { Message = "Ticket not found." });
+    var items = await repo.GetEmailLogForTicketAsync(id.Value, maxRows);
+    return Results.Ok(items.Select(e => new
+    {
+        emailLogId = e.EmailLogId,
+        emailType = e.EmailType,
+        recipient = e.Recipient,
+        subject = e.Subject,
+        status = e.Status,
+        errorMessage = e.ErrorMessage,
+        dateSent = e.DateSent
+    }));
+}).RequireAuthorization();
+
+app.MapPost("/api/itcm/tickets/{ticketId}/emails/{emailLogId}/resend", async (
+    string ticketId,
+    long emailLogId,
+    HttpContext context,
+    IAntiforgery antiforgery,
+    ItcmAuditService audit,
+    IItcmRepository repo,
+    EmailService emailService) =>
+{
+    if (!await ValidateCsrfAsync(context, antiforgery, audit, "EmailResend"))
+        return Results.BadRequest(new { Message = "Invalid request token." });
+
+    var id = await ResolveTicketIdAsync(repo, ticketId);
+    if (!id.HasValue)
+    {
+        audit.Record(context, "EmailResend", false, "not-found");
+        return Results.NotFound(new { Message = "Ticket not found." });
+    }
+    var ticket = await repo.GetTicketNotificationDataAsync(id.Value);
+    if (ticket is null)
+    {
+        audit.Record(context, "EmailResend", false, "not-found");
+        return Results.NotFound(new { Message = "Ticket not found." });
+    }
+    // V1: the log stores subject but not body, so resend issues a fresh
+    // StatusUpdate notification to the ticket's current recipients.
+    var userId = GetUserId(context.User);
+    var result = await emailService.NotifyStatusChangeAsync(
+        id.Value, ticket.Status ?? string.Empty, ticket.Status ?? string.Empty,
+        $"Resent from email log #{emailLogId} via dashboard.", userId);
+    audit.Record(context, "EmailResend", result.SentSuccessfully, $"log={emailLogId};ticket={id.Value}");
+    if (result.SentSuccessfully)
+        return Results.Ok(new { success = true, message = "Notification re-sent to current recipients." });
+    return Results.Ok(new { success = false, message = result.Message ?? "Resend did not produce an email (check rules/template)." });
+}).RequireAuthorization(ItcmAuthDefaults.AdministratorPolicy);
+
 app.MapPost("/api/itcm/email/test-smtp", async (
     HttpContext context,
     IAntiforgery antiforgery,
@@ -778,7 +1002,11 @@ record PresenceBeatRequest(string? MachineName, string? UserName, string? Module
 
 record TicketAssignRequest(int? AssignedToEmpId);
 
+record TicketBulkAssignRequest(List<int>? TicketIds, int? AssignedToEmpId);
+
 record TicketEscalateRequest(string? Note);
+
+record TicketResolveRequest(string? NewStatus, string? Note);
 
 record EmailSettingsSaveRequest(
     string? SmtpServer,
@@ -797,6 +1025,8 @@ record NotificationRulesSaveRequest(
     string? GroupEmail,
     string? EscalationEmail,
     int ReminderDays);
+
+record EmailTemplateSaveRequest(string? TemplateType, string? Subject, string? Body, bool IsActive);
 
 record SmtpTestRequest(
     string? SmtpServer,

@@ -180,6 +180,110 @@ ORDER BY TemplateId DESC;";
         };
     }
 
+    public async Task<List<CallEmailTemplateItem>> GetAllEmailTemplatesAsync()
+    {
+        var items = new List<CallEmailTemplateItem>();
+        await using var conn = CreateConnection();
+        await conn.OpenAsync();
+        if (!await SchemaGate.TableExistsAsync(conn, "dbo.CallEmailTemplate"))
+            return items;
+
+        // One row per type enforced by UQ_CallEmailTemplate_Type: plain select.
+        const string sql = @"
+SELECT TemplateId, TemplateType, Subject, Body, IsActive, UpdatedAt, UpdatedByUserId
+FROM dbo.CallEmailTemplate
+ORDER BY TemplateType;";
+        await using var cmd = new SqlCommand(sql, conn);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            items.Add(new CallEmailTemplateItem
+            {
+                TemplateId = reader.GetInt32(0),
+                TemplateType = reader.IsDBNull(1) ? string.Empty : reader.GetString(1),
+                Subject = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                Body = reader.IsDBNull(3) ? string.Empty : reader.GetString(3),
+                IsActive = reader.GetBoolean(4),
+                UpdatedAt = reader.GetDateTime(5),
+                UpdatedByUserId = reader.IsDBNull(6) ? null : reader.GetInt32(6)
+            });
+        }
+        return items;
+    }
+
+    public async Task SaveEmailTemplateAsync(CallEmailTemplateItem template)
+    {
+        ArgumentNullException.ThrowIfNull(template);
+        await using var conn = CreateConnection();
+        await conn.OpenAsync();
+        if (!await SchemaGate.TableExistsAsync(conn, "dbo.CallEmailTemplate"))
+            throw new InvalidOperationException("CallEmailTemplate table is not installed in this database yet.");
+
+        // UQ_CallEmailTemplate_Type enforces one row per type: UPDATE if present,
+        // else INSERT. (Unlike notification rules, templates are NOT append-only.)
+        const string updateSql = @"
+UPDATE dbo.CallEmailTemplate
+SET Subject = @Subject, Body = @Body, IsActive = @IsActive, UpdatedAt = sysutcdatetime(), UpdatedByUserId = @UpdatedByUserId
+WHERE TemplateType = @TemplateType;";
+        await using (var updateCmd = new SqlCommand(updateSql, conn))
+        {
+            updateCmd.Parameters.AddWithValue("@TemplateType", template.TemplateType.Trim());
+            updateCmd.Parameters.AddWithValue("@Subject", (object?)template.Subject ?? DBNull.Value);
+            updateCmd.Parameters.AddWithValue("@Body", (object?)template.Body ?? DBNull.Value);
+            updateCmd.Parameters.AddWithValue("@IsActive", template.IsActive);
+            updateCmd.Parameters.AddWithValue("@UpdatedByUserId", (object?)template.UpdatedByUserId ?? DBNull.Value);
+            if (await updateCmd.ExecuteNonQueryAsync() > 0)
+                return;
+        }
+        const string insertSql = @"
+INSERT dbo.CallEmailTemplate (TemplateType, Subject, Body, IsActive, UpdatedByUserId)
+VALUES (@TemplateType, @Subject, @Body, @IsActive, @UpdatedByUserId);";
+        await using var insertCmd = new SqlCommand(insertSql, conn);
+        insertCmd.Parameters.AddWithValue("@TemplateType", template.TemplateType.Trim());
+        insertCmd.Parameters.AddWithValue("@Subject", (object?)template.Subject ?? DBNull.Value);
+        insertCmd.Parameters.AddWithValue("@Body", (object?)template.Body ?? DBNull.Value);
+        insertCmd.Parameters.AddWithValue("@IsActive", template.IsActive);
+        insertCmd.Parameters.AddWithValue("@UpdatedByUserId", (object?)template.UpdatedByUserId ?? DBNull.Value);
+        await insertCmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task<List<CallEmailLogItem>> GetEmailLogForTicketAsync(int ticketId, int maxRows = 50)
+    {
+        var items = new List<CallEmailLogItem>();
+        maxRows = Math.Clamp(maxRows, 1, 200);
+        await using var conn = CreateConnection();
+        await conn.OpenAsync();
+        if (!await SchemaGate.TableExistsAsync(conn, "dbo.CallEmailLog"))
+            return items;
+
+        const string sql = @"
+SELECT TOP (@MaxRows)
+    EmailLogId, TicketId, EmailType, Recipient, Subject, Status, ErrorMessage, DateSent, CreatedByUserId
+FROM dbo.CallEmailLog
+WHERE TicketId = @TicketId
+ORDER BY DateSent DESC, EmailLogId DESC;";
+        await using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@MaxRows", maxRows);
+        cmd.Parameters.AddWithValue("@TicketId", ticketId);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            items.Add(new CallEmailLogItem
+            {
+                EmailLogId = reader.IsDBNull(0) ? 0 : reader.GetInt64(0),
+                TicketId = reader.IsDBNull(1) ? null : reader.GetInt32(1),
+                EmailType = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                Recipient = reader.IsDBNull(3) ? null : reader.GetString(3),
+                Subject = reader.IsDBNull(4) ? null : reader.GetString(4),
+                Status = reader.IsDBNull(5) ? string.Empty : reader.GetString(5),
+                ErrorMessage = reader.IsDBNull(6) ? null : reader.GetString(6),
+                DateSent = reader.GetDateTime(7),
+                CreatedByUserId = reader.IsDBNull(8) ? null : reader.GetInt32(8)
+            });
+        }
+        return items;
+    }
+
     // ─── Ticket Notification Data ──────────────────────────────────────────────────
 
     public async Task<CallTicketNotificationData?> GetTicketNotificationDataAsync(int ticketId)

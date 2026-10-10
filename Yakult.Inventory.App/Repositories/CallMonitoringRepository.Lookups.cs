@@ -898,14 +898,21 @@ WHERE e.EmpId = @EmpId;";
                 var hasBranchId = await CallSchemaGate.ColumnExistsAsync(connection, "dbo.Employee", "BranchId");
                 var hasBdc = await CallSchemaGate.TableExistsAsync(connection, "dbo.BranchDepartmentCompany");
 
-                // When possible, derive the company from BranchDepartmentCompany using the employee's BranchId+DeptId.
-                // This avoids relying on deprecated Branch/Department ownership columns.
+                // Honor the employee's stored company when it matches a mapped assignment.
+                // Shared branches can belong to several companies; company ID ordering is only a fallback.
                 string comIdSelect;
                 if (hasBdc && hasBranchId)
                 {
                     var fallback = hasComId ? "e.ComId" : "CAST(NULL AS int)";
+                    var mappedCompany = hasComId ? @"
+        CASE WHEN EXISTS (
+            SELECT 1 FROM dbo.BranchDepartmentCompany assigned
+            WHERE assigned.CompanyID = e.ComId AND assigned.BranchID = e.BranchId
+              AND (assigned.DepartmentID = e.DeptId OR assigned.DepartmentID IS NULL)
+        ) THEN e.ComId END," : "";
                     comIdSelect = $@"
     COALESCE(
+        {mappedCompany}
         (
             SELECT TOP 1 bdc.CompanyID
             FROM dbo.BranchDepartmentCompany bdc

@@ -174,10 +174,18 @@
       </div>
       <div class="data-table-wrap monitoring-table-wrap">
         <table class="data-table">
-          <thead><tr><th>Ticket</th><th>Caller / Issue</th><th>Priority</th><th>Created</th>@if (User.HasClaim("ItcmAdministrator", "true")) {<th>Action</th>}</tr></thead>
+          <thead><tr>@if (User.HasClaim("ItcmAdministrator", "true")) {<th><input type="checkbox" id="triageSelectAll" aria-label="Select all triage tickets" /></th>}<th>Ticket</th><th>Caller / Issue</th><th>Priority</th><th>Created</th>@if (User.HasClaim("ItcmAdministrator", "true")) {<th>Action</th>}</tr></thead>
           <tbody id="portalTriageBody"></tbody>
         </table>
       </div>
+      @if (User.HasClaim("ItcmAdministrator", "true"))
+      {
+        <div class="escalate-row" id="triageBulkBar">
+          <select id="triageBulkSelect" class="filter-input device-select" style="max-width:220px" aria-label="Bulk assignee"></select>
+          <button class="primary sm" onclick="bulkAssignTickets()">Assign selected</button>
+          <span class="pill muted" id="triageSelectedCount">0 selected</span>
+        </div>
+      }
     </div>
     <div class="card">
       <div class="card-header">
@@ -264,6 +272,97 @@
         <span class="pill muted" title="Escalation needs an administrator sign-in">Admin only</span>
       </div>
     }
+  </div>
+
+  <!-- ── Resolve / Reopen (admin only) ── -->
+  <div class="card row-gap">
+    <div class="card-header">
+      <div>
+        <div class="card-title"><span class="dot"></span>Resolve / Reopen</div>
+        <div class="card-helper">Mark Solved / Resolved (Temporary) / Closed (note required) or Reopen a final ticket.</div>
+      </div>
+    </div>
+    @if (User.HasClaim("ItcmAdministrator", "true"))
+    {
+      <div class="escalate-row">
+        <input type="text" class="filter-input" id="qaResolveTicket" placeholder="TCK-000123 or 123" aria-label="Ticket code or ID" />
+        <select id="qaResolveStatus" class="filter-input device-select" aria-label="Target status">
+          <option>Solved</option>
+          <option>Resolved (Temporary)</option>
+          <option>Closed</option>
+          <option>Reopened</option>
+        </select>
+        <input type="text" class="filter-input escalate-note" id="qaResolveNote" placeholder="Resolution note (required except Reopen)" aria-label="Resolution note" />
+        <button class="warn sm" onclick="resolveTicket()">Apply</button>
+      </div>
+    }
+    else
+    {
+      <div class="quick-action-row">
+        <label class="grow">Resolve / reopen by ticket ID</label>
+        <span class="pill muted" title="Needs an administrator sign-in">Admin only</span>
+      </div>
+    }
+  </div>
+
+  <!-- ── Email templates (admin only) ── -->
+  <div class="card row-gap">
+    <div class="card-header">
+      <div>
+        <div class="card-title"><span class="dot"></span>Email Templates</div>
+        <div class="card-helper">Placeholders like {{TicketCode}} {{Status}} {{Note}} render per ticket. One row per type.</div>
+      </div>
+    </div>
+    @if (User.HasClaim("ItcmAdministrator", "true"))
+    {
+      <div class="escalate-row">
+        <select id="tplType" class="filter-input device-select" aria-label="Template type">
+          <option>Reminder</option>
+          <option>Escalation</option>
+          <option>StatusUpdate</option>
+          <option>Assignment</option>
+          <option>Reassignment</option>
+        </select>
+        <label class="check-toggle" title="Inactive templates cause sends to be skipped + logged"><input type="checkbox" id="tplActive" checked /> Active</label>
+        <button class="ghost sm" onclick="loadTemplate()">Load</button>
+      </div>
+      <div class="escalate-row">
+        <input type="text" class="filter-input" id="tplSubject" placeholder="Subject ({{TicketCode}} …)" aria-label="Template subject" style="flex:2" />
+      </div>
+      <div class="escalate-row">
+        <textarea class="filter-input" id="tplBody" rows="6" placeholder="Body — {{CallerName}} {{Issue}} {{OldStatus}} → {{NewStatus}} {{Note}}" aria-label="Template body" style="flex:1"></textarea>
+      </div>
+      <div class="escalate-row">
+        <button class="primary sm" onclick="saveTemplate()">Save template</button>
+      </div>
+    }
+    else
+    {
+      <div class="quick-action-row">
+        <label class="grow">Email template editing</label>
+        <span class="pill muted" title="Needs an administrator sign-in">Admin only</span>
+      </div>
+    }
+  </div>
+
+  <!-- ── Ticket email log ── -->
+  <div class="card row-gap">
+    <div class="card-header">
+      <div>
+        <div class="card-title"><span class="dot"></span>Ticket Email Log</div>
+        <div class="card-helper">Search deliveries for one ticket. Resend issues a fresh status notification (original body is not stored).</div>
+      </div>
+    </div>
+    <div class="escalate-row">
+      <input type="text" class="filter-input" id="emailLogTicket" placeholder="TCK-000123 or 123" aria-label="Ticket code or ID" />
+      <button class="ghost sm" onclick="searchEmailLog()">Search</button>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead><tr><th>When</th><th>Type</th><th>Status</th><th>Recipients</th><th>Subject</th><th>Details</th>@if (User.HasClaim("ItcmAdministrator", "true")) {<th></th>}</tr></thead>
+        <tbody id="ticketEmailLogBody"></tbody>
+      </table>
+    </div>
   </div>
 
   </section>

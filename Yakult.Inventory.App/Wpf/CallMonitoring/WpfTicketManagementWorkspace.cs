@@ -65,6 +65,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private readonly Button _createTicketButton;
         private readonly Button _clearCreateTicketButton;
         private readonly Button _addCreateCallerButton;
+        private readonly Button _updateCreateCallerButton;
+        private readonly Button _retryCallerRefreshButton;
         private readonly Button _refreshTicketsButton;
         private readonly ComboBox _createCompany;
         private readonly ComboBox _createDepartment;
@@ -156,6 +158,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private bool _newTicketOrgLockedFromEmployeeSearch;
         private bool _suppressCallerSearchTextChanged;
         private TextBox _callerEditBox;
+        private int _createLookupVersion;
+        private int _callerSearchVersion;
+        private bool _createScopeLoading;
+        private bool _refreshingCaller;
+        private bool _creatingTicket;
+        private int? _pendingCallerRefreshId;
+        private string _callerRefreshMessage;
 
         // Create-ticket escalation override state (mirrors WinForms TicketManagementControl)
         private int? _createTicketEscDaysToSupervisor;
@@ -180,6 +189,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 out _createNotesBox,
                 out _createStatusText,
                 out _addCreateCallerButton,
+                out _updateCreateCallerButton,
+                out _retryCallerRefreshButton,
                 out _createTicketButton, // This is the actual submit button
                 out _clearCreateTicketButton,
                 out _backdateCheck,
@@ -423,9 +434,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
                 PopulateLookupFilter(_assigneeFilter, _assignees, "(All)", includeUnassigned: true);
                 PopulateLookupFilter(_branchFilter, _branches, "(All)", includeUnassigned: false);
-                PopulateLookupCombo(_createCompany, _companies, "(Select company)", includeBlank: true);
-                PopulateLookupCombo(_createDepartment, _departments, "(Select department)", includeBlank: true);
-                PopulateLookupCombo(_createBranch, _branches, "(Select branch)", includeBlank: true);
+                _loadingCreateLookups = true;
+                try
+                {
+                    PopulateLookupCombo(_createCompany, _companies, "(Select company)", includeBlank: true);
+                    PopulateLookupCombo(_createDepartment, _departments, "(Select department)", includeBlank: true);
+                    PopulateLookupCombo(_createBranch, _branches, "(Select branch)", includeBlank: true);
+                }
+                finally { _loadingCreateLookups = false; }
                 PopulateLookupCombo(_createAssignedTo, _assignees, "(Unassigned)", includeBlank: true);
                 PopulateLookupCombo(_pendingAssigneeCombo, _assignees, "(Unassigned)", includeBlank: true);
                 await ReloadCreateCallersAsync();
@@ -541,20 +557,29 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _createEscalationButton.Click += async (_, __) => await EditCreateTicketEscalationAsync();
             _createEscalationClearButton.Click += (_, __) => ClearCreateTicketEscalation();
             _addCreateCallerButton.Click += async (_, __) => await QuickAddCreateCallerAsync();
+            _updateCreateCallerButton.Click += async (_, __) => await UpdateCreateCallerLocationAsync();
+            _retryCallerRefreshButton.Click += async (_, __) =>
+            {
+                if (_pendingCallerRefreshId.HasValue)
+                    await RefreshCallerEmployeeAsync(_pendingCallerRefreshId.Value);
+            };
             _refreshTicketsButton.Click += async (_, __) => await ReloadTicketsAsync(resetPending: false, resetSolved: false);
             _createCompany.SelectionChanged += async (_, __) =>
             {
-                if (_newTicketOrgLockedFromEmployeeSearch) { UnlockNewTicketOrgFromEmployeeSearch(); return; }
+                if (_loadingCreateLookups) return;
+                if (_newTicketOrgLockedFromEmployeeSearch) UnlockNewTicketOrgFromEmployeeSearch();
                 await ReloadCreateDepartmentsBranchesAndCallersAsync();
             };
             _createDepartment.SelectionChanged += async (_, __) =>
             {
-                if (_newTicketOrgLockedFromEmployeeSearch) { UnlockNewTicketOrgFromEmployeeSearch(); return; }
+                if (_loadingCreateLookups) return;
+                if (_newTicketOrgLockedFromEmployeeSearch) UnlockNewTicketOrgFromEmployeeSearch();
                 await ReloadCreateBranchesAndCallersAsync();
             };
             _createBranch.SelectionChanged += async (_, __) =>
             {
-                if (_newTicketOrgLockedFromEmployeeSearch) { UnlockNewTicketOrgFromEmployeeSearch(); return; }
+                if (_loadingCreateLookups) return;
+                if (_newTicketOrgLockedFromEmployeeSearch) UnlockNewTicketOrgFromEmployeeSearch();
                 await ReloadCreateCallersAsync();
             };
 
@@ -577,12 +602,19 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 new TextChangedEventHandler(OnCallerTextChanged),
                 handledEventsToo: true);
 
-            _createCaller.SelectionChanged += async (_, __) =>
+            _createCaller.SelectionChanged += (_, __) =>
             {
                 if (_loadingCreateLookups || _suppressCallerSearchTextChanged) return;
+                UpdateCreateCallerActions();
                 var selected = _createCaller.SelectedItem as LookupItem;
                 if (selected == null || selected.Id <= 0) return;
-                await HandleCallerEmployeeSelectedAsync(selected.Id);
+                // Wait for ComboBox to synchronize Text with the selected employee.
+                Dispatcher.BeginInvoke(new Action(async () =>
+                {
+                    if (!ReferenceEquals(_createCaller.SelectedItem, selected) || _refreshingCaller || _creatingTicket) return;
+                    _callerRefreshMessage = "Review the caller details, then continue creating the ticket.";
+                    await RefreshCallerEmployeeAsync(selected.Id);
+                }));
             };
             _pendingAssignToMeButton.Click += async (_, __) => await AssignSelectedTicketToMeAsync();
             _pendingReassignButton.Click += async (_, __) => await ReassignSelectedTicketAsync();
@@ -1009,83 +1041,86 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             ReloadTicketsAsync(resetPending: false, resetSolved: false).FireAndForget(ex => System.Diagnostics.Debug.WriteLine("[Tickets] Reload after composer failed: " + ex));
         }
 
-        private async Task ReloadCreateDepartmentsBranchesAndCallersAsync()
-        {
-            if (_repository == null || _loadingCreateLookups)
-            {
-                return;
-            }
+        private Task ReloadCreateDepartmentsBranchesAndCallersAsync() => ReloadCreateScopeAsync(true, true);
 
+        private Task ReloadCreateBranchesAndCallersAsync() => ReloadCreateScopeAsync(false, true);
+
+        private Task ReloadCreateCallersAsync() => ReloadCreateScopeAsync(false, false);
+
+        private async Task ReloadCreateScopeAsync(bool reloadDepartments, bool reloadBranches)
+        {
+            if (_repository == null || _loadingCreateLookups || _newTicketOrgLockedFromEmployeeSearch) return;
+            int version = ++_createLookupVersion;
+            ++_callerSearchVersion;
+            _callerSearchDebounceTimer?.Stop();
+            _pendingCallerRefreshId = null;
+            _createScopeLoading = true;
+            _loadingCreateLookups = _suppressCallerSearchTextChanged = true;
             try
             {
+                if (reloadDepartments) PopulateLookupCombo(_createDepartment, new List<LookupItem>(), "(Select department)", true);
+                if (reloadBranches) PopulateLookupCombo(_createBranch, new List<LookupItem>(), "(Select branch)", true);
+                _createCaller.ItemsSource = null;
+                _createCaller.Text = "";
+                _createCaller.IsDropDownOpen = false;
+            }
+            finally { _loadingCreateLookups = _suppressCallerSearchTextChanged = false; }
+            UpdateCreateCallerActions();
+            int? company = GetLookupId(_createCompany), department = GetLookupId(_createDepartment), branch = GetLookupId(_createBranch);
+            try
+            {
+                var departments = reloadDepartments ? await _repository.GetDepartmentsAsync(company) : null;
+                var branches = reloadBranches ? await _repository.GetBranchesAsync(company, department) : null;
+                if (version != _createLookupVersion) return;
                 _loadingCreateLookups = true;
-                var companyId = GetLookupId(_createCompany);
-                var departments = companyId.HasValue && companyId.Value > 0
-                    ? await _repository.GetDepartmentsAsync(companyId)
-                    : _departments;
-                PopulateLookupCombo(_createDepartment, departments, "(Select department)", includeBlank: true);
-
-                var branches = await _repository.GetBranchesAsync(companyId, null);
-                PopulateLookupCombo(_createBranch, branches, "(Select branch)", includeBlank: true);
+                try
+                {
+                    if (reloadDepartments) PopulateLookupCombo(_createDepartment, departments, "(Select department)", true);
+                    if (reloadBranches) PopulateLookupCombo(_createBranch, branches, "(Select branch)", true);
+                }
+                finally { _loadingCreateLookups = false; }
+                int searchVersion = _callerSearchVersion;
+                var callers = await _repository.GetEmployeesByDeptAndBranchAsync(company, department, branch) ?? new List<LookupItem>();
+                if (version != _createLookupVersion || searchVersion != _callerSearchVersion || !string.IsNullOrWhiteSpace(_createCaller.Text)) return;
+                _suppressCallerSearchTextChanged = true;
+                try { _createCaller.ItemsSource = callers; _createCaller.SelectedIndex = -1; }
+                finally { _suppressCallerSearchTextChanged = false; }
+            }
+            catch (Exception ex)
+            {
+                if (version == _createLookupVersion)
+                {
+                    _createStatusText.Text = "Unable to load caller locations. " + ex.Message;
+                    _createStatusText.Foreground = BrushFromRgb(220, 38, 38);
+                }
             }
             finally
             {
-                _loadingCreateLookups = false;
+                if (version == _createLookupVersion) { _createScopeLoading = false; UpdateCreateCallerActions(); }
             }
-
-            await ReloadCreateCallersAsync();
-        }
-
-        private async Task ReloadCreateBranchesAndCallersAsync()
-        {
-            if (_repository == null || _loadingCreateLookups)
-            {
-                return;
-            }
-
-            try
-            {
-                _loadingCreateLookups = true;
-                var branches = await _repository.GetBranchesAsync(GetLookupId(_createCompany), GetLookupId(_createDepartment));
-                PopulateLookupCombo(_createBranch, branches, "(Select branch)", includeBlank: true);
-            }
-            finally
-            {
-                _loadingCreateLookups = false;
-            }
-
-            await ReloadCreateCallersAsync();
-        }
-
-        private async Task ReloadCreateCallersAsync()
-        {
-            if (_loadingCreateLookups || _newTicketOrgLockedFromEmployeeSearch || _repository == null)
-                return;
-
-            var callers = await _repository.GetEmployeesByDeptAndBranchAsync(
-                GetLookupId(_createCompany),
-                GetLookupId(_createDepartment),
-                GetLookupId(_createBranch)) ?? new List<LookupItem>();
-
-            _suppressCallerSearchTextChanged = true;
-            _createCaller.ItemsSource = callers;
-            _createCaller.SelectedIndex = -1;
-            _createCaller.IsDropDownOpen = false;
-            _suppressCallerSearchTextChanged = false;
         }
 
         private void OnCallerTextChanged(object sender, TextChangedEventArgs e)
         {
-            if (_createCaller == null || _suppressCallerSearchTextChanged)
+            if (_createCaller == null || _suppressCallerSearchTextChanged || _loadingCreateLookups)
                 return;
 
             var text = _createCaller.Text ?? string.Empty;
+            ++_callerSearchVersion;
+            UpdateCreateCallerActions();
+            var selected = _createCaller.SelectedItem as LookupItem;
+            if (selected != null && string.Equals(selected.Name, text, StringComparison.CurrentCultureIgnoreCase))
+            {
+                _callerSearchDebounceTimer.Stop();
+                return;
+            }
+            if (_newTicketOrgLockedFromEmployeeSearch) UnlockNewTicketOrgFromEmployeeSearch(text);
+            _pendingCallerRefreshId = null;
+            UpdateCreateCallerActions();
             if (text.Length < 2)
             {
                 _callerSearchDebounceTimer.Stop();
                 _createCaller.IsDropDownOpen = false;
-                if (_newTicketOrgLockedFromEmployeeSearch)
-                    UnlockNewTicketOrgFromEmployeeSearch();
                 return;
             }
 
@@ -1104,11 +1139,16 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (text.Length < 2)
                 return;
 
+            int version = _callerSearchVersion;
+            int scopeVersion = _createLookupVersion;
             try
             {
                 var employees = await _repository.SearchEmployeesByNameAsync(text);
+                if (version != _callerSearchVersion || scopeVersion != _createLookupVersion || _newTicketOrgLockedFromEmployeeSearch
+                    || !string.Equals(text, (_createCaller.Text ?? "").Trim(), StringComparison.Ordinal)) return;
                 _suppressCallerSearchTextChanged = true;
                 _createCaller.ItemsSource = employees;
+                _createCaller.Text = text;
                 _createCaller.IsDropDownOpen = employees.Count > 0;
                 _ = Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -1128,62 +1168,121 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             finally
             {
                 _suppressCallerSearchTextChanged = false;
+                UpdateCreateCallerActions();
             }
         }
 
-        private async Task HandleCallerEmployeeSelectedAsync(int empId)
+        private async Task<bool> RefreshCallerEmployeeAsync(int empId)
         {
-            if (empId <= 0 || _repository == null)
-                return;
-
+            if (empId <= 0 || _repository == null) return false;
+            int version = ++_createLookupVersion;
+            ++_callerSearchVersion;
+            _callerSearchDebounceTimer.Stop();
+            _createScopeLoading = false;
+            _refreshingCaller = true;
+            _pendingCallerRefreshId = empId;
+            UpdateCreateCallerActions();
             try
             {
-                _loadingCreateLookups = true;
-
                 var org = await _repository.GetEmployeeOrgInfoByEmpIdAsync(empId);
-
-                if (org?.ComId.HasValue == true && org.ComId.Value > 0)
+                if (org?.ComId.HasValue != true || org.ComId <= 0 || org.BranchId.GetValueOrDefault() <= 0)
+                    throw new InvalidOperationException("The employee does not have a complete company and branch assignment.");
+                var companiesTask = _repository.GetCompaniesAsync();
+                var departmentsTask = _repository.GetDepartmentsAsync(org.ComId);
+                var branchesTask = _repository.GetBranchesAsync(org.ComId, org.DeptId);
+                var callersTask = _repository.GetEmployeesByDeptAndBranchAsync(org.ComId, org.DeptId, org.BranchId);
+                await Task.WhenAll(companiesTask, departmentsTask, branchesTask, callersTask);
+                if (version != _createLookupVersion) return false;
+                var companies = companiesTask.Result ?? new List<LookupItem>();
+                var departments = departmentsTask.Result ?? new List<LookupItem>();
+                var branches = branchesTask.Result ?? new List<LookupItem>();
+                var callers = callersTask.Result ?? new List<LookupItem>();
+                if (!companies.Any(x => x.Id == org.ComId) || !branches.Any(x => x.Id == org.BranchId)
+                    || (org.DeptId.HasValue && !departments.Any(x => x.Id == org.DeptId)) || !callers.Any(x => x.Id == empId))
+                    throw new InvalidOperationException("The employee's current assignment is not available in the caller location lists.");
+                // Only suppress events while applying the fetched lists. Never hold this flag across awaits.
+                _loadingCreateLookups = _suppressCallerSearchTextChanged = true;
+                try
+                {
+                    PopulateLookupCombo(_createCompany, companies, "(Select company)", true);
                     SelectLookupItem(_createCompany, org.ComId.Value);
-
-                await ReloadCreateDepartmentsBranchesAndCallersAsync();
-                if (org?.DeptId.HasValue == true && org.DeptId.Value > 0)
-                    SelectLookupItem(_createDepartment, org.DeptId.Value);
-
-                await ReloadCreateBranchesAndCallersAsync();
-                if (org?.BranchId.HasValue == true && org.BranchId.Value > 0)
+                    PopulateLookupCombo(_createDepartment, departments, "(Select department)", true);
+                    if (org.DeptId.HasValue) SelectLookupItem(_createDepartment, org.DeptId.Value);
+                    PopulateLookupCombo(_createBranch, branches, "(Select branch)", true);
                     SelectLookupItem(_createBranch, org.BranchId.Value);
-
-                _newTicketOrgLockedFromEmployeeSearch = true;
-                SetNewTicketOrgDropdownsEnabled(false);
-                _callerSearchDebounceTimer.Stop();
-
-                _suppressCallerSearchTextChanged = true;
-                SelectLookupItem(_createCaller, empId);
-                _createCaller.IsDropDownOpen = false;
-                _suppressCallerSearchTextChanged = false;
+                    _createCaller.ItemsSource = callers;
+                    SelectLookupItem(_createCaller, empId);
+                    _createCaller.Text = callers.First(x => x.Id == empId).Name;
+                    _createCaller.IsDropDownOpen = false;
+                    _newTicketOrgLockedFromEmployeeSearch = true;
+                    _pendingCallerRefreshId = null;
+                    _createStatusText.Text = _callerRefreshMessage;
+                    _createStatusText.Foreground = BrushFromRgb(22, 101, 52);
+                }
+                finally { _loadingCreateLookups = _suppressCallerSearchTextChanged = false; }
+                return true;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                if (version == _createLookupVersion)
+                {
+                    _createStatusText.Text = _callerRefreshMessage + " Caller location could not be refreshed. Use Retry Refresh before creating this ticket. " + ex.Message;
+                    _createStatusText.Foreground = BrushFromRgb(185, 28, 28);
+                }
+                return false;
+            }
             finally
             {
-                _loadingCreateLookups = false;
+                if (version == _createLookupVersion) { _refreshingCaller = false; UpdateCreateCallerActions(); }
             }
         }
 
-        private void UnlockNewTicketOrgFromEmployeeSearch()
+        private void UnlockNewTicketOrgFromEmployeeSearch(string callerText = "")
         {
             if (!_newTicketOrgLockedFromEmployeeSearch)
                 return;
 
             _newTicketOrgLockedFromEmployeeSearch = false;
+            ++_createLookupVersion;
+            ++_callerSearchVersion;
+            _pendingCallerRefreshId = null;
             SetNewTicketOrgDropdownsEnabled(true);
             _callerSearchDebounceTimer.Stop();
 
             _suppressCallerSearchTextChanged = true;
             _createCaller.ItemsSource = null;
             _createCaller.SelectedIndex = -1;
-            _createCaller.Text = string.Empty;
+            _createCaller.Text = callerText;
             _createCaller.IsDropDownOpen = false;
             _suppressCallerSearchTextChanged = false;
+            UpdateCreateCallerActions();
+        }
+
+        private void UpdateCreateCallerActions()
+        {
+            var employee = _createCaller.SelectedItem as LookupItem;
+            bool busy = _refreshingCaller || _creatingTicket;
+            _updateCreateCallerButton.IsEnabled = !busy && !_createScopeLoading && !_pendingCallerRefreshId.HasValue
+                && EmployeeRepository.CanUpdateLocation && employee?.Id > 0
+                && string.Equals(employee.Name, _createCaller.Text, StringComparison.CurrentCultureIgnoreCase);
+            _addCreateCallerButton.IsEnabled = !busy;
+            _clearCreateTicketButton.IsEnabled = !busy;
+            _createCaller.IsEnabled = !busy;
+            SetNewTicketOrgDropdownsEnabled(!busy && !_newTicketOrgLockedFromEmployeeSearch);
+            _createTicketButton.IsEnabled = !busy && !_createScopeLoading && !_pendingCallerRefreshId.HasValue;
+            _retryCallerRefreshButton.Visibility = _pendingCallerRefreshId.HasValue ? Visibility.Visible : Visibility.Collapsed;
+            _retryCallerRefreshButton.IsEnabled = !busy;
+        }
+
+        private async Task UpdateCreateCallerLocationAsync()
+        {
+            UpdateCreateCallerActions();
+            if (!_updateCreateCallerButton.IsEnabled) return;
+            int employeeId = GetLookupId(_createCaller).Value;
+            var dialog = new WpfUpdateEmployeeLocationDialog(employeeId) { Owner = Window.GetWindow(_createCaller) };
+            if (dialog.ShowDialog() != true) return;
+            _callerRefreshMessage = "Employee location saved successfully.";
+            await RefreshCallerEmployeeAsync(employeeId);
         }
 
         private void SetNewTicketOrgDropdownsEnabled(bool enabled)
@@ -1204,30 +1303,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     return;
                 }
 
-                if (dialog.NewCompanyId.HasValue && dialog.NewCompanyId.Value > 0)
-                {
-                    SelectLookupItem(_createCompany, dialog.NewCompanyId.Value);
-                    await ReloadCreateDepartmentsBranchesAndCallersAsync();
-                }
-
-                if (dialog.NewDepartmentId.HasValue && dialog.NewDepartmentId.Value > 0)
-                {
-                    SelectLookupItem(_createDepartment, dialog.NewDepartmentId.Value);
-                    await ReloadCreateBranchesAndCallersAsync();
-                }
-
-                if (dialog.NewBranchId.HasValue && dialog.NewBranchId.Value > 0)
-                {
-                    SelectLookupItem(_createBranch, dialog.NewBranchId.Value);
-                }
-
-                await ReloadCreateCallersAsync();
-
                 if (dialog.NewEmployeeId.HasValue && dialog.NewEmployeeId.Value > 0)
                 {
-                    _suppressCallerSearchTextChanged = true;
-                    SelectLookupItem(_createCaller, dialog.NewEmployeeId.Value);
-                    _suppressCallerSearchTextChanged = false;
+                    _callerRefreshMessage = "Employee added. Review the caller details, then continue creating the ticket.";
+                    await RefreshCallerEmployeeAsync(dialog.NewEmployeeId.Value);
+                    return;
                 }
                 else if (_createCaller.SelectedItem == null && !string.IsNullOrWhiteSpace(dialog.NewEmployeeName))
                 {
@@ -1238,21 +1318,40 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
                 _createStatusText.Text = "Employee added. Review the caller details, then continue creating the ticket.";
                 _createStatusText.Foreground = BrushFromRgb(22, 101, 52);
+                UpdateCreateCallerActions();
             }
         }
 
         private async Task CreateTicketFromWorkspaceAsync()
         {
-            if (_repository == null)
+            if (_repository == null || _refreshingCaller || _createScopeLoading || _pendingCallerRefreshId.HasValue || _creatingTicket)
             {
                 return;
             }
 
+            _creatingTicket = true;
+            UpdateCreateCallerActions();
+            try { await CreateTicketDraftAsync(); }
+            catch (Exception ex)
+            {
+                _createStatusText.Text = ex.Message;
+                _createStatusText.Foreground = BrushFromRgb(220, 38, 38);
+            }
+            finally
+            {
+                _creatingTicket = false;
+                UpdateCreateCallerActions();
+            }
+        }
+
+        private async Task CreateTicketDraftAsync()
+        {
             var companyId    = GetLookupId(_createCompany);
             var departmentId = GetLookupId(_createDepartment);
             var branchId     = GetLookupId(_createBranch);
             var assignedToId = GetLookupId(_createAssignedTo);
-            var callerEmployeeId = GetLookupId(_createCaller);
+            var selectedCaller = GetSelectedCreateCaller();
+            var callerEmployeeId = selectedCaller == null ? (int?)null : selectedCaller.Id;
             var caller       = ResolveCallerText();
             var issue        = (_createIssueBox.Text ?? string.Empty).Trim();
             var notes        = (_createNotesBox.Text ?? string.Empty).Trim();
@@ -1342,7 +1441,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 BackdateDisplay = backlogUtc.HasValue ? backlogUtc.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : null
             })
             {
-                Owner = Window.GetWindow(this)
+                Owner = Window.GetWindow(_createCaller)
             };
             if (dlg.ShowDialog() != true)
                 return;
@@ -1470,10 +1569,6 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _createStatusText.Text = ex.Message;
                 _createStatusText.Foreground = BrushFromRgb(220, 38, 38);
             }
-            finally
-            {
-                _createTicketButton.IsEnabled = true;
-            }
         }
 
         private async Task<string> BuildRecentOpenTicketWarningAsync(string caller)
@@ -1519,12 +1614,22 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private void ClearCreateTicketForm()
         {
+            ++_createLookupVersion;
+            ++_callerSearchVersion;
+            _callerSearchDebounceTimer?.Stop();
+            _pendingCallerRefreshId = null;
+            _createScopeLoading = false;
             if (_newTicketOrgLockedFromEmployeeSearch)
                 UnlockNewTicketOrgFromEmployeeSearch();
 
-            if (_createCompany.Items.Count > 0) _createCompany.SelectedIndex = 0;
-            if (_createDepartment.Items.Count > 0) _createDepartment.SelectedIndex = 0;
-            if (_createBranch.Items.Count > 0) _createBranch.SelectedIndex = 0;
+            _loadingCreateLookups = true;
+            try
+            {
+                PopulateLookupCombo(_createCompany, _companies, "(Select company)", true);
+                PopulateLookupCombo(_createDepartment, _departments, "(Select department)", true);
+                PopulateLookupCombo(_createBranch, _branches, "(Select branch)", true);
+            }
+            finally { _loadingCreateLookups = false; }
             if (_createAssignedTo.Items.Count > 0) _createAssignedTo.SelectedIndex = 0;
             _suppressCallerSearchTextChanged = true;
             _createCaller.ItemsSource = null;
@@ -1546,6 +1651,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             // Reset escalation override
             ClearCreateTicketEscalation();
+            UpdateCreateCallerActions();
         }
 
         private void ClearCreateTicketEscalation()
@@ -3317,6 +3423,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             out TextBox notesBox,
             out TextBlock statusText,
             out Button addCallerButton,
+            out Button updateCallerButton,
+            out Button retryCallerRefreshButton,
             out Button createButton,
             out Button clearButton,
             out CheckBox backdateCheck,
@@ -3335,12 +3443,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             var header = CreateSectionHeader("Create Ticket", "Create live call tickets directly from the WPF ticket list workspace.");
             Grid.SetRow(header, 0);
             layout.Children.Add(header);
+
+            layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             var topFieldsGrid = CreateFormGrid(2, 3);
             topFieldsGrid.Margin = new Thickness(0, 4, 0, 0);
@@ -3359,13 +3468,28 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             callerCombo = caller;
 
             addCallerButton = CreateInlineActionButton("+ Add Employee", BrushFromRgb(13, 148, 136));
-            var callerField = new Grid();
-            callerField.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            callerField.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            updateCallerButton = CreateInlineActionButton("Update Employee Location", BrushFromRgb(37, 99, 235));
+            updateCallerButton.IsEnabled = false;
+            updateCallerButton.ToolTip = "Select an existing employee to update their company, department, or branch.";
+            retryCallerRefreshButton = CreateInlineActionButton("Retry Refresh", BrushFromRgb(180, 83, 9));
+            retryCallerRefreshButton.Visibility = Visibility.Collapsed;
+            var callerField = new StackPanel();
             callerField.Children.Add(caller);
-            Grid.SetColumn(addCallerButton, 1);
-            addCallerButton.Margin = new Thickness(10, 0, 0, 0);
-            callerField.Children.Add(addCallerButton);
+
+            var callerActions = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
+            foreach (var button in new[] { addCallerButton, updateCallerButton, retryCallerRefreshButton })
+            {
+                button.MinWidth = 0;
+                button.Height = 28;
+                button.FontSize = 10;
+                button.HorizontalAlignment = HorizontalAlignment.Left;
+                button.Margin = new Thickness(0, 0, 6, 4);
+                ApplyModernButtonTemplate(button, new Thickness(8, 5, 8, 5));
+            }
+            callerActions.Children.Add(addCallerButton);
+            callerActions.Children.Add(updateCallerButton);
+            callerActions.Children.Add(retryCallerRefreshButton);
+            callerField.Children.Add(callerActions);
 
             AddFormField(topFieldsGrid, 0, 0, "Company", companyCombo);
             AddFormField(topFieldsGrid, 0, 1, "Caller Name", callerField);
@@ -3422,7 +3546,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             dateTimeRow.Children.Add(backdateDatePicker);
             dateTimeRow.Children.Add(backdateTimeText);
 
-            // Escalation controls — placed top-right inside the backdate card
+            // Escalation controls sit beside the backdate checkbox in the original card layout.
             escalationSummary = new TextBlock
             {
                 FontSize = 11,
@@ -3433,6 +3557,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             escalationButton = CreateInlineActionButton("Set escalation", BrushFromRgb(230, 126, 34));
             escalationClearButton = CreateInlineActionButton("Clear", BrushFromRgb(149, 165, 166));
             escalationClearButton.Visibility = Visibility.Collapsed;
+            foreach (var button in new[] { escalationButton, escalationClearButton })
+            {
+                button.MinWidth = 0;
+                button.Height = 28;
+                button.FontSize = 10;
+                ApplyModernButtonTemplate(button, new Thickness(8, 5, 8, 5));
+            }
             escalationClearButton.Margin = new Thickness(6, 0, 0, 0);
 
             var escalationRow = new StackPanel { Orientation = Orientation.Horizontal };
@@ -3440,11 +3571,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             escalationRow.Children.Add(escalationButton);
             escalationRow.Children.Add(escalationClearButton);
 
-            // Top row: checkbox left | escalation right
             var topRow = new Grid { Margin = new Thickness(0, 0, 0, 4) };
             topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            Grid.SetColumn(backdateCheck, 0);
             topRow.Children.Add(backdateCheck);
             Grid.SetColumn(escalationRow, 1);
             topRow.Children.Add(escalationRow);
@@ -4504,10 +4633,17 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private string ResolveCallerText()
         {
-            if (_createCaller.SelectedItem is LookupItem item && !string.IsNullOrWhiteSpace(item.Name))
+            var item = GetSelectedCreateCaller();
+            if (item != null)
                 return item.Name.Trim();
 
             return (_createCaller.Text ?? string.Empty).Trim();
+        }
+
+        private LookupItem GetSelectedCreateCaller()
+        {
+            var item = _createCaller.SelectedItem as LookupItem;
+            return item?.Id > 0 && string.Equals(item.Name, _createCaller.Text, StringComparison.CurrentCultureIgnoreCase) ? item : null;
         }
 
         private LookupItem FindBestEmployeeMatchForCurrentUser()

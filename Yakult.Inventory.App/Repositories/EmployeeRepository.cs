@@ -10,7 +10,7 @@ namespace Yakult.Inventory.App.Repositories
     /// <summary>
     /// Repository for Employee data access operations
     /// </summary>
-    public class EmployeeRepository
+    public partial class EmployeeRepository
     {
         /// <summary>
         /// Creates a new employee

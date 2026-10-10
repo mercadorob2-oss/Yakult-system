@@ -11,19 +11,29 @@ namespace Yakult.Inventory.App.WPF.Renewal.RenewalWorkspace.Views
     public partial class RenewalWorkspaceWindow : Window
     {
         private RenewalWorkspaceViewModel _vm;
+        private int _historySetId;
 
         public RenewalWorkspaceWindow(int setId)
         {
             InitializeComponent();
+            _historySetId = setId;
             AttachViewModel(new RenewalWorkspaceViewModel(setId));
-            Loaded += async (_, __) => await _vm.LoadAsync();
+            Loaded += async (_, __) =>
+            {
+                await _vm.LoadAsync();
+                await BacklogHistory.LoadAsync(_historySetId);
+            };
         }
 
         public RenewalWorkspaceWindow(int itemId, bool isItemIdConstructor)
         {
             InitializeComponent();
             AttachViewModel(new RenewalWorkspaceViewModel(itemId, isItemIdConstructor));
-            Loaded += async (_, __) => await _vm.LoadAsync();
+            Loaded += async (_, __) =>
+            {
+                await _vm.LoadAsync();
+                await BacklogHistory.LoadAsync(0);
+            };
         }
 
         /// <summary>
@@ -64,8 +74,16 @@ namespace Yakult.Inventory.App.WPF.Renewal.RenewalWorkspace.Views
         {
             // Reuse this same window instead of opening a new one per chain hop — otherwise
             // clicking through a long chain leaves a trail of open windows behind.
+            _historySetId = targetSetId;
             AttachViewModel(new RenewalWorkspaceViewModel(targetSetId));
             await _vm.LoadAsync();
+            await BacklogHistory.LoadAsync(targetSetId);
+        }
+
+        private async void OnPreviousRenewals(object sender, RoutedEventArgs e)
+        {
+            HistoryTab.IsSelected = true;
+            await BacklogHistory.OpenAddPeriodAsync();
         }
 
         private async void OnRequestRenewItems(RenewItemsRequest req)
@@ -79,7 +97,10 @@ namespace Yakult.Inventory.App.WPF.Renewal.RenewalWorkspace.Views
             };
 
             if (dlg.ShowDialog() == true)
+            {
                 await _vm.ReloadAfterRenewItemsAsync();
+                await BacklogHistory.LoadAsync(_historySetId);
+            }
         }
 
         private void OnRequestAttachReceipt(int setId)

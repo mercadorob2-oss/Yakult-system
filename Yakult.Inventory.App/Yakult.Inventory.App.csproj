@@ -1055,6 +1055,12 @@
     <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\RenewalChainNodeViewModel.cs" />
     <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\InvoiceItemRowViewModel.cs" />
     <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\InvoiceItemGroupViewModel.cs" />
+    <Compile Include="Wpf\Renewal\History\LicenseHistoricalPeriodsControl.xaml.cs">
+      <DependentUpon>LicenseHistoricalPeriodsControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\Renewal\History\AddLicenseHistoricalPeriodWindow.xaml.cs">
+      <DependentUpon>AddLicenseHistoricalPeriodWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\RenewalHistoryRowViewModel.cs" />
     <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\SubTypeGroupCardViewModel.cs" />
     <Compile Include="Wpf\Renewal\RenewalDetail\ViewModels\RenewalDetailViewModel.cs" />
@@ -1349,6 +1355,7 @@
     <Compile Include="Wpf\CallMonitoring\WpfIncomingTicketAssigneePickerDialog.cs" />
     <Compile Include="Wpf\CallMonitoring\WpfEmailNotificationWorkspace.cs" />
     <Compile Include="Wpf\CallMonitoring\WpfRecipientLinkDialog.cs" />
+    <Compile Include="Wpf\CallMonitoring\WpfUpdateEmployeeLocationDialog.cs" />
     <Compile Include="Wpf\CallMonitoring\WpfSmtpProfileDialog.cs" />
     <Compile Include="Wpf\BorrowItems\WpfBorrowWorkspace.cs" />
     <Compile Include="Wpf\BorrowItems\WpfBorrowBoardWorkspace.cs" />
@@ -1467,6 +1474,7 @@
     <Compile Include="Models\CallMonitoring\CallSolvedSummaryReportRow.cs" />
     <Compile Include="Models\CallMonitoring\CallEmployeeProfileLookup.cs" />
     <Compile Include="Models\CallMonitoring\CallEmployeeOrgInfo.cs" />
+    <Compile Include="Models\EmployeeLocationDto.cs" />
     <Compile Include="Models\CallMonitoring\CallEmployeeReplacementItemRow.cs" />
     <Compile Include="Models\CallMonitoring\CallTechProfileSummary.cs" />
     <Compile Include="Models\CallMonitoring\CallTechHandledTicketRow.cs" />
@@ -1500,6 +1508,7 @@
     <Compile Include="Models\ItemAuditTrailDto.cs" />
     <Compile Include="Models\MovementType.cs" />
     <Compile Include="Models\DisposedSoldItemDto.cs" />
+    <Compile Include="Models\LicenseHistoricalPeriodDto.cs" />
     <Compile Include="Models\RenewalDto.cs" />
     <Compile Include="Models\SetItemRenewalDto.cs" />
     <Compile Include="Models\SetItemSubTypeGroupSummaryDto.cs" />
@@ -1620,6 +1629,7 @@
     <Compile Include="Repositories\DepartmentRepository.cs" />
     <Compile Include="Repositories\EmailRepository.cs" />
     <Compile Include="Repositories\EmployeeRepository.cs" />
+    <Compile Include="Repositories\EmployeeRepository.Location.cs" />
     <Compile Include="Repositories\BorrowItemsRepository.cs" />
     <Compile Include="Repositories\InventoryRepository.cs" />
     <Compile Include="Repositories\InvoiceRepository.cs" />
@@ -1627,6 +1637,7 @@
     <Compile Include="Repositories\NonLicensedInvoiceRepository.cs" />
     <Compile Include="Repositories\ItemRepository.cs" />
     <Compile Include="Repositories\ItemAuditTrailWriter.cs" />
+    <Compile Include="Repositories\LicenseHistoricalPeriodRepository.cs" />
     <Compile Include="Repositories\RenewalRepository.cs" />
     <Compile Include="Repositories\RequestRepository.cs" />
     <Compile Include="Repositories\RoleRepository.cs" />
@@ -2564,6 +2575,14 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Wpf\Renewal\RenewItems\Views\RenewItemsWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Renewal\History\LicenseHistoricalPeriodsControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Renewal\History\AddLicenseHistoricalPeriodWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
