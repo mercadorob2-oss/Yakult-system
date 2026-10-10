@@ -12,6 +12,9 @@ public interface IItcmRepository
 
     Task<CallNotificationRulesItem?> GetNotificationRulesAsync();
     Task<CallEmailTemplateItem?> GetEmailTemplateByTypeAsync(string templateType);
+    Task<List<CallEmailTemplateItem>> GetAllEmailTemplatesAsync();
+    Task SaveEmailTemplateAsync(CallEmailTemplateItem template);
+    Task<List<CallEmailLogItem>> GetEmailLogForTicketAsync(int ticketId, int maxRows = 50);
     Task<CallTicketNotificationData?> GetTicketNotificationDataAsync(int ticketId);
     Task<string?> GetPortalTicketContactEmailAsync(int ticketId);
     Task<List<int>> GetTicketIdsNeedingReminderAsync(int reminderDays, int maxRows = 25);
