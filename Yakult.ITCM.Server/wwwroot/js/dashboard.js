@@ -1140,6 +1140,85 @@ async function resolveTicket() {
   if (noteInput) noteInput.value = '';
 }
 
+async function loadEmailTemplates() {
+  const ae = document.activeElement;
+  if (ae && (ae.id === 'tplSubject' || ae.id === 'tplBody' || ae.id === 'tplType')) return;
+  try {
+    const items = await getJson('/api/itcm/email/templates');
+    const sel = document.getElementById('tplType');
+    if (sel && items && items.length) {
+      const first = items[0];
+      sel.value = first.templateType || sel.value;
+      await loadTemplate(items);
+    }
+  } catch (e) { /* admin-only; viewers get 403 — stay silent */ }
+}
+
+async function loadTemplate(cached) {
+  const sel = document.getElementById('tplType');
+  if (!sel) return;
+  const items = cached || await getJson('/api/itcm/email/templates');
+  const found = (items || []).find(t => t.templateType === sel.value);
+  setInputValue('tplSubject', found ? found.subject || '' : '');
+  setInputValue('tplBody', found ? found.body || '' : '');
+  const active = document.getElementById('tplActive');
+  if (active) active.checked = found ? !!found.isActive : true;
+}
+
+function setInputValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value;
+}
+
+async function saveTemplate() {
+  const sel = document.getElementById('tplType');
+  if (!sel) return;
+  const body = {
+    templateType: sel.value,
+    subject: document.getElementById('tplSubject').value || '',
+    body: document.getElementById('tplBody').value || '',
+    isActive: !!document.getElementById('tplActive').checked
+  };
+  await postJson('/api/itcm/email/templates/save', body, `${sel.value} template saved.`, 'Template save failed.');
+}
+
+async function searchEmailLog() {
+  const input = document.getElementById('emailLogTicket');
+  const tbody = document.getElementById('ticketEmailLogBody');
+  if (!input || !tbody) return;
+  const raw = (input.value || '').trim();
+  if (!raw) { showToast('Enter a ticket code or ID first.', 'warn'); return; }
+  tbody.innerHTML = '';
+  try {
+    const items = await getJson(`/api/itcm/tickets/${encodeURIComponent(raw)}/emails?maxRows=50`);
+    if (!items.length) { monitoringEmptyRow(tbody, 7, 'No email deliveries for this ticket yet.'); return; }
+    const admin = canAssignTickets();
+    items.forEach(e => {
+      const row = document.createElement('tr');
+      const status = createPill(e.status || 'Unknown', (e.status || '').toLowerCase() === 'sent' ? 'ok' : (e.status || '').toLowerCase() === 'failed' ? 'fail' : 'muted');
+      appendCells(row, [fmt(e.dateSent), e.emailType || '—', status, expandableCell(e.recipient, 60), expandableCell(e.subject, 70), expandableCell(e.errorMessage, 70)]);
+      if (admin) {
+        const cell = document.createElement('td');
+        const btn = document.createElement('button');
+        btn.className = 'ghost sm';
+        btn.textContent = 'Resend';
+        btn.onclick = () => resendEmail(raw, e.emailLogId);
+        cell.appendChild(btn);
+        row.appendChild(cell);
+      }
+      tbody.appendChild(row);
+    });
+  } catch (err) {
+    monitoringEmptyRow(tbody, 7, 'Ticket not found or log unavailable.');
+  }
+}
+
+async function resendEmail(ticketId, emailLogId) {
+  await postJson(`/api/itcm/tickets/${encodeURIComponent(ticketId)}/emails/${emailLogId}/resend`, {},
+    'Notification re-sent.', 'Resend produced no email — check rules/template.');
+  searchEmailLog();
+}
+
 // ── Pagination ────────────────────────────────────────────────────────────────
 document.getElementById('prevPage')?.addEventListener('click', () => loadHistory(currentHistoryPage - 1));
 document.getElementById('nextPage')?.addEventListener('click', () => loadHistory(currentHistoryPage + 1));
@@ -1182,6 +1261,7 @@ async function loadAll() {
   await loadSettings();
   await loadHistory(currentHistoryPage);
   await loadMonitoring();
+  if (canAssignTickets()) await loadEmailTemplates();
   await loadPresence();
 }
 
