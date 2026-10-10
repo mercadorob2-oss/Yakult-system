@@ -1071,6 +1071,24 @@ async function escalateTicket() {
   noteInput.value = '';
 }
 
+async function resolveTicket() {
+  const idInput = document.getElementById('qaResolveTicket');
+  const statusInput = document.getElementById('qaResolveStatus');
+  const noteInput = document.getElementById('qaResolveNote');
+  if (!idInput || !statusInput) return;
+  const rawId = (idInput.value || '').trim();
+  const newStatus = (statusInput.value || '').trim();
+  const note = ((noteInput && noteInput.value) || '').trim();
+  if (!rawId) { showToast('Enter a ticket code or ID first.', 'warn'); return; }
+  if (!newStatus) { showToast('Pick a target status.', 'warn'); return; }
+  if (newStatus !== 'Reopened' && !note) { showToast('A resolution note is required.', 'warn'); return; }
+  const ticketId = /^\d+$/.test(rawId) ? parseInt(rawId, 10) : rawId;
+  await postJson(`/api/itcm/tickets/${encodeURIComponent(ticketId)}/resolve`, { newStatus, note },
+    `Ticket marked as ${newStatus}.`, 'Ticket cannot move to that status from its current state.');
+  idInput.value = '';
+  if (noteInput) noteInput.value = '';
+}
+
 // ── Pagination ────────────────────────────────────────────────────────────────
 document.getElementById('prevPage')?.addEventListener('click', () => loadHistory(currentHistoryPage - 1));
 document.getElementById('nextPage')?.addEventListener('click', () => loadHistory(currentHistoryPage + 1));
