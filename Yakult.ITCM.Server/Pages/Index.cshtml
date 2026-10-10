@@ -174,10 +174,18 @@
       </div>
       <div class="data-table-wrap monitoring-table-wrap">
         <table class="data-table">
-          <thead><tr><th>Ticket</th><th>Caller / Issue</th><th>Priority</th><th>Created</th>@if (User.HasClaim("ItcmAdministrator", "true")) {<th>Action</th>}</tr></thead>
+          <thead><tr>@if (User.HasClaim("ItcmAdministrator", "true")) {<th><input type="checkbox" id="triageSelectAll" aria-label="Select all triage tickets" /></th>}<th>Ticket</th><th>Caller / Issue</th><th>Priority</th><th>Created</th>@if (User.HasClaim("ItcmAdministrator", "true")) {<th>Action</th>}</tr></thead>
           <tbody id="portalTriageBody"></tbody>
         </table>
       </div>
+      @if (User.HasClaim("ItcmAdministrator", "true"))
+      {
+        <div class="escalate-row" id="triageBulkBar">
+          <select id="triageBulkSelect" class="filter-input device-select" style="max-width:220px" aria-label="Bulk assignee"></select>
+          <button class="primary sm" onclick="bulkAssignTickets()">Assign selected</button>
+          <span class="pill muted" id="triageSelectedCount">0 selected</span>
+        </div>
+      }
     </div>
     <div class="card">
       <div class="card-header">

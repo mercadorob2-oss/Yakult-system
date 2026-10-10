@@ -532,7 +532,7 @@ function expandableCell(fullText, length = 72) {
   });
   return span;
 }
-function renderMonitoring(data) {
+async function renderMonitoring(data) {
   setText('unassignedPortalCount', data.unassignedPortalTicketCount ?? 0);
   setText('recentAutoEscalationCount', data.recentAutoEscalationCount ?? 0);
   setText('reminderEmailsToday', data.reminderEmailsSentToday ?? 0);
@@ -545,10 +545,21 @@ function renderMonitoring(data) {
   if (triageBody) {
     triageBody.innerHTML = '';
     const items = data.unassignedPortalTickets || [];
-    const triageCols = canAssignTickets() ? 5 : 4;
+    const triageCols = canAssignTickets() ? 6 : 4;
     if (!items.length) monitoringEmptyRow(triageBody, triageCols, 'No unassigned Portal tickets — queue is clear ✓.');
     items.forEach(ticket => {
       const row = document.createElement('tr');
+      if (canAssignTickets()) {
+        const checkCell = document.createElement('td');
+        const check = document.createElement('input');
+        check.type = 'checkbox';
+        check.className = 'triage-check';
+        check.value = String(ticket.ticketId);
+        check.setAttribute('aria-label', `Select ${ticket.ticketCode || `ticket ${ticket.ticketId}`}`);
+        check.onchange = updateTriageSelectedCount;
+        checkCell.appendChild(check);
+        row.appendChild(checkCell);
+      }
       const callerIssue = document.createElement('div');
       callerIssue.className = 'two-line-cell';
       const callerName = document.createElement('strong');
@@ -571,6 +582,32 @@ function renderMonitoring(data) {
       }
       triageBody.appendChild(row);
     });
+    const bulkSelect = document.getElementById('triageBulkSelect');
+    if (bulkSelect && canAssignTickets()) {
+      bulkSelect.innerHTML = '';
+      const none = document.createElement('option');
+      none.value = '';
+      none.textContent = 'Leave unassigned';
+      bulkSelect.appendChild(none);
+      try {
+        const employees = await loadItEmployees();
+        (employees || []).forEach(emp => {
+          const opt = document.createElement('option');
+          opt.value = emp.empId;
+          opt.textContent = emp.name || `Employee #${emp.empId}`;
+          bulkSelect.appendChild(opt);
+        });
+      } catch (e) { /* staff list failure already toasted by single-assign path */ }
+    }
+    const selectAll = document.getElementById('triageSelectAll');
+    if (selectAll) {
+      selectAll.checked = false;
+      selectAll.onchange = () => {
+        document.querySelectorAll('.triage-check').forEach(c => { c.checked = selectAll.checked; });
+        updateTriageSelectedCount();
+      };
+    }
+    updateTriageSelectedCount();
   }
 
   const schedulerBody = document.getElementById('schedulerActivityBody');
@@ -616,7 +653,7 @@ function renderMonitoring(data) {
 }
 function renderMonitoringUnavailable(message) {
   const tables = [
-    ['portalTriageBody', canAssignTickets() ? 5 : 4],
+    ['portalTriageBody', canAssignTickets() ? 6 : 4],
     ['schedulerActivityBody', 4],
     ['ticketMovementBody', 7],
     ['notificationActivityBody', 6]
@@ -630,7 +667,7 @@ function renderMonitoringUnavailable(message) {
 }
 async function loadMonitoring() {
   try {
-    renderMonitoring(await getJson('/api/itcm/monitoring?maxRows=12'));
+    await renderMonitoring(await getJson('/api/itcm/monitoring?maxRows=12'));
   } catch (e) {
     console.error('loadMonitoring failed:', e);
     renderMonitoringUnavailable('Monitoring data is temporarily unavailable. Refresh after checking the Server connection.');
@@ -1056,6 +1093,20 @@ async function confirmAssign() {
     assignedToEmpId ? 'Ticket assigned.' : 'Ticket unassigned.', 'Assignment is no longer possible on this ticket.');
 }
 
+function updateTriageSelectedCount() {
+  const n = document.querySelectorAll('.triage-check:checked').length;
+  setText('triageSelectedCount', `${n} selected`);
+}
+
+async function bulkAssignTickets() {
+  const checked = [...document.querySelectorAll('.triage-check:checked')].map(c => parseInt(c.value, 10)).filter(i => i > 0);
+  if (!checked.length) { showToast('Select at least one ticket.', 'warn'); return; }
+  const raw = document.getElementById('triageBulkSelect').value;
+  const assignedToEmpId = raw === '' ? null : parseInt(raw, 10);
+  await postJson('/api/itcm/tickets/bulk-assign', { ticketIds: checked, assignedToEmpId },
+    'Bulk assignment applied.', 'Bulk assignment failed.');
+}
+
 async function escalateTicket() {
   const idInput = document.getElementById('qaEscalateTicket');
   const noteInput = document.getElementById('qaEscalateNote');
@@ -1115,7 +1166,7 @@ function showLoadingSkeletons() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<span class="skeleton" style="width:64px">&nbsp;</span>';
   });
-  skeletonTableRows('portalTriageBody', canAssignTickets() ? 5 : 4);
+  skeletonTableRows('portalTriageBody', canAssignTickets() ? 6 : 4);
   skeletonTableRows('schedulerActivityBody', 4);
   skeletonTableRows('ticketMovementBody', 7);
   skeletonTableRows('notificationActivityBody', 6);
