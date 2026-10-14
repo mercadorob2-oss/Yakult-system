@@ -1093,6 +1093,7 @@
     <Compile Include="Repositories\ExpiryNotificationRepository.cs" />
     <Compile Include="Repositories\UserNotificationSettingRepository.cs" />
     <Compile Include="Repositories\ReportsRepository.cs" />
+    <Compile Include="Repositories\AdminAlertRepository.cs" />
     <Compile Include="Services\CartridgeApprovalService.cs" />
     <Compile Include="Services\AuthorizationService.cs" />
     <Compile Include="Yakult_Inventory_System_DEVDataSet.Designer.cs">
@@ -1860,6 +1861,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Images\Yakult_logo_QR_new.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Images\Danger Alarm Sound Effect.mp3">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="YAKULT DATABASE - WITH UNIFIED ARCHIVE DATABASE.txt" />
