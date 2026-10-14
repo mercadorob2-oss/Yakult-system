@@ -306,6 +306,14 @@ namespace Yakult.Inventory.App.Forms.Admin
             });
             _sideMenuPanel.Controls.Add(stockMonitorButton);
 
+            // ── CONNECTED DEVICES ──────────────────────────────────────────────────
+            var connectedDevicesButton = AddMenuButton("🖥 Connected Devices", (s, e) =>
+            {
+                ShowConnectedDevicesPage();
+                ToggleMenu();
+            });
+            _sideMenuPanel.Controls.Add(connectedDevicesButton);
+
             // ── DEVELOPER TOOLS (Developer only) ────────────────────────────────────
             if (AppSession.IsDeveloper)
             {
@@ -584,6 +592,11 @@ namespace Yakult.Inventory.App.Forms.Admin
         private void ShowConsumableStockMonitorPage()
         {
             ShowPage(new ConsumableStockMonitorWpfHost());
+        }
+
+        private void ShowConnectedDevicesPage()
+        {
+            ShowPage(new Yakult.Inventory.App.Pages.Admin.Monitoring.ConnectedDevicesPage());
         }
 
         private void ShowBranchAcronymPage()

@@ -2814,6 +2814,9 @@
     <Compile Include="Pages\Admin\Reference-Data\MasterDataUpdatePage.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="Pages\Admin\Monitoring\ConnectedDevicesPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Pages\Admin\Account-Management\DepartmentAccountsPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
