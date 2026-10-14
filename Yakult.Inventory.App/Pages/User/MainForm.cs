@@ -117,6 +117,8 @@ namespace Yakult.Inventory.App.Pages.User
         private DashboardView _dashboardView;
         private HomeNotificationPoller _homeNotifPoller;
         private DesktopNotificationPoller _inventoryActivityPoller;
+        private System.Windows.Forms.Timer _adminAlertPoller;
+        private bool _adminAlertPolling;
 
         // Tracked across navigation (not disposed when another page is shown) purely so
         // MainForm_FormClosing can warn about unsaved Invoice License Review classification
@@ -159,6 +161,34 @@ namespace Yakult.Inventory.App.Pages.User
             // The actor's own item-added rows are written read (no toast, no poller pickup), so the
             // open Activity panel would otherwise not refresh until reopened — do it here.
             InventoryActivityNotifier.Emitted += OnInventoryActivityEmitted;
+
+            // Surprise admin alerts (STOP prank): polls dbo.AdminAlertBroadcast for rows
+            // targeting this machine/user, acks first so each fires exactly once.
+            _adminAlertPoller = new System.Windows.Forms.Timer { Interval = 20000 };
+            _adminAlertPoller.Tick += AdminAlertPoller_Tick;
+            _adminAlertPoller.Start();
+        }
+
+        private async void AdminAlertPoller_Tick(object sender, EventArgs e)
+        {
+            if (_adminAlertPolling) return;
+            _adminAlertPolling = true;
+            try
+            {
+                if (IsDisposed || Disposing) return;
+                if (!Yakult.Inventory.App.Session.AppSession.IsLoggedIn) return;
+                string machine = Environment.MachineName;
+                string user = Yakult.Inventory.App.Session.AppSession.CurrentUserName;
+                var repo = new Repositories.AdminAlertRepository();
+                var pending = await System.Threading.Tasks.Task.Run(() => repo.GetPendingAlerts(machine, user));
+                foreach (var alert in pending)
+                {
+                    try { repo.AcknowledgeAlert(alert.BroadcastId, machine, user); } catch { }
+                    try { Dialogs.AdminAlertDialog.ShowAlert(alert); } catch { }
+                }
+            }
+            catch { /* best-effort; never break the main form */ }
+            finally { _adminAlertPolling = false; }
         }
 
         private void OnInventoryActivityEmitted()
@@ -261,6 +291,12 @@ namespace Yakult.Inventory.App.Pages.User
 
             _homeNotifPoller?.Dispose();
             _homeNotifPoller = null;
+
+            if (_adminAlertPoller != null)
+            {
+                try { _adminAlertPoller.Stop(); _adminAlertPoller.Dispose(); } catch { }
+                _adminAlertPoller = null;
+            }
 
             Services.ItcmPresenceReporter.StopAll();
 

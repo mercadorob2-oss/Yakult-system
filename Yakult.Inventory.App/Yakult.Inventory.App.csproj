@@ -392,6 +392,9 @@
     <Compile Include="Dialogs\SignatoryPickerDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Dialogs\AdminAlertDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\CartridgeManagement\CartridgeManagementWpfHost.cs">
       <SubType>Form</SubType>
     </Compile>
