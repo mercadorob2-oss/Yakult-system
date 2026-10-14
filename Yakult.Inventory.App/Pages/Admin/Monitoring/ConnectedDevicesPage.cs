@@ -149,9 +149,15 @@ namespace Yakult.Inventory.App.Pages.Admin.Monitoring
             _refreshTimer.Start();
         }
 
+        private bool _loading;
+
         private async void LoadData()
         {
-            _presenceError = null;
+            if (_loading || IsDisposed || Disposing) return;
+            _loading = true;
+            try
+            {
+                _presenceError = null;
             try
             {
                 var list = new List<ConnectedDeviceDto>();
@@ -165,7 +171,7 @@ namespace Yakult.Inventory.App.Pages.Admin.Monitoring
                         {
                             _presenceError = "dbo.CallClientPresence not found. Desktops must beat at least once.";
                             _all = list;
-                            ApplyFilters();
+                            SafeApplyFilters();
                             return;
                         }
                     }
@@ -199,7 +205,14 @@ namespace Yakult.Inventory.App.Pages.Admin.Monitoring
                 _presenceError = "Could not load presence: " + ex.Message;
                 _all = new List<ConnectedDeviceDto>();
             }
-            ApplyFilters();
+            SafeApplyFilters();
+            }
+            finally { _loading = false; }
+        }
+
+        private void SafeApplyFilters()
+        {
+            try { if (!IsDisposed && !Disposing) ApplyFilters(); } catch { }
         }
 
         private void ApplyFilters()

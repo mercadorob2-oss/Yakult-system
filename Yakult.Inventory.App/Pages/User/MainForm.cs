@@ -178,12 +178,14 @@ namespace Yakult.Inventory.App.Pages.User
                 if (IsDisposed || Disposing) return;
                 if (!Yakult.Inventory.App.Session.AppSession.IsLoggedIn) return;
                 string machine = Environment.MachineName;
-                string user = Yakult.Inventory.App.Session.AppSession.CurrentUserName;
+                string user = Yakult.Inventory.App.Session.AppSession.CurrentUserName ?? "";
                 var repo = new Repositories.AdminAlertRepository();
                 var pending = await System.Threading.Tasks.Task.Run(() => repo.GetPendingAlerts(machine, user));
                 foreach (var alert in pending)
                 {
-                    try { repo.AcknowledgeAlert(alert.BroadcastId, machine, user); } catch { }
+                    bool claimed = false;
+                    try { claimed = repo.AcknowledgeAlert(alert.BroadcastId, machine, user); } catch { }
+                    if (!claimed) continue;
                     try { Dialogs.AdminAlertDialog.ShowAlert(alert); } catch { }
                 }
             }

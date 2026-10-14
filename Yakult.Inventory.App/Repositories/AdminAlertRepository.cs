@@ -57,12 +57,12 @@ namespace Yakult.Inventory.App.Repositories
                         SELECT CAST(SCOPE_IDENTITY() AS INT);";
                     using (var cmd = new SqlCommand(sql, con))
                     {
-                        cmd.Parameters.AddWithValue("@Title", (object)title ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Title", string.IsNullOrEmpty(title) ? (object)"STOP" : (object)title);
                         cmd.Parameters.AddWithValue("@Message", (object)message ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@TargetMachine", (object)targetMachine ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@TargetUser", (object)targetUser ?? DBNull.Value);
                         cmd.Parameters.AddWithValue("@CreatedBy", createdBy);
-                        cmd.Parameters.AddWithValue("@CreatedByName", (object)createdByName ?? DBNull.Value);
+                        cmd.Parameters.AddWithValue("@CreatedByName", (object)(createdByName ?? ""));
                         cmd.Parameters.AddWithValue("@ExpireMinutes", expireMinutes);
                         return Convert.ToInt32(cmd.ExecuteScalar());
                     }
@@ -124,32 +124,37 @@ namespace Yakult.Inventory.App.Repositories
             return list;
         }
 
-        public void AcknowledgeAlert(int broadcastId, string machineName, string userName)
+        /// <summary>
+        /// Claims the alert for this device. Returns true only when this
+        /// caller won the claim (first writer); losers must not show it.
+        /// </summary>
+        public bool AcknowledgeAlert(int broadcastId, string machineName, string userName)
         {
             try
             {
                 using (var con = new SqlConnection(GetConnectionString()))
                 {
                     con.Open();
-                    if (!TablesExist(con)) return;
+                    if (!TablesExist(con)) return false;
                     const string sql = @"
-                        IF NOT EXISTS (
-                            SELECT 1 FROM dbo.AdminAlertAck
-                            WHERE BroadcastId = @BroadcastId AND MachineName = @MachineName AND UserName = @UserName)
                         INSERT INTO dbo.AdminAlertAck (BroadcastId, MachineName, UserName)
-                        VALUES (@BroadcastId, @MachineName, @UserName);";
+                        SELECT @BroadcastId, @MachineName, @UserName
+                        WHERE NOT EXISTS (
+                            SELECT 1 FROM dbo.AdminAlertAck
+                            WHERE BroadcastId = @BroadcastId AND MachineName = @MachineName AND UserName = @UserName);";
                     using (var cmd = new SqlCommand(sql, con))
                     {
                         cmd.Parameters.AddWithValue("@BroadcastId", broadcastId);
-                        cmd.Parameters.AddWithValue("@MachineName", (object)machineName ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@UserName", (object)userName ?? DBNull.Value);
-                        cmd.ExecuteNonQuery();
+                        cmd.Parameters.AddWithValue("@MachineName", (object)(machineName ?? ""));
+                        cmd.Parameters.AddWithValue("@UserName", (object)(userName ?? ""));
+                        return cmd.ExecuteNonQuery() > 0;
                     }
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError("[AdminAlert] AcknowledgeAlert failed.", ex);
+                return false;
             }
         }
     }
