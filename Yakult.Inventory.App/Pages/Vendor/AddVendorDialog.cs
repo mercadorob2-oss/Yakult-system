@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using Yakult.Inventory.App.Repositories;
@@ -38,7 +39,7 @@ namespace Yakult.Inventory.App.Pages.Vendor
 
         private void BuildUi()
         {
-            BackColor = Color.FromArgb(245, 246, 250);
+            BackColor = InventoryTheme.Colors.HeaderBack;
             Font = new Font("Segoe UI", 9F);
 
             Controls.Clear();

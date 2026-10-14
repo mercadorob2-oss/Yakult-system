@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -60,7 +61,7 @@ namespace Yakult.Inventory.App.Pages.Export
                 Text = "Export All",
                 Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 Size = new Size(160, 36),
-                BackColor = Color.FromArgb(58, 134, 232),
+                BackColor = InventoryTheme.Colors.PrimaryHover,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
@@ -287,9 +288,9 @@ namespace Yakult.Inventory.App.Pages.Export
     // ════════════════════════════════════════════════════════════════════════
     public class SignatoryModeDialog : Form
     {
-        private static readonly Color Teal    = Color.FromArgb(58, 134, 232);
+        private static readonly Color Teal    = InventoryTheme.Colors.PrimaryHover;
         private static readonly Color Dark    = Color.FromArgb(30, 41, 59);
-        private static readonly Color Muted   = Color.FromArgb(100, 116, 139);
+        private static readonly Color Muted   = InventoryTheme.Colors.TextMuted;
         private static readonly Color Border  = Color.FromArgb(226, 232, 240);
 
         /// <summary>True = user chose "Per Report"; false = "Same for All".</summary>
@@ -489,7 +490,7 @@ namespace Yakult.Inventory.App.Pages.Export
             {
                 Text = "Continue",
                 DialogResult = DialogResult.OK,
-                BackColor = Color.FromArgb(58, 134, 232),
+                BackColor = InventoryTheme.Colors.PrimaryHover,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),

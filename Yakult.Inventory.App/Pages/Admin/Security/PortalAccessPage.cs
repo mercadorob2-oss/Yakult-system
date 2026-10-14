@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -79,7 +80,7 @@ namespace Yakult.Inventory.App.Pages.Admin.Security
                 Size      = new Size(100, 36),
                 Location  = new Point(24, 12),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(78, 154, 252),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 Cursor    = Cursors.Hand,
                 Enabled   = false
@@ -96,7 +97,7 @@ namespace Yakult.Inventory.App.Pages.Admin.Security
                 Size      = new Size(130, 36),
                 Location  = new Point(132, 12),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(78, 154, 252),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 Cursor    = Cursors.Hand,
                 Visible   = false
@@ -127,7 +128,7 @@ namespace Yakult.Inventory.App.Pages.Admin.Security
             {
                 Text      = "",
                 Font      = new Font("Segoe UI", 9F),
-                ForeColor = Color.FromArgb(78, 154, 252),
+                ForeColor = InventoryTheme.Colors.Primary,
                 Location  = new Point(372, 20),
                 AutoSize  = true
             };
@@ -298,7 +299,7 @@ namespace Yakult.Inventory.App.Pages.Admin.Security
             {
                 Text      = text,
                 Dock      = DockStyle.Fill,
-                BackColor = Color.FromArgb(78, 154, 252),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 Font      = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 TextAlign = leftAlign

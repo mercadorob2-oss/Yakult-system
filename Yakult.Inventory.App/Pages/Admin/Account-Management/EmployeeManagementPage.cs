@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -342,7 +343,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                 DefaultCellStyle = new DataGridViewCellStyle
                 {
                     Alignment = DataGridViewContentAlignment.MiddleLeft,
-                    ForeColor = Color.FromArgb(22, 100, 170)
+                    ForeColor = InventoryTheme.Colors.PrimaryHover
                 }
             });
 

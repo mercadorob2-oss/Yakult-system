@@ -18,6 +18,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Yakult.Inventory.App;component/WPF/RequestPortal/RequestPortalStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -74,7 +75,7 @@
 
                 <StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center">
                     <TextBlock FontSize="11" FontWeight="Bold"
-                               Foreground="#AADDFF"
+                               Foreground="{StaticResource YakultNavigationMutedBrush}"
                                Text="LINK RENEWAL SET"/>
                     <TextBlock FontSize="18" FontWeight="Bold"
                                Foreground="White" Margin="0,2,0,0">
@@ -107,7 +108,7 @@
                         <TextBlock Text="{Binding AllCandidates.Count, Mode=OneWay}"
                                    FontSize="22" FontWeight="Bold" Foreground="White"
                                    HorizontalAlignment="Center"/>
-                        <TextBlock Text="candidates" FontSize="11" Foreground="#AADDFF"
+                        <TextBlock Text="candidates" FontSize="11" Foreground="{StaticResource YakultNavigationMutedBrush}"
                                    HorizontalAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -588,7 +589,7 @@
                                        Foreground="White" VerticalAlignment="Center"
                                        Text="ITEM COMPARISON — "/>
                             <TextBlock FontSize="11" FontWeight="Bold"
-                                       Foreground="#AADDFF" VerticalAlignment="Center"
+                                       Foreground="{StaticResource YakultNavigationMutedBrush}" VerticalAlignment="Center"
                                        Text="{Binding SelectedCandidate.SetCode, Mode=OneWay}"/>
                         </StackPanel>
 
@@ -601,7 +602,7 @@
                                     <Run Text="{Binding MatchedCount, Mode=OneWay}"/>
                                 </TextBlock>
                             </Border>
-                            <Border Background="#3A8EF6" CornerRadius="4"
+                            <Border Background="{StaticResource YakultPrimaryBrush}" CornerRadius="4"
                                     Padding="10,3" Margin="0,0,6,0">
                                 <TextBlock FontSize="11" FontWeight="Bold" Foreground="White">
                                     <Run Text="+ New: "/>

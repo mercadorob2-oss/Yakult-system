@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
+using Yakult.Inventory.App.Helpers;
 
 namespace Yakult.Inventory.App.Wpf.CallMonitoring
 {
@@ -12,6 +13,32 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
     /// </summary>
     internal static class WpfThemeResources
     {
+        // Shared with the inventory shell. Keep ticket states and chart series separate.
+        public static readonly Color Primary = UiTheme.WpfColors.Primary;
+        public static readonly Color PrimaryHover = UiTheme.WpfColors.PrimaryHover;
+        public static readonly Color Navigation = Color.FromRgb(24, 34, 53);
+        public static readonly Color NavigationHover = Color.FromRgb(41, 54, 77);
+        public static readonly Color NavigationMuted = Color.FromRgb(184, 195, 212);
+        public static readonly Color PageBackground = UiTheme.WpfColors.PageBackground;
+        public static readonly Color SurfaceMuted = UiTheme.WpfColors.SurfaceMuted;
+        public static readonly Color AccentTint = UiTheme.WpfColors.AccentTint;
+        public static readonly Color AccentBorder = Color.FromRgb(231, 184, 193);
+        public static readonly Color Selection = UiTheme.WpfColors.Selection;
+        public static readonly Color Border = UiTheme.WpfColors.Border;
+        public static readonly Color TextDark = UiTheme.WpfColors.TextDark;
+        public static readonly Color TextMuted = UiTheme.WpfColors.TextMuted;
+
+        public static readonly SolidColorBrush PrimaryBrush = new SolidColorBrush(Primary);
+        public static readonly SolidColorBrush PrimaryHoverBrush = new SolidColorBrush(PrimaryHover);
+        public static readonly SolidColorBrush PageBackgroundBrush = new SolidColorBrush(PageBackground);
+        public static readonly SolidColorBrush SurfaceMutedBrush = new SolidColorBrush(SurfaceMuted);
+        public static readonly SolidColorBrush AccentTintBrush = new SolidColorBrush(AccentTint);
+        public static readonly SolidColorBrush AccentBorderBrush = new SolidColorBrush(AccentBorder);
+        public static readonly SolidColorBrush SelectionBrush = new SolidColorBrush(Selection);
+        public static readonly SolidColorBrush BorderBrush = new SolidColorBrush(Border);
+        public static readonly SolidColorBrush TextDarkBrush = new SolidColorBrush(TextDark);
+        public static readonly SolidColorBrush TextMutedBrush = new SolidColorBrush(TextMuted);
+
         // --------------------------------------------------------------------------
         // Scrollbar
         // --------------------------------------------------------------------------

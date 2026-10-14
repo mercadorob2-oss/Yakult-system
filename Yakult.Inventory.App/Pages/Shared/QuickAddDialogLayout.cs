@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -110,7 +111,7 @@ namespace Yakult.Inventory.App.Pages.Shared
 
             if (primary)
             {
-                button.BackColor = Color.FromArgb(58, 142, 246);
+                button.BackColor = InventoryTheme.Colors.Primary;
                 button.ForeColor = Color.White;
                 button.FlatStyle = FlatStyle.Flat;
                 button.FlatAppearance.BorderSize = 0;
@@ -127,7 +128,7 @@ namespace Yakult.Inventory.App.Pages.Shared
                 AutoSize = true,
                 Anchor = AnchorStyles.Left,
                 Margin = new Padding(0, 8, 14, 8),
-                ForeColor = Color.FromArgb(55, 65, 81)
+                ForeColor = InventoryTheme.Colors.TextDark
             };
 
             input.Anchor = AnchorStyles.Left | AnchorStyles.Right;

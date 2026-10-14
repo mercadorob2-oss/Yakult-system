@@ -8,10 +8,15 @@
         FontFamily="Segoe UI">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FL" TargetType="TextBlock">
             <Setter Property="FontSize"          Value="11.5"/>
             <Setter Property="FontWeight"        Value="SemiBold"/>
-            <Setter Property="Foreground"        Value="#4A5A6A"/>
+            <Setter Property="Foreground"        Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin"            Value="0,0,10,0"/>
         </Style>
@@ -30,23 +35,25 @@
         <Style x:Key="PrimaryBtn" TargetType="Button">
             <Setter Property="Height"     Value="32"/>
             <Setter Property="Padding"    Value="18,0"/>
-            <Setter Property="Background" Value="#3A8EF6"/>
+            <Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor"     Value="Hand"/>
         </Style>
         <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
             <Setter Property="Background" Value="#E8ECF0"/>
-            <Setter Property="Foreground" Value="#3A4A5A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <StackPanel Margin="18">
         <TextBlock Text="Record Invoice for this Set" FontSize="14" FontWeight="Bold" Margin="0,0,0,4"/>
-        <TextBlock x:Name="TxtSetCodeLabel" FontSize="11" Foreground="#8A9AAA" Margin="0,0,0,8"/>
-        <Border Background="#EEF4FF" BorderBrush="#BDD0F8" BorderThickness="1" CornerRadius="4"
+        <TextBlock x:Name="TxtSetCodeLabel" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,0,0,8"/>
+        <Border Background="{StaticResource YakultAccentTintBrush}" BorderBrush="{StaticResource YakultAccentBorderBrush}" BorderThickness="1" CornerRadius="4"
                 Padding="8,6" Margin="0,0,0,12">
-            <TextBlock FontSize="10.5" Foreground="#2A5BC8" TextWrapping="Wrap"
+            <TextBlock FontSize="10.5" Foreground="{StaticResource YakultPrimaryHoverBrush}" TextWrapping="Wrap"
                        Text="Enter the invoice number and amounts here. The invoice is addressed to a site — its Company / Department / Branch (taken from the requester), Sub-Type groups and Parent Tags are set on the invoice screen that opens next."/>
         </Border>
 
@@ -102,10 +109,10 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBlock Text="Total Amount Due" Style="{StaticResource FL}"/>
-            <TextBox x:Name="TxtTotalAmountDue" Grid.Column="1" IsReadOnly="True" Background="#F5F7FA"/>
+            <TextBox x:Name="TxtTotalAmountDue" Grid.Column="1" IsReadOnly="True" Background="{StaticResource YakultPageBackgroundBrush}"/>
         </Grid>
 
-        <Border BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Margin="0,0,0,10"/>
+        <Border BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Margin="0,0,0,10"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancel" Style="{StaticResource SecBtn}" Margin="0,0,8,0" Click="BtnCancel_Click"/>

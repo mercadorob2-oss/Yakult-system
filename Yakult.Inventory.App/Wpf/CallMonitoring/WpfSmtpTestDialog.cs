@@ -33,7 +33,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             ResizeMode = ResizeMode.CanResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
-            Background = BrushFromRgb(245, 247, 250);
+            Background = WpfThemeResources.SurfaceMutedBrush;
 
             var root = new DockPanel();
             Content = root;
@@ -50,13 +50,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "SMTP Test",
                 FontSize = 22,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
             header.Children.Add(new TextBlock
             {
                 Text = "Sends one email to the override address while still resolving the normal SMTP profile and recipient path.",
                 Margin = new Thickness(0, 5, 0, 0),
-                Foreground = BrushFromRgb(100, 116, 139)
+                Foreground = WpfThemeResources.TextMutedBrush
             });
 
             var footer = new DockPanel { Background = Brushes.White, Height = 62, LastChildFill = false };

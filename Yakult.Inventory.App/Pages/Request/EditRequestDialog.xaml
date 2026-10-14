@@ -5,11 +5,16 @@
         Width="780" Height="720"
         MinWidth="620" MinHeight="500"
         WindowStartupLocation="CenterOwner"
-        Background="#F5F6FA"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         FontFamily="Segoe UI"
         FontSize="12">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="Foreground" Value="#3C3C3C"/>
@@ -53,6 +58,8 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Margin="24">

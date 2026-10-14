@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:Yakult.Inventory.App.WPF.Renewal.RenewalGroups.Views"
              xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.Renewal.RenewalGroups.ViewModels"
              xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
-             Background="#F0F2F6"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
              FontFamily="Segoe UI"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
@@ -16,6 +16,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -175,9 +176,9 @@
                             <ColumnDefinition Width="3"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Rectangle Grid.Column="0" Fill="#4E9AFC"/>
+                        <Rectangle Grid.Column="0" Fill="{StaticResource YakultPrimaryBrush}"/>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,4,0">
-                            <TextBlock Text="{Binding TotalCount}" Style="{StaticResource StatValueText}" Foreground="#4E9AFC"/>
+                            <TextBlock Text="{Binding TotalCount}" Style="{StaticResource StatValueText}" Foreground="{StaticResource YakultPrimaryBrush}"/>
                             <TextBlock Text="TOTAL GROUPS" Style="{StaticResource StatLabelText}"/>
                         </StackPanel>
                     </Grid>
@@ -280,7 +281,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="10,0,4,0" Foreground="#7A8A9A"/>
+                            <TextBlock Grid.Column="0" Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="10,0,4,0" Foreground="{StaticResource YakultTextMutedBrush}"/>
                             <TextBox Grid.Column="1" BorderThickness="0" Background="Transparent" FontSize="11"
                                      VerticalContentAlignment="Center" Padding="0,0,10,0"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -298,7 +299,7 @@
                         <Border Background="White" BorderBrush="{StaticResource BorderBrush1}" BorderThickness="1"
                                 CornerRadius="8" Padding="18" Width="960">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="#1A2333"/>
+                                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="{StaticResource YakultTextDarkColor}"/>
                             </Border.Effect>
                             <StackPanel>
                                 <TextBlock Text="Advanced Filters" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
@@ -690,7 +691,7 @@
                                                     CommandParameter="{Binding}">
                                                 <Button.Style>
                                                     <Style TargetType="Button" BasedOn="{StaticResource SmallBtn}">
-                                                        <Setter Property="Background" Value="#EFF6FF"/>
+                                                        <Setter Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
                                                         <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
                                                         <Setter Property="BorderBrush" Value="#BFDBFE"/>
                                                     </Style>

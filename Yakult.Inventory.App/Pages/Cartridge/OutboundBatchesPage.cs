@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -35,7 +36,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
         private List<OutboundBatchDto>          _rows;
         private List<VendorBatchAuditTrailDto>  _auditTrail;
 
-        private static readonly Color HeaderColor = Color.FromArgb(58, 134, 232);
+        private static readonly Color HeaderColor = InventoryTheme.Colors.PrimaryHover;
         private static readonly Color Orange      = Color.FromArgb(230, 126, 34);
         private static readonly Color Green       = Color.FromArgb(39, 174, 96);
 
@@ -58,7 +59,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             {
                 Dock      = DockStyle.Top,
                 Height    = 68,
-                BackColor = Color.FromArgb(245, 247, 250)
+                BackColor = InventoryTheme.Colors.HeaderBack
             };
             header.Controls.Add(new Label
             {
@@ -74,7 +75,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             {
                 Dock      = DockStyle.Top,
                 Height    = 45,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding   = new Padding(10, 7, 10, 7)
             };
 
@@ -83,7 +84,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Text      = "⟳ Refresh",
                 Width     = 100,
                 Height    = 32,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor    = Cursors.Hand,
@@ -214,13 +215,13 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             };
 
             _dgvAuditTrail.EnableHeadersVisualStyles                   = false;
-            _dgvAuditTrail.ColumnHeadersDefaultCellStyle.BackColor     = Color.FromArgb(52, 152, 219);
+            _dgvAuditTrail.ColumnHeadersDefaultCellStyle.BackColor     = InventoryTheme.Colors.GridHeaderBack;
             _dgvAuditTrail.ColumnHeadersDefaultCellStyle.ForeColor     = Color.White;
             _dgvAuditTrail.ColumnHeadersDefaultCellStyle.Font          = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             _dgvAuditTrail.ColumnHeadersDefaultCellStyle.Padding       = new Padding(5);
             _dgvAuditTrail.ColumnHeadersDefaultCellStyle.Alignment     = DataGridViewContentAlignment.MiddleLeft;
-            _dgvAuditTrail.AlternatingRowsDefaultCellStyle.BackColor   = Color.FromArgb(232, 240, 248);
-            _dgvAuditTrail.DefaultCellStyle.SelectionBackColor         = Color.FromArgb(52, 152, 219);
+            _dgvAuditTrail.AlternatingRowsDefaultCellStyle.BackColor   = InventoryTheme.Colors.GridAltRowBack;
+            _dgvAuditTrail.DefaultCellStyle.SelectionBackColor         = InventoryTheme.Colors.Primary;
             _dgvAuditTrail.DefaultCellStyle.SelectionForeColor         = Color.White;
             _dgvAuditTrail.DefaultCellStyle.Font                       = new Font("Segoe UI", 9F);
 

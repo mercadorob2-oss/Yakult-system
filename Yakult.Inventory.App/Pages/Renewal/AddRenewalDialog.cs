@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -270,7 +271,7 @@ namespace Yakult.Inventory.App.Pages.Renewal
 
             // ── title banner ─────────────────────────────────────────────────
             var banner = new System.Windows.Forms.Panel { Dock = DockStyle.Top, Height = 52,
-                BackColor = Color.FromArgb(41, 128, 185) };
+                BackColor = InventoryTheme.Colors.PrimaryHover };
             var lblTitle = new Label { Text = "Add Renewal", ForeColor = Color.White,
                 AutoSize = false, Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleLeft,
@@ -325,7 +326,7 @@ namespace Yakult.Inventory.App.Pages.Renewal
 
             _btnNewAsset = new System.Windows.Forms.Button { Text = "+ New Asset", Location = new Point(x0 + lw, y + 24),
                 Size = new Size(100, 24), FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(52, 152, 219), ForeColor = Color.White };
+                BackColor = InventoryTheme.Colors.Primary, ForeColor = Color.White };
             _btnNewAsset.FlatAppearance.BorderSize = 0;
             _btnNewAsset.Click += BtnNewAsset_Click;
             Controls.Add(_btnNewAsset);
@@ -373,7 +374,7 @@ namespace Yakult.Inventory.App.Pages.Renewal
 
             // ── Buttons ──────────────────────────────────────────────────────
             _btnSave = new System.Windows.Forms.Button { Text = "Save", Width = 100, Height = 36,
-                BackColor = Color.FromArgb(41, 128, 185), ForeColor = Color.White,
+                BackColor = InventoryTheme.Colors.PrimaryHover, ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Location = new Point(ClientSize.Width - 230, ClientSize.Height - 52) };
             _btnSave.FlatAppearance.BorderSize = 0;

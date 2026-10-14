@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System.Configuration;
 using System.Data.SqlClient;
 using Yakult.Inventory.App.Repositories;
@@ -606,7 +607,7 @@ private void UpdateAdminMenuVisibility()
             {
                 Height = 70,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(78, 154, 252)
+                BackColor = InventoryTheme.Colors.NavigationBack
             };
             this.Controls.Add(topBar);
             topBar.BringToFront();
@@ -623,13 +624,13 @@ private void UpdateAdminMenuVisibility()
                 Font = new Font("Segoe UI", 24F, FontStyle.Bold),
                 Size = new Size(70, 60),
                 Location = new Point(5, 5),
-                BackColor = Color.FromArgb(58, 134, 232),
+                BackColor = InventoryTheme.Colors.NavigationHover,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
             hamburgerButton.FlatAppearance.BorderSize = 0;
-            hamburgerButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(78, 154, 252);
+            hamburgerButton.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.NavigationHover;
             hamburgerButton.Click += HamburgerButton_Click;
             topBar.Controls.Add(hamburgerButton);
 
@@ -644,7 +645,7 @@ private void UpdateAdminMenuVisibility()
                     Size = new Size(220, 46),
                     Location = new Point(85, 12),
                     SizeMode = PictureBoxSizeMode.Zoom,
-                    BackColor = Color.Transparent
+                    BackColor = Color.White
                 };
                 topBar.Controls.Add(picBrand);
             }
@@ -817,7 +818,7 @@ private void UpdateAdminMenuVisibility()
                 Font = new Font("Segoe UI", 10.5F, FontStyle.Bold),
                 Height = buttonHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
@@ -825,7 +826,7 @@ private void UpdateAdminMenuVisibility()
                 Padding = new Padding(10, 0, 0, 0)
             };
             backToPortalButton.FlatAppearance.BorderSize = 0;
-            backToPortalButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(41, 128, 185);
+            backToPortalButton.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.PrimaryHover;
             backToPortalButton.Click += (s, e) => { ToggleMenu(); ShowPortalAndNavigate(); };
             sideMenuContent.Controls.Add(backToPortalButton);
 
@@ -1103,7 +1104,7 @@ private void UpdateAdminMenuVisibility()
             {
                 Text = "YAKULT INVENTORY",
                 Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(78, 154, 252),
+                ForeColor = InventoryTheme.Colors.Primary,
                 Height = 40,
                 AutoSize = false,
                 Dock = DockStyle.Top,
@@ -1433,7 +1434,7 @@ private void UpdateAdminMenuVisibility()
             foreach (Control c in ContentPanel.Controls) c.Dispose();
             ContentPanel.Controls.Clear();
             ContentPanel.BackgroundImage = null;
-            ContentPanel.BackColor = Color.FromArgb(240, 243, 247);
+            ContentPanel.BackColor = InventoryTheme.Colors.HeaderBack;
 
             // ── Host the WPF SearchView via ElementHost ───────────────────────────
             var searchView = new Yakult.Inventory.App.Wpf.Search.Views.SearchView();
@@ -1445,7 +1446,7 @@ private void UpdateAdminMenuVisibility()
                 Dock  = DockStyle.Fill,
                 Child = searchView,
                 BackColorTransparent = false,
-                BackColor = Color.FromArgb(240, 243, 247)
+                BackColor = InventoryTheme.Colors.HeaderBack
             };
 
             ContentPanel.Controls.Add(host);
@@ -1453,14 +1454,14 @@ private void UpdateAdminMenuVisibility()
 
             // ── Legacy WinForms home page (kept for reference; unreachable) ──────
             #pragma warning disable CS0162
-            ContentPanel.BackColor = Color.FromArgb(245, 247, 250);
+            ContentPanel.BackColor = InventoryTheme.Colors.HeaderBack;
 
             // ── Root scroll-capable panel ────────────────────────────────────────
             var root = new System.Windows.Forms.Panel
             {
                 Dock      = DockStyle.Fill,
                 AutoScroll= true,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding   = new Padding(0)
             };
 
@@ -2634,7 +2635,7 @@ private void UpdateAdminMenuVisibility()
             {
                 var badgeBar = new System.Windows.Forms.Panel
                 {
-                    BackColor = Color.FromArgb(245, 246, 250),
+                    BackColor = InventoryTheme.Colors.HeaderBack,
                     Location  = new System.Drawing.Point(0, totalH - footerH),
                     Size      = new System.Drawing.Size(formW, footerH)
                 };
@@ -2978,7 +2979,7 @@ private void UpdateAdminMenuVisibility()
         {
             ContentPanel.Controls.Clear();
             ContentPanel.BackgroundImage = null;
-            ContentPanel.BackColor = Color.FromArgb(245, 246, 250);
+            ContentPanel.BackColor = InventoryTheme.Colors.HeaderBack;
 
             _dashboardView = new DashboardView
             {

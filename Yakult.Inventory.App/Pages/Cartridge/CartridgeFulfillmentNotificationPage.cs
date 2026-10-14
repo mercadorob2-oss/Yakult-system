@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -153,13 +154,13 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             };
 
             _grid.ColumnHeadersDefaultCellStyle.Font           = new Font("Segoe UI", 9F, FontStyle.Bold);
-            _grid.ColumnHeadersDefaultCellStyle.BackColor       = Color.FromArgb(78, 154, 252);
+            _grid.ColumnHeadersDefaultCellStyle.BackColor       = InventoryTheme.Colors.GridHeaderBack;
             _grid.ColumnHeadersDefaultCellStyle.ForeColor       = Color.White;
-            _grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(78, 154, 252);
+            _grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = InventoryTheme.Colors.GridHeaderBack;
             _grid.ColumnHeadersDefaultCellStyle.Padding         = new Padding(6, 0, 0, 0);
             _grid.ColumnHeadersHeight                           = 36;
             _grid.ColumnHeadersHeightSizeMode                   = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            _grid.DefaultCellStyle.SelectionBackColor           = Color.FromArgb(78, 154, 252);
+            _grid.DefaultCellStyle.SelectionBackColor           = InventoryTheme.Colors.Primary;
             _grid.DefaultCellStyle.SelectionForeColor           = Color.White;
             _grid.DefaultCellStyle.Padding                      = new Padding(6, 6, 6, 6);
 
@@ -216,7 +217,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             {
                 Dock      = DockStyle.Bottom,
                 Height    = 36,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding   = new Padding(8, 4, 8, 4)
             };
 
@@ -266,7 +267,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             {
                 Text      = "Set Details",
                 Font      = new Font("Segoe UI", 12F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(78, 154, 252),
+                ForeColor = InventoryTheme.Colors.Primary,
                 Location  = new Point(0, top),
                 AutoSize  = true
             };
@@ -320,7 +321,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Text      = "Save",
                 Location  = new Point(lw + 250, 4),
                 Size      = new Size(60, 26),
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font      = new Font("Segoe UI", 9F),
@@ -372,7 +373,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Text      = "✉  Send Notification",
                 Location  = new Point(0, top),
                 Size      = new Size(200, 38),
-                BackColor = Color.FromArgb(58, 134, 232),
+                BackColor = InventoryTheme.Colors.PrimaryHover,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
@@ -540,7 +541,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 // Setting a row-level BackColor above also suppresses the grid-level selection
                 // colour (an empty row-level SelectionBackColor falls back to the row BackColor,
                 // not the grid's), so the clicked row never looked highlighted. Restore it here.
-                row.DefaultCellStyle.SelectionBackColor = Color.FromArgb(78, 154, 252);
+                row.DefaultCellStyle.SelectionBackColor = InventoryTheme.Colors.Primary;
                 row.DefaultCellStyle.SelectionForeColor = Color.White;
             }
 
@@ -908,11 +909,11 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 };
                 grid.EnableHeadersVisualStyles                = false;
                 grid.ColumnHeadersDefaultCellStyle.Font      = new Font("Segoe UI", 9F, FontStyle.Bold);
-                grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(78, 154, 252);
+                grid.ColumnHeadersDefaultCellStyle.BackColor = InventoryTheme.Colors.GridHeaderBack;
                 grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
                 grid.ColumnHeadersHeightSizeMode             = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
                 grid.ColumnHeadersHeight                     = 30;
-                grid.DefaultCellStyle.SelectionBackColor     = Color.FromArgb(78, 154, 252);
+                grid.DefaultCellStyle.SelectionBackColor     = InventoryTheme.Colors.Primary;
                 grid.DefaultCellStyle.SelectionForeColor     = Color.White;
 
                 grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "SetCode",   HeaderText = "Set Code",     FillWeight = 80  });

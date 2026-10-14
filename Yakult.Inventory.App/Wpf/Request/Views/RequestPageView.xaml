@@ -4,7 +4,7 @@
              xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls"
              xmlns:helpers="clr-namespace:Yakult.Inventory.App.WPF.Shared.Helpers"
              xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
-             Background="#F0F2F6"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
              FontFamily="Segoe UI"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
@@ -14,6 +14,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -71,7 +72,7 @@
                  reduce visual saturation (kept blue, not a pale tint, since the sort arrow is a
                  hardcoded white Fill). -->
             <Style x:Key="ListDataGridColumnHeader" TargetType="DataGridColumnHeader">
-                <Setter Property="Background"                 Value="#6FAEFB"/>
+                <Setter Property="Background"                 Value="{StaticResource YakultPrimaryHoverBrush}"/>
                 <Setter Property="Foreground"                 Value="White"/>
                 <Setter Property="FontWeight"                 Value="SemiBold"/>
                 <Setter Property="FontSize"                   Value="10.5"/>
@@ -126,7 +127,7 @@
             </Style>
 
             <Style x:Key="RequestsSelectColumnHeader" TargetType="DataGridColumnHeader" BasedOn="{StaticResource SelectColumnHeader}">
-                <Setter Property="Background"  Value="#6FAEFB"/>
+                <Setter Property="Background"  Value="{StaticResource YakultPrimaryHoverBrush}"/>
                 <Setter Property="BorderBrush" Value="{StaticResource PrimaryHoverBrush}"/>
             </Style>
 
@@ -140,7 +141,7 @@
                 <Setter Property="FontSize"                   Value="11"/>
                 <Setter Property="Cursor"                     Value="Hand"/>
                 <Setter Property="Background"                 Value="Transparent"/>
-                <Setter Property="Foreground"                 Value="#1A2333"/>
+                <Setter Property="Foreground"                 Value="{StaticResource YakultTextDarkBrush}"/>
                 <Setter Property="BorderThickness"            Value="0"/>
                 <Setter Property="HorizontalContentAlignment" Value="Left"/>
                 <Setter Property="Template">
@@ -151,7 +152,7 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="bd" Property="Background" Value="#F0F6FF"/>
+                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter TargetName="bd" Property="Opacity" Value="0.4"/>
@@ -201,9 +202,9 @@
                             <ColumnDefinition Width="3"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Rectangle Grid.Column="0" Fill="#4E9AFC"/>
+                        <Rectangle Grid.Column="0" Fill="{StaticResource YakultPrimaryBrush}"/>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,4,0">
-                            <TextBlock Text="{Binding TotalCount}" Style="{StaticResource StatValueText}" Foreground="#4E9AFC"/>
+                            <TextBlock Text="{Binding TotalCount}" Style="{StaticResource StatValueText}" Foreground="{StaticResource YakultPrimaryBrush}"/>
                             <TextBlock Text="TOTAL" Style="{StaticResource StatLabelText}"/>
                         </StackPanel>
                     </Grid>
@@ -217,9 +218,9 @@
                             <ColumnDefinition Width="3"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Rectangle Grid.Column="0" Fill="#3498DB"/>
+                        <Rectangle Grid.Column="0" Fill="{StaticResource YakultPrimaryBrush}"/>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,4,0">
-                            <TextBlock Text="{Binding UnderReviewCount}" Style="{StaticResource StatValueText}" Foreground="#3498DB"/>
+                            <TextBlock Text="{Binding UnderReviewCount}" Style="{StaticResource StatValueText}" Foreground="{StaticResource YakultPrimaryBrush}"/>
                             <TextBlock Text="UNDER REVIEW" Style="{StaticResource StatLabelText}"/>
                         </StackPanel>
                     </Grid>
@@ -312,7 +313,7 @@
                         <Border Background="White" BorderBrush="{StaticResource BorderBrush1}" BorderThickness="1"
                                 CornerRadius="6" Padding="4" MinWidth="190">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.15" Color="#1A2333"/>
+                                <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.15" Color="{StaticResource YakultTextDarkColor}"/>
                             </Border.Effect>
                             <StackPanel>
                                 <Button Style="{StaticResource DropdownMenuItemBtn}" Command="{Binding ExportSelectedPdfCommand}" IsEnabled="{Binding HasAnySelectedOnPage}" Click="CloseMoreActionsDropdown">
@@ -333,7 +334,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="10,0,4,0" Foreground="#7A8A9A"/>
+                            <TextBlock Grid.Column="0" Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="10,0,4,0" Foreground="{StaticResource YakultTextMutedBrush}"/>
                             <TextBox Grid.Column="1" BorderThickness="0" Background="Transparent" FontSize="11"
                                      VerticalContentAlignment="Center" Padding="0,0,10,0"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -351,7 +352,7 @@
                         <Border Background="White" BorderBrush="{StaticResource BorderBrush1}" BorderThickness="1"
                                 CornerRadius="8" Padding="18" Width="960">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="#1A2333"/>
+                                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="{StaticResource YakultTextDarkColor}"/>
                             </Border.Effect>
                             <StackPanel>
                                 <TextBlock Text="Advanced Filters" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
@@ -576,10 +577,10 @@
                       Sorting="RequestsGrid_Sorting"
                       MouseDoubleClick="RequestsGrid_MouseDoubleClick">
                 <DataGrid.Resources>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
                 </DataGrid.Resources>
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Width="44" MinWidth="44" CanUserResize="False" CanUserSort="False" HeaderStyle="{StaticResource RequestsSelectColumnHeader}" CellStyle="{StaticResource SelectColumnCell}">

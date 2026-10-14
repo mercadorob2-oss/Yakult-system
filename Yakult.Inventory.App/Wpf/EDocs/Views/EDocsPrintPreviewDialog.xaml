@@ -7,8 +7,13 @@
         WindowStartupLocation="CenterScreen"
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip"
-        Background="#F0F2F6">
+        Background="{DynamicResource YakultPageBackgroundBrush}">
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="ActionBtn" TargetType="Button">
             <Setter Property="Height" Value="36"/>
             <Setter Property="MinWidth" Value="100"/>
@@ -19,6 +24,8 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -68,7 +75,7 @@
         </Border>
 
         <!-- ── Print Preview ───────────────────────────────────────────────── -->
-        <Border Grid.Row="1" Margin="16" Background="#F0F2F6"
+        <Border Grid.Row="1" Margin="16" Background="{StaticResource YakultPageBackgroundBrush}"
                 BorderBrush="#DDE1E8" BorderThickness="1">
             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto">
@@ -92,7 +99,7 @@
                         Click="OnSkip"/>
                 <Button Style="{StaticResource ActionBtn}"
                         Content="Print"
-                        Background="#4E9AFC" Foreground="White"
+                        Background="{StaticResource YakultPrimaryBrush}" Foreground="White"
                         BorderBrush="#3D86E0"
                         Click="OnPrint"/>
             </StackPanel>

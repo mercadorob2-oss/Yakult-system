@@ -905,7 +905,9 @@ namespace Yakult.Inventory.App.Services
             // deducts the quantity). Grouping here would put an unapproved request on Request
             // & Set Management and deduct its quantity before anyone approved it.
             int? groupedSetId = isAssisted && isConsumableModelRequest
-                ? GroupIntoSet(createdIds, createdByUserId, requestSource)
+                ? GroupIntoSet(createdIds, createdByUserId, requestSource,
+                    request.DestinationCompanyId, request.DestinationBranchId,
+                    request.DestinationDepartmentId, request.ReceivedById)
                 : (int?)null;
 
             return (createdIds, resultWasAutoApproved, resultAuthId, groupedSetId);
@@ -917,14 +919,19 @@ namespace Yakult.Inventory.App.Services
         /// Request Portal submissions show up grouped in Request & Set Management instead of as
         /// separate unlinked rows. Returns the new SetId on success, or null if grouping failed.
         /// </summary>
-        private int? GroupIntoSet(List<int> requestIds, int createdByUserId, string requestSource)
+        private int? GroupIntoSet(List<int> requestIds, int createdByUserId, string requestSource,
+            int comId, int branchId, int deptId, int? receivedById)
         {
             try
             {
                 var setRepository = new SetRepository();
                 int setId = setRepository.CreateSetAsync(
                     createdByUserId,
-                    remarks: $"Auto-grouped from {requestSource} submission").GetAwaiter().GetResult();
+                    remarks: $"Auto-grouped from {requestSource} submission",
+                    comId: comId > 0 ? comId : (int?)null,
+                    currentBranchId: branchId > 0 ? branchId : (int?)null,
+                    currentDepartmentId: deptId > 0 ? deptId : (int?)null,
+                    receivedById: receivedById.HasValue && receivedById.Value > 0 ? receivedById : null).GetAwaiter().GetResult();
 
                 foreach (int reqId in requestIds)
                     setRepository.AddRequestToSetAsync(reqId, setId).GetAwaiter().GetResult();

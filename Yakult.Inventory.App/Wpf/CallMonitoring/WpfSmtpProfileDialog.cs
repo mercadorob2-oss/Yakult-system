@@ -81,13 +81,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = (string)Title,
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(15, 23, 42))
+                Foreground = new SolidColorBrush(WpfThemeResources.TextDark)
             });
             headerStack.Children.Add(new TextBlock
             {
                 Text = "Sender identity for department and branch routing. Leave password blank to keep the saved one.",
                 FontSize = 12,
-                Foreground = new SolidColorBrush(Color.FromRgb(100, 116, 139)),
+                Foreground = new SolidColorBrush(WpfThemeResources.TextMuted),
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 4, 0, 0)
             });
@@ -101,7 +101,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 MinWidth = 110,
                 Height = 34,
                 Margin = new Thickness(0, 0, 12, 0),
-                Background = new SolidColorBrush(Color.FromRgb(37, 99, 235)),
+                Background = new SolidColorBrush(WpfThemeResources.Primary),
                 Foreground = Brushes.White,
                 BorderThickness = new Thickness(0),
                 FontWeight = FontWeights.SemiBold,

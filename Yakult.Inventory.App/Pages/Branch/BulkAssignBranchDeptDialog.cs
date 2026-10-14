@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -96,7 +97,7 @@ namespace Yakult.Inventory.App.Pages.Branch
             {
                 Dock      = DockStyle.Top,
                 Height    = 62,
-                BackColor = Color.FromArgb(245, 247, 250)
+                BackColor = InventoryTheme.Colors.HeaderBack
             };
 
             int fx = 16;
@@ -290,7 +291,7 @@ namespace Yakult.Inventory.App.Pages.Branch
             {
                 Dock      = DockStyle.Bottom,
                 Height    = 55,
-                BackColor = Color.FromArgb(245, 247, 250)
+                BackColor = InventoryTheme.Colors.HeaderBack
             };
 
             _btnCancel = new Button

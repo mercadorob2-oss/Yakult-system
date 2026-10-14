@@ -103,14 +103,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private bool _quickFilterUnassigned;
 
         // Colors
-        private static readonly SolidColorBrush ColorTeal = new SolidColorBrush(Color.FromRgb(0, 150, 136));
-        private static readonly SolidColorBrush ColorTealDark = new SolidColorBrush(Color.FromRgb(15, 118, 110));
+        private static readonly SolidColorBrush ColorTeal = new SolidColorBrush(WpfThemeResources.Primary);
+        private static readonly SolidColorBrush ColorTealDark = new SolidColorBrush(WpfThemeResources.PrimaryHover);
         private static readonly SolidColorBrush ColorWhite = Brushes.White;
         private static readonly SolidColorBrush ColorTextPrimary = new SolidColorBrush(Color.FromRgb(30, 41, 59));
-        private static readonly SolidColorBrush ColorTextSecondary = new SolidColorBrush(Color.FromRgb(100, 116, 139));
-        private static readonly SolidColorBrush ColorBackground = new SolidColorBrush(Color.FromRgb(241, 244, 247));
+        private static readonly SolidColorBrush ColorTextSecondary = new SolidColorBrush(WpfThemeResources.TextMuted);
+        private static readonly SolidColorBrush ColorBackground = new SolidColorBrush(WpfThemeResources.PageBackground);
         private static readonly SolidColorBrush ColorCardBg = Brushes.White;
-        private static readonly SolidColorBrush ColorAccentBlue = new SolidColorBrush(Color.FromRgb(52, 152, 219));
+        private static readonly SolidColorBrush ColorAccentBlue = WpfThemeResources.PrimaryBrush;
         private static readonly SolidColorBrush ColorAccentGreen = new SolidColorBrush(Color.FromRgb(46, 204, 113));
         private static readonly SolidColorBrush ColorAccentRed = new SolidColorBrush(Color.FromRgb(231, 76, 60));
         private static readonly SolidColorBrush ColorAccentOrange = new SolidColorBrush(Color.FromRgb(230, 126, 34));
@@ -314,8 +314,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Padding = new Thickness(24),
                 Margin = new Thickness(0, 0, 0, 16),
                 Background = new LinearGradientBrush(
-                    Color.FromRgb(15, 118, 110),
-                    Color.FromRgb(21, 94, 117),
+                    WpfThemeResources.PrimaryHover,
+                    WpfThemeResources.Navigation,
                     new Point(0, 0),
                     new Point(1, 1)),
                 Effect = new DropShadowEffect
@@ -1606,7 +1606,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             };
 
             var headerStyle = new Style(typeof(DataGridColumnHeader));
-            headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(248, 250, 252))));
+            headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(WpfThemeResources.SurfaceMuted)));
             headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, ColorTextSecondary));
             headerStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
             headerStyle.Setters.Add(new Setter(Control.FontSizeProperty, 11.5));
@@ -1806,7 +1806,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Margin = new Thickness(0, 8, 0, 0),
                 Padding = new Thickness(12, 10, 12, 10),
                 CornerRadius = new CornerRadius(8),
-                Background = new SolidColorBrush(Color.FromRgb(245, 247, 250)),
+                Background = new SolidColorBrush(WpfThemeResources.SurfaceMuted),
                 BorderBrush = ColorBorder,
                 BorderThickness = new Thickness(1),
                 Visibility = Visibility.Collapsed
@@ -1919,7 +1919,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = Window.GetWindow(this),
                 ShowInTaskbar = false,
-                Background = new SolidColorBrush(Color.FromRgb(245, 247, 250))
+                Background = new SolidColorBrush(WpfThemeResources.SurfaceMuted)
             };
 
             var root = new Grid { Margin = new Thickness(16) };
@@ -2241,7 +2241,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = Window.GetWindow(this),
                 ShowInTaskbar = false,
-                Background = new SolidColorBrush(Color.FromRgb(245, 247, 250))
+                Background = new SolidColorBrush(WpfThemeResources.SurfaceMuted)
             };
 
             var root = new Grid { Margin = new Thickness(16) };

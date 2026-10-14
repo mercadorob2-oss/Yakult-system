@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
@@ -35,7 +36,7 @@ namespace Yakult.Inventory.App.WPF.Renewal.RenewalGroups.Views
     internal sealed class BoolToMutedBrushConverter : IValueConverter
     {
         public object Convert(object value, System.Type targetType, object parameter, CultureInfo culture)
-            => (value is bool b && b) ? new SolidColorBrush(Color.FromRgb(59, 130, 246)) : new SolidColorBrush(Color.FromRgb(148, 163, 184));
+            => (value is bool b && b) ? new SolidColorBrush(InventoryTheme.WpfColors.Primary) : new SolidColorBrush(Color.FromRgb(148, 163, 184));
 
         public object ConvertBack(object value, System.Type targetType, object parameter, CultureInfo culture)
             => throw new System.NotSupportedException();

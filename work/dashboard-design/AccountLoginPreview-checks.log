@@ -1,0 +1,37 @@
+PASS: Empty login shows inline validation without contacting the database
+PASS: Sign-in inputs and password toggle support keyboard navigation
+PASS: Show password reveals the existing password field
+PASS: Hide password restores masking
+PASS: Sign-in control remains inside the window: NameLoginField
+PASS: Sign-in control remains inside the window: PassLoginField
+PASS: Sign-in control remains inside the window: LoginBtn
+PASS: Login content is not clipped at scale 1: NameLoginField
+PASS: Login content is not clipped at scale 1: PassLoginField
+PASS: Login content is not clipped at scale 1: LoginBtn
+PASS: Login content is not clipped at scale 1: lblContactAdmin
+PASS: Login content is not clipped at scale 1: lblBrandTitle
+PASS: Login content is not clipped at scale 1: lblBrandSub
+PASS: Support link is not clipped at scale 1
+PASS: Login content is not clipped at scale 1.25: NameLoginField
+PASS: Login content is not clipped at scale 1.25: PassLoginField
+PASS: Login content is not clipped at scale 1.25: LoginBtn
+PASS: Login content is not clipped at scale 1.25: lblContactAdmin
+PASS: Login content is not clipped at scale 1.25: lblBrandTitle
+PASS: Login content is not clipped at scale 1.25: lblBrandSub
+PASS: Support link is not clipped at scale 1.25
+PASS: Login content is not clipped at scale 1.5: NameLoginField
+PASS: Login content is not clipped at scale 1.5: PassLoginField
+PASS: Login content is not clipped at scale 1.5: LoginBtn
+PASS: Login content is not clipped at scale 1.5: lblContactAdmin
+PASS: Login content is not clipped at scale 1.5: lblBrandTitle
+PASS: Login content is not clipped at scale 1.5: lblBrandSub
+PASS: Support link is not clipped at scale 1.5
+PASS: Unchanged email cannot be saved
+PASS: Invalid email is rejected inline
+PASS: Valid email changes enable Save and Discard
+PASS: Discard restores the loaded email locally
+PASS: Account edit and security actions fit the dialog
+PASS: Password update starts disabled
+PASS: Mismatched password confirmation stays disabled
+PASS: Valid matching password enables the existing update action
+Login and account UI checks passed; no credentials authenticated or saved.

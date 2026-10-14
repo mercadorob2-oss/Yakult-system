@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -89,7 +90,7 @@ namespace Yakult.Inventory.App.Pages
             {
                 Dock = DockStyle.Top,
                 Height = 45,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding = new Padding(10, 7, 10, 7)
             };
 
@@ -98,7 +99,7 @@ namespace Yakult.Inventory.App.Pages
                 Text = "⟳ Refresh",
                 Width = 100,
                 Height = 32,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
@@ -161,7 +162,7 @@ namespace Yakult.Inventory.App.Pages
                 Text      = "↩ Assign Returns",
                 Width     = 140,
                 Height    = 32,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor    = Cursors.Hand,
@@ -274,12 +275,12 @@ namespace Yakult.Inventory.App.Pages
             };
 
             dgvAuditTrail.EnableHeadersVisualStyles = false;
-            dgvAuditTrail.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+            dgvAuditTrail.ColumnHeadersDefaultCellStyle.BackColor = InventoryTheme.Colors.GridHeaderBack;
             dgvAuditTrail.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             dgvAuditTrail.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             dgvAuditTrail.ColumnHeadersDefaultCellStyle.Padding = new Padding(5);
-            dgvAuditTrail.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(232, 240, 248);
-            dgvAuditTrail.DefaultCellStyle.SelectionBackColor = Color.FromArgb(52, 152, 219);
+            dgvAuditTrail.AlternatingRowsDefaultCellStyle.BackColor = InventoryTheme.Colors.GridAltRowBack;
+            dgvAuditTrail.DefaultCellStyle.SelectionBackColor = InventoryTheme.Colors.Primary;
             dgvAuditTrail.DefaultCellStyle.SelectionForeColor = Color.White;
             dgvAuditTrail.DefaultCellStyle.Font = new Font("Segoe UI", 9F);
 
@@ -594,7 +595,7 @@ namespace Yakult.Inventory.App.Pages
                     switch (e.Value.ToString())
                     {
                         case "Active":
-                            e.CellStyle.ForeColor = Color.FromArgb(52, 152, 219);
+                            e.CellStyle.ForeColor = InventoryTheme.Colors.Primary;
                             break;
                         case "SentForRefill":
                             e.CellStyle.ForeColor = Color.Gray;
@@ -609,8 +610,8 @@ namespace Yakult.Inventory.App.Pages
                     if (!batch.IsRefillable)
                     {
                         dgvBatches.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "";
-                        e.CellStyle.BackColor = Color.FromArgb(245, 247, 250);
-                        e.CellStyle.SelectionBackColor = Color.FromArgb(245, 247, 250);
+                        e.CellStyle.BackColor = InventoryTheme.Colors.HeaderBack;
+                        e.CellStyle.SelectionBackColor = InventoryTheme.Colors.HeaderBack;
                     }
                     else
                     {
@@ -618,7 +619,7 @@ namespace Yakult.Inventory.App.Pages
                         {
                             case "Active":
                                 dgvBatches.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Send to Vendor";
-                                e.CellStyle.BackColor = Color.FromArgb(52, 152, 219); // Blue
+                                e.CellStyle.BackColor = InventoryTheme.Colors.Primary; // Blue
                                 e.CellStyle.ForeColor = Color.White;
                                 e.CellStyle.Font = new Font(e.CellStyle.Font, FontStyle.Bold);
                                 break;
@@ -632,8 +633,8 @@ namespace Yakult.Inventory.App.Pages
 
                             default:
                                 dgvBatches.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "";
-                                e.CellStyle.BackColor = Color.FromArgb(245, 247, 250);
-                                e.CellStyle.SelectionBackColor = Color.FromArgb(245, 247, 250);
+                                e.CellStyle.BackColor = InventoryTheme.Colors.HeaderBack;
+                                e.CellStyle.SelectionBackColor = InventoryTheme.Colors.HeaderBack;
                                 break;
                         }
                     }
@@ -645,7 +646,7 @@ namespace Yakult.Inventory.App.Pages
             {
                 Dock      = DockStyle.Bottom,
                 Height    = 38,
-                BackColor = Color.FromArgb(245, 247, 250)
+                BackColor = InventoryTheme.Colors.HeaderBack
             };
 
             _btnPrevPage = new Button
@@ -986,7 +987,7 @@ namespace Yakult.Inventory.App.Pages
                 switch (status)
                 {
                     case "Active":
-                        e.CellStyle.ForeColor = Color.FromArgb(52, 152, 219); // Blue
+                        e.CellStyle.ForeColor = InventoryTheme.Colors.Primary; // Blue
                         break;
                     case "SentForRefill":
                         e.CellStyle.ForeColor = Color.FromArgb(230, 126, 34); // Orange

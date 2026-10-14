@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -39,7 +40,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
         private System.Windows.Forms.Panel pnlSearchBorder;
         private const string SearchPlaceholder = "Search by Supplier, SI, DR, or PO...";
 
-        private readonly Color PrimaryBlue = Color.FromArgb(41, 128, 185);
+        private readonly Color PrimaryBlue = InventoryTheme.Colors.PrimaryHover;
         private readonly Color TextMain = Color.FromArgb(44, 62, 80);
         private readonly Color TextMuted = Color.FromArgb(127, 140, 141);
 
@@ -443,7 +444,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
             // Draw "View" button
             var viewBtnRect = new Rectangle(rect.Right - 100, rect.Top + (rect.Height - 36) / 2, 75, 36);
             
-            using (var brush = new SolidBrush(Color.FromArgb(245, 247, 250)))
+            using (var brush = new SolidBrush(InventoryTheme.Colors.HeaderBack))
             {
                 FillRoundedRect(graphics, brush, viewBtnRect, 10);
             }

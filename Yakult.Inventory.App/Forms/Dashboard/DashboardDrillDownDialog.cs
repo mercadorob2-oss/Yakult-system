@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -40,7 +41,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
             {
                 Dock = DockStyle.Top,
                 Height = 70,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 Padding = new Padding(20, 15, 20, 10)
             };
 
@@ -227,7 +228,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
                     }
                     else
                     {
-                        row.Cells["Entry Type"].Style.ForeColor = Color.FromArgb(52, 152, 219);
+                        row.Cells["Entry Type"].Style.ForeColor = InventoryTheme.Colors.Primary;
                     }
                 }
 
@@ -412,7 +413,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
                     else if (entryType == "Negative")
                         row.Cells["EntryType"].Style.ForeColor = Color.FromArgb(231, 76, 60);
                     else
-                        row.Cells["EntryType"].Style.ForeColor = Color.FromArgb(52, 152, 219);
+                        row.Cells["EntryType"].Style.ForeColor = InventoryTheme.Colors.Primary;
                 }
 
                 // Color code Quantity (Inventory Movements dashboard only)

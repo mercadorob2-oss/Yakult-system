@@ -49,7 +49,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var footer = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(20, 12, 20, 16) };
             DockPanel.SetDock(footer, Dock.Bottom);
             root.Children.Add(footer);
-            _save = WpfItcmDialogService.CreateButton("Save Location", WpfItcmDialogService.BrushFromRgb(13, 148, 136));
+            _save = WpfItcmDialogService.CreateButton("Save Location", WpfThemeResources.PrimaryBrush);
             _cancel = WpfItcmDialogService.CreateButton("Cancel", WpfItcmDialogService.BrushFromRgb(71, 85, 105));
             _cancel.IsCancel = true;
             footer.Children.Add(_save);

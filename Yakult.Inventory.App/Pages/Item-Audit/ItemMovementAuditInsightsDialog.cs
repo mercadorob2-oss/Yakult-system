@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -65,7 +66,7 @@ namespace Yakult.Inventory.App.Pages.ItemAudit
                 Height = 28,
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 Location = new Point(Width - 120, 14)
             };
@@ -127,13 +128,13 @@ namespace Yakult.Inventory.App.Pages.ItemAudit
             };
 
             dgv.EnableHeadersVisualStyles = false;
-            dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+            dgv.ColumnHeadersDefaultCellStyle.BackColor = InventoryTheme.Colors.GridHeaderBack;
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             dgv.DefaultCellStyle.Font = new Font("Segoe UI", 9F);
-            dgv.DefaultCellStyle.SelectionBackColor = Color.FromArgb(41, 128, 185);
+            dgv.DefaultCellStyle.SelectionBackColor = InventoryTheme.Colors.PrimaryHover;
             dgv.DefaultCellStyle.SelectionForeColor = Color.White;
-            dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(245, 247, 250);
+            dgv.AlternatingRowsDefaultCellStyle.BackColor = InventoryTheme.Colors.HeaderBack;
             dgv.RowTemplate.Height = 34;
 
             return dgv;

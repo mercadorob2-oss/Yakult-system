@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -125,7 +126,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Size = new Size(150, UiTheme.Sizes.PillButtonHeight),
                 Margin = new Padding(0, 6, 12, 0)
             };
-            UiFactory.ConfigureOutlineHopeButton(_btnRecordReturn, Color.FromArgb(52, 152, 219), Color.FromArgb(220, 240, 255));
+            UiFactory.ConfigureOutlineHopeButton(_btnRecordReturn, InventoryTheme.Colors.Primary, Color.FromArgb(220, 240, 255));
             _btnRecordReturn.Click += BtnRecordReturn_Click;
 
             _btnExportExcel = new HopeButton
@@ -174,7 +175,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             _layout.ButtonLeftFlow.Controls.Add(_btnMarkRefilled);
             _layout.ButtonLeftFlow.Controls.Add(_btnMarkReady);
 
-            _cardTotal = UiFactory.CreateSummaryCard("Total Cartridges", out _lblTotalCount, Color.FromArgb(52, 152, 219));
+            _cardTotal = UiFactory.CreateSummaryCard("Total Cartridges", out _lblTotalCount, InventoryTheme.Colors.Primary);
             _cardForRefill = UiFactory.CreateSummaryCard("For Refill", out _lblForRefillCount, Color.FromArgb(231, 76, 60));
             _cardRefilling = UiFactory.CreateSummaryCard("Refilling", out _lblRefillingCount, Color.FromArgb(241, 196, 15));
 
@@ -211,7 +212,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             dgvCartridges.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dgvCartridges.ColumnHeadersDefaultCellStyle.Padding = new Padding(10, 0, 0, 0);
 
-            dgvCartridges.DefaultCellStyle.SelectionBackColor = Color.FromArgb(52, 152, 219);
+            dgvCartridges.DefaultCellStyle.SelectionBackColor = InventoryTheme.Colors.Primary;
             dgvCartridges.DefaultCellStyle.SelectionForeColor = Color.White;
             dgvCartridges.DefaultCellStyle.Font = new Font("Segoe UI", 9.5F);
             dgvCartridges.DefaultCellStyle.Padding = new Padding(10, 5, 10, 5);

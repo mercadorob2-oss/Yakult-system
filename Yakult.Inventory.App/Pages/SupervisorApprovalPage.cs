@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -126,7 +127,7 @@ namespace Yakult.Inventory.App.Pages
             {
                 Text      = "Pending Authorizations",
                 Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(100, 116, 139),
+                ForeColor = InventoryTheme.Colors.TextMuted,
                 AutoSize  = true,
                 Location  = new Point(0, 3)
             };
@@ -139,7 +140,7 @@ namespace Yakult.Inventory.App.Pages
                 FlatStyle = FlatStyle.Flat,
                 Size      = new Size(80, 28),
                 Anchor    = AnchorStyles.Top | AnchorStyles.Right,
-                BackColor = Color.FromArgb(239, 246, 255),
+                BackColor = InventoryTheme.Colors.OutlineHoverBack,
                 ForeColor = Color.FromArgb(27, 58, 107)
             };
             _btnRefresh.FlatAppearance.BorderColor = Color.FromArgb(191, 219, 254);
@@ -241,7 +242,7 @@ namespace Yakult.Inventory.App.Pages
                 {
                     Text      = caption,
                     Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
-                    ForeColor = Color.FromArgb(100, 116, 139),
+                    ForeColor = InventoryTheme.Colors.TextMuted,
                     Location  = new Point(lx, y),
                     Size      = new Size(130, 20)
                 });
@@ -266,7 +267,7 @@ namespace Yakult.Inventory.App.Pages
             AddSep(lx, y); y += 12;
 
             Lbl("Requested Cartridges:",
-                new Font("Segoe UI", 8.5F, FontStyle.Bold), Color.FromArgb(100, 116, 139));
+                new Font("Segoe UI", 8.5F, FontStyle.Bold), InventoryTheme.Colors.TextMuted);
             y += 20;
 
             _lblModels = new Label
@@ -289,7 +290,7 @@ namespace Yakult.Inventory.App.Pages
             {
                 Text      = "AUTHORIZATION STATEMENT PREVIEW",
                 Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(100, 116, 139),
+                ForeColor = InventoryTheme.Colors.TextMuted,
                 AutoSize  = true,
                 Location  = new Point(lx, y)
             });
@@ -488,7 +489,7 @@ namespace Yakult.Inventory.App.Pages
             {
                 Text      = "Notes (optional for approval; required for rejection):",
                 Font      = new Font("Segoe UI", 8.5F),
-                ForeColor = Color.FromArgb(100, 116, 139),
+                ForeColor = InventoryTheme.Colors.TextMuted,
                 AutoSize  = true,
                 Location  = new Point(lx, y)
             });
@@ -545,7 +546,7 @@ namespace Yakult.Inventory.App.Pages
             {
                 AutoSize  = true,
                 Font      = new Font("Segoe UI", 8.5F),
-                ForeColor = Color.FromArgb(100, 116, 139),
+                ForeColor = InventoryTheme.Colors.TextMuted,
                 Location  = new Point(lx, y)
             };
             _scrollOuter.Controls.Add(_lblStatus);
@@ -623,7 +624,7 @@ namespace Yakult.Inventory.App.Pages
                 Size      = new Size(70, 26),
                 FlatStyle = FlatStyle.Flat,
                 Font      = new Font("Segoe UI", 8F),
-                ForeColor = Color.FromArgb(100, 116, 139)
+                ForeColor = InventoryTheme.Colors.TextMuted
             };
             btnClear.Click += (s, e) => ClearCanvas();
             tab.Controls.Add(btnClear);
@@ -784,7 +785,7 @@ namespace Yakult.Inventory.App.Pages
                 Size      = new Size(90, 28),
                 FlatStyle = FlatStyle.Flat,
                 Font      = new Font("Segoe UI", 8.5F),
-                BackColor = Color.FromArgb(239, 246, 255),
+                BackColor = InventoryTheme.Colors.OutlineHoverBack,
                 ForeColor = Color.FromArgb(27, 58, 107)
             };
             btnBrowse.FlatAppearance.BorderColor = Color.FromArgb(191, 219, 254);
@@ -1396,13 +1397,13 @@ namespace Yakult.Inventory.App.Pages
 
                 Color bg  = sel ? Color.FromArgb(219, 234, 254) : Color.White;
                 Color fg  = sel ? Color.FromArgb(30, 64, 175)   : Color.FromArgb(30, 41, 59);
-                Color sub = sel ? Color.FromArgb(71, 107, 210)  : Color.FromArgb(100, 116, 139);
+                Color sub = sel ? Color.FromArgb(71, 107, 210)  : InventoryTheme.Colors.TextMuted;
 
                 e.Graphics.FillRectangle(new SolidBrush(bg), e.Bounds);
 
                 if (sel)
                     e.Graphics.FillRectangle(
-                        new SolidBrush(Color.FromArgb(59, 130, 246)),
+                        new SolidBrush(InventoryTheme.Colors.Primary),
                         new Rectangle(e.Bounds.X, e.Bounds.Y, 4, e.Bounds.Height));
 
                 int tx = e.Bounds.X + 12;

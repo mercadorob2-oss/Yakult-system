@@ -16,11 +16,16 @@
         ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
 
         <!-- ── Card ──────────────────────────────────────────────────────── -->
         <Style x:Key="Card" TargetType="Border">
             <Setter Property="Background"      Value="White"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius"    Value="8"/>
             <Setter Property="Padding"         Value="16,12"/>
@@ -40,7 +45,7 @@
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Background"      Value="#3A8EF6"/>
+            <Setter Property="Background"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"      Value="White"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -69,7 +74,7 @@
         <!-- ── Secondary button (Remove All) ────────────────────────────── -->
         <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
             <Setter Property="Background" Value="#E8ECF0"/>
-            <Setter Property="Foreground" Value="#3A4A5A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
 
         <!-- ── Row-remove button ─────────────────────────────────────────── -->
@@ -100,6 +105,8 @@
             </Setter>
         </Style>
 
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <!-- ════════════════════════════════════════════════════════════════════ -->
@@ -121,7 +128,7 @@
             <!-- ════════════════════════════════════════════════════════════ -->
             <!-- ROW 0 · TITLE BAR                                           -->
             <!-- ════════════════════════════════════════════════════════════ -->
-            <Border Grid.Row="0" Background="#3A8EF6"
+            <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}"
                     CornerRadius="10,10,0,0"
                     MouseLeftButtonDown="OnHeaderDrag"
                     Cursor="SizeAll">
@@ -129,7 +136,7 @@
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                                 VerticalAlignment="Center" Cursor="Arrow">
                         <TextBlock Text="✕" FontSize="14" FontWeight="Bold"
-                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   Foreground="{StaticResource YakultNavigationMutedBrush}" Cursor="Hand"
                                    VerticalAlignment="Center" Padding="8,0"
                                    MouseLeftButtonDown="OnCloseClick"/>
                     </StackPanel>
@@ -152,7 +159,7 @@
 
                         <TextBlock Grid.Row="0" x:Name="TxtEmptyState"
                                    Text="No items selected."
-                                   FontSize="12" Foreground="#7A8A9A"
+                                   FontSize="12" Foreground="{StaticResource YakultTextMutedBrush}"
                                    Margin="0,0,0,8"
                                    Visibility="Collapsed"/>
 
@@ -167,17 +174,17 @@
                                   HeadersVisibility="Column"
                                   AlternatingRowBackground="#F5F9FF"
                                   Background="White"
-                                  BorderBrush="#DDE3EC"
+                                  BorderBrush="{StaticResource YakultBorderBrush}"
                                   BorderThickness="1"
                                   MinRowHeight="34"
                                   FontSize="12"
-                                  Foreground="#1A2333"
+                                  Foreground="{StaticResource YakultTextDarkBrush}"
                                   IsReadOnly="True"
                                   VirtualizingPanel.IsVirtualizing="False">
 
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background"                 Value="#3498DB"/>
+                                    <Setter Property="Background"                 Value="{StaticResource YakultPrimaryBrush}"/>
                                     <Setter Property="Foreground"                 Value="White"/>
                                     <Setter Property="FontWeight"                 Value="SemiBold"/>
                                     <Setter Property="FontSize"                   Value="12"/>
@@ -236,7 +243,7 @@
             <!-- ROW 2 · FOOTER                                              -->
             <!-- ════════════════════════════════════════════════════════════ -->
             <Border Grid.Row="2" Background="White"
-                    BorderBrush="#DDE3EC" BorderThickness="0,1,0,0"
+                    BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0"
                     CornerRadius="0,0,10,10">
                 <Grid Margin="16,0">
                     <Grid.ColumnDefinitions>
@@ -247,7 +254,7 @@
 
                     <TextBlock x:Name="TxtCount"
                                Grid.Column="0"
-                               FontSize="11.5" Foreground="#7A8A9A"
+                               FontSize="11.5" Foreground="{StaticResource YakultTextMutedBrush}"
                                VerticalAlignment="Center"/>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">

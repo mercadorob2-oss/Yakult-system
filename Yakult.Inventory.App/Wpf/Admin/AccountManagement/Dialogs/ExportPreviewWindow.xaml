@@ -11,6 +11,11 @@
         TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FooterBtn" TargetType="Button">
             <Setter Property="Height"          Value="32"/>
             <Setter Property="Padding"         Value="16,0"/>
@@ -53,7 +58,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="#4E9AFC"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -62,12 +67,12 @@
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background"                 Value="#4E9AFC"/>
+            <Setter Property="Background"                 Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"                 Value="White"/>
             <Setter Property="FontWeight"                 Value="SemiBold"/>
             <Setter Property="FontSize"                   Value="11"/>
             <Setter Property="Padding"                    Value="8,7"/>
-            <Setter Property="BorderBrush"                Value="#3A8EF6"/>
+            <Setter Property="BorderBrush"                Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="BorderThickness"            Value="0,0,1,1"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
         </Style>
@@ -76,7 +81,7 @@
             <Setter Property="Background" Value="White"/>
             <Style.Triggers>
                 <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                    <Setter Property="Background" Value="#FAFBFC"/>
+                    <Setter Property="Background" Value="{StaticResource YakultSurfaceMutedBrush}"/>
                 </Trigger>
                 <DataTrigger Binding="{Binding IsArchived}" Value="True">
                     <Setter Property="Background" Value="#E2E5EA"/>
@@ -84,6 +89,8 @@
                 </DataTrigger>
             </Style.Triggers>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Background="White">
@@ -95,7 +102,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#4E9AFC" Padding="20,14">
+        <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}" Padding="20,14">
             <StackPanel>
                 <TextBlock Text="Export Preview" Foreground="White" FontSize="15" FontWeight="Bold"/>
                 <TextBlock x:Name="TxtSubtitle" Foreground="#EAF2FF" FontSize="11" Margin="0,3,0,0"/>
@@ -103,11 +110,11 @@
         </Border>
 
         <!-- Search -->
-        <Border Grid.Row="1" Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="16,10">
+        <Border Grid.Row="1" Background="#F8FAFB" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="16,10">
             <Grid>
                 <TextBox x:Name="TxtSearch" Style="{StaticResource SearchBox}" Width="320" HorizontalAlignment="Left"
                          TextChanged="TxtSearch_TextChanged"/>
-                <TextBlock x:Name="TxtRowCount" FontSize="11" Foreground="#5A6A7A" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                <TextBlock x:Name="TxtRowCount" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
         </Border>
 
@@ -123,7 +130,7 @@
                   RowHeight="28"
                   FontSize="11"
                   BorderThickness="1"
-                  BorderBrush="#DDE3EC"
+                  BorderBrush="{StaticResource YakultBorderBrush}"
                   AlternationCount="2">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Emp #"          Binding="{Binding EmployeeNumber}" Width="70"/>
@@ -141,13 +148,13 @@
         </DataGrid>
 
         <!-- Footer -->
-        <Border Grid.Row="3" Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="20,12" Margin="0,12,0,0">
+        <Border Grid.Row="3" Background="#F8FAFB" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="20,12" Margin="0,12,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Back" Style="{StaticResource FooterBtn}"
-                        Background="White" Foreground="#5A6A7A" BorderBrush="#CDD5DE"
+                        Background="White" Foreground="{StaticResource YakultTextMutedBrush}" BorderBrush="{StaticResource YakultBorderBrush}"
                         Margin="0,0,8,0" Click="BtnBack_Click"/>
                 <Button Content="Continue to Save" Style="{StaticResource FooterBtn}"
-                        Background="#4E9AFC" Foreground="White" BorderThickness="0"
+                        Background="{StaticResource YakultPrimaryBrush}" Foreground="White" BorderThickness="0"
                         Click="BtnContinue_Click"/>
             </StackPanel>
         </Border>

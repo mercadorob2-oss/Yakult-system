@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -22,9 +23,9 @@ namespace Yakult.Inventory.App.Pages.BranchAssignment
     public class ViewBranchAssignmentPage : UserControl
     {
         // ── Design constants ──────────────────────────────────────────────────
-        private static readonly Color Blue          = Color.FromArgb(52,  152, 219);
-        private static readonly Color BlueDark      = Color.FromArgb(41,  128, 185);
-        private static readonly Color HeaderBg      = Color.FromArgb(245, 247, 250);
+        private static readonly Color Blue          = InventoryTheme.Colors.Primary;
+        private static readonly Color BlueDark      = InventoryTheme.Colors.PrimaryHover;
+        private static readonly Color HeaderBg      = InventoryTheme.Colors.HeaderBack;
 
         // ── Layout panels ─────────────────────────────────────────────────────
         private System.Windows.Forms.Panel _headerPanel;
@@ -371,7 +372,7 @@ namespace Yakult.Inventory.App.Pages.BranchAssignment
             _dgv.DefaultCellStyle.SelectionBackColor = BlueDark;
             _dgv.DefaultCellStyle.SelectionForeColor = Color.White;
             _dgv.DefaultCellStyle.Padding            = new Padding(8, 6, 8, 6);
-            _dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(232, 240, 248);
+            _dgv.AlternatingRowsDefaultCellStyle.BackColor = InventoryTheme.Colors.GridAltRowBack;
             _dgv.RowTemplate.Height    = 38;
             _dgv.RowTemplate.Resizable = DataGridViewTriState.False;
 

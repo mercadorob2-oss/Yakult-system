@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
@@ -342,7 +343,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                     e.CellBounds.Height - 1  // Leave 1px for bottom border
                 );
 
-                using (var brush = new SolidBrush(Color.FromArgb(52, 152, 219)))
+                using (var brush = new SolidBrush(InventoryTheme.Colors.Primary))
                 {
                     e.Graphics.FillRectangle(brush, r);
                 }

@@ -11,6 +11,11 @@
         TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FooterBtn" TargetType="Button">
             <Setter Property="Height"          Value="32"/>
             <Setter Property="Padding"         Value="16,0"/>
@@ -52,7 +57,7 @@
         <Style x:Key="LinkBtn" TargetType="Button">
             <Setter Property="Background"      Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground"      Value="#4E9AFC"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="FontSize"        Value="11"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Padding"         Value="4,2"/>
@@ -64,13 +69,15 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="#2563EB"/>
+                                <Setter Property="Foreground" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Background="White">
@@ -81,7 +88,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#4E9AFC" Padding="20,14">
+        <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}" Padding="20,14">
             <StackPanel>
                 <TextBlock Text="Confirm Import — Full Summary" Foreground="White" FontSize="15" FontWeight="Bold"/>
                 <TextBlock x:Name="TxtSubtitle" Foreground="#EAF2FF" FontSize="11" Margin="0,3,0,0"/>
@@ -89,7 +96,7 @@
         </Border>
 
         <!-- Full, untruncated lists in tabs -->
-        <TabControl Grid.Row="1" Margin="16,12,16,0" BorderThickness="1" BorderBrush="#DDE3EC">
+        <TabControl Grid.Row="1" Margin="16,12,16,0" BorderThickness="1" BorderBrush="{StaticResource YakultBorderBrush}">
             <TabItem x:Name="TabAdd">
                 <DataGrid x:Name="GridAdd"
                           AutoGenerateColumns="False"
@@ -135,9 +142,9 @@
 
             <TabItem x:Name="TabMissing">
                 <DockPanel>
-                    <Border DockPanel.Dock="Top" Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="10,8">
+                    <Border DockPanel.Dock="Top" Background="#F8FAFB" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="10,8">
                         <Grid>
-                            <TextBlock x:Name="TxtMissingCount" FontSize="11" Foreground="#5A6A7A" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TxtMissingCount" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center"/>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <Button Content="Select All to Archive" Style="{StaticResource LinkBtn}" Click="BtnSelectAllMissing_Click"/>
                                 <TextBlock Text=" · " Foreground="#999" VerticalAlignment="Center" FontSize="11"/>
@@ -176,17 +183,17 @@
         </TabControl>
 
         <!-- Footer -->
-        <Border Grid.Row="2" Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="20,12">
+        <Border Grid.Row="2" Background="#F8FAFB" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="20,12">
             <Grid>
-                <TextBlock x:Name="TxtFooterNote" FontSize="11" Foreground="#5A6A7A" VerticalAlignment="Center"
+                <TextBlock x:Name="TxtFooterNote" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center"
                            TextWrapping="Wrap" MaxWidth="520" HorizontalAlignment="Left"/>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Back" Style="{StaticResource FooterBtn}"
-                            Background="White" Foreground="#5A6A7A" BorderBrush="#CDD5DE"
+                            Background="White" Foreground="{StaticResource YakultTextMutedBrush}" BorderBrush="{StaticResource YakultBorderBrush}"
                             Margin="0,0,8,0" Click="BtnBack_Click"/>
                     <Button Content="Confirm &amp; Import" Style="{StaticResource FooterBtn}"
-                            Background="#4E9AFC" Foreground="White" BorderThickness="0"
+                            Background="{StaticResource YakultPrimaryBrush}" Foreground="White" BorderThickness="0"
                             Click="BtnConfirm_Click"/>
                 </StackPanel>
             </Grid>

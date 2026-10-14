@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -50,7 +51,7 @@ namespace Yakult.Inventory.App.Pages.CartridgeManagement
             {
                 Dock = DockStyle.Top,
                 Height = 84,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding = new Padding(15, 10, 15, 10)
             };
 
@@ -82,7 +83,7 @@ namespace Yakult.Inventory.App.Pages.CartridgeManagement
                 Location = new Point(_headerPanel.Width - 73, 13),
                 Anchor = AnchorStyles.Top | AnchorStyles.Right
             };
-            ConfigurePillHopeButton(btnRefresh, Color.FromArgb(52, 152, 219), Color.FromArgb(41, 128, 185));
+            ConfigurePillHopeButton(btnRefresh, InventoryTheme.Colors.Primary, InventoryTheme.Colors.PrimaryHover);
             btnRefresh.Click += async (s, e) => await LoadDataAsync();
             btnRefresh.Resize += (s, e) =>
             {
@@ -324,7 +325,7 @@ namespace Yakult.Inventory.App.Pages.CartridgeManagement
                 switch (status)
                 {
                     case "Active":
-                        e.CellStyle.ForeColor = Color.FromArgb(52, 152, 219); // Blue
+                        e.CellStyle.ForeColor = InventoryTheme.Colors.Primary; // Blue
                         break;
                     case "SentForRefill":
                         e.CellStyle.ForeColor = Color.FromArgb(230, 126, 34); // Orange

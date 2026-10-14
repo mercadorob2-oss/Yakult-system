@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -158,7 +159,7 @@ namespace Yakult.Inventory.App.WPF.Renewal.RenewalGroups.Views
         {
             if (_columnHeaderButtons.TryGetValue(columnKey, out var button))
                 button.Foreground = _vm.HasColumnFilter(columnKey)
-                    ? new SolidColorBrush(Color.FromRgb(59, 130, 246))
+                    ? new SolidColorBrush(InventoryTheme.WpfColors.Primary)
                     : (Brush)FindResource("TextMutedBrush");
         }
 
@@ -230,7 +231,7 @@ namespace Yakult.Inventory.App.WPF.Renewal.RenewalGroups.Views
     internal sealed class BoolToExpandedBrushConverter : IValueConverter
     {
         public object Convert(object value, System.Type targetType, object parameter, CultureInfo culture)
-            => (value is bool b && b) ? new SolidColorBrush(Color.FromRgb(239, 246, 255)) : new SolidColorBrush(Color.FromRgb(248, 250, 252));
+            => (value is bool b && b) ? new SolidColorBrush(InventoryTheme.WpfColors.AccentTint) : new SolidColorBrush(Color.FromRgb(248, 250, 252));
 
         public object ConvertBack(object value, System.Type targetType, object parameter, CultureInfo culture)
             => throw new System.NotSupportedException();

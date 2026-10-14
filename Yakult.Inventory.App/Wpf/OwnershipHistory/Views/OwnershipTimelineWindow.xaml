@@ -5,7 +5,7 @@
         Title="Full History" Height="640" Width="640"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        Background="#F0F2F6" FontFamily="Segoe UI"
+        Background="{DynamicResource YakultPageBackgroundBrush}" FontFamily="Segoe UI"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="ClearType">
@@ -13,6 +13,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -65,7 +66,7 @@
 
                             <!-- Vertical spine: connecting line + colored dot per event -->
                             <Grid Grid.Column="0">
-                                <Rectangle Width="2" Fill="#DDE3EC" HorizontalAlignment="Center" VerticalAlignment="Stretch" Margin="0,6,0,-20"/>
+                                <Rectangle Width="2" Fill="{StaticResource YakultBorderBrush}" HorizontalAlignment="Center" VerticalAlignment="Stretch" Margin="0,6,0,-20"/>
                                 <Ellipse Width="14" Height="14" Fill="{Binding AccentBrush}" Stroke="White" StrokeThickness="2"
                                          HorizontalAlignment="Center" VerticalAlignment="Top"/>
                             </Grid>

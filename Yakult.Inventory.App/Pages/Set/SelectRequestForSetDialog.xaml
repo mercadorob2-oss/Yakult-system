@@ -16,11 +16,16 @@
         ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
 
         <Style x:Key="FilterField" TargetType="TextBox">
             <Setter Property="Height"                   Value="28"/>
             <Setter Property="FontSize"                 Value="11.5"/>
-            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Foreground"               Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Background"               Value="White"/>
             <Setter Property="BorderBrush"              Value="#C8D2DC"/>
             <Setter Property="BorderThickness"          Value="1"/>
@@ -38,7 +43,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3498DB"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -84,7 +89,7 @@
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background"               Value="#3498DB"/>
+            <Setter Property="Background"               Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"               Value="White"/>
             <Setter Property="FontWeight"               Value="Bold"/>
             <Setter Property="FontSize"                 Value="11"/>
@@ -163,7 +168,7 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush"    Value="#C8D2DC"/>
             <Setter Property="Background"     Value="White"/>
-            <Setter Property="Foreground"     Value="#3A4A5A"/>
+            <Setter Property="Foreground"     Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -186,6 +191,8 @@
             </Setter>
         </Style>
 
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Border CornerRadius="8" Background="White" ClipToBounds="True">
@@ -203,11 +210,11 @@
             </Grid.RowDefinitions>
 
             <!-- ═══ TITLE BAR ═══ -->
-            <Border Grid.Row="0" Background="#3498DB" CornerRadius="8,8,0,0"
+            <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}" CornerRadius="8,8,0,0"
                     MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
                 <DockPanel Margin="14,0,8,0" VerticalAlignment="Center">
                     <TextBlock DockPanel.Dock="Right" Text="✕" FontSize="13" FontWeight="Bold"
-                               Foreground="#BDD9FF" Cursor="Hand" VerticalAlignment="Center"
+                               Foreground="{StaticResource YakultNavigationMutedBrush}" Cursor="Hand" VerticalAlignment="Center"
                                Padding="8,0" MouseLeftButtonDown="OnCloseClick"/>
                     <TextBlock Text="Add Request to Set" FontSize="12" FontWeight="Bold"
                                Foreground="White" VerticalAlignment="Center"/>
@@ -215,20 +222,20 @@
             </Border>
 
             <!-- ═══ FILTER BAR ═══ -->
-            <Border Grid.Row="1" Background="#F5F8FC" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1">
+            <Border Grid.Row="1" Background="#F5F8FC" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1">
                 <WrapPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
 
                     <TextBlock Text="Search:" VerticalAlignment="Center" FontSize="11"
-                               Foreground="#4A5A6A" Margin="0,0,6,0"/>
+                               Foreground="{StaticResource YakultTextDarkBrush}" Margin="0,0,6,0"/>
                     <TextBox x:Name="TxtSearch" Width="240" Style="{StaticResource FilterField}"
                              Margin="0,0,18,0" TextChanged="TxtSearch_TextChanged"/>
 
                     <CheckBox x:Name="ChkDateFilter" Content="Date range:" VerticalAlignment="Center"
-                              FontSize="11" Foreground="#4A5A6A" Margin="0,0,8,0"
+                              FontSize="11" Foreground="{StaticResource YakultTextDarkBrush}" Margin="0,0,8,0"
                               Checked="DateFilter_Changed" Unchecked="DateFilter_Changed"/>
 
                     <TextBlock Text="From:" VerticalAlignment="Center" FontSize="11"
-                               Foreground="#4A5A6A" Margin="0,0,4,0"/>
+                               Foreground="{StaticResource YakultTextDarkBrush}" Margin="0,0,4,0"/>
                     <DatePicker x:Name="DtpFrom" Width="130" Height="28" IsEnabled="False"
                                 Margin="0,0,12,0" SelectedDateChanged="DateFilter_Changed"
                                 BorderBrush="#C8D2DC" BorderThickness="1">
@@ -238,7 +245,7 @@
                     </DatePicker>
 
                     <TextBlock Text="To:" VerticalAlignment="Center" FontSize="11"
-                               Foreground="#4A5A6A" Margin="0,0,4,0"/>
+                               Foreground="{StaticResource YakultTextDarkBrush}" Margin="0,0,4,0"/>
                     <DatePicker x:Name="DtpTo" Width="130" Height="28" IsEnabled="False"
                                 SelectedDateChanged="DateFilter_Changed"
                                 BorderBrush="#C8D2DC" BorderThickness="1">
@@ -259,12 +266,12 @@
 
                 <TextBlock x:Name="LblTitle" Grid.Row="0"
                            Text="Select a request to add to this set:"
-                           FontSize="10.5" FontWeight="SemiBold" Foreground="#3A4A5A"
+                           FontSize="10.5" FontWeight="SemiBold" Foreground="{StaticResource YakultTextDarkBrush}"
                            Margin="0,0,0,5" TextWrapping="Wrap"/>
 
                 <DataGrid Grid.Row="1" x:Name="DgvRequests"
                           Background="White"
-                          BorderBrush="#DDE3EC" BorderThickness="1"
+                          BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                           GridLinesVisibility="None"
                           AlternationCount="2"
                           SelectionMode="Single"
@@ -301,11 +308,11 @@
             </Grid>
 
             <!-- ═══ PAGINATION ═══ -->
-            <Border Grid.Row="3" Background="#F8FAFC" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0">
+            <Border Grid.Row="3" Background="#F8FAFC" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0">
                 <DockPanel Margin="10,0" VerticalAlignment="Center">
                     <TextBlock x:Name="LblPageInfo"
                                DockPanel.Dock="Left"
-                               FontSize="10.5" Foreground="#5A6A7A"
+                               FontSize="10.5" Foreground="{StaticResource YakultTextMutedBrush}"
                                VerticalAlignment="Center"/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button x:Name="BtnFirstPage" Content="«" Style="{StaticResource PageBtn}"
@@ -321,7 +328,7 @@
             </Border>
 
             <!-- ═══ FOOTER ═══ -->
-            <Border Grid.Row="4" Background="#F5F8FC" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0">
+            <Border Grid.Row="4" Background="#F5F8FC" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0">
                 <DockPanel Margin="12,0" VerticalAlignment="Center" LastChildFill="False">
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button x:Name="BtnCancel" Content="Cancel" Style="{StaticResource SecBtn}"

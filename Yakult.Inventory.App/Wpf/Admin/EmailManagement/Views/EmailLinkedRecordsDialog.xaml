@@ -9,7 +9,14 @@
         ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
-        <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Admin/EmailManagement/Styles/EmailConfigStyles.xaml"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Admin/EmailManagement/Styles/EmailConfigStyles.xaml"/>
+
+        </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Margin="16">
@@ -23,7 +30,7 @@
         <!-- Header -->
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
             <TextBlock x:Name="LblHeader" TextWrapping="Wrap" FontSize="13"/>
-            <TextBlock x:Name="LblSub" Margin="0,4,0,0" FontSize="11" Foreground="#5A6A7A" TextWrapping="Wrap"
+            <TextBlock x:Name="LblSub" Margin="0,4,0,0" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" TextWrapping="Wrap"
                        Text="Clear these references with &#8220;Unlink All&#8221; to allow a permanent delete, or choose &#8220;Deactivate Instead&#8221; to keep the record but mark it inactive."/>
         </StackPanel>
 
@@ -36,8 +43,8 @@
                   HeadersVisibility="Column"
                   RowHeaderWidth="0"
                   GridLinesVisibility="Horizontal"
-                  HorizontalGridLinesBrush="#EEF1F4"
-                  BorderBrush="#CDD5DE"
+                  HorizontalGridLinesBrush="{StaticResource YakultBorderBrush}"
+                  BorderBrush="{StaticResource YakultBorderBrush}"
                   BorderThickness="1"
                   FontSize="12"
                   ScrollViewer.VerticalScrollBarVisibility="Auto">
@@ -48,7 +55,7 @@
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextWrapping" Value="Wrap"/>
-                            <Setter Property="Foreground" Value="#5A6A7A"/>
+                            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
                             <Setter Property="Padding" Value="0,3"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
@@ -70,16 +77,16 @@
 
         <!-- Actions -->
         <Grid Grid.Row="3" Margin="0,14,0,0">
-            <TextBlock x:Name="LblStatus" VerticalAlignment="Center" FontSize="11" Foreground="#5A6A7A"/>
+            <TextBlock x:Name="LblStatus" VerticalAlignment="Center" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="BtnUnlink" Content="Unlink All" Width="110" Height="32"
                         Background="#E67E22" Style="{StaticResource ActionButton}" Click="BtnUnlink_Click"/>
                 <Button x:Name="BtnDelete" Content="Delete Email" Width="120" Height="32"
                         Background="#C0392B" Style="{StaticResource ActionButton}" Click="BtnDelete_Click"/>
                 <Button x:Name="BtnDeactivate" Content="Deactivate Instead" Width="150" Height="32"
-                        Background="#EEF3FA" Foreground="#5A6A7A" Style="{StaticResource ActionButton}" Click="BtnDeactivate_Click"/>
+                        Background="#EEF3FA" Foreground="{StaticResource YakultTextMutedBrush}" Style="{StaticResource ActionButton}" Click="BtnDeactivate_Click"/>
                 <Button x:Name="BtnClose" Content="Close" Width="90" Height="32"
-                        Background="#EEF3FA" Foreground="#5A6A7A" Style="{StaticResource ActionButton}"
+                        Background="#EEF3FA" Foreground="{StaticResource YakultTextMutedBrush}" Style="{StaticResource ActionButton}"
                         IsCancel="True" Click="BtnClose_Click"/>
             </StackPanel>
         </Grid>

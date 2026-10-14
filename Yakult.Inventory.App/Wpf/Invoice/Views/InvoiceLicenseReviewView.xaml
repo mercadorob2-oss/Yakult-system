@@ -4,7 +4,7 @@
              xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
              xmlns:local="clr-namespace:Yakult.Inventory.App.WPF.Invoice.Views"
              xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls"
-             Background="#F0F2F6"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
              FontFamily="Segoe UI"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
@@ -14,6 +14,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -109,7 +110,7 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="10,0,4,0" Foreground="#7A8A9A"/>
+                                <TextBlock Grid.Column="0" Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="10,0,4,0" Foreground="{StaticResource YakultTextMutedBrush}"/>
                                 <TextBox Grid.Column="1" BorderThickness="0" Background="Transparent" FontSize="11"
                                          VerticalContentAlignment="Center" Padding="0,0,10,0"
                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -195,10 +196,10 @@
                           PreviewMouseLeftButtonDown="ReviewGrid_PreviewMouseLeftButtonDown"
                           PreviewMouseMove="ReviewGrid_PreviewMouseMove">
                     <DataGrid.Resources>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
-                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
                     </DataGrid.Resources>
                     <DataGrid.ContextMenu>
                         <ContextMenu>
@@ -388,7 +389,7 @@
             <Border Background="White" CornerRadius="10" Padding="24,18" HorizontalAlignment="Center" VerticalAlignment="Center"
                     BorderBrush="{StaticResource BorderBrush1}" BorderThickness="1">
                 <Border.Effect>
-                    <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="#1A2333"/>
+                    <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="{StaticResource YakultTextDarkColor}"/>
                 </Border.Effect>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="⏳" FontSize="16" Margin="0,0,10,0" VerticalAlignment="Center"/>

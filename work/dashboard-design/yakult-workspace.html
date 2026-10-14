@@ -1,0 +1,223 @@
+<style>
+#yakult-design { color-scheme: light dark; font-family: 'Segoe UI', system-ui, sans-serif; color: light-dark(#202635, #edf0f5); --yk-bg: light-dark(#f6f5f2,#181c23); --yk-paper: light-dark(#ffffff,#222731); --yk-ink: light-dark(#202635,#edf0f5); --yk-muted: light-dark(#677081,#b1b9c8); --yk-line: light-dark(#e5e6e8,#393f4c); --yk-red: light-dark(#b92335,#ff8995); --yk-tint: light-dark(#fcf0f1,#39262d); --yk-rail: light-dark(#202b3e,#121824); --yk-railtext: #f0f3f8; --yk-railmuted: #b5bfd0; --yk-gap: 24px; }
+#yakult-design * { box-sizing: border-box; }
+#yakult-design [hidden] { display: none !important; }
+#yakult-design .yk-window { background: var(--yk-bg); color: var(--yk-ink); min-height: 900px; border: 1px solid var(--yk-line); font-size: 14px; line-height: 1.5; }
+#yakult-design button, #yakult-design input { font: inherit; }
+#yakult-design button { color: inherit; cursor: var(--cursor-interaction, pointer); }
+#yakult-design button:disabled { cursor: default; }
+#yakult-design h1, #yakult-design h2, #yakult-design h3, #yakult-design p { margin: 0; }
+#yakult-design h1 { font-size: 29px; font-weight: 500; line-height: 1.25; }
+#yakult-design h2 { font-size: 17px; font-weight: 500; }
+#yakult-design h3 { font-size: 15px; font-weight: 500; }
+#yakult-design small, #yakult-design .yk-caption { font-size: 12px; color: var(--yk-muted); }
+#yakult-design .yk-top { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; background: var(--yk-paper); padding: 16px 24px; border-bottom: 1px solid var(--yk-line); padding-right: 100px; }
+#yakult-design .yk-brand { display: flex; align-items: center; gap: 12px; }
+#yakult-design .yk-wordmark { color: var(--yk-red); font-size: 23px; font-weight: 500; letter-spacing: -1px; }
+#yakult-design .yk-brandname { border-left: 1px solid var(--yk-line); padding-left: 12px; }
+#yakult-design .yk-top-end { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+#yakult-design .yk-avatar { background: var(--yk-tint); color: var(--yk-red); width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; }
+#yakult-design .yk-quiet { background: transparent; border: 0; padding: 7px 10px; border-radius: 5px; display: inline-flex; align-items: center; gap: 7px; }
+#yakult-design .yk-quiet:hover { background: var(--yk-tint); }
+#yakult-design .yk-layout { display: grid; grid-template-columns: 190px minmax(0,1fr); }
+#yakult-design .yk-sidebar { background: var(--yk-rail); color: var(--yk-railtext); padding: 24px 14px; display: flex; flex-direction: column; gap: 5px; }
+#yakult-design .yk-side-label { color: var(--yk-railmuted); font-size: 11px; letter-spacing: 1px; margin: 20px 12px 8px; text-transform: uppercase; }
+#yakult-design .yk-side-label:first-child { margin-top: 0; }
+#yakult-design .yk-nav { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; color: var(--yk-railtext); background: transparent; border: 0; border-radius: 6px; }
+#yakult-design .yk-nav:hover { background: #ffffff12; }
+#yakult-design .yk-nav[aria-current='page'] { background: #ffffff17; box-shadow: inset 3px 0 #f18a96; }
+#yakult-design .yk-sidebar footer { margin-top: auto; padding: 30px 12px 0; font-size: 12px; color: var(--yk-railmuted); }
+#yakult-design .yk-main { padding: var(--yk-gap); min-width: 0; }
+#yakult-design .yk-eyebrow { font-size: 11px; color: var(--yk-red); letter-spacing: 1.4px; text-transform: uppercase; margin-bottom: 8px; }
+#yakult-design .yk-intro { display: flex; align-items: end; flex-wrap: wrap; gap: 16px; margin-bottom: 26px; }
+#yakult-design .yk-intro p { margin-top: 8px; color: var(--yk-muted); }
+#yakult-design .yk-date { margin-left: auto; text-align: right; font-size: 12px; color: var(--yk-muted); }
+#yakult-design .yk-summaries { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; margin-bottom: 24px; }
+#yakult-design .yk-summary { text-align: left; background: var(--yk-paper); border: 1px solid var(--yk-line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; align-items: start; gap: 5px; }
+#yakult-design .yk-summary:hover, #yakult-design .yk-module:hover { border-color: var(--yk-red); }
+#yakult-design .yk-summary strong { font-size: 27px; font-weight: 500; font-variant-numeric: tabular-nums; }
+#yakult-design .yk-summary .yk-category { font-size: 12px; color: var(--yk-muted); }
+#yakult-design .yk-body { display: grid; grid-template-columns: minmax(0,1.65fr) minmax(180px,1fr); gap: 24px; }
+#yakult-design .yk-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+#yakult-design .yk-worklist { border-top: 1px solid var(--yk-line); }
+#yakult-design .yk-workrow { display: grid; grid-template-columns: 30px minmax(0,1fr) auto; align-items: center; gap: 10px; padding: 16px 0; border-bottom: 1px solid var(--yk-line); }
+#yakult-design .yk-workrow p { font-size: 12px; color: var(--yk-muted); margin-top: 3px; }
+#yakult-design .yk-workrow > i { color: var(--yk-red); }
+#yakult-design .yk-action { background: var(--yk-paper); border: 1px solid var(--yk-line); padding: 7px 11px; border-radius: 5px; white-space: nowrap; }
+#yakult-design .yk-action:hover { border-color: var(--yk-red); color: var(--yk-red); }
+#yakult-design .yk-module-list { display: flex; flex-direction: column; gap: 4px; }
+#yakult-design .yk-moduleline { display: flex; align-items: center; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--yk-line); padding: 5px 0; }
+#yakult-design .yk-moduleline > button:first-child { text-align: left; min-width: 0; }
+#yakult-design .yk-moduleline .yk-pin { color: var(--yk-muted); padding: 8px; flex-shrink: 0; }
+#yakult-design .yk-pin[aria-pressed='true'] { color: var(--yk-red); background: var(--yk-tint); }
+#yakult-design .yk-recent { margin-top: 22px; }
+#yakult-design .yk-recent button { margin: 8px 8px 0 0; }
+#yakult-design .yk-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 15px 24px; background: var(--yk-paper); border-top: 1px solid var(--yk-line); font-size: 12px; color: var(--yk-muted); }
+#yakult-design .yk-feedback { background: var(--yk-tint); color: var(--yk-ink); border-left: 3px solid var(--yk-red); padding: 12px 16px; margin-top: 18px; font-size: 13px; }
+#yakult-design .yk-launcher { padding: 32px; }
+#yakult-design .yk-launcher .yk-intro { margin-bottom: 20px; }
+#yakult-design .yk-searchbox { display: flex; align-items: center; gap: 10px; background: var(--yk-paper); border: 1px solid var(--yk-line); border-radius: 8px; padding: 12px 16px; margin-bottom: 22px; }
+#yakult-design .yk-searchbox input { background: transparent; color: var(--yk-ink); width: 100%; border: 0; min-width: 0; }
+#yakult-design .yk-searchbox input::placeholder { color: var(--yk-muted); opacity: 1; }
+#yakult-design .yk-modulegrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+#yakult-design .yk-module { background: var(--yk-paper); border: 1px solid var(--yk-line); border-radius: 8px; padding: 18px; display: grid; grid-template-columns: 26px minmax(0,1fr); gap: 12px; text-align: left; align-content: start; }
+#yakult-design .yk-module small { display: block; margin-top: 5px; }
+#yakult-design .yk-module > i { color: var(--yk-red); }
+#yakult-design .yk-focusbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; background: var(--yk-tint); border-radius: 8px; padding: 16px 18px; margin-top: 24px; }
+#yakult-design .yk-focusbar button { margin-left: auto; }
+#yakult-design .yk-supportline { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+@media(max-width:850px) { #yakult-design .yk-layout { grid-template-columns: 160px minmax(0,1fr); } #yakult-design .yk-body { grid-template-columns: 1fr; } #yakult-design .yk-module-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px 12px; } #yakult-design .yk-window { min-height: 950px; } }
+@media(max-width:620px) { #yakult-design .yk-layout { grid-template-columns: 1fr; } #yakult-design .yk-sidebar { flex-direction: row; flex-wrap: wrap; padding: 10px; } #yakult-design .yk-sidebar footer, #yakult-design .yk-side-label { display: none; } #yakult-design .yk-sidebar .yk-nav { padding: 8px; } #yakult-design .yk-top { padding: 16px; padding-top: 54px; } #yakult-design .yk-top-end { margin-left: 0; } #yakult-design .yk-main, #yakult-design .yk-launcher { padding: 20px 16px; } #yakult-design .yk-summaries { grid-template-columns: 1fr; gap: 8px; } #yakult-design .yk-summary { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 8px 14px; } #yakult-design .yk-summary strong { font-size: 23px; } #yakult-design .yk-modulegrid, #yakult-design .yk-module-list { grid-template-columns: 1fr; } #yakult-design .yk-workrow { grid-template-columns: 22px minmax(0,1fr); } #yakult-design .yk-workrow .yk-action { grid-column: 2; justify-self: start; } #yakult-design h1 { font-size: 25px; } #yakult-design .yk-date { margin-left: 0; text-align: left; } #yakult-design .yk-window { min-height: 1450px; } }
+@media(pointer:coarse) { #yakult-design button, #yakult-design input { min-height: 44px; } #yakult-design input { font-size: 16px; } }
+</style>
+<div id="yakult-design" class="viz-carousel" aria-label="Yakult desktop dashboard design concepts">
+  <section data-variant="Daily workspace" aria-label="Daily workspace concept">
+    <div class="yk-window" id="yk-daily">
+      <header class="yk-top">
+        <div class="yk-brand"><span class="yk-wordmark">Yakult</span><span class="yk-brandname">Internal systems<br><small>Workspace</small></span></div>
+        <div class="yk-top-end"><button class="yk-quiet" data-open="Help and support"><i data-lucide="circle-help" aria-hidden="true"></i> Help</button><button class="yk-quiet" data-open="My account"><span class="yk-avatar">RM</span><span>Russel<br><small>IT administrator</small></span></button></div>
+      </header>
+      <div class="yk-layout">
+        <nav class="yk-sidebar" aria-label="Workspace navigation">
+          <div class="yk-side-label">Workspace</div>
+          <button class="yk-nav" aria-current="page" data-open="Workspace home"><i data-lucide="house" aria-hidden="true"></i> Home</button>
+          <button class="yk-nav" data-open="My work queue"><i data-lucide="inbox" aria-hidden="true"></i> My work</button>
+          <div class="yk-side-label">Pinned systems</div>
+          <button class="yk-nav" data-open="Consumable Management"><i data-lucide="printer" aria-hidden="true"></i> Consumables</button>
+          <button class="yk-nav" data-open="IT Call Monitoring"><i data-lucide="headset" aria-hidden="true"></i> IT calls</button>
+          <button class="yk-nav" data-open="Inventory System"><i data-lucide="package" aria-hidden="true"></i> Inventory</button>
+          <footer>Yakult Philippines<br>Internal systems</footer>
+        </nav>
+        <main class="yk-main">
+          <div class="yk-intro"><div><div class="yk-eyebrow">Your working day</div><h1>Good day, Russel.</h1><p>Your requests, stock, and support work in one place.</p></div><div class="yk-date">Tuesday, 13 October<br>Design concept · sample data</div></div>
+          <div class="yk-summaries">
+            <button class="yk-summary" data-open="Consumable requests awaiting fulfillment"><span class="yk-category">Consumables</span><strong>6</strong><span>Awaiting fulfillment</span><small>Open request queue →</small></button>
+            <button class="yk-summary" data-open="Returned cartridges awaiting batch assignment"><span class="yk-category">Cartridge returns</span><strong>3</strong><span>Awaiting batch assignment</span><small>Review returned empties →</small></button>
+            <button class="yk-summary" data-open="IT tickets requiring attention"><span class="yk-category">IT support</span><strong>2</strong><span>Need attention</span><small>Open attention queue →</small></button>
+          </div>
+          <div class="yk-body">
+            <section aria-label="Work requiring attention">
+              <div class="yk-section-head"><h2>Start here</h2><span class="yk-caption">Assigned to your team</span></div>
+              <div class="yk-worklist">
+                <div class="yk-workrow"><i data-lucide="printer" aria-hidden="true"></i><div><h3>Fulfill cartridge requests</h3><p>Approved requests ready for IT processing</p></div><button class="yk-action" data-open="Cartridge Exchange · approved request queue">Review</button></div>
+                <div class="yk-workrow"><i data-lucide="layers" aria-hidden="true"></i><div><h3>Prepare returned empties</h3><p>Good cartridges awaiting refill batch assignment</p></div><button class="yk-action" data-open="Cartridge Returns · assign refill batches">Assign</button></div>
+                <div class="yk-workrow"><i data-lucide="headset" aria-hidden="true"></i><div><h3>Check tickets needing attention</h3><p>Follow up on unresolved support work</p></div><button class="yk-action" data-open="IT Call Monitoring · requires attention">Open</button></div>
+              </div>
+              <div class="yk-recent"><h2>Continue working</h2><button class="yk-action" data-open="Consumable Management">Consumable Management →</button><button class="yk-action" data-open="Reports">Reports →</button></div>
+            </section>
+            <section aria-label="Available systems">
+              <div class="yk-section-head"><h2>Your systems</h2><span class="yk-caption">Pin favorites</span></div>
+              <div class="yk-module-list">
+                <div class="yk-moduleline"><button class="yk-quiet" data-open="Inventory System">Inventory System</button><button class="yk-quiet yk-pin" aria-pressed="true" aria-label="Pin Inventory System"><i data-lucide="pin" aria-hidden="true"></i></button></div>
+                <div class="yk-moduleline"><button class="yk-quiet" data-open="Consumable Management">Consumable Management</button><button class="yk-quiet yk-pin" aria-pressed="true" aria-label="Pin Consumable Management"><i data-lucide="pin" aria-hidden="true"></i></button></div>
+                <div class="yk-moduleline"><button class="yk-quiet" data-open="IT Call Monitoring">IT Call Monitoring</button><button class="yk-quiet yk-pin" aria-pressed="true" aria-label="Pin IT Call Monitoring"><i data-lucide="pin" aria-hidden="true"></i></button></div>
+                <div class="yk-moduleline"><button class="yk-quiet" data-open="Request Portal">Request Portal</button><button class="yk-quiet yk-pin" aria-pressed="false" aria-label="Pin Request Portal"><i data-lucide="pin" aria-hidden="true"></i></button></div>
+                <div class="yk-moduleline"><button class="yk-quiet" data-open="Borrow Items">Borrow Items</button><button class="yk-quiet yk-pin" aria-pressed="false" aria-label="Pin Borrow Items"><i data-lucide="pin" aria-hidden="true"></i></button></div>
+                <div class="yk-moduleline"><button class="yk-quiet" data-open="Reports">Reports</button><button class="yk-quiet yk-pin" aria-pressed="false" aria-label="Pin Reports"><i data-lucide="pin" aria-hidden="true"></i></button></div>
+                <div class="yk-moduleline"><button class="yk-quiet" data-open="Repair Technician Portal">Repair Technician Portal</button><button class="yk-quiet yk-pin" aria-pressed="false" aria-label="Pin Repair Technician Portal"><i data-lucide="pin" aria-hidden="true"></i></button></div>
+                <div class="yk-moduleline"><button class="yk-quiet" data-open="Admin Portal">Admin Portal</button><button class="yk-quiet yk-pin" aria-pressed="false" aria-label="Pin Admin Portal"><i data-lucide="pin" aria-hidden="true"></i></button></div>
+              </div>
+            </section>
+          </div>
+          <div class="yk-feedback" aria-live="polite" hidden></div>
+        </main>
+      </div>
+      <footer class="yk-bottom"><span>Concept preview · live connection not checked</span><button class="yk-quiet" data-open="Help and support">Contact IT support →</button></footer>
+    </div>
+  </section>
+  <section data-variant="Compact launcher" aria-label="Compact launcher concept" hidden>
+    <div class="yk-window" id="yk-compact">
+      <header class="yk-top"><div class="yk-brand"><span class="yk-wordmark">Yakult</span><span class="yk-brandname">Internal systems</span></div><div class="yk-top-end"><button class="yk-quiet" data-open="Help and support">Help</button><button class="yk-quiet" data-open="My account"><span class="yk-avatar">RM</span> My account</button></div></header>
+      <main class="yk-launcher">
+        <div class="yk-intro"><div><div class="yk-eyebrow">All your systems</div><h1>Where would you like to work?</h1><p>Good day, Russel. Pick a system or find it by name.</p></div><div class="yk-date">Design concept<br>Sample data</div></div>
+        <label class="yk-searchbox"><i data-lucide="search" aria-hidden="true"></i><input type="search" aria-label="Find a system" placeholder="Find a system…" id="yk-system-search"></label>
+        <div class="yk-modulegrid" id="yk-search-results">
+          <button class="yk-module" data-open="Inventory System"><i data-lucide="package" aria-hidden="true"></i><span>Inventory System<small>Items, stock, and movements</small></span></button>
+          <button class="yk-module" data-open="Consumable Management"><i data-lucide="printer" aria-hidden="true"></i><span>Consumable Management<small>Fulfillment, returns, and refills</small></span></button>
+          <button class="yk-module" data-open="IT Call Monitoring"><i data-lucide="headset" aria-hidden="true"></i><span>IT Call Monitoring<small>Tickets and issue resolution</small></span></button>
+          <button class="yk-module" data-open="Request Portal"><i data-lucide="clipboard-list" aria-hidden="true"></i><span>Request Portal<small>Submit and track requests</small></span></button>
+          <button class="yk-module" data-open="Borrow Items"><i data-lucide="repeat-2" aria-hidden="true"></i><span>Borrow Items<small>Equipment loans and returns</small></span></button>
+          <button class="yk-module" data-open="Reports"><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i><span>Reports<small>Inventory and operational reports</small></span></button>
+          <button class="yk-module" data-open="Repair Technician Portal"><i data-lucide="wrench" aria-hidden="true"></i><span>Repair Technician Portal<small>Repairs and service evidence</small></span></button>
+          <button class="yk-module" data-open="Admin Portal"><i data-lucide="settings-2" aria-hidden="true"></i><span>Admin Portal<small>Accounts, access, and settings</small></span></button>
+        </div>
+        <p id="yk-empty-search" aria-live="polite" hidden>No matching systems.</p>
+        <div class="yk-focusbar"><i data-lucide="inbox" aria-hidden="true"></i><div><h3>6 consumable requests await fulfillment</h3><small>Approved requests ready for your team</small></div><button class="yk-action" data-open="Consumable Management · fulfillment queue">Review requests →</button></div>
+        <div class="yk-supportline"><span class="yk-caption">Recently opened: Consumable Management, Reports</span><button class="yk-quiet" data-open="Help and support">Contact IT support →</button></div>
+        <div class="yk-feedback" aria-live="polite" hidden></div>
+      </main>
+      <footer class="yk-bottom"><span>Yakult Philippines · Internal systems</span><span>Concept preview · live connection not checked</span></footer>
+    </div>
+  </section>
+</div>
+<script>
+(() => {
+  const root = document.getElementById('yakult-design');
+  const search = root.querySelector('#yk-system-search');
+  const modules = Array.from(root.querySelectorAll('#yk-search-results .yk-module'));
+  function syncPins(names) {
+    const nav = root.querySelector('.yk-sidebar');
+    const home = Array.from(nav.querySelectorAll('.yk-nav')).slice(0, 2);
+    Array.from(nav.querySelectorAll('.yk-nav')).forEach(item => { if (!home.includes(item)) item.remove(); });
+    root.querySelectorAll('.yk-pin').forEach(pin => {
+      const name = pin.getAttribute('aria-label').replace(/^Pin /, '');
+      const selected = names.includes(name);
+      pin.setAttribute('aria-pressed', String(selected));
+      if (!selected) return;
+      const shortcut = document.createElement('button');
+      shortcut.className = 'yk-nav'; shortcut.textContent = name;
+      shortcut.dataset.open = name; shortcut.dataset.pinned = 'true';
+      nav.insertBefore(shortcut, nav.querySelector('footer'));
+    });
+  }
+  function restoreState(snapshot) {
+    const names = snapshot && snapshot.modelContent && snapshot.modelContent.dashboardPinnedSystems;
+    if (Array.isArray(names) && names.every(name => typeof name === 'string')) syncPins(names);
+  }
+  restoreState(window.openai && window.openai.widgetState);
+  window.addEventListener('openai:set_globals', event => {
+    if (event.detail && event.detail.globals) restoreState(event.detail.globals.widgetState);
+  });
+  root.addEventListener('click', event => {
+    const target = event.target.closest('button');
+    if (!target) return;
+    const product = target.closest('.yk-window');
+    const feedback = product.querySelector('.yk-feedback');
+    if (target.classList.contains('yk-pin')) {
+      const selected = target.getAttribute('aria-pressed') !== 'true';
+      target.setAttribute('aria-pressed', String(selected));
+      const name = target.getAttribute('aria-label').replace(/^Pin /, '');
+      const names = Array.from(root.querySelectorAll('.yk-pin[aria-pressed="true"]')).map(item => item.getAttribute('aria-label').replace(/^Pin /, ''));
+      syncPins(names);
+      feedback.textContent = name + (selected ? ' pinned to your workspace.' : ' removed from pinned systems.');
+    } else if (target.dataset.open) {
+      feedback.textContent = 'Preview destination: ' + target.dataset.open + '. No live records are opened or changed.';
+    } else return;
+    feedback.hidden = false;
+    if (window.openai && typeof window.openai.setWidgetState === 'function') {
+      const pinned = Array.from(root.querySelectorAll('.yk-pin[aria-pressed="true"]')).map(item => item.getAttribute('aria-label').replace(/^Pin /, ''));
+      window.openai.setWidgetState({modelContent: {dashboardPinnedSystems: pinned}, privateContent: null}).catch(() => {});
+    }
+  });
+  search.addEventListener('input', () => {
+    const needle = search.value.trim().toLocaleLowerCase();
+    modules.forEach(module => { module.hidden = !module.textContent.toLocaleLowerCase().includes(needle); });
+    root.querySelector('#yk-empty-search').hidden = modules.some(module => !module.hidden);
+  });
+  const designs = [document.getElementById('yk-daily'), document.getElementById('yk-compact')];
+  designs.forEach(product => {
+    const settings = {spacing: 24, accent: 'Yakult red'};
+    function applyDesign() {
+      product.style.setProperty('--yk-gap', settings.spacing + 'px');
+      product.style.setProperty('--yk-red', settings.accent === 'Yakult red' ? 'light-dark(#b92335,#ff8995)' : 'light-dark(#254b7c,#9fc6ff)');
+      product.style.setProperty('--yk-tint', settings.accent === 'Yakult red' ? 'light-dark(#fcf0f1,#39262d)' : 'light-dark(#edf3fb,#202f46)');
+    }
+    applyDesign();
+    if (globalThis.Tweak) {
+      const tweak = new Tweak({container: product, onChange: applyDesign});
+      tweak.addSelect(settings, 'accent', {label: 'Brand accent', options: ['Yakult red', 'Current navy']});
+      if (product.id === 'yk-daily') tweak.addSlider(settings, 'spacing', {label: 'Content spacing', min: 16, max: 32, step: 4, unit: 'px'});
+    }
+  });
+})();
+</script>

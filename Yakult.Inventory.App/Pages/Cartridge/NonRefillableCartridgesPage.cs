@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -79,7 +80,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             {
                 Dock      = DockStyle.Top,
                 Height    = 45,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding   = new Padding(10, 7, 10, 7)
             };
 
@@ -88,7 +89,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Text      = "⟳ Refresh",
                 Width     = 100,
                 Height    = 32,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor    = Cursors.Hand,

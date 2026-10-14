@@ -11,23 +11,28 @@
 
         Usage in a page's UserControl.Resources:
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
     -->
 
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
     <!-- ══ Palette ══════════════════════════════════════════════════════════ -->
-    <SolidColorBrush x:Key="PrimaryBrush"          Color="#4E9AFC"/>
-    <SolidColorBrush x:Key="PrimaryHoverBrush"     Color="#3A8EF6"/>
-    <SolidColorBrush x:Key="TextDarkBrush"         Color="#1A2333"/>
-    <SolidColorBrush x:Key="TextMutedBrush"        Color="#6B7A8D"/>
-    <SolidColorBrush x:Key="TextSubtleBrush"       Color="#5A6A7A"/>
-    <SolidColorBrush x:Key="BorderBrush1"          Color="#DDE3EC"/>
-    <SolidColorBrush x:Key="InputBorderBrush"      Color="#C2CCDA"/>
-    <SolidColorBrush x:Key="PageBackgroundBrush"   Color="#F0F2F6"/>
-    <SolidColorBrush x:Key="AltRowBrush"           Color="#FAFBFC"/>
-    <SolidColorBrush x:Key="HoverRowBrush"         Color="#F0F6FF"/>
-    <SolidColorBrush x:Key="SelectedRowBrush"      Color="#C8DFFE"/>
-    <SolidColorBrush x:Key="SelectedHoverRowBrush" Color="#B8D4FC"/>
+    <SolidColorBrush x:Key="PrimaryBrush"          Color="{StaticResource YakultPrimaryColor}"/>
+    <SolidColorBrush x:Key="PrimaryHoverBrush"     Color="{StaticResource YakultPrimaryHoverColor}"/>
+    <SolidColorBrush x:Key="TextDarkBrush"         Color="{StaticResource YakultTextDarkColor}"/>
+    <SolidColorBrush x:Key="TextMutedBrush"        Color="{StaticResource YakultTextMutedColor}"/>
+    <SolidColorBrush x:Key="TextSubtleBrush"       Color="{StaticResource YakultTextMutedColor}"/>
+    <SolidColorBrush x:Key="BorderBrush1"          Color="{StaticResource YakultBorderColor}"/>
+    <SolidColorBrush x:Key="InputBorderBrush"      Color="{StaticResource YakultInputBorderColor}"/>
+    <SolidColorBrush x:Key="PageBackgroundBrush"   Color="{StaticResource YakultPageBackgroundColor}"/>
+    <SolidColorBrush x:Key="AltRowBrush"           Color="{StaticResource YakultSurfaceMutedColor}"/>
+    <SolidColorBrush x:Key="HoverRowBrush"         Color="{StaticResource YakultAccentTintColor}"/>
+    <SolidColorBrush x:Key="SelectedRowBrush"      Color="{StaticResource YakultSelectionColor}"/>
+    <SolidColorBrush x:Key="SelectedHoverRowBrush" Color="{StaticResource YakultSelectionHoverColor}"/>
     <SolidColorBrush x:Key="SuccessBrush"          Color="#1E9E5E"/>
     <SolidColorBrush x:Key="DangerBrush"           Color="#C0392B"/>
     <SolidColorBrush x:Key="DangerBgBrush"         Color="#FDECEA"/>
@@ -88,8 +93,8 @@
     </Style>
 
     <Style x:Key="FilterBar" TargetType="Border">
-        <Setter Property="Background"      Value="#FAFBFC"/>
-        <Setter Property="BorderBrush"     Value="#EEF1F4"/>
+        <Setter Property="Background"      Value="{StaticResource YakultSurfaceMutedBrush}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="Padding"         Value="14,8"/>
     </Style>
@@ -142,8 +147,8 @@
         <Setter Property="Cursor"          Value="Hand"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="BorderBrush"     Value="{StaticResource InputBorderBrush}"/>
-        <Setter Property="Background"      Value="#F8F9FB"/>
-        <Setter Property="Foreground"      Value="#3A4A5A"/>
+        <Setter Property="Background"      Value="{StaticResource YakultSurfaceMutedBrush}"/>
+        <Setter Property="Foreground"      Value="{StaticResource YakultTextDarkBrush}"/>
         <Setter Property="Margin"          Value="0,0,8,8"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -211,7 +216,7 @@
         <Setter Property="FontWeight"      Value="SemiBold"/>
         <Setter Property="Background"      Value="White"/>
         <Setter Property="Foreground"      Value="{StaticResource PrimaryBrush}"/>
-        <Setter Property="BorderBrush"     Value="#CDD5DE"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Cursor"          Value="Hand"/>
         <Setter Property="Margin"          Value="2,0"/>
@@ -227,7 +232,7 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background"  Value="#EBF5FF"/>
+                            <Setter TargetName="Bd" Property="Background"  Value="{StaticResource YakultAccentTintBrush}"/>
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
@@ -555,8 +560,8 @@
         <Setter Property="Background"                  Value="White"/>
         <Setter Property="BorderThickness"              Value="0"/>
         <Setter Property="GridLinesVisibility"          Value="All"/>
-        <Setter Property="HorizontalGridLinesBrush"     Value="#EEF1F4"/>
-        <Setter Property="VerticalGridLinesBrush"       Value="#E4E8EF"/>
+        <Setter Property="HorizontalGridLinesBrush"     Value="{StaticResource YakultBorderBrush}"/>
+        <Setter Property="VerticalGridLinesBrush"       Value="{StaticResource YakultBorderBrush}"/>
         <Setter Property="AlternationCount"             Value="2"/>
         <Setter Property="CanUserAddRows"                Value="False"/>
         <Setter Property="CanUserDeleteRows"             Value="False"/>
@@ -585,10 +590,10 @@
         own <DataGrid.Resources>, e.g.:
 
             <DataGrid.Resources>
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
-                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
-                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
             </DataGrid.Resources>
     -->
 

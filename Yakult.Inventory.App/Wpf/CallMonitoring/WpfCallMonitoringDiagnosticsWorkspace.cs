@@ -189,7 +189,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var card = new Border
             {
                 Background = new LinearGradientBrush(
-                    Color.FromRgb(15, 23, 42),
+                    WpfThemeResources.TextDark,
                     Color.FromRgb(30, 41, 59),
                     new Point(0, 0),
                     new Point(1, 1)),
@@ -234,7 +234,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Loading...",
                 FontSize = 11.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Color.FromRgb(15, 23, 42)),
+                Foreground = new SolidColorBrush(WpfThemeResources.TextDark),
                 Background = new SolidColorBrush(Color.FromRgb(241, 245, 249)),
                 Padding = new Thickness(10, 4, 10, 4)
             };
@@ -262,7 +262,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             };
 
             // PRIMARY GROUP: Refresh
-            _btnRefresh = CreateHeroButton("↻  Refresh", Color.FromRgb(59, 130, 246), isPrimary: true);
+            _btnRefresh = CreateHeroButton("↻  Refresh", WpfThemeResources.Primary, isPrimary: true);
             _btnRefresh.Click += async (_, __) => await RefreshAsync();
             actions.Children.Add(_btnRefresh);
 
@@ -295,7 +295,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var moreMenu = new Border
             {
-                Background = new SolidColorBrush(Color.FromRgb(15, 23, 42)),
+                Background = new SolidColorBrush(WpfThemeResources.TextDark),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(51, 65, 85)),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(12),
@@ -400,7 +400,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var card = CreateGlassCard();
 
             var stack = new StackPanel();
-            stack.Children.Add(CreateCardHeader("System Summary", Color.FromRgb(59, 130, 246)));
+            stack.Children.Add(CreateCardHeader("System Summary", WpfThemeResources.Primary));
 
             var grid = new Grid { Margin = new Thickness(0, 16, 0, 0) };
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
@@ -551,7 +551,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
                 Background = Brushes.White,
                 RowBackground = Brushes.White,
-                AlternatingRowBackground = new SolidColorBrush(Color.FromRgb(248, 250, 252)),
+                AlternatingRowBackground = new SolidColorBrush(WpfThemeResources.SurfaceMuted),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
                 BorderThickness = new Thickness(1),
                 Margin = new Thickness(0, 16, 0, 0),
@@ -564,7 +564,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             ScrollViewer.SetCanContentScroll(_schemaGrid, true);
 
             _schemaGrid.ColumnHeaderStyle = new Style(typeof(DataGridColumnHeader));
-            _schemaGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(248, 250, 252))));
+            _schemaGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(WpfThemeResources.SurfaceMuted)));
             _schemaGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(Color.FromRgb(71, 85, 105))));
             _schemaGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
             _schemaGrid.ColumnHeaderStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(10, 8, 10, 8)));
@@ -621,7 +621,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _btnConnect.Click += async (_, __) => await ConnectToServerOnDemandAsync();
 
             _btnOpenDashboard = CreateSecondaryButton("Open Web Dashboard");
-            _btnOpenDashboard.Foreground = new SolidColorBrush(Color.FromRgb(37, 99, 235));
+            _btnOpenDashboard.Foreground = new SolidColorBrush(WpfThemeResources.Primary);
             _btnOpenDashboard.Background = new SolidColorBrush(Color.FromRgb(219, 234, 254));
             _btnOpenDashboard.BorderBrush = new SolidColorBrush(Color.FromRgb(147, 197, 253));
             _btnOpenDashboard.Click += (_, __) => OpenWebDashboard();
@@ -707,7 +707,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 FontSize = 13,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
-                Background = new SolidColorBrush(Color.FromRgb(59, 130, 246)),
+                Background = new SolidColorBrush(WpfThemeResources.Primary),
                 BorderThickness = new Thickness(0),
                 Cursor = Cursors.Hand
             };
@@ -719,7 +719,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Margin = new Thickness(0),
                 FontSize = 13,
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(100, 116, 139)),
+                Foreground = new SolidColorBrush(WpfThemeResources.TextMuted),
                 Background = new SolidColorBrush(Color.FromRgb(241, 245, 249)),
                 BorderThickness = new Thickness(0),
                 Cursor = Cursors.Hand
@@ -741,11 +741,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 card1.Visibility = showTab1 ? Visibility.Visible : Visibility.Collapsed;
                 card2.Visibility = showTab1 ? Visibility.Collapsed : Visibility.Visible;
                 
-                btnTab1.Background = new SolidColorBrush(showTab1 ? Color.FromRgb(59, 130, 246) : Color.FromRgb(241, 245, 249));
-                btnTab1.Foreground = showTab1 ? Brushes.White : new SolidColorBrush(Color.FromRgb(100, 116, 139));
+                btnTab1.Background = new SolidColorBrush(showTab1 ? WpfThemeResources.Primary : Color.FromRgb(241, 245, 249));
+                btnTab1.Foreground = showTab1 ? Brushes.White : new SolidColorBrush(WpfThemeResources.TextMuted);
                 
-                btnTab2.Background = new SolidColorBrush(!showTab1 ? Color.FromRgb(59, 130, 246) : Color.FromRgb(241, 245, 249));
-                btnTab2.Foreground = !showTab1 ? Brushes.White : new SolidColorBrush(Color.FromRgb(100, 116, 139));
+                btnTab2.Background = new SolidColorBrush(!showTab1 ? WpfThemeResources.Primary : Color.FromRgb(241, 245, 249));
+                btnTab2.Foreground = !showTab1 ? Brushes.White : new SolidColorBrush(WpfThemeResources.TextMuted);
             };
 
             btnTab1.Click += (_, __) => setActiveTab(true);
@@ -794,7 +794,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 FontSize = 13,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Color.FromRgb(15, 23, 42)),
+                Foreground = new SolidColorBrush(WpfThemeResources.TextDark),
                 VerticalAlignment = VerticalAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 4, 0, 4)
@@ -809,7 +809,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 IsReadOnly = true,
                 TextWrapping = TextWrapping.Wrap,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Background = new SolidColorBrush(Color.FromRgb(248, 250, 252)),
+                Background = new SolidColorBrush(WpfThemeResources.SurfaceMuted),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
                 BorderThickness = new Thickness(1),
                 Padding = new Thickness(8),
@@ -859,7 +859,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Content = text,
                 Margin = new Thickness(0, 0, 12, 4),
                 FontSize = 12.5,
-                Foreground = new SolidColorBrush(Color.FromRgb(37, 99, 235)),
+                Foreground = new SolidColorBrush(WpfThemeResources.Primary),
                 Background = Brushes.Transparent,
                 BorderThickness = new Thickness(0),
                 Cursor = Cursors.Hand,
@@ -872,7 +872,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             return new Border
             {
                 Background = new SolidColorBrush(Color.FromArgb(248, 255, 255, 255)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(223, 229, 236)),
+                BorderBrush = new SolidColorBrush(WpfThemeResources.Border),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(24),
                 Padding = new Thickness(22),
@@ -902,7 +902,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = title,
                 FontSize = 16,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Color.FromRgb(15, 23, 42)),
+                Foreground = new SolidColorBrush(WpfThemeResources.TextDark),
                 VerticalAlignment = VerticalAlignment.Center
             });
             return stack;
@@ -914,7 +914,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 FontSize = 17,
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(15, 23, 42))
+                Foreground = new SolidColorBrush(WpfThemeResources.TextDark)
             };
         }
 
@@ -924,7 +924,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var pill = new Border
             {
                 Background = new SolidColorBrush(Color.FromArgb(248, 255, 255, 255)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(223, 229, 236)),
+                BorderBrush = new SolidColorBrush(WpfThemeResources.Border),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(16),
                 Padding = new Thickness(20, 16, 20, 16),
@@ -955,11 +955,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = title,
                 FontSize = 13,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Color.FromRgb(100, 116, 139))
+                Foreground = new SolidColorBrush(WpfThemeResources.TextMuted)
             });
             valueBlock.FontSize = 32;
             valueBlock.FontWeight = FontWeights.Bold;
-            valueBlock.Foreground = new SolidColorBrush(Color.FromRgb(15, 23, 42));
+            valueBlock.Foreground = new SolidColorBrush(WpfThemeResources.TextDark);
             valueBlock.Margin = new Thickness(0, 2, 0, 0);
             textStack.Children.Add(valueBlock);
 
@@ -1154,7 +1154,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     ? ping.NextRunAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
                     : "-";
                 _lblServerUrlValue.Text = string.IsNullOrWhiteSpace(ping.Url) ? "-" : ping.Url;
-                _lblServerUrlValue.Foreground = new SolidColorBrush(Color.FromRgb(37, 99, 235));
+                _lblServerUrlValue.Foreground = new SolidColorBrush(WpfThemeResources.Primary);
                 _lblLatencyValue.Text = ping.LatencyMs + "ms";
 
                 string schedText;
@@ -1567,7 +1567,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     {
                         Text = "  Fix: " + issue.SuggestedFix,
                         FontSize = 11,
-                        Foreground = new SolidColorBrush(Color.FromRgb(100, 116, 139)),
+                        Foreground = new SolidColorBrush(WpfThemeResources.TextMuted),
                         TextWrapping = TextWrapping.Wrap,
                         MaxWidth = 580,
                         Margin = new Thickness(16, 0, 0, 4)
@@ -1583,7 +1583,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     {
                         Text = "  Runbook",
                         FontSize = 11,
-                        Foreground = new SolidColorBrush(Color.FromRgb(37, 99, 235)),
+                        Foreground = new SolidColorBrush(WpfThemeResources.Primary),
                         TextDecorations = TextDecorations.Underline,
                         Cursor = Cursors.Hand,
                         Margin = new Thickness(16, 0, 0, 6)
@@ -1705,7 +1705,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             
             if (string.Equals(log.Status, "Failed", StringComparison.OrdinalIgnoreCase)) label.Foreground = new SolidColorBrush(Color.FromRgb(239, 68, 68));
             else if (string.Equals(log.Status, "Skipped", StringComparison.OrdinalIgnoreCase)) label.Foreground = new SolidColorBrush(Color.FromRgb(245, 158, 11));
-            else label.Foreground = new SolidColorBrush(Color.FromRgb(15, 23, 42));
+            else label.Foreground = new SolidColorBrush(WpfThemeResources.TextDark);
 
             var formatted = FormatActionableText(log.ErrorMessage);
             details.Text = formatted;

@@ -851,6 +851,20 @@ namespace Yakult.Inventory.App.WPF.RequestPortal.AssistedRequest.ViewModels
                 return;
             }
 
+            // Destination guard (mirrors the desktop WinForms assisted flow): the
+            // Received By filters in Section 5 are NOT a destination — without a
+            // target employee or at least one dept-level field, the request would
+            // be saved with NULL org and a "Branch 0, Dept 0" description.
+            bool hasTarget = _selectedEmployee != null
+                || _selectedCompany != null
+                || _selectedBranch != null
+                || _selectedDepartment != null;
+            if (!hasTarget)
+            {
+                ValidationError = "Please select a target employee or fill in the Dept Level Target (Company / Branch / Department).";
+                return;
+            }
+
             // NOTE: Unlike NewRequestViewModel's guard (the normal employee-facing request
             // flow), this Assisted Request form is explicitly documented as "All fields
             // except cartridge details are optional — useful when encoding historical

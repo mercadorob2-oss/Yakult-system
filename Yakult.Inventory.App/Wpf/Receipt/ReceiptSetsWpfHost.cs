@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -21,7 +22,7 @@ namespace Yakult.Inventory.App.Wpf.Receipt
         public ReceiptSetsWpfHost()
         {
             Dock = DockStyle.Fill;
-            BackColor = Color.FromArgb(240, 242, 246);
+            BackColor = InventoryTheme.Colors.HeaderBack;
 
             _view = new ReceiptSetsView();
             _view.GoToManageSetsRequested += () => GoToManageSetsRequested?.Invoke();

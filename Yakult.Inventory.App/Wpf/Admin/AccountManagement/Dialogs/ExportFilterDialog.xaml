@@ -13,10 +13,15 @@
         TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="LinkBtn" TargetType="Button">
             <Setter Property="Background"      Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground"      Value="#4E9AFC"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="FontSize"        Value="11"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Padding"         Value="4,2"/>
@@ -28,7 +33,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="#2563EB"/>
+                                <Setter Property="Foreground" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -78,18 +83,20 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="#4E9AFC"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <StackPanel Background="White">
         <!-- Header -->
-        <Border Background="#4E9AFC" Padding="20,14">
+        <Border Background="{StaticResource YakultPrimaryBrush}" Padding="20,14">
             <StackPanel>
                 <TextBlock Text="Export Employees" Foreground="White" FontSize="15" FontWeight="Bold"/>
                 <TextBlock Text="Applies on top of your current search/filter — choose branches and status to include" Foreground="#EAF2FF" FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"/>
@@ -99,7 +106,7 @@
         <StackPanel Margin="20,16,20,0">
             <!-- Branch multi-select -->
             <Grid Margin="0,0,0,8">
-                <TextBlock Text="BRANCHES" FontSize="10" FontWeight="SemiBold" Foreground="#5A6A7A" VerticalAlignment="Center"/>
+                <TextBlock Text="BRANCHES" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Select All" Style="{StaticResource LinkBtn}" Click="BtnSelectAllBranches_Click"/>
                     <TextBlock Text=" · " Foreground="#999" VerticalAlignment="Center" FontSize="11"/>
@@ -110,7 +117,7 @@
             <TextBox x:Name="TxtSearch" Style="{StaticResource SearchBox}" Margin="0,0,0,6"
                      TextChanged="TxtSearch_TextChanged"/>
 
-            <Border BorderBrush="#DDE3EC" BorderThickness="1" CornerRadius="5">
+            <Border BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1" CornerRadius="5">
                 <ListBox x:Name="BranchList"
                          MaxHeight="260"
                          BorderThickness="0"
@@ -128,7 +135,7 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="#EEF4FF"/>
+                                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -164,13 +171,13 @@
         </StackPanel>
 
         <!-- Footer -->
-        <Border Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="20,12">
+        <Border Background="#F8FAFB" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="20,12">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Cancel" Style="{StaticResource FooterBtn}"
-                        Background="White" Foreground="#5A6A7A" BorderBrush="#CDD5DE"
+                        Background="White" Foreground="{StaticResource YakultTextMutedBrush}" BorderBrush="{StaticResource YakultBorderBrush}"
                         Margin="0,0,8,0" Click="BtnCancel_Click"/>
                 <Button Content="Export" Style="{StaticResource FooterBtn}"
-                        Background="#4E9AFC" Foreground="White" BorderThickness="0"
+                        Background="{StaticResource YakultPrimaryBrush}" Foreground="White" BorderThickness="0"
                         Click="BtnExport_Click"/>
             </StackPanel>
         </Border>

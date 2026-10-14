@@ -16,20 +16,25 @@
     TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <conv:BoolToVisibilityConverter        x:Key="BoolToVis"/>
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
         <conv:StringToColorBrushConverter      x:Key="HexToBrush"/>
 
         <Style TargetType="TextBlock">
             <Setter Property="FontFamily"                     Value="Segoe UI"/>
-            <Setter Property="Foreground"                     Value="#1A2333"/>
+            <Setter Property="Foreground"                     Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
         </Style>
 
         <!-- ── Section card ───────────────────────────────────────────────── -->
         <Style x:Key="SectionCard" TargetType="Border">
             <Setter Property="Background"      Value="#FFFFFF"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius"    Value="8"/>
             <Setter Property="Padding"         Value="16"/>
@@ -40,7 +45,7 @@
         <Style x:Key="SectionTitle" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="10"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#5A6A7E"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,10"/>
         </Style>
 
@@ -48,19 +53,19 @@
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="9.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#6B7A8D"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,2"/>
         </Style>
 
         <!-- ── Read-only field value box ─────────────────────────────────── -->
         <Style x:Key="FieldBox" TargetType="TextBox">
             <Setter Property="IsReadOnly"              Value="True"/>
-            <Setter Property="Background"              Value="#F5F7FA"/>
-            <Setter Property="BorderBrush"             Value="#DDE3EC"/>
+            <Setter Property="Background"              Value="{StaticResource YakultPageBackgroundBrush}"/>
+            <Setter Property="BorderBrush"             Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness"         Value="1"/>
             <Setter Property="Padding"                 Value="8,5"/>
             <Setter Property="FontSize"                Value="11"/>
-            <Setter Property="Foreground"              Value="#1A2333"/>
+            <Setter Property="Foreground"              Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Margin"                  Value="0,0,0,8"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
@@ -68,12 +73,12 @@
         <!-- ── Multiline read-only field box ─────────────────────────────── -->
         <Style x:Key="MultilineFieldBox" TargetType="TextBox">
             <Setter Property="IsReadOnly"              Value="True"/>
-            <Setter Property="Background"              Value="#F5F7FA"/>
-            <Setter Property="BorderBrush"             Value="#DDE3EC"/>
+            <Setter Property="Background"              Value="{StaticResource YakultPageBackgroundBrush}"/>
+            <Setter Property="BorderBrush"             Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness"         Value="1"/>
             <Setter Property="Padding"                 Value="8,5"/>
             <Setter Property="FontSize"                Value="11"/>
-            <Setter Property="Foreground"              Value="#1A2333"/>
+            <Setter Property="Foreground"              Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Margin"                  Value="0,0,0,8"/>
             <Setter Property="TextWrapping"            Value="Wrap"/>
             <Setter Property="AcceptsReturn"           Value="True"/>
@@ -118,11 +123,11 @@
         <!-- ── DataGrid column header ────────────────────────────────────── -->
         <Style x:Key="SubGridHeader" TargetType="DataGridColumnHeader">
             <Setter Property="Background"      Value="#EEF2F7"/>
-            <Setter Property="Foreground"      Value="#3A4A5A"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="FontSize"        Value="10"/>
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="Padding"         Value="8,5"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
@@ -176,9 +181,11 @@
                          Visibility="{Binding IsMultiline, Converter={StaticResource BoolToVis}}"/>
             </Grid>
         </DataTemplate>
+
+        </ResourceDictionary>
     </Window.Resources>
 
-    <Grid Background="#F0F2F6">
+    <Grid Background="{StaticResource YakultPageBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="60"/>   <!-- Blue header band -->
             <RowDefinition Height="*"/>    <!-- Scrollable body -->
@@ -245,14 +252,14 @@
             <StackPanel Margin="16,14,16,14">
 
                 <!-- Loading overlay inside body -->
-                <Border Background="#F0F2F6" Padding="20"
+                <Border Background="{StaticResource YakultPageBackgroundBrush}" Padding="20"
                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets"
-                                   FontSize="16" Foreground="#3A8EF6"
+                                   FontSize="16" Foreground="{StaticResource YakultPrimaryBrush}"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="Loading archive details…"
-                                   FontSize="12" Foreground="#4A5A6A" VerticalAlignment="Center"/>
+                                   FontSize="12" Foreground="{StaticResource YakultTextDarkBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
 
@@ -262,7 +269,7 @@
                     <Border.BorderBrush>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                             <GradientStop Color="#C0392B" Offset="0"/>
-                            <GradientStop Color="#DDE3EC" Offset="0.05"/>
+                            <GradientStop Color="{StaticResource YakultBorderColor}" Offset="0.05"/>
                         </LinearGradientBrush>
                     </Border.BorderBrush>
                     <Border.BorderThickness>
@@ -337,15 +344,15 @@
                         Visibility="{Binding IsLoading, Converter={StaticResource InvBoolToVis}}">
                     <Border.BorderBrush>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#3A8EF6" Offset="0"/>
-                            <GradientStop Color="#DDE3EC" Offset="0.05"/>
+                            <GradientStop Color="{StaticResource YakultPrimaryColor}" Offset="0"/>
+                            <GradientStop Color="{StaticResource YakultBorderColor}" Offset="0.05"/>
                         </LinearGradientBrush>
                     </Border.BorderBrush>
                     <Border.BorderThickness>
                         <Thickness Left="1" Top="3" Right="1" Bottom="1"/>
                     </Border.BorderThickness>
                     <StackPanel>
-                        <TextBlock Style="{StaticResource SectionTitle}" Foreground="#2E7EE8">
+                        <TextBlock Style="{StaticResource SectionTitle}" Foreground="{StaticResource YakultPrimaryHoverBrush}">
                             <Run Text="{Binding EntityType, Mode=OneWay}"/>
                             <Run Text=" DETAILS"/>
                         </TextBlock>
@@ -395,7 +402,7 @@
                     <Border.BorderBrush>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                             <GradientStop Color="#1E9E5E" Offset="0"/>
-                            <GradientStop Color="#DDE3EC" Offset="0.05"/>
+                            <GradientStop Color="{StaticResource YakultBorderColor}" Offset="0.05"/>
                         </LinearGradientBrush>
                     </Border.BorderBrush>
                     <Border.BorderThickness>
@@ -413,7 +420,7 @@
                                   RowHeaderWidth="0"
                                   GridLinesVisibility="Horizontal"
                                   HorizontalGridLinesBrush="#EEF2F7"
-                                  BorderThickness="1" BorderBrush="#DDE3EC"
+                                  BorderThickness="1" BorderBrush="{StaticResource YakultBorderBrush}"
                                   Background="White"
                                   MaxHeight="220"
                                   ColumnHeaderStyle="{StaticResource SubGridHeader}"
@@ -445,7 +452,7 @@
         </ScrollViewer>
 
         <!-- ══ Row 2: Footer buttons ═══════════════════════════════════════ -->
-        <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="#DDE3EC"
+        <Border Grid.Row="2" Background="#FFFFFF" BorderBrush="{StaticResource YakultBorderBrush}"
                 BorderThickness="0,1,0,0" Padding="16,10">
             <Border.Effect>
                 <DropShadowEffect BlurRadius="8" ShadowDepth="-2" Opacity="0.07" Color="#000000"/>
@@ -458,7 +465,7 @@
 
                 <!-- Restore note -->
                 <TextBlock Grid.Column="0" VerticalAlignment="Center"
-                           FontSize="10" Foreground="#8A9AAA" FontStyle="Italic"
+                           FontSize="10" Foreground="{StaticResource YakultTextMutedBrush}" FontStyle="Italic"
                            Visibility="{Binding IsArchived, Converter={StaticResource InvBoolToVis}}">
                     This record has already been restored.
                 </TextBlock>

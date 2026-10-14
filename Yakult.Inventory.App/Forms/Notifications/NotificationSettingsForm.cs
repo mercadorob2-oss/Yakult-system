@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -11,8 +12,8 @@ namespace Yakult.Inventory.App.Forms.Notifications
 {
     public partial class NotificationSettingsForm : Form
     {
-        private static readonly Color CBlue      = Color.FromArgb(78, 154, 252);
-        private static readonly Color CBlueDark  = Color.FromArgb(58, 134, 232);
+        private static readonly Color CBlue      = InventoryTheme.Colors.Primary;
+        private static readonly Color CBlueDark  = InventoryTheme.Colors.PrimaryHover;
         private static readonly Color CRed       = Color.FromArgb(213, 0, 50);
         private static readonly Color CTextDark  = Color.FromArgb(22, 22, 40);
         private static readonly Color CTextMid   = Color.FromArgb(80, 80, 100);

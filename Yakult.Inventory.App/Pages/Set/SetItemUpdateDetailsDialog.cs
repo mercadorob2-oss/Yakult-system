@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -20,12 +21,12 @@ namespace Yakult.Inventory.App.Pages.Set
 
         // Colors
         private readonly Color ClrTextMain = Color.FromArgb(45, 55, 72);
-        private readonly Color ClrTextLabel = Color.FromArgb(100, 116, 139);
+        private readonly Color ClrTextLabel = InventoryTheme.Colors.TextMuted;
         private readonly Color ClrBorder = Color.FromArgb(235, 238, 240);
-        private readonly Color ClrPrimary = Color.FromArgb(52, 152, 219);
+        private readonly Color ClrPrimary = InventoryTheme.Colors.Primary;
         private readonly Color ClrSuccess = Color.FromArgb(39, 174, 96);
         private readonly Color ClrDanger = Color.FromArgb(220, 53, 69);
-        private readonly Color ClrSecondaryBg = Color.FromArgb(245, 247, 250);
+        private readonly Color ClrSecondaryBg = InventoryTheme.Colors.HeaderBack;
         private readonly Color ClrTimelineBg = Color.FromArgb(250, 252, 254);
 
         private List<SetItemUpdateDto> _fullHistory;

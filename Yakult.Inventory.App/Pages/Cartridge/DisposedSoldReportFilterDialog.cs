@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -39,12 +40,12 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             MinimizeBox     = false;
             StartPosition   = FormStartPosition.CenterParent;
             Font            = new Font("Segoe UI", 9.5f);
-            BackColor       = Color.FromArgb(245, 247, 250);
+            BackColor       = InventoryTheme.Colors.HeaderBack;
 
             // ── Header ──────────────────────────────────────────────────────
             var pnlHeader = new Panel
             {
-                BackColor = Color.FromArgb(58, 134, 232),
+                BackColor = InventoryTheme.Colors.PrimaryHover,
                 Dock      = DockStyle.Top,
                 Height    = 60
             };
@@ -306,11 +307,11 @@ namespace Yakult.Inventory.App.Pages.Cartridge
         private static void SetHighlight(Panel outer, Panel inner, bool selected)
         {
             outer.BackColor = selected
-                ? Color.FromArgb(59, 130, 246)
+                ? InventoryTheme.Colors.Primary
                 : Color.FromArgb(214, 216, 220);
 
             inner.BackColor = selected
-                ? Color.FromArgb(239, 246, 255)
+                ? InventoryTheme.Colors.OutlineHoverBack
                 : Color.White;
         }
     }

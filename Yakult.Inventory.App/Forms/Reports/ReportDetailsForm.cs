@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 // using System;
 // using System.Drawing;
 // using System.Windows.Forms;
@@ -159,7 +160,7 @@
 //             {
 //                 Dock = DockStyle.Bottom,
 //                 Height = 50,
-//                 BackColor = Color.FromArgb(245, 247, 250)
+//                 BackColor = InventoryTheme.Colors.HeaderBack
 //             };
 //             mainPanel.Controls.Add(buttonPanel);
 // 

@@ -2,6 +2,9 @@ package com.example.yakultscanner.data.repository
 
 import com.example.yakultscanner.api.ApiClient
 import com.example.yakultscanner.api.CallLookupResponse
+import com.example.yakultscanner.api.CreateCallEmployeeRequest
+import com.example.yakultscanner.api.UpdateCallEmployeeLocationRequest
+import com.example.yakultscanner.api.CallEmployeeUpsertResponse
 import com.example.yakultscanner.api.EscalationSettingsResponse
 import com.example.yakultscanner.api.SetEscalationOverrideRequest
 import com.example.yakultscanner.api.SetEscalationOverrideResponse
@@ -155,6 +158,22 @@ class CallMonitoringRepository {
 
     suspend fun getEmployeeOrg(empId: Int): Response<com.example.yakultscanner.api.EmployeeOrgResponse> =
         withContext(Dispatchers.IO) { apiService.getCallEmployeeOrg(empId) }
+
+    suspend fun createEmployee(request: CreateCallEmployeeRequest): Response<CallEmployeeUpsertResponse> =
+        withContext(Dispatchers.IO) { apiService.createCallEmployee(request) }
+
+    suspend fun updateEmployeeLocation(request: UpdateCallEmployeeLocationRequest): Response<CallEmployeeUpsertResponse> =
+        withContext(Dispatchers.IO) { apiService.updateCallEmployeeLocation(request) }
+
+    suspend fun getTicketContactEmail(
+        callerEmpId: Int? = null,
+        comId: Int? = null,
+        deptId: Int? = null,
+        branchId: Int? = null
+    ): Response<com.example.yakultscanner.api.ContactEmailResponse> =
+        withContext(Dispatchers.IO) {
+            apiService.getTicketContactEmail(callerEmpId, comId, deptId, branchId)
+        }
 
     suspend fun getItEmployees(): Response<CallLookupResponse> =
         withContext(Dispatchers.IO) { apiService.getCallItEmployees() }

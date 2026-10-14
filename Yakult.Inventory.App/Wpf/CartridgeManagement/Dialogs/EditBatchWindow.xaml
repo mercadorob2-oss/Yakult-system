@@ -7,6 +7,11 @@
         WindowStartupLocation="CenterOwner"
         Background="White">
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="Btn" TargetType="Button">
             <Setter Property="Height" Value="34"/>
             <Setter Property="MinWidth" Value="88"/>
@@ -46,20 +51,22 @@
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
         <Style x:Key="ReadOnlyBox" TargetType="TextBox">
             <Setter Property="Height" Value="34"/>
             <Setter Property="IsReadOnly" Value="True"/>
-            <Setter Property="Background" Value="#F5F7FA"/>
+            <Setter Property="Background" Value="{StaticResource YakultPageBackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="#DDE2E8"/>
             <Setter Property="Padding" Value="10,0"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Foreground" Value="#4A5A6A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -73,19 +80,19 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="Edit Batch"
-                               FontFamily="Segoe UI" FontSize="18" FontWeight="Bold" Foreground="#2A3A4A"/>
+                               FontFamily="Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
                     <TextBlock x:Name="TxtSubtitle"
-                               FontFamily="Segoe UI" FontSize="12" Foreground="#7A8A9A" Margin="0,3,0,0"/>
+                               FontFamily="Segoe UI" FontSize="12" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,3,0,0"/>
                 </StackPanel>
                 <Border x:Name="StatusBadge" Grid.Column="1"
                         CornerRadius="11" Padding="12,5"
-                        VerticalAlignment="Center" Background="#3A8EF6">
+                        VerticalAlignment="Center" Background="{StaticResource YakultPrimaryBrush}">
                     <TextBlock x:Name="TxtStatusBadge"
                                FontFamily="Segoe UI" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
                 </Border>
             </Grid>
 
-            <Rectangle Height="1" Fill="#EEF1F4" Margin="0,18,0,0"/>
+            <Rectangle Height="1" Fill="{StaticResource YakultBorderBrush}" Margin="0,18,0,0"/>
 
             <!-- ─── Batch Information ─── -->
             <StackPanel Margin="28,16,28,0">
@@ -111,7 +118,7 @@
                 </StackPanel>
             </StackPanel>
 
-            <Rectangle Height="1" Fill="#EEF1F4" Margin="0,16,0,0"/>
+            <Rectangle Height="1" Fill="{StaticResource YakultBorderBrush}" Margin="0,16,0,0"/>
 
             <!-- ─── Cartridge Models ─── -->
             <StackPanel Margin="28,16,28,0">
@@ -119,10 +126,10 @@
                     <TextBlock Text="CARTRIDGE MODELS" Style="{StaticResource SectionLabel}"
                                DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0"/>
                     <Border x:Name="ModelCountBadge" DockPanel.Dock="Left"
-                            Background="#EBF5FF" CornerRadius="8" Padding="7,2"
+                            Background="{StaticResource YakultAccentTintBrush}" CornerRadius="8" Padding="7,2"
                             Margin="8,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
                         <TextBlock x:Name="TxtModelCount"
-                                   FontFamily="Segoe UI" FontSize="11" FontWeight="SemiBold" Foreground="#3A8EF6"/>
+                                   FontFamily="Segoe UI" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource YakultPrimaryBrush}"/>
                     </Border>
                 </DockPanel>
 
@@ -146,16 +153,16 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="{Binding ModelNumber}"
                                                    FontFamily="Segoe UI" FontSize="13" FontWeight="SemiBold"
-                                                   Foreground="#2A3A4A" VerticalAlignment="Center"/>
+                                                   Foreground="{StaticResource YakultTextDarkBrush}" VerticalAlignment="Center"/>
                                         <!-- Sent count -->
                                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                             <TextBlock Text="Sent "
                                                        FontFamily="Segoe UI" FontSize="11"
                                                        Foreground="#9AA0A8" VerticalAlignment="Center"/>
-                                            <Border Background="#EBF5FF" CornerRadius="4" Padding="8,3">
+                                            <Border Background="{StaticResource YakultAccentTintBrush}" CornerRadius="4" Padding="8,3">
                                                 <TextBlock Text="{Binding SentQty}"
                                                            FontFamily="Segoe UI" FontSize="12" FontWeight="SemiBold"
-                                                           Foreground="#3A8EF6"/>
+                                                           Foreground="{StaticResource YakultPrimaryBrush}"/>
                                             </Border>
                                         </StackPanel>
                                         <!-- Returned count -->
@@ -170,7 +177,7 @@
                                             </Border>
                                         </StackPanel>
                                     </Grid>
-                                    <Rectangle Height="1" Fill="#EEF1F4"/>
+                                    <Rectangle Height="1" Fill="{StaticResource YakultBorderBrush}"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -178,7 +185,7 @@
                 </Border>
             </StackPanel>
 
-            <Rectangle Height="1" Fill="#EEF1F4" Margin="0,16,0,0"/>
+            <Rectangle Height="1" Fill="{StaticResource YakultBorderBrush}" Margin="0,16,0,0"/>
 
             <!-- ─── Refill Vendor ─── -->
             <StackPanel Margin="28,16,28,0">
@@ -194,7 +201,7 @@
 
             <!-- ─── Transfer Cartridges (Active batches only) ─── -->
             <StackPanel x:Name="PnlTransfer" Margin="28,14,28,0" Visibility="Collapsed">
-                <Rectangle Height="1" Fill="#EEF1F4"/>
+                <Rectangle Height="1" Fill="{StaticResource YakultBorderBrush}"/>
                 <StackPanel Margin="0,14,0,0">
                     <Button HorizontalAlignment="Left"
                             Content="⇄ Transfer Cartridges" Background="#1A7A6E"
@@ -205,15 +212,15 @@
                 </StackPanel>
             </StackPanel>
 
-            <Rectangle Height="1" Fill="#EEF1F4" Margin="0,16,0,0"/>
+            <Rectangle Height="1" Fill="{StaticResource YakultBorderBrush}" Margin="0,16,0,0"/>
 
             <!-- ─── Footer ─── -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
                         Margin="28,14,28,24">
-                <Button Content="Cancel" Background="#E8EBF0" Foreground="#3A4A5A"
+                <Button Content="Cancel" Background="#E8EBF0" Foreground="{StaticResource YakultTextDarkBrush}"
                         Style="{StaticResource Btn}" Click="BtnCancel_Click"
                         Margin="0,0,8,0"/>
-                <Button x:Name="BtnSave" Content="Save Changes" Background="#3A8EF6"
+                <Button x:Name="BtnSave" Content="Save Changes" Background="{StaticResource YakultPrimaryBrush}"
                         Style="{StaticResource Btn}" Click="BtnSave_Click"/>
             </StackPanel>
 

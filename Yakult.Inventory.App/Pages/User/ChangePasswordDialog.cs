@@ -39,14 +39,14 @@ namespace Yakult.Inventory.App.Pages.User
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
-            BackColor = Color.FromArgb(248, 249, 250);
+            BackColor = ColorTranslator.FromHtml("#F6F5F2");
             KeyPreview = true;
             AutoScaleMode = AutoScaleMode.None;
             this.KeyDown += ChangePasswordDialog_KeyDown;
 
-            var themeGreen      = Color.FromArgb(78, 154, 252);
-            var themeGreenHover = Color.FromArgb(58, 142, 246);
-            var outlineHoverBack = Color.FromArgb(235, 245, 255);
+            var themeGreen      = ColorTranslator.FromHtml("#B92335");
+            var themeGreenHover = ColorTranslator.FromHtml("#9E1E2E");
+            var outlineHoverBack = ColorTranslator.FromHtml("#FCF0F1");
 
             // ── Footer (buttons) — docked Bottom so it is always visible ──────
             var footerPanel = new Panel
@@ -96,6 +96,12 @@ namespace Yakult.Inventory.App.Pages.User
             btnChange.FlatAppearance.MouseOverBackColor = themeGreenHover;
             btnChange.Location = new Point(footerPanel.Width - 90 - 12 - 150 - 8, 13);
             btnChange.Click += BtnChange_Click;
+            btnChange.BackColor = ColorTranslator.FromHtml("#F0F1F3");
+            btnChange.EnabledChanged += (_, __) =>
+            {
+                btnChange.BackColor = btnChange.Enabled ? themeGreen : ColorTranslator.FromHtml("#F0F1F3");
+                btnChange.Cursor = btnChange.Enabled ? Cursors.Hand : Cursors.Default;
+            };
 
             footerPanel.Controls.Add(btnCancel);
             footerPanel.Controls.Add(btnChange);
@@ -112,7 +118,7 @@ namespace Yakult.Inventory.App.Pages.User
             {
                 Dock = DockStyle.Top,
                 Height = 72,
-                BackColor = Color.White,
+                BackColor = ColorTranslator.FromHtml("#182235"),
                 Padding = new Padding(0)
             };
 
@@ -120,7 +126,7 @@ namespace Yakult.Inventory.App.Pages.User
             {
                 Text = "Change Password",
                 Font = new Font("Segoe UI", 18F, FontStyle.Bold),
-                ForeColor = themeGreen,
+                ForeColor = Color.White,
                 AutoSize = false,
                 Width = 400,
                 Height = 48,
@@ -260,8 +266,8 @@ namespace Yakult.Inventory.App.Pages.User
 
         private static Panel WrapInBorder(TextBox txt)
         {
-            var normalBorder = Color.FromArgb(180, 180, 180);
-            var focusBorder  = Color.FromArgb(78, 154, 252);
+            var normalBorder = ColorTranslator.FromHtml("#E5E6E8");
+            var focusBorder  = ColorTranslator.FromHtml("#B92335");
 
             var wrapper = new Panel
             {

@@ -10,10 +10,17 @@
         FontFamily="Segoe UI">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <local:StatusToBrushConverter x:Key="StatusToBrush"/>
         <local:BoolToMutedBrushConverter x:Key="BoolToMutedBrush"/>
         <local:CountToVisibilityConverter x:Key="CountToVisibilityConverter"/>
         <conv:BoolToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -55,7 +62,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{Binding Number, StringFormat='#{0}'}" FontSize="9" FontWeight="Bold"
                                                    Foreground="{Binding IsLatest, Converter={StaticResource BoolToMutedBrush}}"/>
-                                        <TextBlock Text="Latest" FontSize="8.5" Foreground="#3B82F6" Margin="8,0,0,0"
+                                        <TextBlock Text="Latest" FontSize="8.5" Foreground="{StaticResource YakultPrimaryBrush}" Margin="8,0,0,0"
                                                    Visibility="{Binding IsLatest, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                     </StackPanel>
 

@@ -10,10 +10,15 @@
         TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="10"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#5A6A7A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,4"/>
         </Style>
         <Style x:Key="InfoLabel" TargetType="TextBlock">
@@ -24,7 +29,7 @@
         </Style>
         <Style x:Key="InfoValue" TargetType="TextBlock">
             <Setter Property="FontSize"     Value="12"/>
-            <Setter Property="Foreground"   Value="#1A2333"/>
+            <Setter Property="Foreground"   Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="Margin"       Value="0,0,0,12"/>
         </Style>
@@ -52,6 +57,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <StackPanel Background="White">
@@ -69,7 +76,7 @@
             <TextBlock Style="{StaticResource InfoLabel}" Text="BRANCH"/>
             <TextBlock x:Name="TxtBranch"     Style="{StaticResource InfoValue}" Margin="0,0,0,4"/>
 
-            <Separator Background="#DDE3EC" Margin="0,0,0,16"/>
+            <Separator Background="{StaticResource YakultBorderBrush}" Margin="0,0,0,16"/>
 
             <!-- Username -->
             <TextBlock Text="USERNAME" Style="{StaticResource FieldLabel}"/>
@@ -77,7 +84,7 @@
 
             <!-- Active -->
             <CheckBox x:Name="ChkIsActive" Content="Account is Active"
-                      FontSize="12" Foreground="#1A2333" Margin="0,0,0,16"/>
+                      FontSize="12" Foreground="{StaticResource YakultTextDarkBrush}" Margin="0,0,0,16"/>
 
             <!-- Email -->
             <TextBlock Text="EMAIL ADDRESS" Style="{StaticResource FieldLabel}"/>
@@ -87,11 +94,11 @@
         </StackPanel>
 
         <!-- Footer -->
-        <Border Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="24,12">
+        <Border Background="#F8FAFB" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="24,12">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="BtnCancel" Content="Cancel" Width="80" Height="32"
-                        Background="White" Foreground="#5A6A7A"
-                        BorderBrush="#CDD5DE" BorderThickness="1"
+                        Background="White" Foreground="{StaticResource YakultTextMutedBrush}"
+                        BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                         FontSize="11" FontWeight="SemiBold" Cursor="Hand"
                         Margin="0,0,8,0" Click="BtnCancel_Click">
                     <Button.Template>

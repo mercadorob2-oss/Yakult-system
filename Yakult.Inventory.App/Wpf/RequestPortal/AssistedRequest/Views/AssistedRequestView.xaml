@@ -677,7 +677,7 @@
                                     <ColumnDefinition Width="150"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="Filter by" Style="{StaticResource FieldLabel}"/>
+                                <TextBlock Grid.Column="0" Text="Filter receivers by" Style="{StaticResource FieldLabel}"/>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
                                     <StackPanel Width="170">
                                         <TextBlock Text="Company" FontSize="10" FontWeight="SemiBold"

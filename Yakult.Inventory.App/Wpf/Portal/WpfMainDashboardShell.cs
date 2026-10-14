@@ -1,841 +1,757 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
+using Newtonsoft.Json;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Forms.Portal;
 using Yakult.Inventory.App.Pages.User;
-using Yakult.Inventory.App.Repositories;
 using Yakult.Inventory.App.Security;
 using Yakult.Inventory.App.Session;
 
 namespace Yakult.Inventory.App.Wpf.Portal
 {
     /// <summary>
-    /// Pure WPF portal shell. Replaces the WinForms <see cref="MainDashboardForm"/>.
-    /// Shows module cards filtered by <see cref="PermissionResolver"/> based on
-    /// the logged-in user's roles, then returns a <see cref="PortalSelection"/>
-    /// to the caller.
+    /// Shared desktop home. Launches only the systems available to the current
+    /// account and keeps personal pins and recent launches between sessions.
     /// </summary>
     public sealed class WpfMainDashboardShell : Window
     {
-        // ====================================================================
-        // RESULT
-        // ====================================================================
-
         public PortalSelection SelectedModule { get; private set; } = PortalSelection.None;
 
-        // ====================================================================
-        // LAYOUT ROOTS
-        // ====================================================================
+        private static readonly Color TextSecondary = Color.FromRgb(103, 112, 129);
+        private static readonly Brush Ink = Brush("#202635");
+        private static readonly Brush Muted = new SolidColorBrush(TextSecondary);
+        private static readonly Brush Accent = Brush("#B92335");
+        private static readonly Brush Line = Brush("#E5E6E8");
+        private static readonly Brush Tint = Brush("#FCF0F1");
+        private static readonly Style ActionStyle = CreateActionStyle();
+        private static readonly Style HeaderActionStyle = CreateActionStyle(true);
 
         private readonly Grid _rootGrid;
-        private System.Windows.Controls.Primitives.UniformGrid _cardsPanel;
+        private readonly List<SystemModule> _modules = new List<SystemModule>();
+        private WorkspacePreferences _preferences;
+        private StackPanel _pinnedPanel;
+        private StackPanel _recentPanel;
+        private UniformGrid _cardsPanel;
+        private TextBox _search;
+        private TextBlock _searchHint;
+        private TextBlock _resultLabel;
+        private TextBlock _emptyResults;
+        private TextBlock _supportReference;
+        private Grid _workspace;
+        private Grid _body;
+        private StackPanel _secondary;
+        private Border _welcome;
+        private StackPanel _keyboardTip;
 
-        // Quick Overview stat labels (populated async)
-        private TextBlock _statPendingTickets;
-        private TextBlock _statUnresolved;
+        private sealed class CardPresentation
+        {
+            public Button Open;
+            public Button Pin;
+            public TextBlock Title;
+            public TextBlock Description;
+            public FrameworkElement Footer;
+            public FrameworkElement Icon;
+        }
 
-        // ====================================================================
-        // COLORS
-        // ====================================================================
+        private sealed class SystemModule
+        {
+            public string Title;
+            public string Description;
+            public string Icon;
+            public string Shortcut;
+            public PortalSelection Selection;
+            public PermissionResolver.Portal Permission;
+        }
 
-        private static readonly Color HeaderStart   = Color.FromRgb(15,  23,  42);
-        private static readonly Color HeaderEnd     = Color.FromRgb(30,  64, 120);
-        private static readonly Color ContentBg     = Color.FromRgb(245, 247, 251);
-        private static readonly Color TextPrimary   = Color.FromRgb(15,  23,  42);
-        private static readonly Color TextSecondary = Color.FromRgb(100, 116, 139);
-        private static readonly Color FooterBg      = Color.FromRgb(241, 243, 247);
-
-        // Module accent colors  (#2563EB #14B8A6 #9333EA #F97316 #EF4444 #64748B #EC4899)
-        private static readonly Color AInventory  = Color.FromRgb(37,   99, 235);
-        private static readonly Color ACallIT     = Color.FromRgb(20,  184, 166);
-        private static readonly Color ARequester  = Color.FromRgb(147,  51, 234);
-        private static readonly Color ACartridge  = Color.FromRgb(249, 115,  22);
-        private static readonly Color ABorrow     = Color.FromRgb(239,  68,  68);
-        private static readonly Color AReports    = Color.FromRgb(100, 116, 139);
-        private static readonly Color AAdmin      = Color.FromRgb(236,  72, 153);
-        private static readonly Color ARepairPortal = Color.FromRgb(13,  148, 136);
-
-        // ====================================================================
-        // CONSTRUCTOR
-        // ====================================================================
+        private sealed class WorkspacePreferences
+        {
+            public List<string> Pinned { get; set; } = new List<string>();
+            public List<string> Recent { get; set; } = new List<string>();
+        }
 
         public WpfMainDashboardShell()
         {
-            Title                  = "Yakult Internal Systems";
-            WindowState            = WindowState.Maximized;
-            WindowStartupLocation  = WindowStartupLocation.CenterScreen;
-            MinWidth               = 1024;
-            MinHeight              = 700;
-            Background             = new SolidColorBrush(ContentBg);
-            FontFamily             = new FontFamily("Segoe UI");
-            Focusable              = true;
+            Title = "Yakult Workspace";
+            WindowState = WindowState.Maximized;
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            MinWidth = 820;
+            MinHeight = 600;
+            Background = Brush("#F6F5F2");
+            FontFamily = new FontFamily("Segoe UI");
+            Foreground = Ink;
+            UseLayoutRounding = true;
 
-            _rootGrid = new Grid();
-            _rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(90) });              // header
-            _rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // content
-            _rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });                 // footer
-
+            RegisterSystems();
+            LoadPreferences();
+            _rootGrid = new Grid { Background = Background };
+            _rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(76) });
+            _rootGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            _rootGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             BuildHeader();
             BuildContent();
             BuildFooter();
-
             Content = _rootGrid;
-
-            Loaded  += async (_, __) => { try { await LoadStatsAsync(); } catch { } };
-            PreviewKeyDown += (_, e) =>
-            {
-                if (e.Key == Key.Escape)
-                {
-                    SelectAndClose(PortalSelection.Logout);
-                    e.Handled = true;
-                    return;
-                }
-                if ((e.KeyboardDevice.Modifiers & ModifierKeys.Control) == ModifierKeys.Control &&
-                    (e.KeyboardDevice.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift &&
-                    e.Key == Key.D)
-                {
-                    if (CanAccessDatabaseSwitcher())
-                        HandleDeveloperDatabaseReset();
-                    e.Handled = true;
-                    return;
-                }
-                // Alt+ shortcuts for direct portal launch
-                var roles = AppSession.CurrentUserRoles;
-                if ((e.KeyboardDevice.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt)
-                {
-                    switch (e.Key)
-                    {
-                        case Key.I:
-                            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.InventorySystem))
-                            { SelectAndClose(PortalSelection.InventorySystem); e.Handled = true; }
-                            return;
-                        case Key.C:
-                            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.CallITMonitoring))
-                            { SelectAndClose(PortalSelection.ITCallMonitoring); e.Handled = true; }
-                            return;
-                        case Key.M:
-                            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.CartridgeManagement))
-                            { SelectAndClose(PortalSelection.CartridgeManagement); e.Handled = true; }
-                            return;
-                        case Key.R:
-                            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.Reports))
-                            { SelectAndClose(PortalSelection.Reports); e.Handled = true; }
-                            return;
-                        case Key.B:
-                            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.BorrowItems))
-                            { SelectAndClose(PortalSelection.BorrowItems); e.Handled = true; }
-                            else
-                            {
-                                System.Windows.MessageBox.Show("You do not have access to Borrow Items.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
-                                e.Handled = true;
-                            }
-                            return;
-                    }
-                }
-            };
+            PreviewKeyDown += HandleShortcut;
         }
 
-        // ====================================================================
-        // HEADER
-        // ====================================================================
+        private void RegisterSystems()
+        {
+            AddSystem("Inventory System", "Manage assets, stock levels, requests, and inventory movements.", "inventory", "Alt + I", PortalSelection.InventorySystem, PermissionResolver.Portal.InventorySystem);
+            AddSystem("IT Call Monitoring", "Track helpdesk tickets, escalations, and issue resolution.", "headset", "Alt + C", PortalSelection.ITCallMonitoring, PermissionResolver.Portal.CallITMonitoring);
+            AddSystem("Request/s Portal", "Submit requests and follow their progress and approval status.", "request", "", PortalSelection.RequesterPortal, PermissionResolver.Portal.RequesterPortal);
+            AddSystem("Consumable Management", "Manage consumable stock, exchanges, refills, and fulfillment.", "printer", "Alt + M", PortalSelection.CartridgeManagement, PermissionResolver.Portal.CartridgeManagement);
+            AddSystem("Borrow Items", "Record borrowed equipment and keep track of returns.", "borrow", "Alt + B", PortalSelection.BorrowItems, PermissionResolver.Portal.BorrowItems);
+            AddSystem("Reports", "View reports, inventory analytics, and invoice summaries.", "report", "Alt + R", PortalSelection.Reports, PermissionResolver.Portal.Reports);
+            AddSystem("Repair Technician Portal", "Track equipment repairs, service records, and supporting evidence.", "repair", "", PortalSelection.RepairTechnicianPortal, PermissionResolver.Portal.RepairTechnicianPortal);
+            // Match the caller's Admin Portal guard as well as the portal permission.
+            if (AppSession.IsDeveloper || AppSession.IsSuperAdmin)
+                AddSystem("Admin Portal", "Manage accounts, permissions, and system configuration.", "settings", "", PortalSelection.AdminPortal, PermissionResolver.Portal.AdminPortal);
+        }
+
+        private void AddSystem(string title, string description, string icon, string shortcut, PortalSelection selection, PermissionResolver.Portal permission)
+        {
+            if (!PermissionResolver.HasPortalAccess(AppSession.CurrentUserRoles, permission)) return;
+            _modules.Add(new SystemModule { Title = title, Description = description, Icon = icon, Shortcut = shortcut, Selection = selection, Permission = permission });
+        }
 
         private void BuildHeader()
         {
-            var gradient = new LinearGradientBrush(
-                new GradientStopCollection
-                {
-                    new GradientStop(HeaderStart, 0.0),
-                    new GradientStop(HeaderEnd,   1.0)
-                },
-                new Point(0, 0), new Point(1, 0));
-
-            var header = new Border { Background = gradient, Padding = new Thickness(28, 0, 28, 0) };
-            Grid.SetRow(header, 0);
-
-            // Single row: [logo] [title/sub] [spacer] [?] [avatar+name+role]
+            var header = new Border { Background = Brush("#182235"), BorderBrush = Brush("#29364D"), BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(24, 0, 24, 0) };
             var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                      // 0 logo
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                      // 1 titles
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // 2 spacer
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                      // 3 help
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });                      // 4 user
-
-            // ─ Logo
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var brand = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             var logo = TryLoadLogo();
+            var logoBadge = new Border { Background = Brushes.White, CornerRadius = new CornerRadius(6), Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center };
             if (logo != null)
-            {
-                var img = new System.Windows.Controls.Image
-                {
-                    Source            = logo,
-                    Width             = 150,
-                    Height            = 40,
-                    Stretch           = Stretch.Uniform,
-                    Margin            = new Thickness(0, 0, 16, 0),
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                Grid.SetColumn(img, 0);
-                grid.Children.Add(img);
-            }
+                logoBadge.Child = new Image { Source = logo, Width = 98, Height = 28, Stretch = Stretch.Uniform };
+            else
+                logoBadge.Child = Label("Yakult", 25, Accent, FontWeights.Bold);
+            brand.Children.Add(logoBadge);
+            brand.Children.Add(new Border { Width = 1, Height = 28, Background = Brush("#354158"), Margin = new Thickness(0, 0, 18, 0) });
+            var titles = new StackPanel();
+            titles.Children.Add(Label("WORKSPACE", 12, Brush("#F8FAFC"), FontWeights.SemiBold));
+            titles.Children.Add(Label("Internal systems", 11, Brush("#B8C3D4")));
+            brand.Children.Add(titles);
+            grid.Children.Add(brand);
 
-            // ─ Titles
-            var titleStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            titleStack.Children.Add(new TextBlock
-            {
-                Text       = "INTERNAL PORTAL",
-                FontSize   = 17,
-                FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White
-            });
-            titleStack.Children.Add(new TextBlock
-            {
-                Text       = $"Welcome back, {AppSession.CurrentUserName ?? "User"}",
-                FontSize   = 11,
-                Foreground = new SolidColorBrush(Color.FromRgb(180, 210, 235)),
-                Margin     = new Thickness(0, 2, 0, 0)
-            });
-            Grid.SetColumn(titleStack, 1);
-            grid.Children.Add(titleStack);
-
-            // ─ Dummy database indicator (col 2, spacer) — only shown when connected to the dummy DB
             if (IsDummyDatabase())
             {
-                var dummyBadge = new Border
-                {
-                    Background          = new SolidColorBrush(Color.FromArgb(60, 255, 193, 7)),
-                    BorderBrush         = new SolidColorBrush(Color.FromRgb(255, 193, 7)),
-                    BorderThickness     = new Thickness(1),
-                    CornerRadius        = new CornerRadius(4),
-                    Padding             = new Thickness(10, 4, 10, 4),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment   = VerticalAlignment.Center
-                };
-                dummyBadge.Child = new TextBlock
-                {
-                    Text       = "DUMMY DATABASE",
-                    FontSize   = 11,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = new SolidColorBrush(Color.FromRgb(255, 193, 7))
-                };
-                Grid.SetColumn(dummyBadge, 2);
-                grid.Children.Add(dummyBadge);
+                var badge = new Border { Background = Brush("#FFF5D6"), CornerRadius = new CornerRadius(5), Padding = new Thickness(8, 5, 8, 5), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = Label("DUMMY DB", 10, Brush("#805F08"), FontWeights.SemiBold) };
+                Grid.SetColumn(badge, 1);
+                grid.Children.Add(badge);
             }
 
-            // ─ Help "?" circle (col 3)
-            var helpCircle = new Border
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            Button recent = null;
+            recent = ActionButton("Recent", null, () => ShowSystemMenu(recent, _preferences.Recent));
+            actions.Children.Add(recent);
+            actions.Children.Add(ActionButton("Help", "help", ShowHelpDialog));
+            actions.Children.Add(ActionButton("My account", "person", OpenAccountDialog));
+            var logout = ActionButton("Log out", "logout", () => SelectAndClose(PortalSelection.Logout));
+            actions.Children.Add(logout);
+            foreach (Button action in actions.Children)
             {
-                Background          = new SolidColorBrush(Color.FromArgb(45, 255, 255, 255)),
-                CornerRadius        = new CornerRadius(19),
-                Width               = 38,
-                Height              = 38,
-                Margin              = new Thickness(0, 0, 10, 0),
-                VerticalAlignment   = VerticalAlignment.Center,
-                Cursor              = Cursors.Hand
-            };
-            helpCircle.Child = new TextBlock { Text = "?", FontSize = 16, FontWeight = FontWeights.Bold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-            helpCircle.MouseDown += (_, __) => ShowHelpDialog();
-            Grid.SetColumn(helpCircle, 3);
-            grid.Children.Add(helpCircle);
-
-            // ─ User: avatar circle + name/role (col 4)
-            var userPanel = new StackPanel
-            {
-                Orientation       = Orientation.Horizontal,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin            = new Thickness(4, 0, 0, 0)
-            };
-            var initial = (AppSession.CurrentUserName ?? "U").Length > 0
-                ? (AppSession.CurrentUserName ?? "U")[0].ToString().ToUpper() : "U";
-            var avatarCircle = new Border
-            {
-                Background   = new SolidColorBrush(Color.FromRgb(52, 152, 219)),
-                CornerRadius = new CornerRadius(19),
-                Width        = 38,
-                Height       = 38,
-                Margin       = new Thickness(0, 0, 10, 0)
-            };
-            avatarCircle.Child = new TextBlock
-            {
-                Text                = initial,
-                Foreground          = Brushes.White,
-                FontSize            = 16,
-                FontWeight          = FontWeights.Bold,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center
-            };
-            userPanel.Children.Add(avatarCircle);
-            var userInfo = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            userInfo.Children.Add(new TextBlock
-            {
-                Text       = AppSession.CurrentUserName ?? "User",
-                Foreground = Brushes.White,
-                FontSize   = 12,
-                FontWeight = FontWeights.Bold
-            });
-            // Show employee position if available, otherwise fall back to roles
-            var roleText = !string.IsNullOrWhiteSpace(AppSession.CurrentEmployeePosition)
-                ? AppSession.CurrentEmployeePosition
-                : (AppSession.CurrentUserRoles?.Count > 0
-                    ? string.Join(", ", AppSession.CurrentUserRoles)
-                    : "User");
-            userInfo.Children.Add(new TextBlock
-            {
-                Text       = roleText,
-                Foreground = new SolidColorBrush(Color.FromRgb(180, 210, 235)),
-                FontSize   = 10
-            });
-            userPanel.Children.Add(userInfo);
-            Grid.SetColumn(userPanel, 4);
-            grid.Children.Add(userPanel);
-
+                action.Style = HeaderActionStyle;
+                action.Foreground = Brush("#F8FAFC");
+            }
+            logout.Foreground = Brush("#FF9AA8");
+            Grid.SetColumn(actions, 2);
+            grid.Children.Add(actions);
             header.Child = grid;
             _rootGrid.Children.Add(header);
         }
 
-        // ====================================================================
-        // CONTENT
-        // ====================================================================
-
         private void BuildContent()
         {
-            var scroll = new ScrollViewer
+            var layout = new Grid();
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(184) });
+            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Grid.SetRow(layout, 1);
+            _rootGrid.Children.Add(layout);
+            BuildSidebar(layout);
+
+            _workspace = new Grid { Margin = new Thickness(28, 20, 28, 20), MaxWidth = 1500 };
+            _workspace.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            _workspace.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            _workspace.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            Grid.SetColumn(_workspace, 1);
+            layout.Children.Add(_workspace);
+
+            var intro = new Grid { Margin = new Thickness(0, 0, 0, 18) };
+            intro.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            intro.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var greeting = new StackPanel();
+            greeting.Children.Add(Label("YOUR DAILY WORKSPACE", 10, Accent, FontWeights.SemiBold, new Thickness(0, 0, 0, 8)));
+            var hour = DateTime.Now.Hour;
+            string salutation = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+            var name = AppSession.CurrentUserName;
+            var greetingTitle = Label(string.IsNullOrWhiteSpace(name) ? salutation + "." : salutation + ", " + name + ".", 25, Ink, FontWeights.SemiBold);
+            greetingTitle.TextWrapping = TextWrapping.NoWrap;
+            greetingTitle.TextTrimming = TextTrimming.CharacterEllipsis;
+            greetingTitle.ToolTip = greetingTitle.Text;
+            greeting.Children.Add(greetingTitle);
+            greeting.Children.Add(Label("Your systems and shortcuts, together in one place.", 12, Muted, FontWeights.Normal, new Thickness(0, 5, 12, 0)));
+            intro.Children.Add(greeting);
+            var date = Label(DateTime.Today.ToString("dddd\ndd MMMM yyyy"), 12, Muted);
+            date.TextAlignment = TextAlignment.Right;
+            date.VerticalAlignment = VerticalAlignment.Bottom;
+            Grid.SetColumn(date, 1);
+            intro.Children.Add(date);
+            _workspace.Children.Add(intro);
+
+            _welcome = new Border { Background = Brushes.White, BorderBrush = Line, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(18), Margin = new Thickness(0, 0, 0, 20), Visibility = Visibility.Collapsed };
+            var welcomeGrid = new Grid();
+            welcomeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            welcomeGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var message = new StackPanel { Margin = new Thickness(0, 0, 20, 0) };
+            message.Children.Add(Label("Make yourself at home", 17, Ink, FontWeights.SemiBold));
+            message.Children.Add(Label("Pin the systems you use most. Find everything else in your system library below.", 12, Muted, FontWeights.Normal, new Thickness(0, 6, 0, 0)));
+            welcomeGrid.Children.Add(message);
+            var library = ActionButton("Explore systems", "arrow", () => { _search.Focus(); _search.BringIntoView(); });
+            library.Background = Tint;
+            library.Foreground = Accent;
+            library.VerticalAlignment = VerticalAlignment.Center;
+            Grid.SetColumn(library, 1);
+            welcomeGrid.Children.Add(library);
+            _welcome.Child = welcomeGrid;
+            Grid.SetRow(_welcome, 1);
+            _workspace.Children.Add(_welcome);
+
+            _body = new Grid();
+            _body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            _body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(272) });
+            Grid.SetRow(_body, 2);
+            _workspace.Children.Add(_body);
+            var libraryGrid = new Grid();
+            for (int row = 0; row < 3; row++) libraryGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            libraryGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            _body.Children.Add(libraryGrid);
+            libraryGrid.Children.Add(Label("Your systems", 18, Ink, FontWeights.SemiBold));
+            _resultLabel = Label("", 11, Muted, FontWeights.Normal, new Thickness(0, 4, 0, 10));
+            Grid.SetRow(_resultLabel, 1);
+            libraryGrid.Children.Add(_resultLabel);
+            var searchPanel = new StackPanel();
+            Grid.SetRow(searchPanel, 2);
+            libraryGrid.Children.Add(searchPanel);
+            BuildSearch(searchPanel);
+            _cardsPanel = new UniformGrid { Columns = 2, Margin = new Thickness(-6, 0, -6, 0), VerticalAlignment = VerticalAlignment.Top };
+            Grid.SetRow(_cardsPanel, 3);
+            libraryGrid.Children.Add(_cardsPanel);
+            _emptyResults = Label("", 13, Muted, FontWeights.Normal, new Thickness(0, 24, 0, 24));
+            Grid.SetRow(_emptyResults, 3);
+            libraryGrid.Children.Add(_emptyResults);
+            libraryGrid.SizeChanged += (_, e) =>
             {
-                VerticalScrollBarVisibility   = ScrollBarVisibility.Hidden,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+                _cardsPanel.Columns = e.NewSize.Width >= 840 ? 3 : 2;
+                FitCardDensity();
             };
-            Grid.SetRow(scroll, 1);
-
-            var contentStack = new StackPanel { Margin = new Thickness(80, 16, 80, 36) };
-
-            // ── Account / Logout buttons (top-right, white area)
-            var actionBar = new Grid { Margin = new Thickness(0, 0, 0, 10) };
-            actionBar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            actionBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var btnStrip = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            var btnAcc = MakeHeaderButton("My Account", Color.FromRgb(39, 174, 96));
-            btnAcc.Click += (_, __) => OpenAccountDialog();
-            var btnOut = MakeHeaderButton("Logout", Color.FromRgb(192, 57, 43));
-            btnOut.Margin = new Thickness(10, 0, 0, 0);
-            btnOut.Click  += (_, __) => SelectAndClose(PortalSelection.Logout);
-            btnStrip.Children.Add(btnAcc);
-            btnStrip.Children.Add(btnOut);
-            Grid.SetColumn(btnStrip, 1);
-            actionBar.Children.Add(btnStrip);
-            contentStack.Children.Add(actionBar);
-
-            // ── Greeting row ─────────────────────────────────────────────────
-            var greetGrid = new Grid { Margin = new Thickness(0, 0, 0, 28) };
-            greetGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            greetGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var greetStack = new StackPanel();
-            greetStack.Children.Add(new TextBlock
+            _cardsPanel.SizeChanged += (_, __) => FitCardDensity();
+            BuildSecondary();
+            _workspace.SizeChanged += (_, e) =>
             {
-                Text       = $"Good day, {AppSession.CurrentUserName ?? "User"}! \U0001F44B",
-                FontSize   = 26,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(TextPrimary)
-            });
-            greetStack.Children.Add(new TextBlock
-            {
-                Text       = "Access your systems and tools quickly and efficiently.",
-                FontSize   = 13,
-                Foreground = new SolidColorBrush(TextSecondary),
-                Margin     = new Thickness(0, 4, 0, 0)
-            });
-            Grid.SetColumn(greetStack, 0);
-            greetGrid.Children.Add(greetStack);
-
-            // "All Systems Operational" badge
-            var statusRow = new StackPanel
-            {
-                Orientation       = Orientation.Horizontal,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin            = new Thickness(0, 8, 0, 0)
+                _welcome.Visibility = e.NewSize.Height >= 900 ? Visibility.Visible : Visibility.Collapsed;
+                greetingTitle.FontSize = e.NewSize.Width < 650 ? 21 : 25;
+                UpdateLayoutForWidth(e.NewSize.Width);
             };
-            statusRow.Children.Add(new System.Windows.Shapes.Ellipse
+            _body.SizeChanged += (_, __) =>
             {
-                Width             = 8,
-                Height            = 8,
-                Fill              = new SolidColorBrush(Color.FromRgb(39, 174, 96)),
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            statusRow.Children.Add(new TextBlock
-            {
-                Text              = "  All Systems Operational",
-                FontSize          = 11,
-                FontWeight        = FontWeights.Bold,
-                Foreground        = new SolidColorBrush(Color.FromRgb(39, 174, 96)),
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            Grid.SetColumn(statusRow, 1);
-            greetGrid.Children.Add(statusRow);
-
-            contentStack.Children.Add(greetGrid);
-
-            // ── Module cards ─────────────────────────────────────────────────
-            _cardsPanel = new System.Windows.Controls.Primitives.UniformGrid
-            {
-                Columns = 4,
-                Margin  = new Thickness(-8, 0, -8, 4)
+                UpdateLayoutForWidth(_workspace.ActualWidth);
+                _keyboardTip.Visibility = _body.ActualHeight >= 600 ? Visibility.Visible : Visibility.Collapsed;
+                RenderRecent();
             };
-            BuildModuleCards();
-            contentStack.Children.Add(_cardsPanel);
-
-            // ── Quick Overview ────────────────────────────────────────────────
-            contentStack.Children.Add(BuildQuickOverviewPanel());
-
-            scroll.Content = contentStack;
-            _rootGrid.Children.Add(scroll);
+            RenderSystems();
+            RenderPins();
+            RenderRecent();
         }
 
-        private void BuildModuleCards()
+        private void BuildSidebar(Grid layout)
         {
-            var roles = AppSession.CurrentUserRoles;
-
-            // Admin Portal is pinned to the first slot (top-left) when the user has access.
-            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.AdminPortal))
-                _cardsPanel.Children.Add(MakeCard(
-                    "Admin Portal",
-                    "Manage user accounts, roles, SMTP settings, and configuration.",
-                    "⚙", AAdmin,
-                    () => SelectAndClose(PortalSelection.AdminPortal)));
-
-            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.InventorySystem))
-                _cardsPanel.Children.Add(MakeCard(
-                    "Inventory System",
-                    "Manage stock levels, requests, and analyze movement data.",
-                    "\U0001F4E6", AInventory,
-                    () => SelectAndClose(PortalSelection.InventorySystem)));
-
-            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.CallITMonitoring))
-                _cardsPanel.Children.Add(MakeCard(
-                    "IT Call Monitoring",
-                    "Track helpdesk tickets, escalations, and issue resolution.",
-                    "\U0001F3A7", ACallIT,
-                    () => SelectAndClose(PortalSelection.ITCallMonitoring)));
-
-            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.RequesterPortal))
-                _cardsPanel.Children.Add(MakeCard(
-                    "Request/s Portal",
-                    "Quick access to submit and track cartridge requests.",
-                    "\U0001F4CB", ARequester,
-                    () => SelectAndClose(PortalSelection.RequesterPortal)));
-
-            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.CartridgeManagement))
-                _cardsPanel.Children.Add(MakeCard(
-                    "Consumable Management",
-                    "Manage cartridges, ink, printhead, and toner cartridge requests and fulfillment.",
-                    "\U0001F5A8", ACartridge,
-                    () => SelectAndClose(PortalSelection.CartridgeManagement)));
-
-            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.BorrowItems))
-                _cardsPanel.Children.Add(MakeCard(
-                    "Borrow Items",
-                    "Log borrowed hardware by serial number and track returns.",
-                    "\U0001F501", ABorrow,
-                    () => SelectAndClose(PortalSelection.BorrowItems)));
-
-            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.Reports))
-                _cardsPanel.Children.Add(MakeCard(
-                    "Reports",
-                    "Generate and view system reports and analytics.",
-                    "\U0001F4CA", AReports,
-                    () => SelectAndClose(PortalSelection.Reports)));
-
-            // (Admin Portal card is rendered first - see top of this method.)
-
-            if (PermissionResolver.HasPortalAccess(roles, PermissionResolver.Portal.RepairTechnicianPortal))
-                _cardsPanel.Children.Add(MakeCard(
-                    "Repair Technician Portal",
-                    "Log, track, and resolve equipment repairs with photo/video evidence.",
-                    "\U0001F527", ARepairPortal,
-                    () => SelectAndClose(PortalSelection.RepairTechnicianPortal)));
+            var rail = new Border { Background = Brush("#202B3E"), Padding = new Thickness(12, 24, 12, 18) };
+            layout.Children.Add(rail);
+            var dock = new DockPanel { LastChildFill = true };
+            rail.Child = dock;
+            var identity = new StackPanel { Margin = new Thickness(12, 20, 8, 0) };
+            identity.Children.Add(Label("SIGNED IN", 10, Brush("#9DAAC0"), FontWeights.SemiBold));
+            identity.Children.Add(Label(AppSession.CurrentUserName ?? "User", 12, Brushes.White, FontWeights.SemiBold, new Thickness(0, 7, 0, 0)));
+            var context = string.Join(" · ", new[] { AppSession.CurrentCompanyName, AppSession.CurrentDepartmentName }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            identity.Children.Add(Label(context, 10, Brush("#BBC5D5"), FontWeights.Normal, new Thickness(0, 5, 0, 0)));
+            DockPanel.SetDock(identity, Dock.Bottom);
+            dock.Children.Add(identity);
+            var menu = new StackPanel();
+            var home = ActionButton("Home", "home", () => { _search.Clear(); _search.Focus(); });
+            home.Background = Brush("#354158");
+            home.Foreground = Brushes.White;
+            home.Margin = new Thickness(0, 0, 0, 6);
+            AutomationProperties.SetHelpText(home, "Current page: dashboard home");
+            menu.Children.Add(home);
+            var systems = ActionButton("All systems", "grid", () => { _search.Focus(); _search.BringIntoView(); });
+            systems.Foreground = Brush("#DDE3ED");
+            menu.Children.Add(systems);
+            menu.Children.Add(Label("PINNED SYSTEMS", 10, Brush("#9DAAC0"), FontWeights.SemiBold, new Thickness(12, 32, 0, 12)));
+            _pinnedPanel = new StackPanel();
+            menu.Children.Add(_pinnedPanel);
+            dock.Children.Add(menu);
         }
 
-        // ====================================================================
-        // CARD FACTORY
-        // ====================================================================
-
-        private Border MakeCard(string title, string desc, string icon, Color accent, Action onClick)
+        private void BuildSearch(StackPanel parent)
         {
-            var normalShadow = new DropShadowEffect { BlurRadius = 8,  ShadowDepth = 2, Opacity = 0.07, Direction = 270, Color = Colors.Black };
-            var hoverShadow  = new DropShadowEffect { BlurRadius = 20, ShadowDepth = 4, Opacity = 0.15, Direction = 270, Color = Colors.Black };
-
-            var card = new Border
+            var border = new Border { Background = Brushes.White, BorderBrush = Line, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7), Padding = new Thickness(12, 2, 4, 2), Margin = new Thickness(0, 0, 0, 12) };
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.Children.Add(MakeIcon("search", Muted, 17));
+            var input = new Grid();
+            _search = new TextBox { Background = Brushes.Transparent, BorderThickness = new Thickness(0), Foreground = Ink, FontSize = 13, Padding = new Thickness(2, 8, 2, 8), VerticalContentAlignment = VerticalAlignment.Center };
+            AutomationProperties.SetName(_search, "Search your systems");
+            _searchHint = Label("Search systems…", 13, Muted);
+            _searchHint.Margin = new Thickness(3, 0, 0, 0);
+            _searchHint.VerticalAlignment = VerticalAlignment.Center;
+            _searchHint.IsHitTestVisible = false;
+            input.Children.Add(_search);
+            input.Children.Add(_searchHint);
+            Grid.SetColumn(input, 1);
+            grid.Children.Add(input);
+            var clear = ActionButton("Clear", null, () => { _search.Clear(); _search.Focus(); });
+            clear.ToolTip = "Clear search";
+            clear.Visibility = Visibility.Collapsed;
+            Grid.SetColumn(clear, 2);
+            grid.Children.Add(clear);
+            _search.TextChanged += (_, __) =>
             {
-                Margin          = new Thickness(8, 0, 8, 20),
-                Background      = Brushes.White,
-                BorderBrush     = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
-                BorderThickness = new Thickness(1),
-                CornerRadius    = new CornerRadius(12),
-                Cursor          = Cursors.Hand,
-                Effect          = normalShadow
+                _searchHint.Visibility = string.IsNullOrEmpty(_search.Text) ? Visibility.Visible : Visibility.Collapsed;
+                clear.Visibility = string.IsNullOrEmpty(_search.Text) ? Visibility.Collapsed : Visibility.Visible;
+                RenderSystems();
             };
-
-            // Inner grid: 4px accent top bar + body
-            var innerGrid = new Grid();
-            innerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
-            innerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-
-            var accentBar = new Border { Background = new SolidColorBrush(accent), CornerRadius = new CornerRadius(10, 10, 0, 0) };
-            Grid.SetRow(accentBar, 0);
-            innerGrid.Children.Add(accentBar);
-
-            // Body — icon ABOVE title (vertical stack)
-            var body = new StackPanel { Margin = new Thickness(22, 20, 22, 20) };
-
-            // Icon square (above title)
-            var iconBox = new Border
-            {
-                Background          = new SolidColorBrush(Color.FromArgb(32, accent.R, accent.G, accent.B)),
-                CornerRadius        = new CornerRadius(12),
-                Width               = 52,
-                Height              = 52,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                Margin              = new Thickness(0, 0, 0, 14)
-            };
-            iconBox.Child = new TextBlock
-            {
-                Text                = icon,
-                FontSize            = 24,
-                FontFamily          = new FontFamily("Segoe UI Emoji"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center
-            };
-            body.Children.Add(iconBox);
-
-            // Title
-            body.Children.Add(new TextBlock
-            {
-                Text         = title,
-                FontSize     = 15,
-                FontWeight   = FontWeights.Bold,
-                Foreground   = new SolidColorBrush(TextPrimary),
-                TextWrapping = TextWrapping.Wrap,
-                Margin       = new Thickness(0, 0, 0, 6)
-            });
-
-            // Description
-            body.Children.Add(new TextBlock
-            {
-                Text         = desc,
-                FontSize     = 12,
-                Foreground   = new SolidColorBrush(TextSecondary),
-                TextWrapping = TextWrapping.Wrap,
-                Margin       = new Thickness(0, 0, 0, 16)
-            });
-
-            // Open System →
-            body.Children.Add(new TextBlock
-            {
-                Text       = "Open System \u2192",
-                FontSize   = 12,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(accent)
-            });
-
-            Grid.SetRow(body, 1);
-            innerGrid.Children.Add(body);
-            card.Child = innerGrid;
-
-            card.MouseEnter += (_, __) => { card.Effect = hoverShadow; card.BorderBrush = new SolidColorBrush(accent); };
-            card.MouseLeave += (_, __) => { card.Effect = normalShadow; card.BorderBrush = new SolidColorBrush(Color.FromRgb(225, 230, 236)); };
-            WireActivateClick(card, onClick);
-
-            return card;
+            border.Child = grid;
+            parent.Children.Add(border);
         }
 
-        /// <summary>
-        /// Wires a "click" (press + release on the same element) instead of a bare
-        /// <see cref="UIElement.MouseLeftButtonUp"/> handler.
-        ///
-        /// A lone MouseLeftButtonUp handler fires for ANY left-button release over the element —
-        /// including a stale / redelivered WM_LBUTTONUP whose matching WM_LBUTTONDOWN happened on a
-        /// different window. That is exactly what occurs when a sub-portal is closed by clicking its
-        /// own "Back to Portal" button: MainForm re-shows this dashboard synchronously (via a nested
-        /// ShowDialog message pump) while that click is still being routed, so the trailing button-up
-        /// lands on whichever card now sits under the cursor and instantly re-launches a portal the
-        /// user never chose. Requiring the press to have started on this same element (the same
-        /// contract Button.Click uses) discards that fall-through release.
-        /// </summary>
-        private static void WireActivateClick(FrameworkElement element, Action onClick)
+        private void BuildSecondary()
         {
-            if (element == null || onClick == null) return;
+            _secondary = new StackPanel { Margin = new Thickness(28, 0, 0, 0) };
+            Grid.SetColumn(_secondary, 1);
+            _body.Children.Add(_secondary);
+            _secondary.Children.Add(Label("Recently opened", 16, Ink, FontWeights.SemiBold));
+            _secondary.Children.Add(Label("Pick up where you left off.", 12, Muted, FontWeights.Normal, new Thickness(0, 5, 0, 14)));
+            _recentPanel = new StackPanel();
+            _secondary.Children.Add(_recentPanel);
 
-            bool pressedHere = false;
-            element.MouseLeftButtonDown += (_, __) => pressedHere = true;
-            element.MouseLeave          += (_, __) => pressedHere = false;
-            element.MouseLeftButtonUp   += (_, __) =>
-            {
-                if (!pressedHere) return;
-                pressedHere = false;
-                onClick();
-            };
-        }
-
-        // ====================================================================
-        // QUICK OVERVIEW PANEL
-        // ====================================================================
-
-        private UIElement BuildQuickOverviewPanel()
-        {
-            var outer = new Border
-            {
-                Margin          = new Thickness(0, 28, 0, 0),
-                Background      = Brushes.White,
-                BorderBrush     = new SolidColorBrush(Color.FromRgb(225, 230, 236)),
-                BorderThickness = new Thickness(1),
-                CornerRadius    = new CornerRadius(10),
-                Effect          = new DropShadowEffect { BlurRadius = 8, ShadowDepth = 2, Opacity = 0.07, Direction = 270, Color = Colors.Black }
-            };
-
-            var outerGrid = new Grid();
-            outerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            outerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300) });
-
-            // ── Left: stats ──────────────────────────────────────────────────
-            var statsSection = new StackPanel { Margin = new Thickness(26, 22, 26, 22) };
-            statsSection.Children.Add(new TextBlock
-            {
-                Text       = "Quick Overview",
-                FontSize   = 14,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(TextPrimary),
-                Margin     = new Thickness(0, 0, 0, 16)
-            });
-
-            var statsRow = new StackPanel { Orientation = Orientation.Horizontal };
-
-            _statPendingTickets = AddStatTile(statsRow, "—", "Pending Tickets",  ACallIT,    "\U0001F3A7", () => SelectAndClose(PortalSelection.ITCallMonitoring));
-            /*_statOpenRequests = */ AddStatTile(statsRow, "—", "Open Requests",   ARequester, "\U0001F4CB", () => SelectAndClose(PortalSelection.RequesterPortal));
-            /*_statBorrowedItems= */ AddStatTile(statsRow, "—", "Borrowed Items",  ABorrow,    "\U0001F501", () => SelectAndClose(PortalSelection.BorrowItems));
-            _statUnresolved    = AddStatTile(statsRow, "—", "Unresolved Issues", ACartridge, "\U0001F5A8", () => SelectAndClose(PortalSelection.ITCallMonitoring));
-
-            statsSection.Children.Add(statsRow);
-            Grid.SetColumn(statsSection, 0);
-            outerGrid.Children.Add(statsSection);
-
-            // ── Right: Need Help ─────────────────────────────────────────────
-            var helpCard = new Border
-            {
-                Margin          = new Thickness(0, 18, 22, 18),
-                Background      = new SolidColorBrush(Color.FromRgb(248, 250, 252)),
-                BorderBrush     = new SolidColorBrush(Color.FromRgb(215, 225, 235)),
-                BorderThickness = new Thickness(1),
-                CornerRadius    = new CornerRadius(8),
-                Padding         = new Thickness(20, 16, 20, 16),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            var helpBody = new StackPanel();
-
-            // Headset icon + title row
-            var helpTitleRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
-            var helpIconCircle = new Border
-            {
-                Background        = new SolidColorBrush(Color.FromArgb(22, 52, 152, 219)),
-                CornerRadius      = new CornerRadius(22),
-                Width             = 44,
-                Height            = 44,
-                Margin            = new Thickness(0, 0, 12, 0),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            helpIconCircle.Child = new TextBlock
-            {
-                Text                = "\U0001F3A7",
-                FontSize            = 22,
-                FontFamily          = new FontFamily("Segoe UI Emoji"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center
-            };
-            helpTitleRow.Children.Add(helpIconCircle);
-            helpTitleRow.Children.Add(new TextBlock
-            {
-                Text              = "Need Help?",
-                FontSize          = 14,
-                FontWeight        = FontWeights.Bold,
-                Foreground        = new SolidColorBrush(TextPrimary),
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            helpBody.Children.Add(helpTitleRow);
-
-            // ── IT Contact info (dynamic, admin-editable) ──
-            var email = Properties.Settings.Default.ITContactEmail ?? "it-support@yakult.com";
-            var reference = Properties.Settings.Default.ITContactReference ?? "IT Helpdesk";
-
-            var emailLink = new TextBlock
-            {
-                Text         = email,
-                FontSize     = 11,
-                FontWeight   = FontWeights.SemiBold,
-                Foreground   = new SolidColorBrush(Color.FromRgb(52, 152, 219)),
-                Cursor       = Cursors.Hand,
-                TextWrapping = TextWrapping.Wrap
-            };
-            emailLink.MouseDown += (_, __) =>
-            {
-                try { System.Diagnostics.Process.Start("mailto:" + email); }
-                catch { }
-            };
-            helpBody.Children.Add(emailLink);
-
-            helpBody.Children.Add(new TextBlock
-            {
-                Text         = reference,
-                FontSize     = 11,
-                Foreground   = new SolidColorBrush(TextSecondary),
-                TextWrapping = TextWrapping.Wrap,
-                Margin       = new Thickness(0, 2, 0, 10)
-            });
-
-            var contactRow = new StackPanel { Orientation = Orientation.Horizontal };
-            var supportBtn = MakeHeaderButton("Contact Support \u2192", Color.FromRgb(52, 152, 219));
-            supportBtn.HorizontalAlignment = HorizontalAlignment.Left;
-            supportBtn.Width = double.NaN;
-            contactRow.Children.Add(supportBtn);
-
-            // Admin-only edit button
+            var help = new StackPanel();
+            help.Children.Add(MakeIcon("headset", Accent, 23));
+            help.Children.Add(Label("Need a hand?", 16, Ink, FontWeights.SemiBold, new Thickness(0, 12, 0, 6)));
+            help.Children.Add(Label("Your IT team is here to help with system access and technical concerns.", 12, Muted));
+            var email = Label(ContactEmail(), 12, Accent, FontWeights.SemiBold);
+            var emailButton = new Button { Style = ActionStyle, Content = email, Padding = new Thickness(0, 10, 0, 10), HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 6, 0, 0) };
+            AutomationProperties.SetName(emailButton, "Email IT support");
+            emailButton.Click += (_, __) => ContactSupport();
+            help.Children.Add(emailButton);
+            _supportReference = Label(Properties.Settings.Default.ITContactReference ?? "IT Helpdesk · Mon–Fri, 8AM–5PM", 11, Muted);
+            help.Children.Add(_supportReference);
             if (AppSession.IsAdmin)
-            {
-                var editBtn = new TextBlock
-                {
-                    Text              = "\u270E  Edit",
-                    FontSize          = 10,
-                    Foreground        = new SolidColorBrush(Color.FromRgb(127, 140, 141)),
-                    Cursor            = Cursors.Hand,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Margin            = new Thickness(10, 0, 0, 0)
-                };
-                editBtn.MouseEnter += (_, __) => editBtn.Foreground = new SolidColorBrush(Color.FromRgb(52, 73, 94));
-                editBtn.MouseLeave += (_, __) => editBtn.Foreground = new SolidColorBrush(Color.FromRgb(127, 140, 141));
-                editBtn.MouseDown += (_, __) => ShowEditITContactDialog(emailLink, reference);
-                contactRow.Children.Add(editBtn);
-            }
-            helpBody.Children.Add(contactRow);
-            helpCard.Child = helpBody;
-            Grid.SetColumn(helpCard, 1);
-            outerGrid.Children.Add(helpCard);
-
-            outer.Child = outerGrid;
-            return outer;
+                help.Children.Add(ActionButton("Edit contact", null, () => ShowEditITContactDialog(email, _supportReference.Text)));
+            _secondary.Children.Add(new Border { Child = help, Background = Brushes.White, CornerRadius = new CornerRadius(9), BorderBrush = Line, BorderThickness = new Thickness(1), Padding = new Thickness(20), Margin = new Thickness(0, 24, 0, 0) });
+            var tip = new StackPanel { Margin = new Thickness(2, 20, 2, 0) };
+            _keyboardTip = tip;
+            tip.Children.Add(Label("A LITTLE SHORTCUT", 10, Muted, FontWeights.SemiBold));
+            tip.Children.Add(Label("Press Ctrl + K to find a system, or use Tab and Enter to navigate.", 12, Muted, FontWeights.Normal, new Thickness(0, 7, 0, 0)));
+            _secondary.Children.Add(tip);
         }
 
-        private TextBlock AddStatTile(StackPanel parent, string count, string label, Color color, string icon, Action onClick)
+        private void RenderSystems()
         {
-            var tile = new StackPanel
+            if (_cardsPanel == null) return;
+            _cardsPanel.Children.Clear();
+            var query = (_search.Text ?? "").Trim();
+            var matches = _modules.Where(m => (m.Title + " " + m.Description).IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+            _resultLabel.Text = query.Length == 0
+                ? _modules.Count + (_modules.Count == 1 ? " system available to your account" : " systems available to your account")
+                : matches.Count + " of " + _modules.Count + " systems match your search";
+            foreach (var module in matches)
             {
-                Orientation = Orientation.Horizontal,
-                Margin      = new Thickness(0, 0, 36, 0),
-                Cursor      = onClick != null ? Cursors.Hand : Cursors.Arrow
-            };
-            WireActivateClick(tile, onClick);
-
-            // Icon box (matching card icon style)
-            var iconBox = new Border
-            {
-                Background        = new SolidColorBrush(Color.FromArgb(22, color.R, color.G, color.B)),
-                CornerRadius      = new CornerRadius(10),
-                Width             = 46,
-                Height            = 46,
-                Margin            = new Thickness(0, 0, 14, 0),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            iconBox.Child = new TextBlock
-            {
-                Text                = icon,
-                FontSize            = 22,
-                FontFamily          = new FontFamily("Segoe UI Emoji"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center
-            };
-            tile.Children.Add(iconBox);
-
-            var textCol = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            var countText = new TextBlock
-            {
-                Text       = count,
-                FontSize   = 26,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(TextPrimary)
-            };
-            textCol.Children.Add(countText);
-            textCol.Children.Add(new TextBlock
-            {
-                Text       = label,
-                FontSize   = 11,
-                Foreground = new SolidColorBrush(TextSecondary)
-            });
-            if (onClick != null)
-            {
-                textCol.Children.Add(new TextBlock
-                {
-                    Text       = "View all",
-                    FontSize   = 10.5,
-                    Foreground = new SolidColorBrush(Color.FromRgb(52, 152, 219)),
-                    Margin     = new Thickness(0, 2, 0, 0)
-                });
+                var card = new Grid { Margin = new Thickness(6, 0, 6, 10) };
+                var content = new Grid();
+                content.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                content.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                var top = new Grid { Margin = new Thickness(0, 0, 30, 0) };
+                top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                var icon = MakeIcon(module.Icon, Accent, 23);
+                icon.HorizontalAlignment = HorizontalAlignment.Left;
+                icon.Margin = new Thickness(0, 0, 12, 0);
+                top.Children.Add(icon);
+                var title = Label(module.Title, 15, Ink, FontWeights.SemiBold);
+                title.VerticalAlignment = VerticalAlignment.Center;
+                title.TextTrimming = TextTrimming.CharacterEllipsis;
+                Grid.SetColumn(title, 1);
+                top.Children.Add(title);
+                content.Children.Add(top);
+                var description = Label(module.Description, 12, Muted, FontWeights.Normal, new Thickness(0, 7, 0, 12));
+                Grid.SetRow(description, 1);
+                content.Children.Add(description);
+                var bottom = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
+                var shortcut = Label(module.Shortcut, 10, Muted);
+                shortcut.HorizontalAlignment = HorizontalAlignment.Right;
+                DockPanel.SetDock(shortcut, Dock.Right);
+                bottom.Children.Add(shortcut);
+                bottom.Children.Add(Label("Open system  →", 11, Accent, FontWeights.SemiBold));
+                Grid.SetRow(bottom, 2);
+                content.Children.Add(bottom);
+                var open = new Button { Style = ActionStyle, Content = content, Background = Brushes.White, BorderBrush = Line, BorderThickness = new Thickness(1), Padding = new Thickness(16), HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch, ToolTip = module.Title + "\n" + module.Description };
+                AutomationProperties.SetName(open, "Open " + module.Title);
+                open.Click += (_, __) => SelectAndClose(module.Selection);
+                card.Children.Add(open);
+                var pinned = IsPinned(module);
+                var pin = new Button { Style = ActionStyle, Content = MakeIcon("pin", pinned ? Accent : Muted, 17), Background = pinned ? Tint : Brushes.Transparent, Padding = new Thickness(8), Margin = new Thickness(0, 12, 12, 0), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top };
+                var pinText = (pinned ? "Unpin " : "Pin ") + module.Title;
+                pin.ToolTip = pinText;
+                AutomationProperties.SetName(pin, pinText);
+                AutomationProperties.SetHelpText(pin, pinned ? "Pinned to the home sidebar" : "Add to the home sidebar");
+                pin.Click += (_, __) => TogglePin(module);
+                card.Children.Add(pin);
+                card.Tag = new CardPresentation { Open = open, Pin = pin, Title = title, Description = description, Footer = bottom, Icon = icon };
+                _cardsPanel.Children.Add(card);
             }
-            tile.Children.Add(textCol);
-            parent.Children.Add(tile);
-            return countText;
+            _emptyResults.Text = _modules.Count == 0 ? "No systems are assigned to your account. Contact IT support for access." : "No systems found. Try a different search or clear the search field.";
+            _emptyResults.Visibility = matches.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            FitCardDensity();
         }
 
-        // ====================================================================
-        // FOOTER
-        // ====================================================================
+        private void FitCardDensity()
+        {
+            if (_cardsPanel == null || _cardsPanel.Children.Count == 0) return;
+            int rows = (int)Math.Ceiling(_cardsPanel.Children.Count / (double)_cardsPanel.Columns);
+            var library = (Grid)_cardsPanel.Parent;
+            double availableHeight = library.RowDefinitions[3].ActualHeight;
+            if (availableHeight <= 0) return;
+            double panelHeight = Math.Min(availableHeight, rows * 210);
+            _cardsPanel.Height = panelHeight;
+            double height = panelHeight / rows - 10;
+            // Keep every launch and pin action visible. Descriptions remain in tooltips
+            // when smaller windows need compact cards.
+            foreach (Grid card in _cardsPanel.Children)
+            {
+                var view = (CardPresentation)card.Tag;
+                bool tight = height < 115;
+                view.Open.Padding = new Thickness(height < 80 ? 8 : tight ? 12 : 16);
+                view.Title.FontSize = tight ? 12 : 14;
+                view.Description.Visibility = height >= 155 ? Visibility.Visible : Visibility.Collapsed;
+                view.Footer.Visibility = height >= 95 ? Visibility.Visible : Visibility.Collapsed;
+                view.Icon.Width = view.Icon.Height = tight ? 18 : 23;
+                view.Pin.Padding = new Thickness(tight ? 5 : 7);
+                view.Pin.Margin = new Thickness(0, tight ? 5 : 10, tight ? 5 : 10, 0);
+            }
+        }
+
+        private bool IsPinned(SystemModule module) => _preferences.Pinned.Contains(module.Selection.ToString());
+
+        private void TogglePin(SystemModule module)
+        {
+            var key = module.Selection.ToString();
+            if (!_preferences.Pinned.Remove(key)) _preferences.Pinned.Add(key);
+            SavePreferences();
+            RenderPins();
+            RenderSystems();
+            // Restore focus to the replacement pin button after rebuilding the cards.
+            foreach (Grid card in _cardsPanel.Children)
+            {
+                var pin = (Button)card.Children[1];
+                if (AutomationProperties.GetName(pin) == (IsPinned(module) ? "Unpin " : "Pin ") + module.Title)
+                { pin.Focus(); break; }
+            }
+        }
+
+        private void RenderPins()
+        {
+            _pinnedPanel.Children.Clear();
+            var pinned = _preferences.Pinned.Select(key => _modules.FirstOrDefault(m => m.Selection.ToString() == key)).Where(m => m != null).ToList();
+            foreach (var module in pinned.Take(3))
+            {
+                var button = ActionButton(module.Title, module.Icon, () => SelectAndClose(module.Selection));
+                button.Foreground = Brush("#DDE3ED");
+                button.FontSize = 11;
+                button.Padding = new Thickness(10, 7, 10, 7);
+                button.Margin = new Thickness(0, 0, 0, 4);
+                _pinnedPanel.Children.Add(button);
+            }
+            if (pinned.Count > 3)
+            {
+                Button more = null;
+                more = ActionButton("More pinned…", null, () => ShowSystemMenu(more, pinned.Skip(3).Select(m => m.Selection.ToString())));
+                more.Foreground = Brush("#DDE3ED");
+                _pinnedPanel.Children.Add(more);
+            }
+            if (_pinnedPanel.Children.Count == 0)
+                _pinnedPanel.Children.Add(Label("Use the pin on any system to add it here.", 11, Brush("#BBC5D5"), FontWeights.Normal, new Thickness(12, 0, 12, 0)));
+        }
+
+        private void RenderRecent()
+        {
+            _recentPanel.Children.Clear();
+            foreach (var key in _preferences.Recent.Take(_body.ActualHeight < 600 ? 2 : 4))
+            {
+                var module = _modules.FirstOrDefault(m => m.Selection.ToString() == key);
+                if (module == null) continue;
+                var button = ActionButton(module.Title, module.Icon, () => SelectAndClose(module.Selection));
+                button.Background = Brushes.White;
+                button.BorderBrush = Line;
+                button.BorderThickness = new Thickness(1);
+                button.Margin = new Thickness(0, 0, 0, 8);
+                _recentPanel.Children.Add(button);
+            }
+            if (_recentPanel.Children.Count == 0)
+                _recentPanel.Children.Add(Label("Systems you open will appear here. Choose one from your library to get started.", 12, Muted));
+        }
+
+        private void UpdateLayoutForWidth(double width)
+        {
+            bool compact = width < 900 || _body.ActualHeight < 430;
+            _body.ColumnDefinitions[1].Width = compact ? new GridLength(0) : new GridLength(272);
+            _secondary.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void ShowSystemMenu(Button anchor, IEnumerable<string> keys)
+        {
+            var menu = new ContextMenu { PlacementTarget = anchor, Placement = PlacementMode.Bottom };
+            foreach (var key in keys)
+            {
+                var module = _modules.FirstOrDefault(m => m.Selection.ToString() == key);
+                if (module == null) continue;
+                var item = new MenuItem { Header = module.Title };
+                item.Click += (_, __) => SelectAndClose(module.Selection);
+                menu.Items.Add(item);
+            }
+            if (menu.Items.Count == 0) menu.Items.Add(new MenuItem { Header = "No recent systems yet", IsEnabled = false });
+            anchor.ContextMenu = menu;
+            menu.IsOpen = true;
+        }
 
         private void BuildFooter()
         {
-            var footer = new Border
-            {
-                Background      = new SolidColorBrush(FooterBg),
-                BorderBrush     = new SolidColorBrush(Color.FromRgb(220, 226, 232)),
-                BorderThickness = new Thickness(0, 1, 0, 0),
-                Padding         = new Thickness(50, 12, 50, 12)
-            };
+            var footer = new Border { Background = Brushes.White, BorderBrush = Line, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(24, 10, 24, 10) };
+            var dock = new DockPanel();
+            var version = Label("v" + (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0"), 10, Muted);
+            version.HorizontalAlignment = HorizontalAlignment.Right;
+            DockPanel.SetDock(version, Dock.Right);
+            dock.Children.Add(version);
+            dock.Children.Add(Label("© " + DateTime.Today.Year + " Yakult · Internal systems", 10, Muted));
+            footer.Child = dock;
             Grid.SetRow(footer, 2);
-
-            var fg = new Grid();
-            fg.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            fg.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            fg.Children.Add(new TextBlock
-            {
-                Text              = "\u00A9 2026 Yakult Philippines, Inc. All rights reserved.",
-                FontSize          = 11,
-                Foreground        = new SolidColorBrush(TextSecondary),
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            var ver = new TextBlock
-            {
-                Text              = "Version 2.0.0",
-                FontSize          = 11,
-                Foreground        = new SolidColorBrush(TextSecondary),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            Grid.SetColumn(ver, 1);
-            fg.Children.Add(ver);
-
-            footer.Child = fg;
             _rootGrid.Children.Add(footer);
         }
 
-        // ====================================================================
-        // NAVIGATION
-        // ====================================================================
+        private void HandleShortcut(object sender, KeyEventArgs e)
+        {
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            if (key == Key.Escape)
+            {
+                if (_rootGrid.Children.Count > 3) _rootGrid.Children.RemoveAt(_rootGrid.Children.Count - 1);
+                else if (!string.IsNullOrEmpty(_search.Text)) { _search.Clear(); _search.Focus(); }
+                else SelectAndClose(PortalSelection.Logout);
+                e.Handled = true;
+                return;
+            }
+            // Do not launch another portal while a home dialog is open.
+            if (_rootGrid.Children.Count > 3) return;
+            var modifiers = e.KeyboardDevice.Modifiers;
+            if (modifiers == ModifierKeys.Control && key == Key.K)
+            { _search.Focus(); _search.BringIntoView(); _search.SelectAll(); e.Handled = true; }
+            else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && key == Key.D)
+            { if (CanAccessDatabaseSwitcher()) HandleDeveloperDatabaseReset(); e.Handled = true; }
+            else if (key == Key.F1)
+            { ShowHelpDialog(); e.Handled = true; }
+            else if (modifiers == ModifierKeys.Alt)
+            {
+                PortalSelection selection = PortalSelection.None;
+                switch (key)
+                {
+                    case Key.I: selection = PortalSelection.InventorySystem; break;
+                    case Key.C: selection = PortalSelection.ITCallMonitoring; break;
+                    case Key.M: selection = PortalSelection.CartridgeManagement; break;
+                    case Key.R: selection = PortalSelection.Reports; break;
+                    case Key.B: selection = PortalSelection.BorrowItems; break;
+                }
+                if (selection != PortalSelection.None)
+                { SelectAndClose(selection); e.Handled = true; }
+            }
+        }
 
         private void SelectAndClose(PortalSelection selection)
         {
+            if (selection != PortalSelection.Logout)
+            {
+                var module = _modules.FirstOrDefault(m => m.Selection == selection);
+                if (module == null || !PermissionResolver.HasPortalAccess(AppSession.CurrentUserRoles, module.Permission)) return;
+                var key = selection.ToString();
+                _preferences.Recent.RemoveAll(s => s == key);
+                _preferences.Recent.Insert(0, key);
+                _preferences.Recent = _preferences.Recent.Take(4).ToList();
+                SavePreferences();
+            }
             SelectedModule = selection;
             Close();
+        }
+
+        private string PreferencesPath()
+        {
+            string account = AppSession.IsDepartmentAccountSession
+                ? "department_" + AppSession.DepartmentAccountId
+                : "user_" + AppSession.CurrentUserId;
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Yakult", "Workspace", account + ".json");
+        }
+
+        private void LoadPreferences()
+        {
+            _preferences = new WorkspacePreferences();
+            try
+            {
+                var path = PreferencesPath();
+                if (File.Exists(path))
+                {
+                    _preferences = JsonConvert.DeserializeObject<WorkspacePreferences>(File.ReadAllText(path)) ?? new WorkspacePreferences();
+                    _preferences.Pinned = (_preferences.Pinned ?? new List<string>()).Distinct().ToList();
+                    _preferences.Recent = (_preferences.Recent ?? new List<string>()).Distinct().Take(4).ToList();
+                    return;
+                }
+            }
+            catch (Exception ex) { Logger.LogError("[Workspace] Could not load home preferences.", ex); }
+            _preferences.Pinned = _modules.Take(3).Select(m => m.Selection.ToString()).ToList();
+        }
+
+        private void SavePreferences()
+        {
+            // Guest/preview sessions must not create shared user_0 preferences.
+            if (!AppSession.IsLoggedIn) return;
+            try
+            {
+                var path = PreferencesPath();
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.WriteAllText(path, JsonConvert.SerializeObject(_preferences, Formatting.Indented));
+            }
+            catch (Exception ex) { Logger.LogError("[Workspace] Could not save home preferences.", ex); }
+        }
+
+        private static string ContactEmail() => string.IsNullOrWhiteSpace(Properties.Settings.Default.ITContactEmail) ? "it-support@yakult.com" : Properties.Settings.Default.ITContactEmail.Trim();
+
+        private static void ContactSupport()
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:" + Uri.EscapeDataString(ContactEmail())) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("[Workspace] Could not open the email application.", ex);
+                MessageBox.Show("Please contact IT support at " + ContactEmail(), "IT support", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private static Brush Brush(string hex)
+        {
+            var brush = (SolidColorBrush)new BrushConverter().ConvertFromString(hex);
+            brush.Freeze();
+            return brush;
+        }
+
+        private static TextBlock Label(string text, double size, Brush foreground, FontWeight? weight = null, Thickness? margin = null)
+        {
+            return new TextBlock { Text = text, FontSize = size, Foreground = foreground, FontWeight = weight ?? FontWeights.Normal, Margin = margin ?? new Thickness(0), TextWrapping = TextWrapping.Wrap };
+        }
+
+        private static Button ActionButton(string text, string icon, Action action)
+        {
+            var row = new Grid();
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            if (icon != null)
+            {
+                var glyph = MakeIcon(icon, null, 17);
+                glyph.Margin = new Thickness(0, 0, 10, 0);
+                row.Children.Add(glyph);
+            }
+            var label = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(label, 1);
+            row.Children.Add(label);
+            var button = new Button { Style = ActionStyle, Content = row, FontSize = 12, Foreground = Ink, Padding = new Thickness(12, 10, 12, 10), HorizontalContentAlignment = HorizontalAlignment.Stretch };
+            AutomationProperties.SetName(button, text);
+            button.Click += (_, __) => action();
+            return button;
+        }
+
+        private static Style CreateActionStyle(bool darkHeader = false)
+        {
+            var border = new FrameworkElementFactory(typeof(Border), "Surface");
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(7));
+            border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+            border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+            border.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Control.PaddingProperty));
+            var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, new TemplateBindingExtension(Control.HorizontalContentAlignmentProperty));
+            presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, new TemplateBindingExtension(Control.VerticalContentAlignmentProperty));
+            border.AppendChild(presenter);
+            var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+            var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(Border.BorderBrushProperty, darkHeader ? Brush("#29364D") : Accent, "Surface"));
+            hover.Setters.Add(new Setter(Border.BorderThicknessProperty, new Thickness(1), "Surface"));
+            if (darkHeader) hover.Setters.Add(new Setter(Border.BackgroundProperty, Brush("#29364D"), "Surface"));
+            template.Triggers.Add(hover);
+            var press = new Trigger { Property = Button.IsPressedProperty, Value = true };
+            press.Setters.Add(new Setter(UIElement.OpacityProperty, 0.72, "Surface"));
+            template.Triggers.Add(press);
+            var focus = new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true };
+            focus.Setters.Add(new Setter(Border.BorderBrushProperty, darkHeader ? Brush("#FF9AA8") : Accent, "Surface"));
+            focus.Setters.Add(new Setter(Border.BorderThicknessProperty, new Thickness(2), "Surface"));
+            template.Triggers.Add(focus);
+            var style = new Style(typeof(Button));
+            style.Setters.Add(new Setter(Control.TemplateProperty, template));
+            style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+            style.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
+            style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(1)));
+            style.Setters.Add(new Setter(FrameworkElement.CursorProperty, Cursors.Hand));
+            return style;
+        }
+
+        private static FrameworkElement MakeIcon(string name, Brush foreground, double size)
+        {
+            string data;
+            switch (name)
+            {
+                case "home": data = "M3,10 L12,3 21,10 M5,9 L5,21 10,21 10,14 14,14 14,21 19,21 19,9"; break;
+                case "inventory": data = "M3,7 L12,3 21,7 21,18 12,22 3,18 Z M3,7 L12,11 21,7 M12,11 L12,22 M7,5 L16,9"; break;
+                case "headset": data = "M4,14 L4,11 A8,8 0 0 1 20,11 L20,14 M4,12 L7,12 7,19 3,19 3,12 Z M17,12 L21,12 21,19 17,19 Z M20,19 Q20,22 14,22"; break;
+                case "request": data = "M8,5 L4,5 4,22 20,22 20,5 16,5 M8,3 L16,3 16,7 8,7 Z M8,12 L16,12 M8,17 L14,17"; break;
+                case "printer": data = "M6,8 L6,3 18,3 18,8 M6,18 L3,18 3,8 21,8 21,18 18,18 M6,14 L18,14 18,22 6,22 Z M17,11 L18,11"; break;
+                case "borrow": data = "M4,7 L20,7 M16,3 L20,7 16,11 M20,17 L4,17 M8,13 L4,17 8,21"; break;
+                case "report": data = "M4,3 L4,21 22,21 M8,17 L8,11 M13,17 L13,6 M18,17 L18,9"; break;
+                case "repair": data = "M14,3 Q20,1 22,6 L18,10 14,6 M22,6 Q24,14 16,14 L7,23 2,18 11,9 Q9,3 14,3 Z"; break;
+                case "settings": data = "M9,3 L15,3 16,7 20,8 23,13 20,17 16,18 15,22 9,22 8,18 4,17 1,12 4,8 8,7 Z M16,12 A4,4 0 1 1 8,12 A4,4 0 1 1 16,12"; break;
+                case "grid": data = "M3,3 L10,3 10,10 3,10 Z M14,3 L21,3 21,10 14,10 Z M3,14 L10,14 10,21 3,21 Z M14,14 L21,14 21,21 14,21 Z"; break;
+                case "pin": data = "M8,3 L17,3 M9,3 L9,10 5,15 19,15 15,10 15,3 M12,15 L12,23"; break;
+                case "search": data = "M17,10 A7,7 0 1 1 3,10 A7,7 0 1 1 17,10 M15,15 L22,22"; break;
+                case "person": data = "M16,7 A4,4 0 1 1 8,7 A4,4 0 1 1 16,7 M3,22 Q3,14 12,14 Q21,14 21,22"; break;
+                case "logout": data = "M10,3 L3,3 3,21 10,21 M8,12 L22,12 M17,7 L22,12 17,17"; break;
+                case "help": data = "M22,12 A10,10 0 1 1 2,12 A10,10 0 1 1 22,12 M8,8 Q8,4 13,6 Q18,8 12,12 L12,14 M12,17 L12,18"; break;
+                default: data = "M3,12 L21,12 M15,6 L21,12 15,18"; break;
+            }
+            var path = new System.Windows.Shapes.Path { Data = Geometry.Parse(data), StrokeThickness = 1.6, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round, Stretch = Stretch.Uniform, Width = size, Height = size, VerticalAlignment = VerticalAlignment.Center };
+            if (foreground != null) path.Stroke = foreground;
+            else path.SetBinding(System.Windows.Shapes.Shape.StrokeProperty, new System.Windows.Data.Binding("Foreground") { RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.FindAncestor, typeof(Button), 1) });
+            return path;
         }
 
         private void OpenAccountDialog()
@@ -845,11 +761,12 @@ namespace Yakult.Inventory.App.Wpf.Portal
                 using (var dlg = new System.Windows.Forms.Form
                 {
                     Text            = "Account Settings",
-                    Size            = new System.Drawing.Size(880, 660),
+                    Size            = new System.Drawing.Size(1020, 700),
+                    MinimumSize     = new System.Drawing.Size(880, 620),
                     StartPosition   = System.Windows.Forms.FormStartPosition.CenterParent,
                     MinimizeBox     = false,
                     MaximizeBox     = false,
-                    FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
+                    FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable
                 })
                 {
                     var page = new MyAccountPage { Dock = System.Windows.Forms.DockStyle.Fill };
@@ -860,33 +777,6 @@ namespace Yakult.Inventory.App.Wpf.Portal
             catch (Exception ex)
             {
                 Logger.LogError("[WpfMainDashboardShell] Failed to open Account dialog.", ex);
-            }
-        }
-
-        // ====================================================================
-        // ASYNC DATA LOADING
-        // ====================================================================
-
-        private async Task LoadStatsAsync()
-        {
-            try
-            {
-                var repo = new CallMonitoringRepository();
-                if (!await repo.CallSchemaExistsAsync()) return;
-
-                var rows  = await repo.GetRequiresAttentionAsync(maxRows: 99);
-                var count = rows?.Count ?? 0;
-                var text  = count.ToString();
-
-                Dispatcher.Invoke(() =>
-                {
-                    if (_statPendingTickets != null) _statPendingTickets.Text = text;
-                    if (_statUnresolved     != null) _statUnresolved.Text     = text;
-                });
-            }
-            catch
-            {
-                // Non-fatal: stats stay as "—"
             }
         }
 
@@ -934,67 +824,6 @@ namespace Yakult.Inventory.App.Wpf.Portal
         }
 
         // ====================================================================
-        // HELPERS
-        // ====================================================================
-
-        private static Button MakeHeaderButton(string text, Color bg)
-        {
-            var baseBg = new SolidColorBrush(bg);
-            var hoverBg = new SolidColorBrush(Color.FromRgb(
-                (byte)Math.Min(bg.R + 25, 255),
-                (byte)Math.Min(bg.G + 25, 255),
-                (byte)Math.Min(bg.B + 25, 255)));
-            var pressBg = new SolidColorBrush(Color.FromRgb(
-                (byte)Math.Max(bg.R - 15, 0),
-                (byte)Math.Max(bg.G - 15, 0),
-                (byte)Math.Max(bg.B - 15, 0)));
-
-            var border = new Border
-            {
-                Background    = baseBg,
-                CornerRadius  = new CornerRadius(19),
-                Padding       = new Thickness(14, 0, 14, 0),
-                SnapsToDevicePixels = true,
-                Effect        = new DropShadowEffect
-                {
-                    BlurRadius = 6, ShadowDepth = 2, Opacity = 0.12, Direction = 270, Color = Colors.Black
-                }
-            };
-
-            border.Child = new TextBlock
-            {
-                Text                = text,
-                Foreground          = Brushes.White,
-                FontWeight          = FontWeights.SemiBold,
-                FontSize            = 12,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment   = VerticalAlignment.Center
-            };
-
-            var btn = new Button
-            {
-                Content         = border,
-                Width           = 120,
-                Height          = 38,
-                Background      = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Cursor          = Cursors.Hand,
-                VerticalAlignment = VerticalAlignment.Center,
-                Template        = new ControlTemplate(typeof(Button))
-                {
-                    VisualTree = new FrameworkElementFactory(typeof(ContentPresenter))
-                }
-            };
-
-            btn.MouseEnter += (_, __) => border.Background = hoverBg;
-            btn.MouseLeave += (_, __) => border.Background = baseBg;
-            btn.PreviewMouseDown += (_, __) => border.Background = pressBg;
-            btn.PreviewMouseUp += (_, __) => border.Background = hoverBg;
-
-            return btn;
-        }
-
-        // ====================================================================
         // EDIT IT CONTACT (Admin only)
         // ====================================================================
 
@@ -1004,6 +833,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
 
             var overlay = new Grid { Background = new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)) };
             Grid.SetRowSpan(overlay, 3);
+            KeyboardNavigation.SetTabNavigation(overlay, KeyboardNavigationMode.Cycle);
 
             var dialog = new Border
             {
@@ -1087,7 +917,8 @@ namespace Yakult.Inventory.App.Wpf.Portal
                     Properties.Settings.Default.ITContactEmail = txtEmail.Text.Trim();
                     Properties.Settings.Default.ITContactReference = txtRef.Text.Trim();
                     Properties.Settings.Default.Save();
-                    emailLink.Text = Properties.Settings.Default.ITContactEmail;
+                    emailLink.Text = ContactEmail();
+                    _supportReference.Text = Properties.Settings.Default.ITContactReference;
                     _rootGrid.Children.Remove(overlay);
                 }
                 catch (Exception ex)
@@ -1109,6 +940,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
         {
             var overlay = new Grid { Background = new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)) };
             Grid.SetRowSpan(overlay, 3);
+            KeyboardNavigation.SetTabNavigation(overlay, KeyboardNavigationMode.Cycle);
 
             var dialog = new Border
             {
@@ -1133,19 +965,8 @@ namespace Yakult.Inventory.App.Wpf.Portal
                 Foreground = new SolidColorBrush(Color.FromRgb(44, 62, 80)),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            var closeX = new TextBlock
-            {
-                Text              = "\u2715",
-                FontSize          = 18,
-                Foreground        = new SolidColorBrush(Color.FromRgb(127, 140, 141)),
-                Cursor            = Cursors.Hand,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Padding           = new Thickness(6)
-            };
-            closeX.MouseEnter += (_, __) => closeX.Foreground = new SolidColorBrush(Color.FromRgb(231, 76, 60));
-            closeX.MouseLeave += (_, __) => closeX.Foreground = new SolidColorBrush(Color.FromRgb(127, 140, 141));
-            closeX.MouseDown  += (_, __) => _rootGrid.Children.Remove(overlay);
+            var closeX = ActionButton("Close", null, () => _rootGrid.Children.Remove(overlay));
+            closeX.HorizontalAlignment = HorizontalAlignment.Right;
             titleBar.Children.Add(titleText);
             titleBar.Children.Add(closeX);
             Grid.SetRow(titleBar, 0);
@@ -1157,26 +978,23 @@ namespace Yakult.Inventory.App.Wpf.Portal
 
             // ─ Portal Descriptions ─
             stack.Children.Add(MakeHelpSection("Portal Descriptions"));
-            stack.Children.Add(MakeHelpRow("\U0001F4E6  Inventory System",       "Manage stock levels, requests, item movements, and analyze inventory data."));
-            stack.Children.Add(MakeHelpRow("\U0001F3A7  IT Call Monitoring",     "Track helpdesk tickets, escalations, SLA compliance, and issue resolution."));
-            stack.Children.Add(MakeHelpRow("\U0001F4CB  Request/s Portal",      "Submit and track cartridge and item requests, view approval status."));
-            stack.Children.Add(MakeHelpRow("\U0001F5A8  Consumable Management", "Manage cartridge exchanges, refills, brand-new allocations, and fulfillment for cartridges, ink, printhead, and toner cartridge."));
-            stack.Children.Add(MakeHelpRow("\U0001F501  Borrow Items",           "Log borrowed hardware by serial number, track returns, and view due dates."));
-            stack.Children.Add(MakeHelpRow("\U0001F4CA  Reports",                "Generate and view system reports, analytics, and invoice summaries."));
-            stack.Children.Add(MakeHelpRow("\u2699  Admin Portal",               "Manage user accounts, roles, SMTP settings, portal access, and system configuration."));
+            foreach (var module in _modules)
+                stack.Children.Add(MakeHelpRow(module.Title, module.Description));
 
             // ─ Keyboard Shortcuts ─
             stack.Children.Add(MakeHelpSection("Keyboard Shortcuts"));
-            stack.Children.Add(MakeHelpRow("Alt + I",  "Open Inventory System (if accessible)."));
-            stack.Children.Add(MakeHelpRow("Alt + C",  "Open IT Call Monitoring (if accessible)."));
-            stack.Children.Add(MakeHelpRow("Alt + M",  "Open Consumable Management (if accessible)."));
-            stack.Children.Add(MakeHelpRow("Alt + R",  "Open Reports (if accessible)."));
-            stack.Children.Add(MakeHelpRow("Alt + B",  "Open Borrow Items (if accessible)."));
-            stack.Children.Add(MakeHelpRow("Esc",      "Logout and return to the login screen."));
-            stack.Children.Add(MakeHelpRow("Ctrl + Shift + D", "Developer only: Reset database configuration and restart."));
+            stack.Children.Add(MakeHelpRow("Ctrl + K", "Search your available systems."));
+            stack.Children.Add(MakeHelpRow("Tab / Enter", "Move between controls and activate a selected control."));
+            stack.Children.Add(MakeHelpRow("F1", "Open Help & Shortcuts."));
+            foreach (var module in _modules.Where(m => !string.IsNullOrEmpty(m.Shortcut)))
+                stack.Children.Add(MakeHelpRow(module.Shortcut, "Open " + module.Title + "."));
+            stack.Children.Add(MakeHelpRow("Esc", "Close this dialog, clear an active search, or log out from home."));
+            if (CanAccessDatabaseSwitcher())
+                stack.Children.Add(MakeHelpRow("Ctrl + Shift + D", "Reset database configuration and restart."));
 
             // ─ User Manual ─
             stack.Children.Add(MakeHelpSection("User Manual"));
+            stack.Children.Add(ActionButton("Contact IT support", "headset", ContactSupport));
             stack.Children.Add(new TextBlock
             {
                 Text         = "User manual is not yet updated.",
@@ -1200,9 +1018,8 @@ namespace Yakult.Inventory.App.Wpf.Portal
             overlay.MouseDown += (_, e) => { if (e.Source == overlay) _rootGrid.Children.Remove(overlay); };
             overlay.KeyDown += (_, e) => { if (e.Key == Key.Escape) _rootGrid.Children.Remove(overlay); };
             overlay.Focusable = true;
-            overlay.Focus();
-
             _rootGrid.Children.Add(overlay);
+            closeX.Focus();
         }
 
         private static TextBlock MakeHelpSection(string title)
@@ -1226,7 +1043,8 @@ namespace Yakult.Inventory.App.Wpf.Portal
                 FontSize   = 12,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = new SolidColorBrush(Color.FromRgb(52, 73, 94)),
-                Width      = 160
+                Width      = 160,
+                TextWrapping = TextWrapping.Wrap
             });
             row.Children.Add(new TextBlock
             {

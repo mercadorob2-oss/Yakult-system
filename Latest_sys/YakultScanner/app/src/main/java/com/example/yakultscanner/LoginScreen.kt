@@ -66,6 +66,7 @@ import com.example.yakultscanner.api.SCANNER_GENERIC_MESSAGE
 import com.example.yakultscanner.api.SCANNER_NETWORK_MESSAGE
 import com.example.yakultscanner.api.safeApiCall
 import com.example.yakultscanner.api.userMessageOr
+import androidx.compose.material3.Checkbox
 import com.example.yakultscanner.BuildConfig
 import com.example.yakultscanner.settings.ApiSettings
 import com.example.yakultscanner.settings.ApiEnvironment
@@ -91,8 +92,9 @@ import android.util.Log
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(navController: NavController) {
-    var username by remember { mutableStateOf(TextFieldValue("")) }
+    var username by remember { mutableStateOf(TextFieldValue(UserSession.lastUsername().orEmpty())) }
     var password by remember { mutableStateOf(TextFieldValue("")) }
+    var rememberMe by remember { mutableStateOf(UserSession.rememberMeEnabled()) }
     var isLoading by remember { mutableStateOf(false) }
     var isPasswordVisible by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -169,8 +171,8 @@ fun LoginScreen(navController: NavController) {
                 is ApiResult.Success -> {
                     val body = result.data
                     if (body.success && !body.token.isNullOrBlank()) {
-                        UserSession.loginFromApi(rawUsername, body)
-                        UserSession.cacheCredentials(rawUsername, rawPassword)
+                        UserSession.loginFromApi(rawUsername, body, rememberMe)
+                        if (rememberMe) UserSession.cacheCredentials(rawUsername, rawPassword)
                         val displayName = (body.name ?: "").trim().ifBlank { rawUsername }
                         snackbarHostState.showSnackbar("Welcome, $displayName!")
                         navController.navigate("root_home") {
@@ -600,6 +602,25 @@ fun LoginScreen(navController: NavController) {
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                                 keyboardActions = KeyboardActions(onDone = { performLogin() })
                             )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = rememberMe,
+                                    onCheckedChange = { rememberMe = it },
+                                    enabled = !isLoading
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Remember me", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                    Text(
+                                        "Stay signed in on this device",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
 
                             Button(
                                 onClick = { performLogin() },

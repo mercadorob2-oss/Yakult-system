@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -482,8 +483,8 @@ namespace Yakult.Inventory.App.Pages.Receipt
             if (button == null)
                 return;
 
-            var accent = Color.FromArgb(52, 152, 219);
-            var hover = Color.FromArgb(41, 128, 185);
+            var accent = InventoryTheme.Colors.Primary;
+            var hover = InventoryTheme.Colors.PrimaryHover;
 
             button.FlatStyle = FlatStyle.Flat;
             button.FlatAppearance.BorderSize = 0;
@@ -556,7 +557,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
             if (button == null)
                 return;
 
-            var accent = Color.FromArgb(52, 152, 219);
+            var accent = InventoryTheme.Colors.Primary;
             var hover = Color.FromArgb(232, 244, 253);
 
             button.FlatStyle = FlatStyle.Flat;
@@ -1025,15 +1026,15 @@ namespace Yakult.Inventory.App.Pages.Receipt
 
             if (primary)
             {
-                backColor = Color.FromArgb(52, 152, 219);
+                backColor = InventoryTheme.Colors.Primary;
                 foreColor = Color.White;
-                borderColor = Color.FromArgb(41, 128, 185);
+                borderColor = InventoryTheme.Colors.PrimaryHover;
             }
             else
             {
                 backColor = Color.White;
-                foreColor = Color.FromArgb(41, 128, 185);
-                borderColor = Color.FromArgb(41, 128, 185);
+                foreColor = InventoryTheme.Colors.PrimaryHover;
+                borderColor = InventoryTheme.Colors.PrimaryHover;
             }
 
             button.BackColor = backColor;
@@ -1068,7 +1069,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
             {
                 Dock = DockStyle.Top,
                 Height = 100,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding = new Padding(12, 10, 12, 10)
             };
 
@@ -1173,7 +1174,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
                 Margin = new Padding(6, 4, 0, 0)
             };
             _btnClearFilters.Click += (s, e) => ClearAllFilters();
-            ConfigureOutlineHopeButton(_btnClearFilters, Color.FromArgb(130, 130, 130), Color.FromArgb(245, 247, 250));
+            ConfigureOutlineHopeButton(_btnClearFilters, Color.FromArgb(130, 130, 130), InventoryTheme.Colors.HeaderBack);
 
             var headerRow = new FlowLayoutPanel
             {
@@ -1213,7 +1214,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
                 Dock = DockStyle.Top,
                 Height = 94,
                 Padding = new Padding(12, 0, 12, 10),
-                BackColor = Color.FromArgb(245, 247, 250)
+                BackColor = InventoryTheme.Colors.HeaderBack
             };
 
             var filterCard = new MaterialCard
@@ -1365,7 +1366,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
                 Margin = new Padding(0, 6, 12, 0)
             };
             _btnOpenViewer.Click += BtnOpenViewer_Click;
-            ConfigureOutlineHopeButton(_btnOpenViewer, Color.FromArgb(52, 152, 219), Color.FromArgb(232, 244, 253));
+            ConfigureOutlineHopeButton(_btnOpenViewer, InventoryTheme.Colors.Primary, Color.FromArgb(232, 244, 253));
 
             _btnGoToManageSets = new HopeButton
             {
@@ -1376,7 +1377,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
                 Margin = new Padding(0, 6, 12, 0)
             };
             _btnGoToManageSets.Click += (s, e) => GoToManageSetsRequested?.Invoke();
-            ConfigureGhostHopeButton(_btnGoToManageSets, Color.FromArgb(52, 152, 219), Color.FromArgb(245, 247, 250));
+            ConfigureGhostHopeButton(_btnGoToManageSets, InventoryTheme.Colors.Primary, InventoryTheme.Colors.HeaderBack);
 
             _btnRefresh = new HopeButton
             {
@@ -1387,7 +1388,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
                 Margin = new Padding(0, 0, 0, 0)
             };
             _btnRefresh.Click += (s, e) => LoadReceiptSets();
-            ConfigurePillHopeButton(_btnRefresh, Color.FromArgb(52, 152, 219), Color.FromArgb(41, 128, 185));
+            ConfigurePillHopeButton(_btnRefresh, InventoryTheme.Colors.Primary, InventoryTheme.Colors.PrimaryHover);
 
             var rightActions = new FlowLayoutPanel
             {
@@ -1454,7 +1455,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
                 Margin = new Padding(0)
             };
 
-            _cardTotal = CreateSummaryCard("Total", Color.FromArgb(52, 152, 219), out _lblTotalCount);
+            _cardTotal = CreateSummaryCard("Total", InventoryTheme.Colors.Primary, out _lblTotalCount);
             _cardComplete = CreateSummaryCard("Complete", Color.FromArgb(46, 204, 113), out _lblCompleteCount);
             _cardPending = CreateSummaryCard("Pending", Color.FromArgb(231, 76, 60), out _lblPendingCount);
 
@@ -1708,10 +1709,10 @@ namespace Yakult.Inventory.App.Pages.Receipt
             };
 
             // Style the column headers (match updates page)
-            _gridReceipts.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+            _gridReceipts.ColumnHeadersDefaultCellStyle.BackColor = InventoryTheme.Colors.GridHeaderBack;
             _gridReceipts.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             _gridReceipts.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            _gridReceipts.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(52, 152, 219);
+            _gridReceipts.ColumnHeadersDefaultCellStyle.SelectionBackColor = InventoryTheme.Colors.GridHeaderBack;
             _gridReceipts.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             _gridReceipts.ColumnHeadersDefaultCellStyle.Padding = new Padding(8, 4, 0, 4);
             _gridReceipts.ColumnHeadersHeight = 40;
@@ -1721,10 +1722,10 @@ namespace Yakult.Inventory.App.Pages.Receipt
             _gridReceipts.DefaultCellStyle.BackColor = Color.FromArgb(240, 246, 252);
             _gridReceipts.DefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
             _gridReceipts.DefaultCellStyle.ForeColor = Color.FromArgb(40, 40, 40);
-            _gridReceipts.DefaultCellStyle.SelectionBackColor = Color.FromArgb(41, 128, 185);
+            _gridReceipts.DefaultCellStyle.SelectionBackColor = InventoryTheme.Colors.PrimaryHover;
             _gridReceipts.DefaultCellStyle.SelectionForeColor = Color.White;
             _gridReceipts.DefaultCellStyle.Padding = new Padding(8, 6, 8, 6);
-            _gridReceipts.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(232, 240, 248);
+            _gridReceipts.AlternatingRowsDefaultCellStyle.BackColor = InventoryTheme.Colors.GridAltRowBack;
             _gridReceipts.RowTemplate.Height = 56;
             _gridReceipts.RowTemplate.Resizable = DataGridViewTriState.False;
 
@@ -2553,7 +2554,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
                 Location = new Point(0, 98)
             };
             _btnEmptyAction.Click += EmptyStateAction_Click;
-            ConfigurePillHopeButton(_btnEmptyAction, Color.FromArgb(52, 152, 219), Color.FromArgb(41, 128, 185));
+            ConfigurePillHopeButton(_btnEmptyAction, InventoryTheme.Colors.Primary, InventoryTheme.Colors.PrimaryHover);
 
             inner.Controls.Add(_lblEmptyTitle);
             inner.Controls.Add(_lblEmptySubtitle);
@@ -3143,7 +3144,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
                     e.CellBounds.Height - 1  // Leave 1px for bottom border
                 );
 
-                using (var brush = new SolidBrush(Color.FromArgb(52, 152, 219)))
+                using (var brush = new SolidBrush(InventoryTheme.Colors.Primary))
                 {
                     e.Graphics.FillRectangle(brush, r);
                 }
@@ -3235,7 +3236,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
 
             if (isSelected)
             {
-                pillColor = Color.FromArgb(41, 128, 185);
+                pillColor = InventoryTheme.Colors.PrimaryHover;
             }
 
             // Fill background with white for border separation
@@ -3265,7 +3266,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
             }
             else if (isActionColumn)
             {
-                textColor = Color.FromArgb(41, 128, 185);
+                textColor = InventoryTheme.Colors.PrimaryHover;
             }
             else if (isStatusColumn)
             {
@@ -3857,9 +3858,9 @@ namespace Yakult.Inventory.App.Pages.Receipt
             BackColor = Color.White;
 
             if (_headerPanel != null)
-                _headerPanel.BackColor = Color.FromArgb(245, 247, 250);
+                _headerPanel.BackColor = InventoryTheme.Colors.HeaderBack;
             if (_buttonBarPanel != null)
-                _buttonBarPanel.BackColor = Color.FromArgb(245, 247, 250);
+                _buttonBarPanel.BackColor = InventoryTheme.Colors.HeaderBack;
             if (_titleLabel != null)
                 _titleLabel.ForeColor = Color.FromArgb(40, 40, 40);
 
@@ -3874,7 +3875,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
             {
                 _gridReceipts.BackgroundColor = Color.White;
                 _gridReceipts.GridColor = Color.White;
-                _gridReceipts.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+                _gridReceipts.ColumnHeadersDefaultCellStyle.BackColor = InventoryTheme.Colors.GridHeaderBack;
                 _gridReceipts.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
                 _gridReceipts.DefaultCellStyle.ForeColor = Color.FromArgb(40, 40, 40);
             }

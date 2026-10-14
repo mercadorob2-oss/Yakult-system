@@ -7,11 +7,16 @@
         ResizeMode="NoResize"
         ShowInTaskbar="False"
         FontFamily="Segoe UI"
-        Background="#F0F2F6"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
 
         <Style x:Key="FormInput" TargetType="TextBox">
             <Setter Property="Height"                   Value="36"/>
@@ -19,7 +24,7 @@
             <Setter Property="BorderBrush"              Value="#C8D0DC"/>
             <Setter Property="BorderThickness"          Value="1"/>
             <Setter Property="Background"               Value="White"/>
-            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Foreground"               Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="FontSize"                 Value="13"/>
             <Setter Property="Template">
@@ -36,7 +41,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush"     Value="#4E9AFC"/>
+                                <Setter TargetName="Bd" Property="BorderBrush"     Value="{StaticResource YakultPrimaryBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -49,13 +54,13 @@
             <Setter Property="Height"                   Value="36"/>
             <Setter Property="Padding"                  Value="10,0"/>
             <Setter Property="Background"               Value="White"/>
-            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Foreground"               Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="FontSize"                 Value="13"/>
         </Style>
 
         <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background"     Value="#4E9AFC"/>
+            <Setter Property="Background"     Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"     Value="White"/>
             <Setter Property="FontSize"       Value="13"/>
             <Setter Property="FontWeight"     Value="SemiBold"/>
@@ -87,7 +92,7 @@
 
         <Style x:Key="GhostButton" TargetType="Button">
             <Setter Property="Background"      Value="White"/>
-            <Setter Property="Foreground"      Value="#5A6A7A"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="FontSize"        Value="13"/>
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="BorderBrush"     Value="#C8D0DC"/>
@@ -118,6 +123,8 @@
             </Setter>
         </Style>
 
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -128,7 +135,7 @@
         </Grid.RowDefinitions>
 
         <!-- ── Header ─────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Background="#4E9AFC">
+        <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}">
             <TextBlock Text="Edit Consumable Model"
                        FontSize="15" FontWeight="SemiBold"
                        Foreground="White"
@@ -140,7 +147,7 @@
         <Border Grid.Row="1" Background="White"
                 Margin="16,12,16,8"
                 CornerRadius="8"
-                BorderBrush="#DDE3EC"
+                BorderBrush="{StaticResource YakultBorderBrush}"
                 BorderThickness="1">
             <Grid Margin="20,16,20,16">
 
@@ -157,13 +164,13 @@
 
                     <TextBlock Text="MODEL NUMBER"
                                FontSize="10" FontWeight="SemiBold"
-                               Foreground="#7A8A9A"
+                               Foreground="{StaticResource YakultTextMutedBrush}"
                                Margin="0,0,0,5"/>
                     <TextBox x:Name="TxtModelNumber" Style="{StaticResource FormInput}"/>
 
                     <TextBlock Text="CATEGORY"
                                FontSize="10" FontWeight="SemiBold"
-                               Foreground="#7A8A9A"
+                               Foreground="{StaticResource YakultTextMutedBrush}"
                                Margin="0,14,0,5"/>
                     <ComboBox x:Name="CmbCategory" Style="{StaticResource FormCombo}">
                         <ComboBoxItem Content="Ink"/>
@@ -175,13 +182,13 @@
                         <CheckBox x:Name="ChkRequestable"
                                   Content="Is Requestable"
                                   FontSize="13"
-                                  Foreground="#1A2333"
+                                  Foreground="{StaticResource YakultTextDarkBrush}"
                                   Cursor="Hand"
                                   VerticalContentAlignment="Center"/>
                         <CheckBox x:Name="ChkActive"
                                   Content="Is Active"
                                   FontSize="13"
-                                  Foreground="#1A2333"
+                                  Foreground="{StaticResource YakultTextDarkBrush}"
                                   Cursor="Hand"
                                   VerticalContentAlignment="Center"
                                   Margin="0,10,0,0"/>
@@ -193,8 +200,8 @@
 
         <!-- ── Footer ─────────────────────────────────────────────────────── -->
         <Border Grid.Row="2"
-                Background="#F8F9FB"
-                BorderBrush="#DDE3EC"
+                Background="{StaticResource YakultSurfaceMutedBrush}"
+                BorderBrush="{StaticResource YakultBorderBrush}"
                 BorderThickness="0,1,0,0">
             <DockPanel Margin="16,0" LastChildFill="False" VerticalAlignment="Center">
                 <Button x:Name="BtnSave"

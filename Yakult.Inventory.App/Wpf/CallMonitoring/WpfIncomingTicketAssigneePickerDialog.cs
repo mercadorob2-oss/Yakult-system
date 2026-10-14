@@ -245,7 +245,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 BorderThickness = new Thickness(selected ? 2 : 1),
                 CornerRadius = new CornerRadius(14),
                 Cursor = Cursors.Hand,
-                Effect = new DropShadowEffect { BlurRadius = 10, ShadowDepth = 1, Opacity = 0.06, Color = Color.FromRgb(15, 23, 42) }
+                Effect = new DropShadowEffect { BlurRadius = 10, ShadowDepth = 1, Opacity = 0.06, Color = WpfThemeResources.TextDark }
             };
             card.MouseLeftButtonUp += (_, __) => SelectCandidate(candidate);
             card.KeyDown += (_, e) =>

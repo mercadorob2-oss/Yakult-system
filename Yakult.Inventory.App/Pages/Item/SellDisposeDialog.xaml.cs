@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,7 +69,7 @@ namespace Yakult.Inventory.App.Pages.Item
                 TxtTitle.Text = title;
                 TxtSubtitle.Text = subtitle;
                 TxtOkLabel.Text = title;
-                var brush = _isSell ? new SolidColorBrush(Color.FromRgb(58, 142, 246)) : new SolidColorBrush(Color.FromRgb(231, 76, 60));
+                var brush = _isSell ? new SolidColorBrush(InventoryTheme.WpfColors.Primary) : new SolidColorBrush(Color.FromRgb(231, 76, 60));
                 HeaderBar.Background = brush;
                 BtnOk.Background = brush;
                 CountBadge.Background = brush;

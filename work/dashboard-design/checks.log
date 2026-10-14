@@ -1,0 +1,22 @@
+PASS: Developer sees all eight systems
+PASS: Wide layout has a separate recent/support column
+PASS: Wide layout uses three readable system columns
+PASS: Compact layout moves recent/support below systems
+PASS: 1024px layout fits two system columns
+PASS: Minimum width uses one system column
+PASS: Home hides the visible scrollbar
+PASS: Overflow content remains reachable with scrolling
+PASS: Search trims whitespace and ignores case
+PASS: Pinning does not launch a system
+PASS: Pin state and accessible label update
+PASS: An unmatched search has a clear empty state
+PASS: Help opens inside the home overlay
+PASS: Escape closes Help without logging out
+PASS: Escape clears a search without logging out
+PASS: Native system button returns the caller's existing portal selection
+PASS: Launching moves the system to the front of recent history
+PASS: Requester only sees the permitted portal
+PASS: An inaccessible launch is blocked
+PASS: No-access account receives no system cards
+PASS: No-access home explains how to request access
+All home checks passed. No windows shown; no database connections made.

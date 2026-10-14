@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -443,7 +444,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
             {
                 Height = 4,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(52, 152, 219)
+                BackColor = InventoryTheme.Colors.Primary
             };
             card.Controls.Add(headerBar);
 
@@ -467,7 +468,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
 
             actionsFlow.Controls.Add(CreateQuickActionButton("View Inventory", Color.FromArgb(46, 204, 113), () => OnViewInventoryClicked?.Invoke()));
             actionsFlow.Controls.Add(CreateUpdatesQuickAction());
-            actionsFlow.Controls.Add(CreateQuickActionButton("Refresh", Color.FromArgb(52, 152, 219), () => OnRefreshClicked?.Invoke()));
+            actionsFlow.Controls.Add(CreateQuickActionButton("Refresh", InventoryTheme.Colors.Primary, () => OnRefreshClicked?.Invoke()));
 
             card.Controls.Add(actionsFlow);
             return card;
@@ -673,7 +674,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
             {
                 control.MouseEnter += (s, e) =>
                 {
-                    control.BackColor = Color.FromArgb(245, 247, 250);
+                    control.BackColor = InventoryTheme.Colors.HeaderBack;
                 };
                 control.MouseLeave += (s, e) =>
                 {
@@ -696,7 +697,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
             // High-contrast, vibrant dashboard palette with distinct color families
             var distinctPalette = new Color[]
             {
-                Color.FromArgb(52, 152, 219),   // Bright Blue
+                InventoryTheme.Colors.Primary,   // Bright Blue
                 Color.FromArgb(46, 204, 113),   // Vibrant Green
                 Color.FromArgb(231, 76, 60),    // Clear Red
                 Color.FromArgb(241, 196, 15),   // Bright Yellow
@@ -712,7 +713,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
                 Color.FromArgb(123, 104, 238),   // Periwinkle
                 Color.FromArgb(0, 150, 136),      // Dark Turquoise
                 Color.FromArgb(255, 121, 63),    // Deep Orange
-                Color.FromArgb(74, 144, 226),    // Sky Blue
+                InventoryTheme.Colors.Primary,    // Sky Blue
                 Color.FromArgb(168, 85, 247),    // Lavender
                 Color.FromArgb(255, 71, 87),     // Rose
                 Color.FromArgb(34, 197, 94)      // Forest Green
@@ -853,7 +854,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
             {
                 Name = "Active Stock",
                 ChartType = SeriesChartType.Column,
-                Color = Color.FromArgb(52, 152, 219),
+                Color = InventoryTheme.Colors.Primary,
                 Font = new Font("Segoe UI", 8F)
             };
 
@@ -925,7 +926,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
             var colors = new[] {
                 Color.FromArgb(46, 204, 113),
                 Color.FromArgb(231, 76, 60),
-                Color.FromArgb(52, 152, 219),
+                InventoryTheme.Colors.Primary,
                 Color.FromArgb(241, 196, 15)
             };
 
@@ -1093,7 +1094,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
                 Width = 1180,
                 Height = 60,
                 Location = new Point(0, 0),
-                BackColor = Color.FromArgb(52, 152, 219)
+                BackColor = InventoryTheme.Colors.Primary
             };
 
             var titleLabel = new Label
@@ -1172,7 +1173,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
             if (hasCol7) dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Col7", HeaderText = GetColumnHeader(7), DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleCenter } });
             if (hasStatus) dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", HeaderText = "Status", DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleCenter } });
 
-            dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+            dgv.ColumnHeadersDefaultCellStyle.BackColor = InventoryTheme.Colors.GridHeaderBack;
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
@@ -1230,7 +1231,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
                 Width = 1180,
                 Height = 60,
                 Location = new Point(0, 0),
-                BackColor = Color.FromArgb(52, 152, 219)
+                BackColor = InventoryTheme.Colors.Primary
             };
 
             var titleLabel = new Label
@@ -1294,7 +1295,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "TotalItems", HeaderText = "Item Records", Width = 140, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleCenter, Font = new Font("Segoe UI", 10F, FontStyle.Bold) } });
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "StockStatus", HeaderText = "Status", Width = 150, DefaultCellStyle = { Alignment = DataGridViewContentAlignment.MiddleCenter } });
 
-            dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+            dgv.ColumnHeadersDefaultCellStyle.BackColor = InventoryTheme.Colors.GridHeaderBack;
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;

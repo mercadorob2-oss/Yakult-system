@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -65,7 +66,7 @@ namespace Yakult.Inventory.App.Pages.Set
             {
                 Dock      = DockStyle.Top,
                 Height    = 56,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 Padding   = new Padding(16, 0, 16, 0)
             };
 
@@ -89,7 +90,7 @@ namespace Yakult.Inventory.App.Pages.Set
                 Width     = 110,
                 Height    = 36,
                 Margin    = new Padding(0, 10, 0, 10),
-                BackColor = Color.FromArgb(41, 128, 185),
+                BackColor = InventoryTheme.Colors.PrimaryHover,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor    = Cursors.Hand
@@ -138,14 +139,14 @@ namespace Yakult.Inventory.App.Pages.Set
                 GridColor             = Color.FromArgb(230, 230, 230)
             };
             _grid.ColumnHeadersDefaultCellStyle.Font            = new Font("Segoe UI", 9F, FontStyle.Bold);
-            _grid.ColumnHeadersDefaultCellStyle.BackColor       = Color.FromArgb(52, 152, 219);
+            _grid.ColumnHeadersDefaultCellStyle.BackColor       = InventoryTheme.Colors.GridHeaderBack;
             _grid.ColumnHeadersDefaultCellStyle.ForeColor       = Color.White;
             _grid.ColumnHeadersDefaultCellStyle.Padding         = new Padding(6, 0, 0, 0);
-            _grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(52, 152, 219);
+            _grid.ColumnHeadersDefaultCellStyle.SelectionBackColor = InventoryTheme.Colors.GridHeaderBack;
             _grid.ColumnHeadersHeight                           = 40;
             _grid.ColumnHeadersHeightSizeMode                   = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             _grid.EnableHeadersVisualStyles                     = false;
-            _grid.DefaultCellStyle.SelectionBackColor     = Color.FromArgb(52, 152, 219);
+            _grid.DefaultCellStyle.SelectionBackColor     = InventoryTheme.Colors.Primary;
             _grid.DefaultCellStyle.SelectionForeColor     = Color.White;
             _grid.DefaultCellStyle.Padding                = new Padding(6, 6, 6, 6);
 
@@ -207,7 +208,7 @@ namespace Yakult.Inventory.App.Pages.Set
             {
                 Text      = "Set Details",
                 Font      = new Font("Segoe UI", 12F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(52, 152, 219),
+                ForeColor = InventoryTheme.Colors.Primary,
                 Dock      = DockStyle.Fill,
                 TextAlign = ContentAlignment.BottomLeft
             };
@@ -276,7 +277,7 @@ namespace Yakult.Inventory.App.Pages.Set
                 Text      = "Save",
                 Location  = new Point(225, 10),
                 Size      = new Size(60, 26),
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font      = new Font("Segoe UI", 9F),
@@ -324,7 +325,7 @@ namespace Yakult.Inventory.App.Pages.Set
                 Dock      = DockStyle.None,
                 Location  = new Point(0, 6),
                 Size      = new Size(200, 38),
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font      = new Font("Segoe UI", 10F, FontStyle.Bold),

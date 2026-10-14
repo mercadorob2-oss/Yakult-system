@@ -11,6 +11,11 @@
         SnapsToDevicePixels="True"
         Background="#EEF1F6">
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="Btn" TargetType="Button">
             <Setter Property="Height" Value="36"/>
             <Setter Property="MinWidth" Value="100"/>
@@ -45,7 +50,7 @@
         </Style>
         <Style x:Key="SecondaryBtn" TargetType="Button" BasedOn="{StaticResource Btn}">
             <Setter Property="Background" Value="#E8ECF2"/>
-            <Setter Property="Foreground" Value="#3A4A5A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Segoe UI"/>
@@ -70,7 +75,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -123,6 +128,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Margin="20">
@@ -138,7 +145,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Width="40" Height="40" CornerRadius="10" Background="#3A8EF6" Margin="0,0,12,0">
+                <Border Width="40" Height="40" CornerRadius="10" Background="{StaticResource YakultPrimaryBrush}" Margin="0,0,12,0">
                     <TextBlock Text="📁" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel VerticalAlignment="Center">
@@ -166,7 +173,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Button Grid.Row="0" x:Name="BtnAddGroup" Content="➕  Add Group" Background="#3A8EF6"
+                <Button Grid.Row="0" x:Name="BtnAddGroup" Content="➕  Add Group" Background="{StaticResource YakultPrimaryBrush}"
                         Style="{StaticResource Btn}" HorizontalAlignment="Left" Margin="0,0,0,10"
                         Click="BtnAddGroup_Click"/>
 
@@ -181,7 +188,7 @@
                 </ScrollViewer>
             </Grid>
 
-            <GridSplitter Grid.Column="1" Width="3" HorizontalAlignment="Center" Background="#DDE3EC"/>
+            <GridSplitter Grid.Column="1" Width="3" HorizontalAlignment="Center" Background="{StaticResource YakultBorderBrush}"/>
 
             <!-- ═══ RIGHT: Set picker ═══ -->
             <Border Grid.Column="2" Style="{StaticResource CardBorder}" Margin="10,0,0,0">

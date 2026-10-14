@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.IO;
@@ -55,7 +56,7 @@ namespace Yakult.Inventory.App.Forms.Reports
             {
                 Height = 70,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(78, 154, 252)
+                BackColor = InventoryTheme.Colors.Primary
             };
             Controls.Add(topBar);
 
@@ -66,13 +67,13 @@ namespace Yakult.Inventory.App.Forms.Reports
                 Font = new Font("Segoe UI", 24F, FontStyle.Bold),
                 Size = new Size(70, 60),
                 Location = new Point(5, 5),
-                BackColor = Color.FromArgb(58, 134, 232),
+                BackColor = InventoryTheme.Colors.PrimaryHover,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
             };
             _hamburgerButton.FlatAppearance.BorderSize = 0;
-            _hamburgerButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(78, 154, 252);
+            _hamburgerButton.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.Primary;
             _hamburgerButton.Click += HamburgerButton_Click;
             topBar.Controls.Add(_hamburgerButton);
 
@@ -110,7 +111,7 @@ namespace Yakult.Inventory.App.Forms.Reports
                 Location = new Point(0, topBar.Height),
                 Size = new Size(ClientSize.Width, ClientSize.Height - topBar.Height),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-                BackColor = Color.FromArgb(245, 247, 250)
+                BackColor = InventoryTheme.Colors.HeaderBack
             };
             Controls.Add(contentPanel);
             topBar.BringToFront();
@@ -190,7 +191,7 @@ namespace Yakult.Inventory.App.Forms.Reports
             {
                 ExitAction = ReportsExitAction.BackToPortal;
                 Close();
-            }, isPrimary: true, backColor: Color.FromArgb(52, 152, 219), foreColor: Color.White));
+            }, isPrimary: true, backColor: InventoryTheme.Colors.Primary, foreColor: Color.White));
 
             _sideMenuPanel.Controls.Add(Spacer(5));
 
@@ -273,7 +274,7 @@ namespace Yakult.Inventory.App.Forms.Reports
             {
                 Text = "REPORT MONITORING",
                 Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(78, 154, 252),
+                ForeColor = InventoryTheme.Colors.Primary,
                 Height = 40,
                 AutoSize = false,
                 Dock = DockStyle.Top,

@@ -78,6 +78,13 @@ sealed class CreateTicketUiState {
     data class Error(val message: String) : CreateTicketUiState()
 }
 
+sealed class ContactEmailUiState {
+    object Idle : ContactEmailUiState()
+    object Loading : ContactEmailUiState()
+    data class Success(val email: String, val source: String? = null) : ContactEmailUiState()
+    data class Error(val message: String) : ContactEmailUiState()
+}
+
 sealed class FieldVisitsUiState {
     object Idle : FieldVisitsUiState()
     object Loading : FieldVisitsUiState()
@@ -90,6 +97,20 @@ sealed class FieldVisitActionUiState {
     object Loading : FieldVisitActionUiState()
     data class Success(val message: String) : FieldVisitActionUiState()
     data class Error(val message: String) : FieldVisitActionUiState()
+}
+
+sealed class AddEmployeeUiState {
+    object Idle : AddEmployeeUiState()
+    object Loading : AddEmployeeUiState()
+    data class Success(val employee: com.example.yakultscanner.api.CallEmployeeResultDto?) : AddEmployeeUiState()
+    data class Error(val message: String) : AddEmployeeUiState()
+}
+
+sealed class UpdateLocationUiState {
+    object Idle : UpdateLocationUiState()
+    object Loading : UpdateLocationUiState()
+    data class Success(val employee: com.example.yakultscanner.api.CallEmployeeResultDto?) : UpdateLocationUiState()
+    data class Error(val message: String) : UpdateLocationUiState()
 }
 
 @HiltViewModel
@@ -109,6 +130,9 @@ class CallMonitoringViewModel @Inject constructor(
     private val _createState = MutableStateFlow<CreateTicketUiState>(CreateTicketUiState.Idle)
     val createState: StateFlow<CreateTicketUiState> = _createState.asStateFlow()
 
+    private val _contactEmailState = MutableStateFlow<ContactEmailUiState>(ContactEmailUiState.Idle)
+    val contactEmailState: StateFlow<ContactEmailUiState> = _contactEmailState.asStateFlow()
+
     private var currentPage = 1
     private val pageSize = 25
 
@@ -117,6 +141,12 @@ class CallMonitoringViewModel @Inject constructor(
 
     private val _fieldVisitActionState = MutableStateFlow<FieldVisitActionUiState>(FieldVisitActionUiState.Idle)
     val fieldVisitActionState: StateFlow<FieldVisitActionUiState> = _fieldVisitActionState.asStateFlow()
+
+    private val _addEmployeeState = MutableStateFlow<AddEmployeeUiState>(AddEmployeeUiState.Idle)
+    val addEmployeeState: StateFlow<AddEmployeeUiState> = _addEmployeeState.asStateFlow()
+
+    private val _updateLocationState = MutableStateFlow<UpdateLocationUiState>(UpdateLocationUiState.Idle)
+    val updateLocationState: StateFlow<UpdateLocationUiState> = _updateLocationState.asStateFlow()
 
     private val _pendingFieldActions = MutableStateFlow<List<String>>(emptyList())
     val pendingFieldActions: StateFlow<List<String>> = _pendingFieldActions.asStateFlow()
@@ -471,13 +501,21 @@ class CallMonitoringViewModel @Inject constructor(
         request: CreateTicketRequest,
         daysToSupervisor: Int? = null,
         daysToManager: Int? = null,
-        reason: String? = null
+        reason: String? = null,
+        backdateInstant: String? = null,
+        callerEmpId: Int? = null,
+        linkContactEmail: Boolean? = null
     ) {
         val hasEscalation = daysToSupervisor != null && daysToManager != null && !reason.isNullOrBlank()
+        val effective = request.copy(
+            createdAtUtc = backdateInstant ?: request.createdAtUtc,
+            callerEmpId = callerEmpId ?: request.callerEmpId,
+            linkContactEmailToCaller = linkContactEmail ?: request.linkContactEmailToCaller
+        )
         viewModelScope.launch {
             _createState.value = CreateTicketUiState.Loading
             try {
-                val response = repository.createTicket(request)
+                val response = repository.createTicket(effective)
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body != null && body.success) {
@@ -490,7 +528,7 @@ class CallMonitoringViewModel @Inject constructor(
                                     daysToSupervisor = daysToSupervisor,
                                     daysToManager = daysToManager,
                                     reason = reason!!,
-                                    changedByUserId = request.createdByUserId
+                                    changedByUserId = effective.createdByUserId
                                 )
                                 val overrideResp = repository.setEscalationOverride(overrideReq)
                                 if (!overrideResp.isSuccessful || overrideResp.body()?.success != true) {
@@ -544,8 +582,97 @@ class CallMonitoringViewModel @Inject constructor(
         _actionState.value = ActionUiState.Idle
     }
 
+    /** Quick-adds an employee (desktop QuickAddEmployeeDialog parity). Never throws. */
+    fun createEmployee(request: com.example.yakultscanner.api.CreateCallEmployeeRequest) {
+        viewModelScope.launch {
+            _addEmployeeState.value = AddEmployeeUiState.Loading
+            try {
+                val response = repository.createEmployee(request)
+                val body = response.body()
+                _addEmployeeState.value = if (response.isSuccessful && body?.success == true) {
+                    AddEmployeeUiState.Success(body.employee)
+                } else {
+                    AddEmployeeUiState.Error(serverErrorMessage(response) ?: friendlyHttpMessage(response.code()))
+                }
+            } catch (e: Exception) {
+                _addEmployeeState.value = AddEmployeeUiState.Error("Network error: ${e.message}")
+            }
+        }
+    }
+
+    fun resetAddEmployeeState() {
+        _addEmployeeState.value = AddEmployeeUiState.Idle
+    }
+
+    /**
+     * Updates one employee's org location (desktop Update Employee Location parity).
+     * 401/403 surfaces the server message; offline surfaces a network error. Never throws.
+     */
+    fun updateEmployeeLocation(request: com.example.yakultscanner.api.UpdateCallEmployeeLocationRequest) {
+        viewModelScope.launch {
+            _updateLocationState.value = UpdateLocationUiState.Loading
+            try {
+                val response = repository.updateEmployeeLocation(request)
+                val body = response.body()
+                _updateLocationState.value = if (response.isSuccessful && body?.success == true) {
+                    UpdateLocationUiState.Success(body.employee)
+                } else {
+                    UpdateLocationUiState.Error(serverErrorMessage(response) ?: friendlyHttpMessage(response.code()))
+                }
+            } catch (e: Exception) {
+                _updateLocationState.value = UpdateLocationUiState.Error("Network error: ${e.message}")
+            }
+        }
+    }
+
+    fun resetUpdateLocationState() {
+        _updateLocationState.value = UpdateLocationUiState.Idle
+    }
+
     fun resetCreateState() {
         _createState.value = CreateTicketUiState.Idle
+    }
+
+    /** Resolves the default contact email for a caller (desktop ConfirmTicketCreationDialog parity). Never throws. */
+    fun resolveTicketContactEmail(
+        callerEmpId: Int? = null,
+        comId: Int? = null,
+        deptId: Int? = null,
+        branchId: Int? = null
+    ) {
+        viewModelScope.launch {
+            _contactEmailState.value = ContactEmailUiState.Loading
+            try {
+                val r = repository.getTicketContactEmail(callerEmpId, comId, deptId, branchId)
+                val body = r.body()
+                if (r.isSuccessful && body?.success == true && !body.email.isNullOrBlank()) {
+                    _contactEmailState.value = ContactEmailUiState.Success(body.email, body.source)
+                } else {
+                    _contactEmailState.value = ContactEmailUiState.Error("No email found")
+                }
+            } catch (e: Exception) {
+                _contactEmailState.value = ContactEmailUiState.Error("Network error: ${e.message}")
+            }
+        }
+    }
+
+    fun resetContactEmailState() {
+        _contactEmailState.value = ContactEmailUiState.Idle
+    }
+
+    /**
+     * Duplicate-warning check (desktop recent-open-ticket warning parity).
+     * Reuses the existing pending + caller-name search; returns open tickets or empty on any failure. Never throws.
+     */
+    suspend fun searchOpenTicketsForCaller(callerName: String, limit: Int = 5): List<CallTicketListItem> {
+        val q = callerName.trim()
+        if (q.isEmpty()) return emptyList()
+        return try {
+            val r = repository.getCallTickets(status = "pending", search = q, page = 1, pageSize = limit)
+            if (r.isSuccessful) r.body()?.tickets.orEmpty() else emptyList()
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
 
     fun resetFieldVisitActionState() { _fieldVisitActionState.value = FieldVisitActionUiState.Idle }

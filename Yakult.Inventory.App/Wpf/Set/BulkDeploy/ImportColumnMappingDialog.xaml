@@ -5,13 +5,14 @@
         Width="560" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#F0F2F6"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         FontFamily="Segoe UI"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <Style x:Key="MapCard" TargetType="Border">
@@ -39,7 +40,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
-            <TextBlock Text="Confirm Column Mapping" FontSize="15" FontWeight="Bold" Foreground="#1A2333"/>
+            <TextBlock Text="Confirm Column Mapping" FontSize="15" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
             <TextBlock x:Name="SubtitleText" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
         </StackPanel>
 

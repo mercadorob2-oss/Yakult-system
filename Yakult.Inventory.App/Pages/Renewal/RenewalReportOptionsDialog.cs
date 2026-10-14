@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -25,7 +26,7 @@ namespace Yakult.Inventory.App.Pages.Renewal
             MinimizeBox     = false;
             StartPosition   = FormStartPosition.CenterParent;
             Font            = new Font("Segoe UI", 9.5f);
-            BackColor       = Color.FromArgb(245, 247, 250);
+            BackColor       = InventoryTheme.Colors.HeaderBack;
 
             // ── Header ──────────────────────────────────────────────────────
             var pnlHeader = new Panel

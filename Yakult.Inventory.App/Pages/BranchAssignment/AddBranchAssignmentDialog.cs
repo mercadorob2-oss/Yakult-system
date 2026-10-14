@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -14,7 +15,7 @@ namespace Yakult.Inventory.App.Pages.BranchAssignment
     /// </summary>
     public class AddBranchAssignmentDialog : Form
     {
-        private static readonly Color Blue = Color.FromArgb(41, 128, 185);
+        private static readonly Color Blue = InventoryTheme.Colors.PrimaryHover;
         private static readonly Color Gray = Color.FromArgb(149, 165, 166);
 
         // ── Controls ─────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ namespace Yakult.Inventory.App.Pages.BranchAssignment
             body.Controls.Add(_cmbDepartment);
 
             // Button bar
-            var btnBar = new Panel { Dock = DockStyle.Bottom, Height = 50, BackColor = Color.FromArgb(245, 247, 250) };
+            var btnBar = new Panel { Dock = DockStyle.Bottom, Height = 50, BackColor = InventoryTheme.Colors.HeaderBack };
 
             _btnCancel = new Button
             {

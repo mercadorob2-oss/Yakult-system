@@ -4,10 +4,15 @@
         Title="Bulk Add Invoice Items"
         Width="1080" Height="680"
         WindowStartupLocation="CenterOwner"
-        Background="#F0F2F6"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         FontFamily="Segoe UI">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -17,6 +22,8 @@
         <Style x:Key="FieldBox" TargetType="Control">
             <Setter Property="Height" Value="30"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Margin="16">
@@ -34,7 +41,7 @@
         </Border>
 
         <!-- ── Sub-Type Group (optional, applies to all checked items) ─────────── -->
-        <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="12" Margin="0,0,0,10" BorderBrush="#DDE3EC" BorderThickness="1">
+        <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="12" Margin="0,0,0,10" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1">
             <StackPanel>
                 <TextBlock Text="Convert to Sub-Type Group (optional)" FontWeight="Bold" FontSize="13" Margin="0,0,0,8"/>
                 <Grid>
@@ -88,12 +95,12 @@
                   HeadersVisibility="Column"
                   AlternatingRowBackground="#F5F9FF"
                   Background="White"
-                  BorderBrush="#DDE3EC"
+                  BorderBrush="{StaticResource YakultBorderBrush}"
                   BorderThickness="1"
                   RowHeight="32">
             <DataGrid.Resources>
                 <Style TargetType="DataGridColumnHeader">
-                    <Setter Property="Background" Value="#3498DB"/>
+                    <Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
                     <Setter Property="Foreground" Value="White"/>
                     <Setter Property="FontWeight" Value="Bold"/>
                     <Setter Property="Padding" Value="6"/>
@@ -137,7 +144,7 @@
             <TextBlock x:Name="TxtSelectedCount" Text="0 item(s) selected" VerticalAlignment="Center"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button x:Name="BtnCancel" Content="Cancel" Width="100" Height="36" Margin="0,0,8,0" Click="BtnCancel_Click"/>
-                <Button x:Name="BtnOk" Content="Add Selected" Width="130" Height="36" Background="#2F6FED" Foreground="White" BorderThickness="0" Click="BtnOk_Click"/>
+                <Button x:Name="BtnOk" Content="Add Selected" Width="130" Height="36" Background="{StaticResource YakultPrimaryBrush}" Foreground="White" BorderThickness="0" Click="BtnOk_Click"/>
             </StackPanel>
         </Grid>
     </Grid>

@@ -4,17 +4,22 @@
         Title="Bulk Create Accounts"
         Width="1180" Height="720" MinWidth="900" MinHeight="520"
         WindowStartupLocation="CenterOwner"
-        Background="#F0F2F6"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         FontFamily="Segoe UI"
         UseLayoutRounding="True" SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="10"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#5A6A7A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,4"/>
         </Style>
 
@@ -67,8 +72,8 @@
             <Setter Property="Height"          Value="28"/>
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="Background"      Value="White"/>
-            <Setter Property="Foreground"      Value="#3A8EF6"/>
-            <Setter Property="BorderBrush"     Value="#CDD5DE"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultPrimaryBrush}"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Margin"          Value="2,0"/>
@@ -82,8 +87,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background"  Value="#EBF5FF"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/>
+                                <Setter TargetName="Bd" Property="Background"  Value="{StaticResource YakultAccentTintBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
@@ -95,12 +100,12 @@
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background"                 Value="#4E9AFC"/>
+            <Setter Property="Background"                 Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"                 Value="White"/>
             <Setter Property="FontWeight"                 Value="SemiBold"/>
             <Setter Property="FontSize"                   Value="11"/>
             <Setter Property="Padding"                    Value="10,8"/>
-            <Setter Property="BorderBrush"                Value="#3A8EF6"/>
+            <Setter Property="BorderBrush"                Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="BorderThickness"            Value="0,0,1,1"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Template">
@@ -137,7 +142,7 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#3A8EF6"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                             <Trigger Property="SortDirection" Value="Ascending">
                                 <Setter TargetName="SortArrow" Property="Data"    Value="M 0,5 L 4,0 L 8,5 Z"/>
@@ -155,12 +160,12 @@
 
         <!-- Result grid header: same look, no filter button -->
         <Style x:Key="PlainHeader" TargetType="DataGridColumnHeader">
-            <Setter Property="Background"      Value="#4E9AFC"/>
+            <Setter Property="Background"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"      Value="White"/>
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="FontSize"        Value="11"/>
             <Setter Property="Padding"         Value="10,8"/>
-            <Setter Property="BorderBrush"     Value="#3A8EF6"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
@@ -168,10 +173,12 @@
             <Setter Property="Background" Value="White"/>
             <Style.Triggers>
                 <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                    <Setter Property="Background" Value="#FAFBFC"/>
+                    <Setter Property="Background" Value="{StaticResource YakultSurfaceMutedBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -185,7 +192,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#4E9AFC" Padding="20,12">
+        <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}" Padding="20,12">
             <StackPanel>
                 <TextBlock Text="Bulk Create Accounts" Foreground="White" FontSize="16" FontWeight="Bold"/>
                 <TextBlock Foreground="#E6F0FF" FontSize="11" Margin="0,3,0,0"
@@ -194,7 +201,7 @@
         </Border>
 
         <!-- Password options -->
-        <Border x:Name="OptionsPanel" Grid.Row="1" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="20,12">
+        <Border x:Name="OptionsPanel" Grid.Row="1" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="20,12">
             <StackPanel>
                 <TextBlock Text="PASSWORD" Style="{StaticResource FieldLabel}"/>
                 <StackPanel Orientation="Horizontal">
@@ -217,7 +224,7 @@
                         <PasswordBox x:Name="PwdConfirm" Width="200" Style="{StaticResource PwdBox}"/>
                         <TextBox x:Name="TxtConfVisible" Width="200" Style="{StaticResource InputBox}" Visibility="Collapsed"/>
                     </StackPanel>
-                    <CheckBox x:Name="ChkShow" Content="Show password" FontSize="11" Foreground="#5A6A7A"
+                    <CheckBox x:Name="ChkShow" Content="Show password" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}"
                               VerticalAlignment="Bottom" Margin="0,0,0,6"
                               Checked="ChkShow_Changed" Unchecked="ChkShow_Changed"/>
                 </StackPanel>
@@ -246,7 +253,7 @@
                 <Border x:Name="SearchPanel" Grid.Column="1" Background="White" BorderBrush="#B0BAC8" BorderThickness="1"
                         CornerRadius="5" Padding="8,0" Height="28" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#7A8A9A"/>
+                        <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource YakultTextMutedBrush}"/>
                         <TextBox x:Name="TxtSearch" BorderThickness="0" Background="Transparent"
                                  FontSize="11" Width="280" VerticalContentAlignment="Center"
                                  ToolTip="Search any column: name, number, position, department, company, branch, role. Separate words to match all of them."/>
@@ -258,9 +265,9 @@
         <!-- Preview grid (filterable) and results grid share one cell -->
         <Grid Grid.Row="3" Margin="20,0,20,0">
             <DataGrid x:Name="PreviewGrid"
-                      Background="White" BorderBrush="#DDE3EC" BorderThickness="1"
+                      Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                       GridLinesVisibility="All"
-                      HorizontalGridLinesBrush="#EEF1F4" VerticalGridLinesBrush="#E4E8EF"
+                      HorizontalGridLinesBrush="{StaticResource YakultBorderBrush}" VerticalGridLinesBrush="{StaticResource YakultBorderBrush}"
                       AlternationCount="2"
                       CanUserAddRows="False" CanUserDeleteRows="False"
                       AutoGenerateColumns="False" SelectionMode="Single"
@@ -295,9 +302,9 @@
             </DataGrid>
 
             <DataGrid x:Name="ResultsGrid" Visibility="Collapsed"
-                      Background="White" BorderBrush="#DDE3EC" BorderThickness="1"
+                      Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                       GridLinesVisibility="All"
-                      HorizontalGridLinesBrush="#EEF1F4" VerticalGridLinesBrush="#E4E8EF"
+                      HorizontalGridLinesBrush="{StaticResource YakultBorderBrush}" VerticalGridLinesBrush="{StaticResource YakultBorderBrush}"
                       AlternationCount="2"
                       CanUserAddRows="False" CanUserDeleteRows="False"
                       AutoGenerateColumns="False" SelectionMode="Extended"
@@ -321,14 +328,14 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Button x:Name="BtnFirst" Content="«" Style="{StaticResource PageButton}" Click="BtnFirst_Click"/>
                 <Button x:Name="BtnPrev"  Content="‹" Style="{StaticResource PageButton}" Click="BtnPrev_Click"/>
-                <TextBlock x:Name="TxtPageInfo" FontSize="11" Foreground="#5A6A7A" VerticalAlignment="Center" Margin="8,0"/>
+                <TextBlock x:Name="TxtPageInfo" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center" Margin="8,0"/>
                 <Button x:Name="BtnNext"  Content="›" Style="{StaticResource PageButton}" Click="BtnNext_Click"/>
                 <Button x:Name="BtnLast"  Content="»" Style="{StaticResource PageButton}" Click="BtnLast_Click"/>
             </StackPanel>
         </Border>
 
         <!-- Footer -->
-        <Border Grid.Row="5" Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="20,12">
+        <Border Grid.Row="5" Background="#F8FAFB" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="20,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -336,15 +343,15 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
                     <ProgressBar x:Name="Progress" Height="6" Visibility="Collapsed" Margin="0,0,0,4"/>
-                    <TextBlock x:Name="TxtStatus" FontSize="11" Foreground="#5A6A7A" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="TxtStatus" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" TextWrapping="Wrap"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button x:Name="BtnExport" Content="Save results as CSV" Background="#3A8EF6"
+                    <Button x:Name="BtnExport" Content="Save results as CSV" Background="{StaticResource YakultPrimaryBrush}"
                             Style="{StaticResource ActionButton}" Margin="0,0,8,0"
                             Visibility="Collapsed" Click="BtnExport_Click"/>
-                    <Button x:Name="BtnCreate" Content="Create Accounts" Background="#4E9AFC"
+                    <Button x:Name="BtnCreate" Content="Create Accounts" Background="{StaticResource YakultPrimaryBrush}"
                             Style="{StaticResource ActionButton}" Margin="0,0,8,0" Click="BtnCreate_Click"/>
-                    <Button x:Name="BtnClose" Content="Close" Background="#7A8A9A"
+                    <Button x:Name="BtnClose" Content="Close" Background="{StaticResource YakultTextMutedBrush}"
                             Style="{StaticResource ActionButton}" Click="BtnClose_Click"/>
                 </StackPanel>
             </Grid>

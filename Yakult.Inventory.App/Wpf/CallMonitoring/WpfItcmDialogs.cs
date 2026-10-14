@@ -44,7 +44,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         public static bool Confirm(DependencyObject owner, string message, string title, string confirmText = "Confirm", bool destructive = false)
         {
             var dialog = CreateBaseWindow(owner, title, 520, 300);
-            var accent = destructive ? BrushFromRgb(220, 38, 38) : BrushFromRgb(37, 99, 235);
+            var accent = destructive ? BrushFromRgb(220, 38, 38) : WpfThemeResources.PrimaryBrush;
             dialog.Content = BuildAlertContent(
                 title,
                 message,
@@ -84,7 +84,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 ResizeMode = ResizeMode.NoResize,
                 ShowInTaskbar = false,
-                Background = BrushFromRgb(245, 247, 250)
+                Background = WpfThemeResources.SurfaceMutedBrush
             };
 
             var ownerWindow = owner as Window ?? Window.GetWindow(owner);
@@ -116,7 +116,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Margin = new Thickness(0, 14, 0, 0),
                 FontSize = 21,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 TextWrapping = TextWrapping.Wrap
             });
             body.Children.Add(new TextBlock
@@ -141,7 +141,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             };
             if (!string.IsNullOrWhiteSpace(secondaryText))
             {
-                var secondary = CreateButton(secondaryText, BrushFromRgb(100, 116, 139));
+                var secondary = CreateButton(secondaryText, WpfThemeResources.TextMutedBrush);
                 secondary.IsCancel = true;
                 secondary.Click += (_, __) => secondaryAction?.Invoke();
                 buttons.Children.Add(secondary);
@@ -193,7 +193,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 BorderBrush = BrushFromRgb(203, 213, 225),
                 BorderThickness = new Thickness(1),
                 Background = Brushes.White,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 TextWrapping = TextWrapping.Wrap
             };
         }
@@ -205,7 +205,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = text,
                 FontSize = 15,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 Margin = new Thickness(0, 0, 0, 10)
             };
         }
@@ -247,7 +247,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Text = text ?? string.Empty,
                 FontSize = 12.5,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 TextWrapping = TextWrapping.Wrap
             };
         }
@@ -324,7 +324,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
             ShowInTaskbar = false;
-            Background = WpfItcmDialogService.BrushFromRgb(245, 247, 250);
+            Background = WpfThemeResources.SurfaceMutedBrush;
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -348,7 +348,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Confirm ticket creation",
                 FontSize = 24,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
             headerStack.Children.Add(WpfItcmDialogService.CreateMutedText("Review the requester, contact routing, and ticket details before saving."));
             Grid.SetColumn(headerStack, 0);
@@ -407,7 +407,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 model.EscalationSummary ?? "-",
                 (model.EscalationSummary ?? string.Empty).StartsWith("Custom", StringComparison.OrdinalIgnoreCase)
                     ? WpfItcmDialogService.BrushFromRgb(217, 119, 6)
-                    : WpfItcmDialogService.BrushFromRgb(100, 116, 139)));
+                    : WpfThemeResources.TextMutedBrush));
             if (!string.IsNullOrWhiteSpace(model.EscalationReason))
                 handling.Children.Add(WpfItcmDialogService.CreateMutedText("Reason: " + model.EscalationReason.Trim()));
             if (!string.IsNullOrWhiteSpace(model.BackdateDisplay))
@@ -439,7 +439,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     IsChecked = hasFallback,
                     IsEnabled = hasFallback,
                     Margin = new Thickness(0, 8, 0, 3),
-                    Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42)
+                    Foreground = WpfThemeResources.TextDarkBrush
                 };
                 contactStack.Children.Add(_useOrgFallbackCheckBox);
                 contactStack.Children.Add(CreateLabel("Caller personal email (optional)"));
@@ -453,7 +453,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     {
                         Content = "Link this as the caller's active primary employee email",
                         Margin = new Thickness(0, 8, 0, 3),
-                        Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42),
+                        Foreground = WpfThemeResources.TextDarkBrush,
                         IsEnabled = !hasFallback
                     };
                     contactStack.Children.Add(_linkCallerEmailToProfileCheckBox);
@@ -548,9 +548,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center
             };
-            buttons.Children.Add(CreateActionButton("Cancel", WpfItcmDialogService.BrushFromRgb(100, 116, 139), CreationAction.Cancel, true));
-            buttons.Children.Add(CreateActionButton("Create Another", WpfItcmDialogService.BrushFromRgb(15, 118, 110), CreationAction.CreateAnother, false));
-            buttons.Children.Add(CreateActionButton("Create and Open", WpfItcmDialogService.BrushFromRgb(37, 99, 235), CreationAction.CreateAndOpen, false));
+            buttons.Children.Add(CreateActionButton("Cancel", WpfThemeResources.TextMutedBrush, CreationAction.Cancel, true));
+            buttons.Children.Add(CreateActionButton("Create Another", WpfThemeResources.PrimaryHoverBrush, CreationAction.CreateAnother, false));
+            buttons.Children.Add(CreateActionButton("Create and Open", WpfThemeResources.PrimaryBrush, CreationAction.CreateAndOpen, false));
             buttons.Children.Add(CreateActionButton("Create", WpfItcmDialogService.BrushFromRgb(22, 163, 74), CreationAction.Create, false));
             Grid.SetColumn(buttons, 1);
             footerGrid.Children.Add(buttons);
@@ -644,7 +644,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = string.IsNullOrWhiteSpace(value) ? "-" : value.Trim(),
                 Margin = new Thickness(0, 0, 0, 10),
                 FontSize = 13,
-                Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 TextWrapping = TextWrapping.Wrap
             });
         }
@@ -656,7 +656,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = text,
                 FontSize = 11.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = WpfItcmDialogService.BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0, 3, 0, 3)
             };
         }
@@ -704,7 +704,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
             ShowInTaskbar = false;
-            Background = WpfItcmDialogService.BrushFromRgb(245, 247, 250);
+            Background = WpfThemeResources.SurfaceMutedBrush;
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -719,7 +719,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = string.IsNullOrWhiteSpace(headerText) ? "Override escalation" : headerText.Trim(),
                 FontSize = 23,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
             headerStack.Children.Add(WpfItcmDialogService.CreateMutedText("Set ticket-specific escalation timing. A reason is required and will be saved in ticket history."));
             header.Child = headerStack;
@@ -801,10 +801,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(12, 12, 20, 12)
             };
-            var cancel = WpfItcmDialogService.CreateButton("Cancel", WpfItcmDialogService.BrushFromRgb(100, 116, 139));
+            var cancel = WpfItcmDialogService.CreateButton("Cancel", WpfThemeResources.TextMutedBrush);
             cancel.IsCancel = true;
             cancel.Click += (_, __) => DialogResult = false;
-            _saveButton = WpfItcmDialogService.CreateButton("Save", WpfItcmDialogService.BrushFromRgb(37, 99, 235));
+            _saveButton = WpfItcmDialogService.CreateButton("Save", WpfThemeResources.PrimaryBrush);
             _saveButton.IsDefault = true;
             _saveButton.Click += (_, __) => SaveAndClose(clear: false);
             buttons.Children.Add(cancel);
@@ -908,7 +908,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = label,
                 FontSize = 11.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = WpfItcmDialogService.BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0, 10, 0, 2)
             });
             parent.Children.Add(combo);
@@ -935,7 +935,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
             ShowInTaskbar = false;
-            Background = WpfItcmDialogService.BrushFromRgb(245, 247, 250);
+            Background = WpfThemeResources.SurfaceMutedBrush;
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -950,7 +950,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = string.IsNullOrWhiteSpace(ticket.TicketCode) ? "Ticket #" + ticket.TicketId : ticket.TicketCode.Trim(),
                 FontSize = 23,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
             var chips = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
             chips.Children.Add(WpfItcmDialogService.CreatePill(ticket.Status ?? "-", StatusBrush(ticket.Status)));
@@ -994,7 +994,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             body.Children.Add(timingCard);
 
             var footer = WpfItcmDialogService.CreateFooter();
-            var close = WpfItcmDialogService.CreateButton("Close", WpfItcmDialogService.BrushFromRgb(37, 99, 235));
+            var close = WpfItcmDialogService.CreateButton("Close", WpfThemeResources.PrimaryBrush);
             close.IsDefault = true;
             close.Click += (_, __) => Close();
             close.Margin = new Thickness(8, 12, 22, 12);
@@ -1011,14 +1011,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = label,
                 FontSize = 11.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = WpfItcmDialogService.BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0, 8, 0, 2)
             });
             parent.Children.Add(new TextBlock
             {
                 Text = string.IsNullOrWhiteSpace(value) ? "-" : value.Trim(),
                 FontSize = 13,
-                Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 TextWrapping = TextWrapping.Wrap
             });
         }
@@ -1029,7 +1029,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (s.Contains("closed") || s.Contains("solved")) return WpfItcmDialogService.BrushFromRgb(22, 163, 74);
             if (s.Contains("escalated")) return WpfItcmDialogService.BrushFromRgb(234, 88, 12);
             if (s.Contains("progress")) return WpfItcmDialogService.BrushFromRgb(37, 99, 235);
-            return WpfItcmDialogService.BrushFromRgb(100, 116, 139);
+            return WpfThemeResources.TextMutedBrush;
         }
 
         private static Brush PriorityBrush(string priority)
@@ -1056,7 +1056,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
             ShowInTaskbar = false;
-            Background = WpfItcmDialogService.BrushFromRgb(245, 247, 250);
+            Background = WpfThemeResources.SurfaceMutedBrush;
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -1070,7 +1070,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = Title,
                 FontSize = 22,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             };
             Grid.SetRow(header, 0);
             root.Children.Add(header);
@@ -1109,7 +1109,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(12, 12, 20, 12)
             };
-            var open = WpfItcmDialogService.CreateButton("Open Ticket", WpfItcmDialogService.BrushFromRgb(37, 99, 235));
+            var open = WpfItcmDialogService.CreateButton("Open Ticket", WpfThemeResources.PrimaryBrush);
             open.Click += (_, __) =>
             {
                 if (grid.SelectedItem is CallTicketListItem item && item.TicketId > 0)
@@ -1119,7 +1119,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     Close();
                 }
             };
-            var close = WpfItcmDialogService.CreateButton("Close", WpfItcmDialogService.BrushFromRgb(100, 116, 139));
+            var close = WpfItcmDialogService.CreateButton("Close", WpfThemeResources.TextMutedBrush);
             close.IsCancel = true;
             close.Click += (_, __) => DialogResult = false;
             buttons.Children.Add(close);
@@ -1150,7 +1150,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
             ShowInTaskbar = false;
-            Background = WpfItcmDialogService.BrushFromRgb(245, 247, 250);
+            Background = WpfThemeResources.SurfaceMutedBrush;
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -1165,7 +1165,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Email Log - " + (string.IsNullOrWhiteSpace(ticketCode) ? "Ticket #" + ticketId : ticketCode.Trim()),
                 FontSize = 22,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = WpfItcmDialogService.BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
             _statusText = WpfItcmDialogService.CreateMutedText("Loading email activity...");
             _statusText.Margin = new Thickness(0, 6, 0, 0);
@@ -1192,7 +1192,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             root.Children.Add(_grid);
 
             var footer = WpfItcmDialogService.CreateFooter();
-            var close = WpfItcmDialogService.CreateButton("Close", WpfItcmDialogService.BrushFromRgb(37, 99, 235));
+            var close = WpfItcmDialogService.CreateButton("Close", WpfThemeResources.PrimaryBrush);
             close.IsDefault = true;
             close.Click += (_, __) => Close();
             close.Margin = new Thickness(8, 12, 22, 12);

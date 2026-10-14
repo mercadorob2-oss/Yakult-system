@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -91,7 +92,7 @@ namespace Yakult.Inventory.App.Pages.Item
                 AutoSize = false,
                 Width = 700,
                 TextAlign = ContentAlignment.MiddleLeft,
-                ForeColor = Color.FromArgb(100, 116, 139)
+                ForeColor = InventoryTheme.Colors.TextMuted
             };
 
             bottom.Controls.Add(_status);

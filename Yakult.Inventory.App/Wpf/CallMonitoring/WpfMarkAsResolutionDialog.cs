@@ -102,7 +102,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
             ShowInTaskbar = false;
-            Background = BrushFromRgb(245, 247, 250);
+            Background = WpfThemeResources.SurfaceMutedBrush;
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -127,7 +127,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Resolution Details",
                 FontSize = 22,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             };
             header.Children.Add(_dialogTitle);
             _dialogSubtitle = new TextBlock
@@ -181,12 +181,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             DockPanel.SetDock(_validationText, Dock.Left);
             footer.Children.Add(_validationText);
 
-            _backButton = CreateButton("Back", BrushFromRgb(100, 116, 139));
+            _backButton = CreateButton("Back", WpfThemeResources.TextMutedBrush);
             _backButton.Click += (_, __) => GoBack();
             var cancelButton = CreateButton("Cancel", BrushFromRgb(71, 85, 105));
             cancelButton.IsCancel = true;
             cancelButton.Click += (_, __) => DialogResult = false;
-            _nextButton = CreateButton("Next", BrushFromRgb(37, 99, 235));
+            _nextButton = CreateButton("Next", WpfThemeResources.PrimaryBrush);
             _nextButton.Click += (_, __) => GoNext();
             _confirmButton = CreateButton("Confirm", BrushFromRgb(22, 163, 74));
             _confirmButton.Click += (_, __) => Confirm();
@@ -305,7 +305,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _qtyBox.Text = "1";
             HookNumericQuantityInput(_qtyBox);
             _qtyBox.LostFocus += (_, __) => ClampQuantityToSelectedStock();
-            _newStockHint = new TextBlock { Margin = new Thickness(0, 4, 0, 0), Foreground = BrushFromRgb(100, 116, 139) };
+            _newStockHint = new TextBlock { Margin = new Thickness(0, 4, 0, 0), Foreground = WpfThemeResources.TextMutedBrush };
             var newItemStack = new StackPanel();
             newItemStack.Children.Add(_newItemCombo);
             newItemStack.Children.Add(_newStockHint);
@@ -931,7 +931,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = text,
                 FontSize = 14,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 Margin = new Thickness(0, 0, 0, 10)
             };
         }
@@ -1001,7 +1001,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (showStock)
             {
                 var stock = new FrameworkElementFactory(typeof(TextBlock));
-                stock.SetValue(TextBlock.ForegroundProperty, BrushFromRgb(100, 116, 139));
+                stock.SetValue(TextBlock.ForegroundProperty, WpfThemeResources.TextMutedBrush);
                 stock.SetBinding(TextBlock.TextProperty, new Binding("StockOnHand") { StringFormat = "  (Stock: {0})" });
                 panel.AppendChild(stock);
             }

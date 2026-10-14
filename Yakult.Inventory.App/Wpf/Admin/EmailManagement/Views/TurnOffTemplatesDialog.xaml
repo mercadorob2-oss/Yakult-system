@@ -9,7 +9,14 @@
         ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
-        <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Admin/EmailManagement/Styles/EmailConfigStyles.xaml"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Admin/EmailManagement/Styles/EmailConfigStyles.xaml"/>
+
+        </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Margin="16">
@@ -23,15 +30,15 @@
             <TextBlock Text="Select templates to disable SMTP sending:" FontWeight="Bold" VerticalAlignment="Center"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="BtnSelectAll" Content="Select All" Width="88" Height="26"
-                        Background="#EEF3FA" Foreground="#3A8EF6" Style="{StaticResource ActionButton}"
+                        Background="#EEF3FA" Foreground="{StaticResource YakultPrimaryBrush}" Style="{StaticResource ActionButton}"
                         Click="BtnSelectAll_Click"/>
                 <Button x:Name="BtnClearAll" Content="Clear All" Width="88" Height="26"
-                        Background="#EEF3FA" Foreground="#5A6A7A" Style="{StaticResource ActionButton}"
+                        Background="#EEF3FA" Foreground="{StaticResource YakultTextMutedBrush}" Style="{StaticResource ActionButton}"
                         Click="BtnClearAll_Click"/>
             </StackPanel>
         </Grid>
 
-        <ListBox Grid.Row="1" x:Name="LstTemplates" BorderBrush="#CDD5DE" BorderThickness="1"
+        <ListBox Grid.Row="1" x:Name="LstTemplates" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                   ScrollViewer.VerticalScrollBarVisibility="Auto">
             <ListBox.ItemTemplate>
                 <DataTemplate>
@@ -41,10 +48,10 @@
         </ListBox>
 
         <Grid Grid.Row="2" Margin="0,14,0,0">
-            <TextBlock x:Name="LblSelectedCount" Text="0 selected" Foreground="#5A6A7A" FontSize="11" VerticalAlignment="Center"/>
+            <TextBlock x:Name="LblSelectedCount" Text="0 selected" Foreground="{StaticResource YakultTextMutedBrush}" FontSize="11" VerticalAlignment="Center"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="BtnCancel" Content="Cancel" Width="100" Height="32"
-                        Background="#EEF3FA" Foreground="#5A6A7A" Style="{StaticResource ActionButton}"
+                        Background="#EEF3FA" Foreground="{StaticResource YakultTextMutedBrush}" Style="{StaticResource ActionButton}"
                         IsCancel="True" Click="BtnCancel_Click"/>
                 <Button x:Name="BtnTurnOff" Content="Turn Off" Width="100" Height="32"
                         Background="#E74C3C" Style="{StaticResource ActionButton}"

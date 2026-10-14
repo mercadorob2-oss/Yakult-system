@@ -43,7 +43,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
             ShowInTaskbar = false;
-            Background = BrushFromRgb(245, 247, 250);
+            Background = WpfThemeResources.SurfaceMutedBrush;
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -66,7 +66,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = GetHeadline(),
                 FontSize = 22,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
             headerStack.Children.Add(new TextBlock
             {
@@ -149,7 +149,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             DockPanel.SetDock(buttons, Dock.Right);
             footer.Children.Add(buttons);
 
-            var cancel = CreateButton("Cancel", BrushFromRgb(100, 116, 139));
+            var cancel = CreateButton("Cancel", WpfThemeResources.TextMutedBrush);
             cancel.IsCancel = true;
             cancel.Click += (_, __) => DialogResult = false;
             _confirmButton = CreateButton(GetConfirmText(), GetActionBrush());
@@ -281,7 +281,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private FrameworkElement CreateStatusChangeRow()
         {
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
-            row.Children.Add(CreatePill(_currentStatus, BrushFromRgb(100, 116, 139)));
+            row.Children.Add(CreatePill(_currentStatus, WpfThemeResources.TextMutedBrush));
             row.Children.Add(new TextBlock
             {
                 Text = "->",
@@ -301,7 +301,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Margin = new Thickness(0, 14, 0, 0),
                 Padding = new Thickness(12),
                 CornerRadius = new CornerRadius(6),
-                Background = BrushFromRgb(248, 250, 252),
+                Background = WpfThemeResources.SurfaceMutedBrush,
                 BorderBrush = BrushFromRgb(226, 232, 240),
                 BorderThickness = new Thickness(1),
                 Child = new TextBlock
@@ -339,14 +339,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = label,
                 FontSize = 11.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(100, 116, 139)
+                Foreground = WpfThemeResources.TextMutedBrush
             });
             stack.Children.Add(new TextBlock
             {
                 Text = string.IsNullOrWhiteSpace(value) ? "-" : value,
                 Margin = new Thickness(0, 3, 0, 0),
                 FontSize = 13,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 TextWrapping = TextWrapping.Wrap
             });
             return stack;
@@ -369,7 +369,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = text,
                 FontSize = 14,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 Margin = new Thickness(0, 0, 0, 4)
             };
         }

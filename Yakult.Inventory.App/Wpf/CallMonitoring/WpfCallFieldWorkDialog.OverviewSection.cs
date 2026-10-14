@@ -14,7 +14,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var pill = new Border { CornerRadius = new CornerRadius(10), Padding = new Thickness(12,5,12,5), HorizontalAlignment = HorizontalAlignment.Left, Background = GetFieldWorkStatusBrush(v.Status) };
             pill.Child = new TextBlock { Text = (v.Status ?? "-").ToUpperInvariant(), Foreground = Brushes.White, FontWeight = FontWeights.SemiBold, FontSize = 11.5 };
             row.Children.Add(pill);
-            row.Children.Add(new TextBlock { Text = $"Visit #{v.FieldVisitId}", Foreground = BrushFromRgb(100,116,139), FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10,0,0,0) });
+            row.Children.Add(new TextBlock { Text = $"Visit #{v.FieldVisitId}", Foreground = WpfThemeResources.TextMutedBrush, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10,0,0,0) });
             if (v.HasSignature)
             {
                 var sig = new Border { CornerRadius = new CornerRadius(8), Background = BrushFromRgb(220,252,231), Padding = new Thickness(8,3,8,3), Margin = new Thickness(10,0,0,0), VerticalAlignment = VerticalAlignment.Center, BorderBrush = BrushFromRgb(134,239,172), BorderThickness = new Thickness(1) };
@@ -77,7 +77,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0,12,0,0), VerticalAlignment = VerticalAlignment.Center };
             var icon = new TextBlock { Text = hasSig ? "\uE73E" : "\uE70B", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 16, Foreground = hasSig ? BrushFromRgb(22,163,74) : BrushFromRgb(148,163,184), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,8,0) };
             row.Children.Add(icon);
-            row.Children.Add(new TextBlock { Text = hasSig ? "✓ Customer signature on file — tap Signature to replace" : "No signature yet — capture before completing visit", Foreground = hasSig ? BrushFromRgb(22,163,74) : BrushFromRgb(100,116,139), FontStyle = hasSig ? FontStyles.Normal : FontStyles.Italic, FontSize = 12.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            row.Children.Add(new TextBlock { Text = hasSig ? "✓ Customer signature on file — tap Signature to replace" : "No signature yet — capture before completing visit", Foreground = hasSig ? BrushFromRgb(22,163,74) : WpfThemeResources.TextMutedBrush, FontStyle = hasSig ? FontStyles.Normal : FontStyles.Italic, FontSize = 12.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
             return row;
         }
 
@@ -89,21 +89,21 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private Border MakeDetailCell(string label, string value, int col, int row, string glyph, Brush glyphBrush)
         {
             var panel = new StackPanel { Margin = new Thickness(0,0,12,8) };
-            panel.Children.Add(new TextBlock { Text = label, FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(100,116,139), Margin = new Thickness(0,0,0,4) });
+            panel.Children.Add(new TextBlock { Text = label, FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0,0,0,4) });
             var display = string.IsNullOrWhiteSpace(value) ? "—" : value;
             var isPlaceholder = string.IsNullOrWhiteSpace(value) || display == "—" || display == "Not yet";
             if (string.IsNullOrEmpty(glyph))
             {
-                panel.Children.Add(new TextBlock { Text = display, Foreground = isPlaceholder ? BrushFromRgb(100,116,139) : BrushFromRgb(15,23,42), FontStyle = isPlaceholder ? FontStyles.Italic : FontStyles.Normal, FontWeight = FontWeights.SemiBold, FontSize = 13, TextWrapping = TextWrapping.Wrap });
+                panel.Children.Add(new TextBlock { Text = display, Foreground = isPlaceholder ? WpfThemeResources.TextMutedBrush : WpfThemeResources.TextDarkBrush, FontStyle = isPlaceholder ? FontStyles.Italic : FontStyles.Normal, FontWeight = FontWeights.SemiBold, FontSize = 13, TextWrapping = TextWrapping.Wrap });
             }
             else
             {
                 var valueRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-                valueRow.Children.Add(new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 14, Foreground = glyphBrush ?? BrushFromRgb(100,116,139), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,6,0) });
-                valueRow.Children.Add(new TextBlock { Text = display, Foreground = isPlaceholder ? BrushFromRgb(100,116,139) : BrushFromRgb(15,23,42), FontStyle = isPlaceholder ? FontStyles.Italic : FontStyles.Normal, FontWeight = FontWeights.SemiBold, FontSize = 13, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center });
+                valueRow.Children.Add(new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 14, Foreground = glyphBrush ?? WpfThemeResources.TextMutedBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,6,0) });
+                valueRow.Children.Add(new TextBlock { Text = display, Foreground = isPlaceholder ? WpfThemeResources.TextMutedBrush : WpfThemeResources.TextDarkBrush, FontStyle = isPlaceholder ? FontStyles.Italic : FontStyles.Normal, FontWeight = FontWeights.SemiBold, FontSize = 13, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center });
                 panel.Children.Add(valueRow);
             }
-            var border = new Border { Child = panel, Background = BrushFromRgb(248,250,252), CornerRadius = new CornerRadius(10), Padding = new Thickness(12,10,12,10), Margin = new Thickness(0,0,8,0), BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1) };
+            var border = new Border { Child = panel, Background = WpfThemeResources.SurfaceMutedBrush, CornerRadius = new CornerRadius(10), Padding = new Thickness(12,10,12,10), Margin = new Thickness(0,0,8,0), BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1) };
             Grid.SetColumn(border, col); Grid.SetRow(border, row);
             return border;
         }

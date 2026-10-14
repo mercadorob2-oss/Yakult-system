@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Globalization;
 using System.Linq;
@@ -161,7 +162,7 @@ namespace Yakult.Inventory.App.WPF.RepairedItems.Views
 
     public sealed class SpareToBrushConverter : IValueConverter
     {
-        private static readonly Brush SpareBrush = new SolidColorBrush(Color.FromRgb(41, 128, 185));
+        private static readonly Brush SpareBrush = new SolidColorBrush(InventoryTheme.WpfColors.PrimaryHover);
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
             => string.Equals(value as string, "Yes", StringComparison.OrdinalIgnoreCase) ? SpareBrush : Brushes.Black;
@@ -187,10 +188,10 @@ namespace Yakult.Inventory.App.WPF.RepairedItems.Views
 
     public sealed class OriginToBrushConverter : IValueConverter
     {
-        private static readonly Brush Itcm = new SolidColorBrush(Color.FromRgb(41, 128, 185));
+        private static readonly Brush Itcm = new SolidColorBrush(InventoryTheme.WpfColors.PrimaryHover);
         private static readonly Brush Manual = new SolidColorBrush(Color.FromRgb(52, 73, 94));
         private static readonly Brush Mobile = new SolidColorBrush(Color.FromRgb(39, 174, 96));
-        private static readonly Brush Muted = new SolidColorBrush(Color.FromRgb(122, 138, 154));
+        private static readonly Brush Muted = new SolidColorBrush(InventoryTheme.WpfColors.TextMuted);
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {

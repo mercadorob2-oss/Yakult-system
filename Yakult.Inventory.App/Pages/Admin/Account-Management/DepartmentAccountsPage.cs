@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -191,7 +192,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                 AutoSizeMode     = DataGridViewAutoSizeColumnMode.AllCells,
                 ReadOnly         = false,
                 SortMode         = DataGridViewColumnSortMode.NotSortable,
-                DefaultCellStyle = new DataGridViewCellStyle { ForeColor = Color.FromArgb(22, 100, 170) }
+                DefaultCellStyle = new DataGridViewCellStyle { ForeColor = InventoryTheme.Colors.PrimaryHover }
             });
             // Branch Email (child) — editable inline, overrides dept email for this branch
             _dgv.Columns.Add(new DataGridViewTextBoxColumn
@@ -203,7 +204,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                 AutoSizeMode     = DataGridViewAutoSizeColumnMode.AllCells,
                 ReadOnly         = false,
                 SortMode         = DataGridViewColumnSortMode.NotSortable,
-                DefaultCellStyle = new DataGridViewCellStyle { ForeColor = Color.FromArgb(22, 100, 170) }
+                DefaultCellStyle = new DataGridViewCellStyle { ForeColor = InventoryTheme.Colors.PrimaryHover }
             });
             _dgv.Columns.Add(new DataGridViewTextBoxColumn
             {

@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -35,7 +36,7 @@ namespace Yakult.Inventory.App.Pages.Admin.Security
         private static readonly Color ChipBg = Color.FromArgb(255, 235, 235);
         private static readonly Color ChipBorder = Color.FromArgb(235, 190, 190);
         private static readonly Color ChipText = Color.FromArgb(160, 50, 50);
-        private static readonly Color AccentBlue = Color.FromArgb(78, 154, 252);
+        private static readonly Color AccentBlue = InventoryTheme.Colors.Primary;
 
         public CategoryAccessPanel()
         {
@@ -200,7 +201,7 @@ namespace Yakult.Inventory.App.Pages.Admin.Security
                 using (var pen = new Pen(CardBorder))
                     e.Graphics.DrawRectangle(pen, 0, 0, card.Width - 1, card.Height - 1);
             };
-            card.BackColor = Color.FromArgb(250, 251, 252);
+            card.BackColor = InventoryTheme.Colors.GridAltRowBack;
             return card;
         }
 

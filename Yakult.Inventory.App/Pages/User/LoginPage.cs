@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using Yakult.Inventory.App.Data;
@@ -18,6 +19,8 @@ namespace Yakult.Inventory.App.Pages.User
         private readonly UserRepository _userRepo;
         private bool _passwordVisible = false;
         private bool _isLoggingIn = false;
+        private Label _loginStatus;
+        private Button _passwordToggle;
 
         public LoginPage(UserRepository userRepo)
         {
@@ -43,6 +46,196 @@ namespace Yakult.Inventory.App.Pages.User
             // Enter key support
             NameLoginField.KeyDown += NameLoginField_KeyDown;
             PassLoginField.KeyDown += PassLoginField_KeyDown;
+
+            LoadBrandLogo();
+            ApplyWorkspaceLayout();
+        }
+
+        private void ApplyWorkspaceLayout()
+        {
+            SuspendLayout();
+            var navy = ColorTranslator.FromHtml("#182235");
+            var ink = ColorTranslator.FromHtml("#202635");
+            var muted = ColorTranslator.FromHtml("#677081");
+            var accent = ColorTranslator.FromHtml("#B92335");
+            var line = ColorTranslator.FromHtml("#E5E6E8");
+            Text = "Sign in · Yakult Workspace";
+            BackColor = ColorTranslator.FromHtml("#F6F5F2");
+            Font = new Font("Segoe UI", 10F);
+            ClientSize = new Size(960, 620);
+            MinimumSize = new Size(850, 580);
+            FormBorderStyle = FormBorderStyle.Sizable;
+            MaximizeBox = true;
+            MainPanel.Controls.Clear();
+            MainPanel.Padding = Padding.Empty;
+            MainPanel.EdgeColor = line;
+            MainPanel.Anchor = AnchorStyles.None;
+
+            var split = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty, Padding = Padding.Empty, BackColor = Color.White };
+            split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 39));
+            split.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 61));
+            BrandPanel.Dock = DockStyle.Fill;
+            BrandPanel.Margin = Padding.Empty;
+            BrandPanel.BackColor = navy;
+            BrandPanel.EdgeColor = navy;
+            logoCard.Dock = DockStyle.None;
+            logoCard.Bounds = new Rectangle(28, 36, 160, 58);
+            picLogo.Dock = DockStyle.Fill;
+            picLogo.Margin = Padding.Empty;
+            lblBrandTitle.Text = "Your systems.\nOne workspace.";
+            lblBrandTitle.Font = new Font("Segoe UI", 23F, FontStyle.Bold);
+            lblBrandTitle.ForeColor = Color.White;
+            lblBrandTitle.TextAlign = ContentAlignment.TopLeft;
+            lblBrandTitle.AutoSize = false;
+            lblBrandSub.Text = "Access the tools that keep your day moving, from inventory to IT support.";
+            lblBrandSub.Font = new Font("Segoe UI", 10F);
+            lblBrandSub.ForeColor = ColorTranslator.FromHtml("#B8C3D4");
+            lblBrandSub.TextAlign = ContentAlignment.TopLeft;
+            var brandFooter = new Label { Text = "YAKULT · INTERNAL SYSTEMS", ForeColor = ColorTranslator.FromHtml("#B8C3D4"), Font = new Font("Segoe UI", 8F), AutoSize = false, Height = 34 };
+            BrandPanel.Controls.Add(brandFooter);
+            void ArrangeBrand()
+            {
+                double scale = logoCard.Width / 160D;
+                int Spacing(int value) => (int)Math.Round(value * scale);
+                int width = Math.Max(1, BrandPanel.ClientSize.Width - Spacing(56));
+                lblBrandTitle.Bounds = new Rectangle(Spacing(28), Spacing(156), width, Spacing(98));
+                lblBrandSub.Bounds = new Rectangle(Spacing(28), Spacing(274), width, Spacing(86));
+                brandFooter.Bounds = new Rectangle(Spacing(28), BrandPanel.ClientSize.Height - Spacing(52), width, Spacing(30));
+            }
+            BrandPanel.SizeChanged += (_, __) => ArrangeBrand();
+            split.Controls.Add(BrandPanel, 0, 0);
+
+            var signIn = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.White, Padding = new Padding(36, 28, 36, 24), Margin = Padding.Empty };
+            var form = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 0, BackColor = Color.White, Margin = Padding.Empty };
+            form.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            void Add(Control control, int height, int bottom = 0)
+            {
+                control.Dock = DockStyle.Top;
+                control.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+                control.Margin = new Padding(0, 0, 0, bottom);
+                control.Height = height;
+                int row = form.RowCount++;
+                control.TabIndex = row;
+                form.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                form.Controls.Add(control, 0, row);
+            }
+            Add(new Label { Text = "WELCOME TO YOUR WORKSPACE", ForeColor = accent, Font = new Font("Segoe UI", 8F, FontStyle.Bold) }, 18, 8);
+            TitleLabel.Text = "Welcome back";
+            TitleLabel.ForeColor = ink;
+            TitleLabel.Font = new Font("Segoe UI", 23F, FontStyle.Bold);
+            TitleLabel.AutoSize = false;
+            Add(TitleLabel, 42);
+            lblSubtitle.Text = "Sign in with your Yakult account.";
+            lblSubtitle.ForeColor = muted;
+            lblSubtitle.Font = new Font("Segoe UI", 10F);
+            Add(lblSubtitle, 25, 14);
+            lblUserCaption.ForeColor = muted;
+            lblPassCaption.ForeColor = muted;
+            Add(lblUserCaption, 21, 3);
+
+            foreach (var field in new[] { NameLoginField, PassLoginField })
+            {
+                field.BaseColor = Color.White;
+                field.BorderColorA = line;
+                field.BorderColorB = accent;
+                field.ForeColor = ink;
+                field.TabStop = true;
+                field.Font = new Font("Segoe UI", 11F);
+            }
+            NameLoginField.AccessibleName = "Username";
+            NameLoginField.TabIndex = 0;
+            PassLoginField.AccessibleName = "Password";
+            PassLoginField.TabIndex = 1;
+            Add(NameLoginField, 42, 12);
+            Add(lblPassCaption, 21, 3);
+            var passwordRow = new TableLayoutPanel { ColumnCount = 2, RowCount = 1, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty, TabIndex = 1 };
+            passwordRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            passwordRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 68));
+            passwordRow.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            PassLoginField.Dock = DockStyle.Fill;
+            PassLoginField.Margin = Padding.Empty;
+            passwordRow.Controls.Add(PassLoginField, 0, 0);
+            _passwordToggle = new Button { Text = "Show", Dock = DockStyle.Fill, Margin = new Padding(6, 0, 0, 0), FlatStyle = FlatStyle.Flat, ForeColor = muted, BackColor = Color.White, UseVisualStyleBackColor = false, Cursor = Cursors.Hand, TabIndex = 2, AccessibleName = "Show password" };
+            _passwordToggle.FlatAppearance.BorderColor = line;
+            _passwordToggle.FlatAppearance.MouseOverBackColor = ColorTranslator.FromHtml("#FCF0F1");
+            _passwordToggle.Click += lblTogglePassword_Click;
+            passwordRow.Controls.Add(_passwordToggle, 1, 0);
+            Add(passwordRow, 42);
+            _loginStatus = new Label { Text = "", ForeColor = accent, Font = new Font("Segoe UI", 9F), AccessibleName = "Sign-in status" };
+            Add(_loginStatus, 30);
+            LoginBtn.TabIndex = 3;
+            LoginBtn.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+            Helpers.UiFactory.ConfigurePillHopeButton(LoginBtn, accent, ColorTranslator.FromHtml("#9E1E2E"));
+            Add(LoginBtn, 44, 10);
+            lblContactAdmin.ForeColor = muted;
+            lblContactAdmin.Text = "Need an account or help signing in?\nContact the Information Technology Department.";
+            lblContactAdmin.TextAlign = ContentAlignment.TopLeft;
+            Add(lblContactAdmin, 40);
+            var support = new LinkLabel { Text = "Contact IT support", AutoSize = false, LinkColor = accent, ActiveLinkColor = accent, VisitedLinkColor = accent, TabIndex = 4 };
+            support.LinkClicked += (_, __) =>
+            {
+                string email = Properties.Settings.Default.ITContactEmail;
+                if (string.IsNullOrWhiteSpace(email)) email = "it-support@yakult.com";
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("mailto:" + Uri.EscapeDataString(email.Trim())) { UseShellExecute = true }); }
+                catch { _loginStatus.Text = "Contact IT support at " + email; }
+            };
+            Add(support, 22);
+            signIn.Controls.Add(form);
+            lblTogglePassword.Visible = false;
+            signIn.Controls.Add(lblTogglePassword);
+            split.Controls.Add(signIn, 1, 0);
+            MainPanel.Controls.Add(split);
+            bool arranging = false;
+            void CenterCard()
+            {
+                if (arranging || ClientSize.Width <= 0 || ClientSize.Height <= 0) return;
+                arranging = true;
+                try
+                {
+                    // AutoScale also scales the controls and padding. Use the same scale
+                    // here, then arrange again after startup scaling has completed.
+                    double scale = signIn.Padding.Left / 36D;
+                    int outerSpace = (int)Math.Round(40 * scale);
+                    int width = Math.Max(1, Math.Min((int)Math.Round(920 * scale), ClientSize.Width - outerSpace));
+                    int contentHeight = form.PreferredSize.Height + signIn.Padding.Vertical;
+                    int height = Math.Max(1, Math.Min(Math.Max((int)Math.Round(548 * scale), contentHeight), ClientSize.Height - outerSpace));
+                    MainPanel.SetBounds((ClientSize.Width - width) / 2, (ClientSize.Height - height) / 2, width, height);
+                    ArrangeBrand();
+                }
+                finally { arranging = false; }
+            }
+            Resize += (_, __) => CenterCard();
+            Layout += (_, __) => CenterCard();
+            Load += (_, __) => CenterCard();
+            CenterCard();
+            Shown += (_, __) => NameLoginField.Focus();
+            ResumeLayout(true);
+        }
+
+        private void LoadBrandLogo()
+        {
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string[] candidates = new[]
+                {
+                    Path.Combine(baseDir, "Images", "yakult_Name.png"),
+                    Path.Combine(baseDir, "images", "yakult_Name.png"),
+                    Path.Combine(baseDir, "yakult_Name.png")
+                };
+                foreach (string path in candidates)
+                {
+                    if (File.Exists(path))
+                    {
+                        picLogo.Image = Image.FromFile(path);
+                        break;
+                    }
+                }
+            }
+            catch
+            {
+                // Text-only branding remains; logo is decorative.
+            }
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -87,7 +280,13 @@ namespace Yakult.Inventory.App.Pages.User
         // 👁 Toggle password visibility
         private void lblTogglePassword_Click(object sender, EventArgs e)
         {
+            if (_isLoggingIn) return;
             _passwordVisible = !_passwordVisible;
+            if (_passwordToggle != null)
+            {
+                _passwordToggle.Text = _passwordVisible ? "Hide" : "Show";
+                _passwordToggle.AccessibleName = _passwordVisible ? "Hide password" : "Show password";
+            }
 
             if (_passwordVisible)
             {
@@ -104,7 +303,7 @@ namespace Yakult.Inventory.App.Pages.User
         // Optional hover effect
         private void lblTogglePassword_MouseEnter(object sender, EventArgs e)
         {
-            lblTogglePassword.ForeColor = Color.FromArgb(78, 154, 252);
+            lblTogglePassword.ForeColor = Color.FromArgb(227, 6, 19);
         }
 
         private void lblTogglePassword_MouseLeave(object sender, EventArgs e)
@@ -121,19 +320,19 @@ namespace Yakult.Inventory.App.Pages.User
 
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(password))
             {
-                MessageBox.Show(
-                    "Please enter both name and password.",
-                    "Login Required",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning
-                );
+                _loginStatus.Text = "Enter your username and password to continue.";
+                if (string.IsNullOrWhiteSpace(name)) NameLoginField.Focus();
+                else PassLoginField.Focus();
                 return;
             }
 
+            _loginStatus.Text = "";
             _isLoggingIn = true;
             LoginBtn.Enabled = false;
+            LoginBtn.Text = "Signing in...";
             NameLoginField.Enabled = false;
             PassLoginField.Enabled = false;
+            _passwordToggle.Enabled = false;
 
             try
             {
@@ -191,18 +390,24 @@ namespace Yakult.Inventory.App.Pages.User
                     return;
                 }
 
-                MessageBox.Show(
-                    "Invalid name or password.",
-                    "Login Failed",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                _loginStatus.Text = "The username or password is incorrect. Please try again.";
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("[Login] Sign-in failed.", ex);
+                if (!IsDisposed) _loginStatus.Text = "Unable to sign in. Try again or contact IT support.";
             }
             finally
             {
                 _isLoggingIn = false;
-                LoginBtn.Enabled = true;
-                NameLoginField.Enabled = true;
-                PassLoginField.Enabled = true;
+                if (!IsDisposed)
+                {
+                    LoginBtn.Enabled = true;
+                    LoginBtn.Text = "Sign In";
+                    NameLoginField.Enabled = true;
+                    PassLoginField.Enabled = true;
+                    _passwordToggle.Enabled = true;
+                }
             }
         }
 

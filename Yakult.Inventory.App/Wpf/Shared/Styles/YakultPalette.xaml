@@ -1,0 +1,32 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Brand colors are separate from success, warning, error, and chart colors. -->
+    <Color x:Key="YakultPrimaryColor">#B92335</Color>
+    <Color x:Key="YakultPrimaryHoverColor">#9E1E2E</Color>
+    <Color x:Key="YakultNavigationColor">#182235</Color>
+    <Color x:Key="YakultNavigationMutedColor">#B8C3D4</Color>
+    <Color x:Key="YakultPageBackgroundColor">#F6F5F2</Color>
+    <Color x:Key="YakultSurfaceMutedColor">#F5F6F8</Color>
+    <Color x:Key="YakultAccentTintColor">#FCF0F1</Color>
+    <Color x:Key="YakultAccentBorderColor">#E7B8C1</Color>
+    <Color x:Key="YakultSelectionColor">#F8DDE2</Color>
+    <Color x:Key="YakultSelectionHoverColor">#F2CCD4</Color>
+    <Color x:Key="YakultBorderColor">#E5E6E8</Color>
+    <Color x:Key="YakultInputBorderColor">#CDD0D6</Color>
+    <Color x:Key="YakultTextDarkColor">#202635</Color>
+    <Color x:Key="YakultTextMutedColor">#677081</Color>
+    <SolidColorBrush x:Key="YakultPrimaryBrush" Color="{StaticResource YakultPrimaryColor}"/>
+    <SolidColorBrush x:Key="YakultPrimaryHoverBrush" Color="{StaticResource YakultPrimaryHoverColor}"/>
+    <SolidColorBrush x:Key="YakultNavigationBrush" Color="{StaticResource YakultNavigationColor}"/>
+    <SolidColorBrush x:Key="YakultNavigationMutedBrush" Color="{StaticResource YakultNavigationMutedColor}"/>
+    <SolidColorBrush x:Key="YakultPageBackgroundBrush" Color="{StaticResource YakultPageBackgroundColor}"/>
+    <SolidColorBrush x:Key="YakultSurfaceMutedBrush" Color="{StaticResource YakultSurfaceMutedColor}"/>
+    <SolidColorBrush x:Key="YakultAccentTintBrush" Color="{StaticResource YakultAccentTintColor}"/>
+    <SolidColorBrush x:Key="YakultAccentBorderBrush" Color="{StaticResource YakultAccentBorderColor}"/>
+    <SolidColorBrush x:Key="YakultSelectionBrush" Color="{StaticResource YakultSelectionColor}"/>
+    <SolidColorBrush x:Key="YakultSelectionHoverBrush" Color="{StaticResource YakultSelectionHoverColor}"/>
+    <SolidColorBrush x:Key="YakultBorderBrush" Color="{StaticResource YakultBorderColor}"/>
+    <SolidColorBrush x:Key="YakultInputBorderBrush" Color="{StaticResource YakultInputBorderColor}"/>
+    <SolidColorBrush x:Key="YakultTextDarkBrush" Color="{StaticResource YakultTextDarkColor}"/>
+    <SolidColorBrush x:Key="YakultTextMutedBrush" Color="{StaticResource YakultTextMutedColor}"/>
+</ResourceDictionary>

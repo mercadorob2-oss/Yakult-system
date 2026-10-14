@@ -4,13 +4,14 @@
         Title="Paste Bulk Deploy"
         Width="1400" Height="800"
         WindowStartupLocation="CenterOwner"
-        Background="#F0F2F6"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         FontFamily="Segoe UI"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <Style x:Key="DeployCard" TargetType="Border">
@@ -24,7 +25,7 @@
             <Style x:Key="DeployTitle" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="15"/>
                 <Setter Property="FontWeight" Value="Bold"/>
-                <Setter Property="Foreground" Value="#1A2333"/>
+                <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             </Style>
             <Style x:Key="DeploySubtitle" TargetType="TextBlock">
                 <Setter Property="FontSize" Value="11"/>

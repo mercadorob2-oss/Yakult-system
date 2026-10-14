@@ -3,13 +3,21 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              VerticalAlignment="Center"
              Visibility="Collapsed">
-    <Border Background="#EBF5FF" CornerRadius="10" Padding="10,5"
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border Background="{StaticResource YakultAccentTintBrush}" CornerRadius="10" Padding="10,5"
             Cursor="Hand"
             MouseLeftButtonUp="Root_MouseLeftButtonUp">
         <Border.ToolTip>
             <ToolTip x:Name="RootToolTip" Content="Click to view and unselect rows"/>
         </Border.ToolTip>
-        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#4E9AFC" TextDecorations="Underline">
+        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource YakultPrimaryBrush}" TextDecorations="Underline">
             <Run x:Name="RunCount" Text="0"/>
             <Run Text=" Selected"/>
         </TextBlock>

@@ -603,6 +603,12 @@ ORDER BY c.Name", con))
                 {
                     con.Open();
 
+                    // New Company/Branch/Dept combos need a mapping row or the
+                    // ticket workspace refresh rejects the employee, so ensure
+                    // it here as part of the same save.
+                    BranchDepartmentCompanyHelper.EnsureMapping(
+                        con, selectedCompany.Id, selectedBranch.Id, selectedDepartment?.Id);
+
                     // Distributor is optional and deployment-guarded: older DBs may
                     // not have dbo.Employee.DistributorId yet.
                     bool hasDistributorColumn;
@@ -614,9 +620,9 @@ ORDER BY c.Name", con))
                     var ins = EmployeeDistributorHelper.BuildDistributorInsertFragments(hasDistributorColumn);
 
                     using (var cmd = new SqlCommand(@"
-                        INSERT INTO dbo.Employee (Name, EmployeeNumber, Position, Description, DateCreated, Createdby, ComId, BranchId, DeptId, TitleId," + ins.ColumnFragment + @")
+                        INSERT INTO dbo.Employee (Name, EmployeeNumber, Position, Description, DateCreated, Createdby, ComId, BranchId, DeptId, TitleId" + ins.ColumnFragment + @")
                         OUTPUT INSERTED.EmpId
-                        VALUES (@Name, @EmployeeNumber, @Position, @Description, @DateCreated, @Createdby, @ComId, @BranchId, @DeptId, @TitleId," + ins.ValueFragment + @")", con))
+                        VALUES (@Name, @EmployeeNumber, @Position, @Description, @DateCreated, @Createdby, @ComId, @BranchId, @DeptId, @TitleId" + ins.ValueFragment + @")", con))
                     {
                         cmd.Parameters.AddWithValue("@Name", txtName.Text.Trim());
                         // EmployeeNumber may be null/empty

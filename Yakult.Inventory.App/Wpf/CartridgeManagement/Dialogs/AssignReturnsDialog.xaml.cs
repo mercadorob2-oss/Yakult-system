@@ -260,7 +260,7 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.Dialogs
             BtnConfirm.Visibility = (step == 2) ? Visibility.Visible : Visibility.Collapsed;
 
             // Step indicator colors
-            var activeColor   = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#3A8EF6");
+            var activeColor   = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#B92335");
             var inactiveColor = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#CCCCCC");
 
             Dot1.Fill = new System.Windows.Media.SolidColorBrush(step >= 1 ? activeColor : inactiveColor);
