@@ -71,20 +71,20 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             var techStack = new StackPanel { Margin = new Thickness(0,0,8,0) };
-            techStack.Children.Add(new TextBlock { Text = "Technician", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(100,116,139), Margin = new Thickness(0,0,0,6) });
+            techStack.Children.Add(new TextBlock { Text = "Technician", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0,0,0,6) });
             // _techCombo is created in main ctor; reuse it
             techStack.Children.Add(_techCombo);
             Grid.SetColumn(techStack, 0); grid.Children.Add(techStack);
 
             var dateStack = new StackPanel { Margin = new Thickness(8,0,8,0) };
-            dateStack.Children.Add(new TextBlock { Text = "Schedule Date", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(100,116,139), Margin = new Thickness(0,0,0,6) });
-            _scheduleDatePicker = new DatePicker { SelectedDate = DateTime.Today, DisplayDateStart = DateTime.Today, Height = 36, Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), Foreground = BrushFromRgb(15,23,42), FontSize = 13 };
+            dateStack.Children.Add(new TextBlock { Text = "Schedule Date", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0,0,0,6) });
+            _scheduleDatePicker = new DatePicker { SelectedDate = DateTime.Today, DisplayDateStart = DateTime.Today, Height = 36, Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), Foreground = WpfThemeResources.TextDarkBrush, FontSize = 13 };
             dateStack.Children.Add(_scheduleDatePicker);
             Grid.SetColumn(dateStack, 1); grid.Children.Add(dateStack);
 
             var timeStack = new StackPanel { Margin = new Thickness(8,0,0,0) };
-            timeStack.Children.Add(new TextBlock { Text = "Time (HH:mm)", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(100,116,139), Margin = new Thickness(0,0,0,6) });
-            _scheduleTimeBox = new TextBox { Text = DateTime.Now.ToString("HH:mm"), Height = 36, Padding = new Thickness(8,6,8,6), Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), Foreground = BrushFromRgb(15,23,42), FontSize = 13 };
+            timeStack.Children.Add(new TextBlock { Text = "Time (HH:mm)", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0,0,0,6) });
+            _scheduleTimeBox = new TextBox { Text = DateTime.Now.ToString("HH:mm"), Height = 36, Padding = new Thickness(8,6,8,6), Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), Foreground = WpfThemeResources.TextDarkBrush, FontSize = 13 };
             timeStack.Children.Add(_scheduleTimeBox);
             Grid.SetColumn(timeStack, 2); grid.Children.Add(timeStack);
 
@@ -93,7 +93,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Content = "Log past visit (backdate)",
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(100,116,139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0,10,0,0)
             };
             _backdateCheck.Checked += (_, __) => UpdateBackdateMode();
@@ -106,12 +106,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             // when completing a past visit. Silent: no marker is stored.
             _completedRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0,8,0,0), Visibility = Visibility.Collapsed };
             var doneDateStack = new StackPanel { Width = 220, Margin = new Thickness(0,0,8,0) };
-            doneDateStack.Children.Add(new TextBlock { Text = "Completed Date", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(100,116,139), Margin = new Thickness(0,0,0,6) });
-            _completedDatePicker = new DatePicker { SelectedDate = DateTime.Today, Height = 36, Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), Foreground = BrushFromRgb(15,23,42), FontSize = 13 };
+            doneDateStack.Children.Add(new TextBlock { Text = "Completed Date", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0,0,0,6) });
+            _completedDatePicker = new DatePicker { SelectedDate = DateTime.Today, Height = 36, Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), Foreground = WpfThemeResources.TextDarkBrush, FontSize = 13 };
             doneDateStack.Children.Add(_completedDatePicker);
             var doneTimeStack = new StackPanel { Width = 160 };
-            doneTimeStack.Children.Add(new TextBlock { Text = "Time (HH:mm)", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(100,116,139), Margin = new Thickness(0,0,0,6) });
-            _completedTimeBox = new TextBox { Text = DateTime.Now.ToString("HH:mm"), Height = 36, Padding = new Thickness(8,6,8,6), Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), Foreground = BrushFromRgb(15,23,42), FontSize = 13 };
+            doneTimeStack.Children.Add(new TextBlock { Text = "Time (HH:mm)", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0,0,0,6) });
+            _completedTimeBox = new TextBox { Text = DateTime.Now.ToString("HH:mm"), Height = 36, Padding = new Thickness(8,6,8,6), Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), Foreground = WpfThemeResources.TextDarkBrush, FontSize = 13 };
             doneTimeStack.Children.Add(_completedTimeBox);
             _completedRow.Children.Add(doneDateStack);
             _completedRow.Children.Add(doneTimeStack);

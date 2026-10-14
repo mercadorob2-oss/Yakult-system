@@ -93,7 +93,8 @@ fun AppNavigator(
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = "login",
+                        // Remembered (and still-valid) sessions skip sign-in.
+                        startDestination = if (UserSession.isSessionUsable()) "root_home" else "login",
                         modifier = Modifier
                             .fillMaxSize()
                             .widthIn(max = adaptiveLayout.contentMaxWidth)

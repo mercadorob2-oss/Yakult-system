@@ -6,24 +6,43 @@ namespace Yakult.Inventory.App.Helpers
     {
         internal static class Colors
         {
-            internal static readonly Color HeaderBack = Color.FromArgb(245, 247, 250);
+            internal static readonly Color HeaderBack = ColorTranslator.FromHtml("#F6F5F2");
             internal static readonly Color CardBack = Color.White;
+            internal static readonly Color NavigationBack = ColorTranslator.FromHtml("#182235");
+            internal static readonly Color NavigationHover = ColorTranslator.FromHtml("#29364D");
+            internal static readonly Color Border = ColorTranslator.FromHtml("#E5E6E8");
+            internal static readonly Color InputBorder = ColorTranslator.FromHtml("#CDD0D6");
 
-            internal static readonly Color Primary = Color.FromArgb(52, 152, 219);
-            internal static readonly Color PrimaryHover = Color.FromArgb(41, 128, 185);
+            internal static readonly Color Primary = ColorTranslator.FromHtml("#B92335");
+            internal static readonly Color PrimaryHover = ColorTranslator.FromHtml("#9E1E2E");
 
             internal static readonly Color Danger = Color.FromArgb(231, 76, 60);
             internal static readonly Color DangerHoverBack = Color.FromArgb(255, 240, 240);
 
-            internal static readonly Color OutlineHoverBack = Color.FromArgb(235, 245, 255);
+            internal static readonly Color OutlineHoverBack = ColorTranslator.FromHtml("#FCF0F1");
 
-            internal static readonly Color TextDark = Color.FromArgb(40, 40, 40);
-            internal static readonly Color TextMuted = Color.FromArgb(90, 90, 90);
+            internal static readonly Color TextDark = ColorTranslator.FromHtml("#202635");
+            internal static readonly Color TextMuted = ColorTranslator.FromHtml("#677081");
 
-            internal static readonly Color GridHeaderBack = Color.FromArgb(52, 152, 219);
-            internal static readonly Color GridAltRowBack = Color.FromArgb(232, 240, 248);
-            internal static readonly Color GridSelectionBack = Color.FromArgb(41, 128, 185);
-            internal static readonly Color GridSelectionFore = Color.White;
+            internal static readonly Color GridHeaderBack = NavigationBack;
+            internal static readonly Color GridAltRowBack = ColorTranslator.FromHtml("#F5F6F8");
+            internal static readonly Color GridSelectionBack = ColorTranslator.FromHtml("#F8DDE2");
+            internal static readonly Color GridSelectionFore = TextDark;
+        }
+
+        internal static class WpfColors
+        {
+            internal static readonly System.Windows.Media.Color Primary = Convert(Colors.Primary);
+            internal static readonly System.Windows.Media.Color PrimaryHover = Convert(Colors.PrimaryHover);
+            internal static readonly System.Windows.Media.Color PageBackground = Convert(Colors.HeaderBack);
+            internal static readonly System.Windows.Media.Color Border = Convert(Colors.Border);
+            internal static readonly System.Windows.Media.Color InputBorder = Convert(Colors.InputBorder);
+            internal static readonly System.Windows.Media.Color TextDark = Convert(Colors.TextDark);
+            internal static readonly System.Windows.Media.Color TextMuted = Convert(Colors.TextMuted);
+            internal static readonly System.Windows.Media.Color AccentTint = Convert(Colors.OutlineHoverBack);
+            internal static readonly System.Windows.Media.Color Selection = Convert(Colors.GridSelectionBack);
+            internal static readonly System.Windows.Media.Color SurfaceMuted = Convert(Colors.GridAltRowBack);
+            private static System.Windows.Media.Color Convert(Color color) => System.Windows.Media.Color.FromArgb(color.A, color.R, color.G, color.B);
         }
 
         internal static class Fonts

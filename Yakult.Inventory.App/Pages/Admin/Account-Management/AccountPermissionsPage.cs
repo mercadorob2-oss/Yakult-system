@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -755,7 +756,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
 
         private static readonly Dictionary<string, Color> AccentColors = new Dictionary<string, Color>(StringComparer.OrdinalIgnoreCase)
         {
-            { "Coordinator", Color.FromArgb(41,  128, 185) },
+            { "Coordinator", InventoryTheme.Colors.PrimaryHover },
             { "Manager",     Color.FromArgb(142,  68, 173) },
             { "Supervisor",  Color.FromArgb(39,  174,  96) },
         };
@@ -1093,7 +1094,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                 Location  = new Point(16, btnY),
                 Width     = 120,
                 Height    = 32,
-                BackColor = Color.FromArgb(41, 128, 185),
+                BackColor = InventoryTheme.Colors.PrimaryHover,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat
             };

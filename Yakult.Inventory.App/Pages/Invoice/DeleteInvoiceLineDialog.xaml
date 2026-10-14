@@ -5,10 +5,18 @@
         Width="520" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#F0F2F6"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         FontFamily="Segoe UI">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
-    <Border Background="White" Margin="16" CornerRadius="10" Padding="20" BorderBrush="#DDE3EC" BorderThickness="1">
+
+    <Border Background="White" Margin="16" CornerRadius="10" Padding="20" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1">
         <StackPanel>
             <Border Background="#FFF2CC" BorderBrush="#E0C36A" BorderThickness="1" Padding="10" Margin="0,0,0,10">
                 <TextBlock x:Name="TxtTitle" TextWrapping="Wrap" FontWeight="Bold"/>
@@ -19,7 +27,7 @@
                 <Button x:Name="BtnDeleteGroup" Content="Delete Entire Group" Width="160" Height="34" Margin="0,0,8,0"
                         Background="#C0392B" Foreground="White" BorderThickness="0" Click="BtnDeleteGroup_Click" Visibility="Collapsed"/>
                 <Button x:Name="BtnDeleteRow" Content="Delete Row" Width="120" Height="34"
-                        Background="#2F6FED" Foreground="White" BorderThickness="0" Click="BtnDeleteRow_Click" Visibility="Collapsed"/>
+                        Background="{StaticResource YakultPrimaryBrush}" Foreground="White" BorderThickness="0" Click="BtnDeleteRow_Click" Visibility="Collapsed"/>
             </StackPanel>
         </StackPanel>
     </Border>

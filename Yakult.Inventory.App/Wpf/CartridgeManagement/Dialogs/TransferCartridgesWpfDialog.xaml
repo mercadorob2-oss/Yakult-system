@@ -7,6 +7,11 @@
         WindowStartupLocation="CenterOwner"
         Background="White">
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
 
         <Style x:Key="Btn" TargetType="Button">
             <Setter Property="Height" Value="34"/>
@@ -44,10 +49,10 @@
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#4A5A6A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="#DDE2E8"/>
-            <Setter Property="Background" Value="#F0F2F6"/>
+            <Setter Property="Background" Value="{StaticResource YakultPageBackgroundBrush}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -78,6 +83,8 @@
             <Setter Property="Foreground" Value="#9AA0A8"/>
         </Style>
 
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -86,12 +93,12 @@
             <!-- ─── Header ─── -->
             <StackPanel Margin="28,24,28,0">
                 <TextBlock Text="Transfer Cartridges"
-                           FontFamily="Segoe UI" FontSize="18" FontWeight="Bold" Foreground="#2A3A4A"/>
+                           FontFamily="Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
                 <TextBlock x:Name="TxtSubtitle"
-                           FontFamily="Segoe UI" FontSize="12" Foreground="#7A8A9A" Margin="0,3,0,0"/>
+                           FontFamily="Segoe UI" FontSize="12" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,3,0,0"/>
             </StackPanel>
 
-            <Rectangle Height="1" Fill="#EEF1F4" Margin="0,18,0,0"/>
+            <Rectangle Height="1" Fill="{StaticResource YakultBorderBrush}" Margin="0,18,0,0"/>
 
             <!-- ─── Model selection ─── -->
             <StackPanel Margin="28,16,28,0">
@@ -111,7 +118,7 @@
                     <ItemsControl x:Name="ModelsList">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border BorderBrush="#EEF1F4" BorderThickness="0,0,0,1" Padding="16,13">
+                                <Border BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="16,13">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
@@ -129,7 +136,7 @@
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding ModelName}"
                                                        FontFamily="Segoe UI" FontSize="13" FontWeight="SemiBold"
-                                                       Foreground="#2A3A4A"/>
+                                                       Foreground="{StaticResource YakultTextDarkBrush}"/>
                                             <TextBlock FontFamily="Segoe UI" FontSize="11" Foreground="#9AA0A8" Margin="0,2,0,0">
                                                 <TextBlock.Text>
                                                     <MultiBinding StringFormat="{}{0} unit(s) available across {1} row(s)">
@@ -161,7 +168,7 @@
                                                     Click="BtnDecrement_Click"/>
                                             <TextBlock Text="{Binding TransferQty}"
                                                        FontFamily="Segoe UI" FontSize="13" FontWeight="SemiBold"
-                                                       Foreground="#2A3A4A" Width="36"
+                                                       Foreground="{StaticResource YakultTextDarkBrush}" Width="36"
                                                        TextAlignment="Center" VerticalAlignment="Center"/>
                                             <Button Content="+" Style="{StaticResource QtyBtn}"
                                                     IsEnabled="{Binding QtyIncrEnabled}"
@@ -187,7 +194,7 @@
                            Foreground="#9AA0A8" Margin="0,12,0,0"/>
             </StackPanel>
 
-            <Rectangle Height="1" Fill="#EEF1F4" Margin="0,16,0,0"/>
+            <Rectangle Height="1" Fill="{StaticResource YakultBorderBrush}" Margin="0,16,0,0"/>
 
             <!-- ─── Target batch ─── -->
             <StackPanel Margin="28,16,28,0">
@@ -202,7 +209,7 @@
                            Foreground="#9AA0A8" Margin="0,5,0,0"/>
             </StackPanel>
 
-            <Rectangle Height="1" Fill="#EEF1F4" Margin="0,16,0,0"/>
+            <Rectangle Height="1" Fill="{StaticResource YakultBorderBrush}" Margin="0,16,0,0"/>
 
             <!-- ─── Footer ─── -->
             <Grid Margin="28,14,28,24">
@@ -215,10 +222,10 @@
                            FontFamily="Segoe UI" FontSize="12" FontStyle="Italic"
                            Foreground="#9AA0A8" VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="Close" Background="#E8EBF0" Foreground="#3A4A5A"
+                    <Button Content="Close" Background="#E8EBF0" Foreground="{StaticResource YakultTextDarkBrush}"
                             Style="{StaticResource Btn}" Click="BtnClose_Click"
                             Margin="0,0,8,0"/>
-                    <Button x:Name="BtnTransfer" Content="⇄ Transfer Selected" Background="#3A8EF6"
+                    <Button x:Name="BtnTransfer" Content="⇄ Transfer Selected" Background="{StaticResource YakultPrimaryBrush}"
                             Style="{StaticResource Btn}" Click="BtnTransfer_Click"
                             IsEnabled="False"/>
                 </StackPanel>

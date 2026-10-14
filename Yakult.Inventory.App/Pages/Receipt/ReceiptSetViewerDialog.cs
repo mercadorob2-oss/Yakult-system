@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -321,9 +322,9 @@ namespace Yakult.Inventory.App.Pages.Receipt
             MinimizeBox = false;
             MaximizeBox = false;
 
-            var appBg = Color.FromArgb(245, 247, 250);
+            var appBg = InventoryTheme.Colors.HeaderBack;
             var cardBg = Color.White;
-            var surfaceBg = Color.FromArgb(250, 251, 252);
+            var surfaceBg = InventoryTheme.Colors.GridAltRowBack;
             var border = Color.FromArgb(215, 223, 233);
             var textColor = Color.FromArgb(18, 22, 28);
             var muted = Color.FromArgb(90, 100, 110);
@@ -1025,7 +1026,7 @@ namespace Yakult.Inventory.App.Pages.Receipt
             {
                 Dock = DockStyle.Fill,
                 Padding = new Padding(0, 0, 8, 0),
-                BackColor = Color.FromArgb(250, 251, 252)
+                BackColor = InventoryTheme.Colors.GridAltRowBack
             };
 
             var thumbsLayout = new FlowLayoutPanel
@@ -4909,15 +4910,15 @@ namespace Yakult.Inventory.App.Pages.Receipt
 
             if (primary)
             {
-                backColor = Color.FromArgb(52, 152, 219);
+                backColor = InventoryTheme.Colors.Primary;
                 foreColor = Color.White;
-                borderColor = Color.FromArgb(41, 128, 185);
+                borderColor = InventoryTheme.Colors.PrimaryHover;
             }
             else
             {
                 backColor = Color.White;
-                foreColor = Color.FromArgb(41, 128, 185);
-                borderColor = Color.FromArgb(41, 128, 185);
+                foreColor = InventoryTheme.Colors.PrimaryHover;
+                borderColor = InventoryTheme.Colors.PrimaryHover;
             }
 
             button.BackColor = backColor;

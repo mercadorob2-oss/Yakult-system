@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Windows;
 using System.Windows.Media;
@@ -34,7 +35,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.Dialogs
             {
                 _copyResetTimer.Stop();
                 BtnCopy.Content    = "Copy";
-                BtnCopy.Background = new SolidColorBrush(Color.FromRgb(78, 154, 252));
+                BtnCopy.Background = new SolidColorBrush(InventoryTheme.WpfColors.Primary);
             };
             _copyResetTimer.Start();
         }

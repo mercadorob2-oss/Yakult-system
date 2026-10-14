@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -128,7 +129,7 @@ namespace Yakult.Inventory.App.Pages
                 Location = new Point(320, 30),
                 Width = 80,
                 Height = 26,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand
@@ -333,7 +334,7 @@ namespace Yakult.Inventory.App.Pages
                 Location = new Point(10, 15),
                 Width = 150,
                 Height = 35,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),

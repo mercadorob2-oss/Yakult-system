@@ -18,6 +18,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Yakult.Inventory.App;component/WPF/RequestPortal/RequestPortalStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -44,7 +45,7 @@
         </Border>
 
         <!-- Body -->
-        <Grid Grid.Row="1" Background="#F5F7FA">
+        <Grid Grid.Row="1" Background="{StaticResource YakultPageBackgroundBrush}">
             <TextBlock Text="No receipts have been attached to any set in this renewal chain."
                        HorizontalAlignment="Center" VerticalAlignment="Center"
                        FontSize="13" Foreground="{StaticResource TextMuted}"

@@ -211,8 +211,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             tableTopGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             tableTopGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var titleRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            titleRow.Children.Add(new TextBlock { Text = "Ticket List", FontSize = 15, FontWeight = FontWeights.Bold, Foreground = BrushFromRgb(15, 23, 42) });
-            _tableCountText = new TextBlock { Text = "0 tickets", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(100, 116, 139) };
+            titleRow.Children.Add(new TextBlock { Text = "Ticket List", FontSize = 15, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextDarkBrush });
+            _tableCountText = new TextBlock { Text = "0 tickets", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush };
             titleRow.Children.Add(new Border { CornerRadius = new CornerRadius(999), Background = BrushFromRgb(241, 245, 249), Padding = new Thickness(10, 3, 10, 3), Margin = new Thickness(12, 0, 0, 0), Child = _tableCountText });
             Grid.SetColumn(titleRow, 0);
             tableTopGrid.Children.Add(titleRow);
@@ -508,7 +508,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Text = "Group by:",
                 FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 8, 0)
             });
@@ -532,7 +532,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var searchBorder = new Border
             {
-                Background = BrushFromRgb(248, 250, 252),
+                Background = WpfThemeResources.SurfaceMutedBrush,
                 BorderBrush = BrushFromRgb(226, 232, 240),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(6),
@@ -572,7 +572,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 FontSize = 11.5, FontWeight = FontWeights.SemiBold,
                 Cursor = Cursors.Hand,
                 BorderThickness = new Thickness(1),
-                BorderBrush = BrushFromRgb(210, 219, 230),
+                BorderBrush = WpfThemeResources.BorderBrush,
                 Foreground = BrushFromRgb(71, 85, 105),
                 Background = Brushes.Transparent
             };
@@ -596,7 +596,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 btn.Background = active ? BrushFromRgb(14, 165, 233) : Brushes.Transparent;
                 btn.Foreground = active ? Brushes.White : BrushFromRgb(71, 85, 105);
-                btn.BorderBrush = active ? BrushFromRgb(14, 165, 233) : BrushFromRgb(210, 219, 230);
+                btn.BorderBrush = active ? BrushFromRgb(14, 165, 233) : WpfThemeResources.BorderBrush;
                 btn.FontWeight = active ? FontWeights.Bold : FontWeights.SemiBold;
             }
             SetActive(_btnGroupStatus, _groupMode == BoardGroupMode.Status);
@@ -776,13 +776,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var rowBorder = new Border
             {
                 Tag = t,
-                Background = BrushFromRgb(248, 250, 252), BorderBrush = BrushFromRgb(241, 245, 249),
+                Background = WpfThemeResources.SurfaceMutedBrush, BorderBrush = BrushFromRgb(241, 245, 249),
                 BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6),
                 Margin = new Thickness(0, 0, 0, 6), Padding = new Thickness(10, 7, 10, 7),
                 Cursor = Cursors.Hand
             };
             rowBorder.MouseEnter += (_, __) => rowBorder.Background = BrushFromRgb(241, 245, 249);
-            rowBorder.MouseLeave += (_, __) => rowBorder.Background = BrushFromRgb(248, 250, 252);
+            rowBorder.MouseLeave += (_, __) => rowBorder.Background = WpfThemeResources.SurfaceMutedBrush;
             rowBorder.MouseDown += (s, e) =>
             {
                 if (e.ClickCount == 2 && ((Border)s).Tag is CallTicketListItem ticket && _navigator != null)
@@ -794,8 +794,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             var infoStack = new StackPanel();
-            infoStack.Children.Add(new TextBlock { Text = t.TicketCode ?? $"#{t.TicketId}", FontSize = 11.5, FontWeight = FontWeights.Bold, Foreground = BrushFromRgb(15, 23, 42), TextTrimming = TextTrimming.CharacterEllipsis });
-            infoStack.Children.Add(new TextBlock { Text = t.Issue ?? "(No summary)", FontSize = 10.5, Foreground = BrushFromRgb(100, 116, 139), TextTrimming = TextTrimming.CharacterEllipsis });
+            infoStack.Children.Add(new TextBlock { Text = t.TicketCode ?? $"#{t.TicketId}", FontSize = 11.5, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextDarkBrush, TextTrimming = TextTrimming.CharacterEllipsis });
+            infoStack.Children.Add(new TextBlock { Text = t.Issue ?? "(No summary)", FontSize = 10.5, Foreground = WpfThemeResources.TextMutedBrush, TextTrimming = TextTrimming.CharacterEllipsis });
             Grid.SetColumn(infoStack, 0);
             g.Children.Add(infoStack);
 
@@ -842,7 +842,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240),
                 BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Cursor = Cursors.Hand
             };
-            tile.MouseEnter += (_, __) => tile.Background = BrushFromRgb(248, 250, 252);
+            tile.MouseEnter += (_, __) => tile.Background = WpfThemeResources.SurfaceMutedBrush;
             tile.MouseLeave += (_, __) => tile.Background = Brushes.White;
 
             var inner = new Grid();
@@ -863,9 +863,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 0, 0, 10),
                 Child = new TextBlock { Text = GetBoardInitials(empName), FontSize = 22, FontWeight = FontWeights.Bold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center }
             });
-            avatarSection.Children.Add(new TextBlock { Text = empName, FontSize = 13, FontWeight = FontWeights.Bold, Foreground = BrushFromRgb(15, 23, 42), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap });
+            avatarSection.Children.Add(new TextBlock { Text = empName, FontSize = 13, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextDarkBrush, HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap });
             if (!string.IsNullOrWhiteSpace(deptName))
-                avatarSection.Children.Add(new TextBlock { Text = deptName, FontSize = 11, Foreground = BrushFromRgb(100, 116, 139), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 2, 0, 0) });
+                avatarSection.Children.Add(new TextBlock { Text = deptName, FontSize = 11, Foreground = WpfThemeResources.TextMutedBrush, HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 2, 0, 0) });
             Grid.SetRow(avatarSection, 1);
             inner.Children.Add(avatarSection);
 
@@ -1156,7 +1156,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var headerStyle = new Style(typeof(DataGridColumnHeader));
             headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.White));
-            headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(100, 116, 139)));
+            headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, WpfThemeResources.TextMutedBrush));
             headerStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
             headerStyle.Setters.Add(new Setter(Control.FontSizeProperty, 11.5));
             headerStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 12, 8, 12)));
@@ -1170,11 +1170,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             rowStyle.Setters.Add(new Setter(Control.CursorProperty, Cursors.Hand));
             
             var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(248, 250, 252)));
+            hoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, WpfThemeResources.SurfaceMutedBrush));
             rowStyle.Triggers.Add(hoverTrigger);
             
             var selectedTrigger = new Trigger { Property = DataGridRow.IsSelectedProperty, Value = true };
-            selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(239, 246, 255)));
+            selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, WpfThemeResources.SelectionBrush));
             rowStyle.Triggers.Add(selectedTrigger);
             grid.RowStyle = rowStyle;
 
@@ -1184,7 +1184,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             cellStyle.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
             
             var cellSelectedTrigger = new Trigger { Property = DataGridCell.IsSelectedProperty, Value = true };
-            cellSelectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(15, 23, 42)));
+            cellSelectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, WpfThemeResources.TextDarkBrush));
             cellSelectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
             cellSelectedTrigger.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
             cellStyle.Triggers.Add(cellSelectedTrigger);

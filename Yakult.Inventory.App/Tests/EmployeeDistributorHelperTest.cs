@@ -39,6 +39,8 @@ namespace Yakult.Inventory.App.Tests
             var insOn = EmployeeDistributorHelper.BuildDistributorInsertFragments(true);
             Check(insOn.ColumnFragment.Contains("DistributorId"), "insert(true) column has DistributorId");
             Check(insOn.ValueFragment.Contains("@DistributorId"), "insert(true) value has @DistributorId");
+            Check(insOn.ColumnFragment.StartsWith(","), "insert(true) column leads with comma (no caller comma needed)");
+            Check(insOn.ValueFragment.StartsWith(","), "insert(true) value leads with comma (no caller comma needed)");
             var insOff = EmployeeDistributorHelper.BuildDistributorInsertFragments(false);
             Check(insOff.ColumnFragment == string.Empty && insOff.ValueFragment == string.Empty, "insert(false) is empty");
 

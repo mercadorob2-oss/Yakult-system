@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -91,7 +92,7 @@ namespace Yakult.Inventory.App.Pages.Invoice
                 ScrollBars = ScrollBars.Both,
                 ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
                 {
-                    BackColor = Color.FromArgb(52, 152, 219),
+                    BackColor = InventoryTheme.Colors.Primary,
                     ForeColor = Color.White,
                     Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
                     Alignment = DataGridViewContentAlignment.MiddleCenter
@@ -105,7 +106,7 @@ namespace Yakult.Inventory.App.Pages.Invoice
                 },
                 AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle
                 {
-                    BackColor = Color.FromArgb(232, 240, 248),
+                    BackColor = InventoryTheme.Colors.GridAltRowBack,
                     SelectionBackColor = Color.FromArgb(210, 225, 255),
                     SelectionForeColor = Color.Black
                 }
@@ -123,12 +124,12 @@ namespace Yakult.Inventory.App.Pages.Invoice
             {
                 Dock = DockStyle.Top,
                 Height = 50,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding = new Padding(10, 0, 10, 0)
             };
 
             var btnExport = MakeToolbarButton("📄  Export PDF",
-                Color.FromArgb(52, 152, 219), Color.FromArgb(41, 128, 185));
+                InventoryTheme.Colors.Primary, InventoryTheme.Colors.PrimaryHover);
             btnExport.Click += BtnExport_Click;
 
             var btnColumns = MakeToolbarButton("⚙  Columns",

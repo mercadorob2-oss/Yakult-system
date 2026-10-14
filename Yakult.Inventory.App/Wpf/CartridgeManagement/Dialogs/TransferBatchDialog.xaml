@@ -5,8 +5,13 @@
         Width="540" SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
-        Background="#F0F2F6">
+        Background="{DynamicResource YakultPageBackgroundBrush}">
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="Btn" TargetType="Button">
             <Setter Property="Height" Value="34"/>
             <Setter Property="MinWidth" Value="88"/>
@@ -37,9 +42,11 @@
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Border Background="White">
@@ -54,16 +61,16 @@
             <!-- Title -->
             <StackPanel Grid.Row="0" Margin="0,0,0,20">
                 <TextBlock Text="Transfer to Another Batch"
-                           FontFamily="Segoe UI" FontSize="18" FontWeight="Bold" Foreground="#2A3A4A"/>
+                           FontFamily="Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
             </StackPanel>
 
             <!-- Context info card -->
-            <Border Grid.Row="1" Background="#EBF5FF" BorderBrush="#B3D4F5" BorderThickness="1"
+            <Border Grid.Row="1" Background="{StaticResource YakultAccentTintBrush}" BorderBrush="#B3D4F5" BorderThickness="1"
                     CornerRadius="6" Padding="16,12" Margin="0,0,0,20">
                 <StackPanel>
                     <TextBlock x:Name="TxtTransferContext"
                                FontFamily="Segoe UI" FontSize="13" FontWeight="SemiBold"
-                               Foreground="#2A3A4A"/>
+                               Foreground="{StaticResource YakultTextDarkBrush}"/>
                     <TextBlock x:Name="TxtFromBatch"
                                FontFamily="Segoe UI" FontSize="12" Foreground="#5A7A9A"
                                Margin="0,4,0,0"/>
@@ -82,9 +89,9 @@
 
             <!-- Buttons -->
             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel" Background="#E8EBF0" Foreground="#3A4A5A"
+                <Button Content="Cancel" Background="#E8EBF0" Foreground="{StaticResource YakultTextDarkBrush}"
                         Style="{StaticResource Btn}" Click="BtnCancel_Click" Margin="0,0,8,0"/>
-                <Button Content="⇌ Transfer" Background="#3A8EF6"
+                <Button Content="⇌ Transfer" Background="{StaticResource YakultPrimaryBrush}"
                         Style="{StaticResource Btn}" Click="BtnTransfer_Click"/>
             </StackPanel>
         </Grid>

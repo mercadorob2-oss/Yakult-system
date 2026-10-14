@@ -3,7 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <UserControl.Resources>
-        <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Admin/EmailManagement/Styles/EmailConfigStyles.xaml"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Admin/EmailManagement/Styles/EmailConfigStyles.xaml"/>
+
+        </ResourceDictionary.MergedDictionaries>
+
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -14,18 +21,18 @@
         </Grid.RowDefinitions>
 
         <!-- Row 0 · Toolbar -->
-        <Border Grid.Row="0" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="14,8">
+        <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="14,8">
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                    <Button x:Name="BtnAdd"  Background="#4E9AFC" Style="{StaticResource ActionButton}" Content="✚  Add Profile"  Click="BtnAdd_Click"/>
-                    <Button x:Name="BtnEdit" Background="#3A8EF6" Style="{StaticResource ActionButton}" Content="✎  Edit Profile" Click="BtnEdit_Click"/>
+                    <Button x:Name="BtnAdd"  Background="{StaticResource YakultPrimaryBrush}" Style="{StaticResource ActionButton}" Content="✚  Add Profile"  Click="BtnAdd_Click"/>
+                    <Button x:Name="BtnEdit" Background="{StaticResource YakultPrimaryBrush}" Style="{StaticResource ActionButton}" Content="✎  Edit Profile" Click="BtnEdit_Click"/>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#EBF5FF" CornerRadius="4" Padding="8,3" Margin="0,0,8,0"
+                    <Border Background="{StaticResource YakultAccentTintBrush}" CornerRadius="4" Padding="8,3" Margin="0,0,8,0"
                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="#4E9AFC"/>
+                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="{StaticResource YakultPrimaryBrush}"/>
                     </Border>
-                    <Button x:Name="BtnRefresh" Background="#4E9AFC" Style="{StaticResource ActionButton}" Content="⟳  Refresh" Click="BtnRefresh_Click"/>
+                    <Button x:Name="BtnRefresh" Background="{StaticResource YakultPrimaryBrush}" Style="{StaticResource ActionButton}" Content="⟳  Refresh" Click="BtnRefresh_Click"/>
                 </StackPanel>
             </DockPanel>
         </Border>
@@ -34,11 +41,11 @@
         <DataGrid x:Name="MainGrid"
                   Grid.Row="1"
                   Background="White"
-                  BorderBrush="#DDE3EC"
+                  BorderBrush="{StaticResource YakultBorderBrush}"
                   BorderThickness="0"
                   GridLinesVisibility="All"
-                  HorizontalGridLinesBrush="#EEF1F4"
-                  VerticalGridLinesBrush="#E4E8EF"
+                  HorizontalGridLinesBrush="{StaticResource YakultBorderBrush}"
+                  VerticalGridLinesBrush="{StaticResource YakultBorderBrush}"
                   AlternationCount="2"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
@@ -52,10 +59,10 @@
                   VirtualizingPanel.IsVirtualizing="False"
                   MouseDoubleClick="MainGrid_MouseDoubleClick">
             <DataGrid.Resources>
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"                    Color="#B8CEED"/>
-                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"                Color="#1A2333"/>
-                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"   Color="#CDD8EE"/>
-                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"                    Color="{StaticResource YakultSelectionColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"                Color="{StaticResource YakultTextDarkColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"   Color="{StaticResource YakultSelectionColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
             </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID"          Binding="{Binding ProfileId}"         Width="60"/>
@@ -69,11 +76,11 @@
         </DataGrid>
 
         <!-- Row 2 · Pagination -->
-        <Border Grid.Row="2" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="14,8">
+        <Border Grid.Row="2" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="14,8">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Button x:Name="BtnFirst" Content="«" Style="{StaticResource PageButton}" IsEnabled="{Binding CanGoPrev}" Click="BtnFirst_Click"/>
                 <Button x:Name="BtnPrev"  Content="‹" Style="{StaticResource PageButton}" IsEnabled="{Binding CanGoPrev}" Click="BtnPrev_Click"/>
-                <TextBlock Text="{Binding PageInfo}" FontSize="11" Foreground="#5A6A7A" VerticalAlignment="Center" Margin="8,0"/>
+                <TextBlock Text="{Binding PageInfo}" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center" Margin="8,0"/>
                 <Button x:Name="BtnNext" Content="›" Style="{StaticResource PageButton}" IsEnabled="{Binding CanGoNext}" Click="BtnNext_Click"/>
                 <Button x:Name="BtnLast" Content="»" Style="{StaticResource PageButton}" IsEnabled="{Binding CanGoNext}" Click="BtnLast_Click"/>
             </StackPanel>

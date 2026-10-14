@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -178,7 +179,7 @@ namespace Yakult.Inventory.App.WPF.Update.Views
                     Location = new Point(fieldX, startY + rowH * 3),
                     Size = new Size(85, 32),
                     FlatStyle = WinForms.FlatStyle.Flat,
-                    BackColor = Color.FromArgb(41, 128, 185),
+                    BackColor = InventoryTheme.Colors.PrimaryHover,
                     ForeColor = Color.White,
                     Font = new Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold)
                 };

@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -66,7 +67,7 @@ namespace Yakult.Inventory.App.Pages.Export
                 {
                     Text = "Invoice Report",
                     Font = headerFont,
-                    ForeColor = Color.FromArgb(58, 134, 232),
+                    ForeColor = InventoryTheme.Colors.PrimaryHover,
                     AutoSize = true,
                     Location = new Point(margin, yPos)
                 };
@@ -80,7 +81,7 @@ namespace Yakult.Inventory.App.Pages.Export
                 {
                     Text = "Sets Report",
                     Font = headerFont,
-                    ForeColor = Color.FromArgb(58, 134, 232),
+                    ForeColor = InventoryTheme.Colors.PrimaryHover,
                     AutoSize = true,
                     Location = new Point(margin, yPos)
                 };
@@ -94,7 +95,7 @@ namespace Yakult.Inventory.App.Pages.Export
                 {
                     Text = "Renewal Report",
                     Font = headerFont,
-                    ForeColor = Color.FromArgb(58, 134, 232),
+                    ForeColor = InventoryTheme.Colors.PrimaryHover,
                     AutoSize = true,
                     Location = new Point(margin, yPos)
                 };
@@ -121,7 +122,7 @@ namespace Yakult.Inventory.App.Pages.Export
                 {
                     Text = "Renewals (Grouped)",
                     Font = headerFont,
-                    ForeColor = Color.FromArgb(58, 134, 232),
+                    ForeColor = InventoryTheme.Colors.PrimaryHover,
                     AutoSize = true,
                     Location = new Point(margin, yPos)
                 };
@@ -148,7 +149,7 @@ namespace Yakult.Inventory.App.Pages.Export
                 {
                     Text = "Cartridge Disposed/Sold",
                     Font = headerFont,
-                    ForeColor = Color.FromArgb(58, 134, 232),
+                    ForeColor = InventoryTheme.Colors.PrimaryHover,
                     AutoSize = true,
                     Location = new Point(margin, yPos)
                 };
@@ -178,7 +179,7 @@ namespace Yakult.Inventory.App.Pages.Export
                 Location = new Point(160, yPos),
                 Size = new Size(80, 32),
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                BackColor = Color.FromArgb(58, 134, 232),
+                BackColor = InventoryTheme.Colors.PrimaryHover,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand

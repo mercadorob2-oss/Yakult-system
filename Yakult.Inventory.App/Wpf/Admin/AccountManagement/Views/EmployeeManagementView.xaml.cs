@@ -367,7 +367,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.Views
                         var cell = ws.Cell(1, c + 1);
                         cell.Value = headers[c];
                         cell.Style.Font.Bold = true;
-                        cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#4E9AFC");
+                        cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#B92335");
                         cell.Style.Font.FontColor       = XLColor.White;
                     }
 
@@ -851,7 +851,7 @@ namespace Yakult.Inventory.App.WPF.Admin.AccountManagement.Views
                         var cell = ws.Cell(1, c + 1);
                         cell.Value = headers[c];
                         cell.Style.Font.Bold = true;
-                        cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#4E9AFC");
+                        cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#B92335");
                         cell.Style.Font.FontColor       = XLColor.White;
                     }
                     // Explicit widths — AdjustToContents triggers a SixLabors.Fonts version conflict

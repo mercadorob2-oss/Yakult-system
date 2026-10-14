@@ -358,6 +358,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Helpers\EmailAddressValidator.cs" />
+    <Compile Include="Helpers\BranchDepartmentCompanyHelper.cs" />
     <Compile Include="Helpers\EmployeeDistributorHelper.cs" />
     <Compile Include="Helpers\SearchableComboHelper.cs" />
     <Compile Include="Components\DynamicSectionControl.cs">
@@ -2191,6 +2192,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Wpf\Shared\Styles\ListPageStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\Shared\Styles\YakultPalette.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

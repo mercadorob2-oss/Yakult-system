@@ -12,6 +12,11 @@
         SnapsToDevicePixels="True"
         Background="#EEF1F6">
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="Btn" TargetType="Button">
             <Setter Property="Height" Value="38"/>
             <Setter Property="MinWidth" Value="104"/>
@@ -46,7 +51,7 @@
         </Style>
         <Style x:Key="SecondaryBtn" TargetType="Button" BasedOn="{StaticResource Btn}">
             <Setter Property="Background" Value="#E8ECF2"/>
-            <Setter Property="Foreground" Value="#3A4A5A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Segoe UI"/>
@@ -71,7 +76,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -104,7 +109,7 @@
                                 Padding="{TemplateBinding Padding}">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <ContentPresenter/>
-                                <Border x:Name="bdUnderline" Height="2.5" Background="#3A8EF6"
+                                <Border x:Name="bdUnderline" Height="2.5" Background="{StaticResource YakultPrimaryBrush}"
                                         VerticalAlignment="Bottom" Margin="0,7,0,-11" Opacity="0"/>
                             </StackPanel>
                         </Border>
@@ -135,6 +140,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Margin="22">
@@ -152,7 +159,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Width="42" Height="42" CornerRadius="10" Background="#3A8EF6" Margin="0,0,14,0">
+                <Border Width="42" Height="42" CornerRadius="10" Background="{StaticResource YakultPrimaryBrush}" Margin="0,0,14,0">
                     <TextBlock Text="🧾" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel VerticalAlignment="Center">
@@ -166,7 +173,7 @@
                 <Button x:Name="BtnRefresh" Content="🔄  Refresh" Style="{StaticResource SecondaryBtn}"
                         Click="BtnRefresh_Click" Margin="0,0,8,0"
                         ToolTip="Reload this Set's header and receipt documents from the database"/>
-                <Button x:Name="BtnSave" Content="💾  Save" Background="#3A8EF6"
+                <Button x:Name="BtnSave" Content="💾  Save" Background="{StaticResource YakultPrimaryBrush}"
                         Style="{StaticResource Btn}" Click="BtnSave_Click" Margin="0,0,8,0"/>
                 <Button x:Name="BtnRevert" Content="⏪  Revert" Background="#E67E22"
                         Style="{StaticResource Btn}" Click="BtnRevert_Click"
@@ -344,7 +351,7 @@
                                         IsHitTestVisible="False" Visibility="Collapsed">
                                 <TextBlock x:Name="EmptyStateIcon" Text="🖼" FontSize="46" Foreground="#D4DCE6" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                                 <TextBlock x:Name="EmptyStateTitle" Text="No images attached yet" FontSize="14.5" FontWeight="SemiBold"
-                                           Foreground="#6A7A8A" HorizontalAlignment="Center"/>
+                                           Foreground="{StaticResource YakultTextMutedBrush}" HorizontalAlignment="Center"/>
                                 <TextBlock x:Name="EmptyStateHint" Text="Drag and drop image files here, or click Add Image(s) above."
                                            FontSize="12" Foreground="#9AA6B4" Margin="0,4,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
@@ -411,7 +418,7 @@
 
                             <!-- Grid splitter -->
                             <GridSplitter Grid.Column="1" Width="3" HorizontalAlignment="Center"
-                                          Background="#DDE3EC"/>
+                                          Background="{StaticResource YakultBorderBrush}"/>
 
                             <!-- History details panel -->
                             <Border Grid.Column="2" Margin="0,12,12,12" Background="#F7F9FC"
@@ -424,19 +431,19 @@
                                                FontSize="12" FontWeight="SemiBold" Foreground="#20303F"
                                                Margin="0,0,0,4"/>
                                     <TextBlock x:Name="HistDetailSaved" Text="—"
-                                               FontSize="11" Foreground="#6A7A8A" Margin="0,0,0,2"/>
+                                               FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,0,0,2"/>
                                     <TextBlock x:Name="HistDetailSupplier" Text="—"
-                                               FontSize="11" Foreground="#6A7A8A" Margin="0,0,0,2"/>
+                                               FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,0,0,2"/>
                                     <TextBlock x:Name="HistDetailDoc" Text="—"
-                                               FontSize="11" Foreground="#6A7A8A" Margin="0,0,0,2"/>
+                                               FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,0,0,2"/>
                                     <TextBlock x:Name="HistDetailChanged" Text="—"
-                                               FontSize="11" FontStyle="Italic" Foreground="#6A7A8A"
+                                               FontSize="11" FontStyle="Italic" Foreground="{StaticResource YakultTextMutedBrush}"
                                                Margin="0,0,0,12" TextWrapping="Wrap"/>
 
                                     <TextBlock Text="Image indicators" FontSize="10" FontWeight="Bold"
                                                Foreground="#8A98A8" Margin="0,0,0,4"/>
                                     <TextBlock x:Name="HistDetailImgs" Text="—"
-                                               FontSize="11" Foreground="#6A7A8A" Margin="0,0,0,12"/>
+                                               FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,0,0,12"/>
 
                                     <Button x:Name="BtnHistOpen" Content="Open (read-only)"
                                             Style="{StaticResource SecondaryBtn}"

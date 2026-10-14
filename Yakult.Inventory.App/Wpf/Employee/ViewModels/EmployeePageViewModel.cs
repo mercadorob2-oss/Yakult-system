@@ -546,8 +546,8 @@ namespace Yakult.Inventory.App.WPF.Employee.ViewModels
                     bool hasDistributorColumn = HasEmployeeDistributorColumn(con);
                     var ins = EmployeeDistributorHelper.BuildDistributorInsertFragments(hasDistributorColumn);
                     using (var cmd = new SqlCommand(@"
-                        INSERT INTO dbo.Employee (Name, Position, Description, DateCreated, Createdby, ComId, DeptId, BranchId," + ins.ColumnFragment + @" EmployeeNumber, TitleId)
-                        VALUES (@Name, @Position, @Description, @DateCreated, @CreatedBy, @ComId, @DeptId, @BranchId," + ins.ValueFragment + @" @EmployeeNumber, @TitleId);
+                        INSERT INTO dbo.Employee (Name, Position, Description, DateCreated, Createdby, ComId, DeptId, BranchId" + ins.ColumnFragment + @", EmployeeNumber, TitleId)
+                        VALUES (@Name, @Position, @Description, @DateCreated, @CreatedBy, @ComId, @DeptId, @BranchId" + ins.ValueFragment + @", @EmployeeNumber, @TitleId);
                         SELECT CAST(SCOPE_IDENTITY() AS INT);", con))
                     {
                         cmd.Parameters.AddWithValue("@Name", emp.Name);

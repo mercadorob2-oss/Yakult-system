@@ -18,7 +18,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             fieldHistory.Sort((a,b) => a.ChangedAt.GetValueOrDefault().CompareTo(b.ChangedAt.GetValueOrDefault()));
             if (fieldHistory.Count == 0)
             {
-                host.Children.Add(new Border { Background = BrushFromRgb(248,250,252), CornerRadius = new CornerRadius(10), Padding = new Thickness(14), BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1), Child = new TextBlock { Text = "No status history yet — this visit was just scheduled.", Foreground = BrushFromRgb(100,116,139), FontStyle = FontStyles.Italic } });
+                host.Children.Add(new Border { Background = WpfThemeResources.SurfaceMutedBrush, CornerRadius = new CornerRadius(10), Padding = new Thickness(14), BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1), Child = new TextBlock { Text = "No status history yet — this visit was just scheduled.", Foreground = WpfThemeResources.TextMutedBrush, FontStyle = FontStyles.Italic } });
                 return card;
             }
             for (int i=0;i<fieldHistory.Count;i++)
@@ -39,9 +39,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 var stack = new StackPanel(); cardInner.Child=stack;
                 var header = new StackPanel{ Orientation=Orientation.Horizontal, VerticalAlignment=VerticalAlignment.Center }; stack.Children.Add(header);
                 var pill = new Border{ CornerRadius=new CornerRadius(8), Background=GetFieldWorkStatusBrush(h.NewValue), Padding=new Thickness(8,3,8,3) }; pill.Child=new TextBlock{ Text=(h.NewValue??"-").ToUpperInvariant(), Foreground=Brushes.White, FontWeight=FontWeights.Bold, FontSize=11 }; header.Children.Add(pill);
-                if (!string.IsNullOrWhiteSpace(h.OldValue)) header.Children.Add(new TextBlock{ Text=$"  {h.OldValue} →", Foreground=BrushFromRgb(100,116,139), FontSize=11, VerticalAlignment=VerticalAlignment.Center, Margin=new Thickness(8,0,0,0)});
+                if (!string.IsNullOrWhiteSpace(h.OldValue)) header.Children.Add(new TextBlock{ Text=$"  {h.OldValue} →", Foreground=WpfThemeResources.TextMutedBrush, FontSize=11, VerticalAlignment=VerticalAlignment.Center, Margin=new Thickness(8,0,0,0)});
                 if (isReschedule) { var rs=new Border{ CornerRadius=new CornerRadius(6), Background=BrushFromRgb(250,204,21), Padding=new Thickness(6,2,6,2), Margin=new Thickness(8,0,0,0)}; rs.Child=new TextBlock{ Text="RESCHEDULE", FontSize=10, FontWeight=FontWeights.Bold, Foreground=BrushFromRgb(113,63,18)}; header.Children.Add(rs); }
-                stack.Children.Add(new TextBlock{ Text=$"{h.ChangedAt:MMM d, yyyy h:mm tt} • {h.ChangedByName ?? "System"}", Foreground=BrushFromRgb(100,116,139), FontSize=11, Margin=new Thickness(0,6,0,0)});
+                stack.Children.Add(new TextBlock{ Text=$"{h.ChangedAt:MMM d, yyyy h:mm tt} • {h.ChangedByName ?? "System"}", Foreground=WpfThemeResources.TextMutedBrush, FontSize=11, Margin=new Thickness(0,6,0,0)});
                 if (!string.IsNullOrWhiteSpace(h.Note)) stack.Children.Add(new TextBlock{ Text=h.Note, Foreground=BrushFromRgb(30,41,59), FontSize=12, TextWrapping=TextWrapping.Wrap, Margin=new Thickness(0,6,0,0)});
                 host.Children.Add(row);
             }

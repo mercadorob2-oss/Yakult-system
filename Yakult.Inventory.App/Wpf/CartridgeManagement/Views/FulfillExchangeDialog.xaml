@@ -17,6 +17,11 @@
         TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <conv:BoolToVisibilityConverter        x:Key="BoolToVis"/>
         <conv:StringToColorBrushConverter      x:Key="HexToBrush"/>
 
@@ -26,9 +31,9 @@
             <Setter Property="Height"          Value="20"/>
             <Setter Property="FontSize"        Value="13"/>
             <Setter Property="FontWeight"      Value="Bold"/>
-            <Setter Property="Foreground"      Value="#3A4A5A"/>
-            <Setter Property="Background"      Value="#F0F3F7"/>
-            <Setter Property="BorderBrush"     Value="#CDD5DE"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultTextDarkBrush}"/>
+            <Setter Property="Background"      Value="{StaticResource YakultPageBackgroundBrush}"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Padding"         Value="0"/>
@@ -45,7 +50,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#DDE3EC"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultBorderBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.70"/>
@@ -65,7 +70,7 @@
             <Setter Property="Height"                  Value="28"/>
             <Setter Property="FontSize"                Value="13"/>
             <Setter Property="FontWeight"              Value="SemiBold"/>
-            <Setter Property="Foreground"              Value="#1A2333"/>
+            <Setter Property="Foreground"              Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="TextAlignment"           Value="Center"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="BorderBrush"             Value="#C8D2DC"/>
@@ -83,7 +88,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="#3A8EF6"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -123,6 +128,8 @@
             </Setter>
         </Style>
 
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
@@ -144,7 +151,7 @@
             <!-- ════════════════════════════════════════════════════════════ -->
             <!-- Header bar                                                   -->
             <!-- ════════════════════════════════════════════════════════════ -->
-            <Border Grid.Row="0" Background="#3A8EF6" CornerRadius="10,10,0,0"
+            <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}" CornerRadius="10,10,0,0"
                     MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
                 <DockPanel Margin="16,0">
                     <TextBlock DockPanel.Dock="Right"
@@ -171,7 +178,7 @@
             <ScrollViewer Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Background="#F0F2F6">
+                          Background="{StaticResource YakultPageBackgroundBrush}">
                 <ItemsControl x:Name="StatesPanel"
                               ItemsSource="{Binding}"
                               Margin="14,12,14,8">
@@ -180,7 +187,7 @@
 
                             <!-- Per-model card -->
                             <Border Background="White"
-                                    BorderBrush="#DDE3EC" BorderThickness="1"
+                                    BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                                     CornerRadius="8" Margin="0,0,0,10"
                                     Padding="16,14">
                                 <Border.Effect>
@@ -193,11 +200,11 @@
                                     <!-- Model name -->
                                     <TextBlock Text="{Binding CartridgeModel}"
                                                FontSize="12" FontWeight="Bold"
-                                               Foreground="#1A2333"/>
+                                               Foreground="{StaticResource YakultTextDarkBrush}"/>
 
                                     <!-- Sub-header: req#, returned, prev issued, pending -->
                                     <TextBlock Text="{Binding SubHeaderText}"
-                                               FontSize="9" Foreground="#6A7A8A"
+                                               FontSize="9" Foreground="{StaticResource YakultTextMutedBrush}"
                                                Margin="0,3,0,0"/>
 
                                     <!-- Divider -->
@@ -207,7 +214,7 @@
                                     <!-- ── Qty to Issue section ───────────── -->
                                     <TextBlock Text="QTY TO ISSUE"
                                                FontSize="9" FontWeight="SemiBold"
-                                               Foreground="#4A5A6A" Margin="0,0,0,8"/>
+                                               Foreground="{StaticResource YakultTextDarkBrush}" Margin="0,0,0,8"/>
 
                                     <!-- Brand New row -->
                                     <Grid Margin="0,0,0,8">
@@ -219,7 +226,7 @@
 
                                         <TextBlock Grid.Column="0"
                                                    Text="Brand New:"
-                                                   FontSize="11" Foreground="#2A3A4A"
+                                                   FontSize="11" Foreground="{StaticResource YakultTextDarkBrush}"
                                                    VerticalAlignment="Center"/>
 
                                         <!-- Spinner: − value + -->
@@ -258,7 +265,7 @@
 
                                         <TextBlock Grid.Column="0"
                                                    Text="Refilled:"
-                                                   FontSize="11" Foreground="#2A3A4A"
+                                                   FontSize="11" Foreground="{StaticResource YakultTextDarkBrush}"
                                                    VerticalAlignment="Center"/>
 
                                         <StackPanel Grid.Column="1"
@@ -292,37 +299,37 @@
                                     <!-- ── Live fulfillment preview ──────── -->
                                     <TextBlock Text="FULFILLMENT PREVIEW"
                                                FontSize="9" FontWeight="SemiBold"
-                                               Foreground="#4A5A6A" Margin="0,0,0,8"/>
+                                               Foreground="{StaticResource YakultTextDarkBrush}" Margin="0,0,0,8"/>
 
                                     <WrapPanel Orientation="Horizontal">
-                                        <Border Background="#F5F8FF" BorderBrush="#DDE3EC"
+                                        <Border Background="#F5F8FF" BorderBrush="{StaticResource YakultBorderBrush}"
                                                 BorderThickness="1" CornerRadius="4"
                                                 Padding="10,4" Margin="0,0,8,0">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="Issued After: "
-                                                           FontSize="10" Foreground="#4A5A6A"/>
+                                                           FontSize="10" Foreground="{StaticResource YakultTextDarkBrush}"/>
                                                 <TextBlock Text="{Binding IssuedAfter}"
                                                            FontSize="10" FontWeight="Bold"
                                                            Foreground="#27AE60"/>
                                             </StackPanel>
                                         </Border>
-                                        <Border Background="#F5F8FF" BorderBrush="#DDE3EC"
+                                        <Border Background="#F5F8FF" BorderBrush="{StaticResource YakultBorderBrush}"
                                                 BorderThickness="1" CornerRadius="4"
                                                 Padding="10,4" Margin="0,0,8,0">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="Pending After: "
-                                                           FontSize="10" Foreground="#4A5A6A"/>
+                                                           FontSize="10" Foreground="{StaticResource YakultTextDarkBrush}"/>
                                                 <TextBlock Text="{Binding PendingAfter}"
                                                            FontSize="10" FontWeight="Bold"
                                                            Foreground="#E74C3C"/>
                                             </StackPanel>
                                         </Border>
-                                        <Border Background="#F5F8FF" BorderBrush="#DDE3EC"
+                                        <Border Background="#F5F8FF" BorderBrush="{StaticResource YakultBorderBrush}"
                                                 BorderThickness="1" CornerRadius="4"
                                                 Padding="10,4">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="Status: "
-                                                           FontSize="10" Foreground="#4A5A6A"/>
+                                                           FontSize="10" Foreground="{StaticResource YakultTextDarkBrush}"/>
                                                 <TextBlock Text="{Binding StatusAfterText}"
                                                            FontSize="10" FontWeight="Bold"
                                                            Foreground="{Binding StatusAfterColor,
@@ -338,10 +345,10 @@
                                     <!-- ── Remarks ────────────────────────── -->
                                     <TextBlock Text="REMARKS (optional)"
                                                FontSize="9" FontWeight="SemiBold"
-                                               Foreground="#4A5A6A" Margin="0,0,0,6"/>
+                                               Foreground="{StaticResource YakultTextDarkBrush}" Margin="0,0,0,6"/>
 
                                     <TextBox Text="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}"
-                                             FontSize="11" Foreground="#1A2333"
+                                             FontSize="11" Foreground="{StaticResource YakultTextDarkBrush}"
                                              BorderBrush="#C8D2DC" BorderThickness="1"
                                              Background="White" Padding="8,6"
                                              AcceptsReturn="False"
@@ -359,7 +366,7 @@
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsFocused" Value="True">
-                                                        <Setter Property="BorderBrush" Value="#3A8EF6"/>
+                                                        <Setter Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -378,7 +385,7 @@
             <!-- Footer                                                       -->
             <!-- ════════════════════════════════════════════════════════════ -->
             <Border Grid.Row="2" Background="White"
-                    BorderBrush="#DDE3EC" BorderThickness="0,1,0,0"
+                    BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0"
                     Padding="16,0">
                 <DockPanel LastChildFill="False" VerticalAlignment="Center">
 
@@ -396,7 +403,7 @@
 
                     <Button DockPanel.Dock="Right"
                             Style="{StaticResource DlgButton}"
-                            Background="#E8ECF0" Foreground="#4A5A6A"
+                            Background="#E8ECF0" Foreground="{StaticResource YakultTextDarkBrush}"
                             Click="OnCancelClick"
                             IsCancel="True"
                             Margin="0,0,8,0">

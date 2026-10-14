@@ -32,9 +32,9 @@ namespace Yakult.Inventory.App.Repositories
                 var ins = EmployeeDistributorHelper.BuildDistributorInsertFragments(hasDistributorColumn);
 
                 using (var cmd = new SqlCommand(@"
-                    INSERT INTO dbo.Employee (Name, Description, DateCreated, Createdby, ComId, BranchId, DeptId, Position, EmployeeNumber," + ins.ColumnFragment + @")
+                    INSERT INTO dbo.Employee (Name, Description, DateCreated, Createdby, ComId, BranchId, DeptId, Position, EmployeeNumber" + ins.ColumnFragment + @")
                     OUTPUT INSERTED.EmpId
-                    VALUES (@Name, @Description, @DateCreated, @Createdby, @ComId, @BranchId, @DeptId, @Position, @EmployeeNumber," + ins.ValueFragment + @");
+                    VALUES (@Name, @Description, @DateCreated, @Createdby, @ComId, @BranchId, @DeptId, @Position, @EmployeeNumber" + ins.ValueFragment + @");
                 ", con))
                 {
                     cmd.Parameters.AddWithValue("@Name", employee.Name ?? (object)DBNull.Value);

@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -57,7 +58,7 @@ namespace Yakult.Inventory.App.Pages
             Height = 500;
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterParent;
-            BackColor = Color.FromArgb(245, 247, 250); // App background color
+            BackColor = InventoryTheme.Colors.HeaderBack; // App background color
             DoubleBuffered = true;
 
             // Region for rounded corners
@@ -85,7 +86,7 @@ namespace Yakult.Inventory.App.Pages
             {
                 Width = 5,
                 Height = 32,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 Location = new Point(0, 14)
             };
 
@@ -128,7 +129,7 @@ namespace Yakult.Inventory.App.Pages
                 Text = "Select",
                 Size = new Size(120, 40),
                 ButtonType = HopeButtonType.Primary,
-                PrimaryColor = Color.FromArgb(52, 152, 219),
+                PrimaryColor = InventoryTheme.Colors.Primary,
                 TextColor = Color.White,
                 Dock = DockStyle.Right,
                 Cursor = Cursors.Hand
@@ -378,7 +379,7 @@ namespace Yakult.Inventory.App.Pages
                 }
                 
                 // Left indicator strip
-                using (var brush = new SolidBrush(Color.FromArgb(52, 152, 219)))
+                using (var brush = new SolidBrush(InventoryTheme.Colors.Primary))
                 {
                     g.FillRectangle(brush, e.Bounds.X, e.Bounds.Y + 4, 4, e.Bounds.Height - 8);
                 }
@@ -392,7 +393,7 @@ namespace Yakult.Inventory.App.Pages
             }
 
             // Text
-            using (var brush = new SolidBrush(isSelected ? Color.FromArgb(41, 128, 185) : Color.FromArgb(60, 60, 60)))
+            using (var brush = new SolidBrush(isSelected ? InventoryTheme.Colors.PrimaryHover : Color.FromArgb(60, 60, 60)))
             {
                 var font = isSelected ? new Font(e.Font, FontStyle.Bold) : e.Font;
                 

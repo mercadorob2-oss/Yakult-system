@@ -4,7 +4,7 @@
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:gp="clr-namespace:Yakult.Inventory.App.WPF.EDocs.Gatepass.Views"
              FontFamily="Segoe UI"
-             Background="#F5F7FA"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
              SizeChanged="OnSizeChanged">
     <VisualStateManager.VisualStateGroups>
         <VisualStateGroup x:Name="ResponsiveStates">
@@ -33,6 +33,11 @@
         </VisualStateGroup>
     </VisualStateManager.VisualStateGroups>
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <gp:GatepassCategoryLabelConverter x:Key="CategoryLabel"/>
         <gp:GatepassModelLabelConverter x:Key="ModelLabel"/>
         <Style x:Key="ChipItem" TargetType="ListBoxItem">
@@ -47,11 +52,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="chip" Property="BorderBrush" Value="#3498DB"/>
+                                <Setter TargetName="chip" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="chip" Property="Background" Value="#3498DB"/>
-                                <Setter TargetName="chip" Property="BorderBrush" Value="#3498DB"/>
+                                <Setter TargetName="chip" Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
+                                <Setter TargetName="chip" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -83,7 +88,7 @@
             <Setter Property="Margin" Value="8"/>
         </Style>
         <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="#3498DB"/>
+            <Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Padding" Value="14,7,14,7"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -117,7 +122,7 @@
         </Style>
         <Style x:Key="CardSubtitle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#5A6C7D"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
         <Style x:Key="StepNumber" TargetType="TextBlock">
@@ -139,23 +144,25 @@
             <Setter Property="BorderBrush" Value="#C9D2DC"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
+
+        </ResourceDictionary>
     </UserControl.Resources>
     <ScrollViewer x:Name="OuterScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
         <StackPanel Margin="16" MinWidth="480">
             <Border Background="White" CornerRadius="8" BorderBrush="#E1E6EB" BorderThickness="1" Padding="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <Border Background="#3498DB" CornerRadius="8,8,0,0" Height="6"/>
+                    <Border Background="{StaticResource YakultPrimaryBrush}" CornerRadius="8,8,0,0" Height="6"/>
                     <StackPanel Margin="20,14,20,18">
                     <TextBlock Text="E-Documents" FontSize="22" FontWeight="Bold" Foreground="#1F2D3D"/>
-                    <TextBlock Text="Transmittal &#x2022; Gatepass &#x2022; Requisition" FontSize="13" Foreground="#5A6C7D" Margin="0,4,0,0"/>
-                    <TextBlock Text="Standalone print forms — fill in the fields on each tab, then print. Nothing here is tied to sets, requests, or cartridges." FontSize="12" Foreground="#5A6C7D" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="Transmittal &#x2022; Gatepass &#x2022; Requisition" FontSize="13" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,4,0,0"/>
+                    <TextBlock Text="Standalone print forms — fill in the fields on each tab, then print. Nothing here is tied to sets, requests, or cartridges." FontSize="12" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
             <UniformGrid x:Name="QuickActionGrid" Columns="3" Margin="0,0,0,4">
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
-                        <Rectangle Width="36" Height="36" Fill="#3498DB" RadiusX="6" RadiusY="6" HorizontalAlignment="Left"/>
+                        <Rectangle Width="36" Height="36" Fill="{StaticResource YakultPrimaryBrush}" RadiusX="6" RadiusY="6" HorizontalAlignment="Left"/>
                         <TextBlock Text="Transmittal" Style="{StaticResource CardTitle}" Margin="0,10,0,0"/>
                         <TextBlock Text="Fill and print a standalone transmittal form." Style="{StaticResource CardSubtitle}" Margin="0,4,0,10"/>
                         <Button Content="Open Transmittal" Style="{StaticResource PrimaryButton}" Command="{Binding OpenTransmittalCommand}" HorizontalAlignment="Left"/>
@@ -163,7 +170,7 @@
                 </Border>
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
-                        <Ellipse Width="36" Height="36" Fill="#3498DB" HorizontalAlignment="Left"/>
+                        <Ellipse Width="36" Height="36" Fill="{StaticResource YakultPrimaryBrush}" HorizontalAlignment="Left"/>
                         <TextBlock Text="Gatepass" Style="{StaticResource CardTitle}" Margin="0,10,0,0"/>
                         <TextBlock Text="Fill and print a standalone gatepass form." Style="{StaticResource CardSubtitle}" Margin="0,4,0,10"/>
                         <Button Content="New Gatepass" Style="{StaticResource PrimaryButton}" Command="{Binding NewGatepassCommand}" HorizontalAlignment="Left"/>
@@ -171,7 +178,7 @@
                 </Border>
                 <Border Style="{StaticResource CardBorder}">
                     <StackPanel>
-                        <Path Width="36" Height="36" Fill="#3498DB" Stretch="Uniform" HorizontalAlignment="Left" Data="M6,2 L18,2 L24,8 L24,30 L6,30 Z M18,2 L18,8 L24,8"/>
+                        <Path Width="36" Height="36" Fill="{StaticResource YakultPrimaryBrush}" Stretch="Uniform" HorizontalAlignment="Left" Data="M6,2 L18,2 L24,8 L24,30 L6,30 Z M18,2 L18,8 L24,8"/>
                         <TextBlock Text="Requisition" Style="{StaticResource CardTitle}" Margin="0,10,0,0"/>
                         <TextBlock Text="Fill and print a standalone requisition form." Style="{StaticResource CardSubtitle}" Margin="0,4,0,10"/>
                         <Button Content="Open Requisition" Style="{StaticResource PrimaryButton}" Command="{Binding OpenRequisitionCommand}" HorizontalAlignment="Left"/>
@@ -207,7 +214,7 @@
                                     </UniformGrid>
                                     <TextBlock Text="FROM (permanent)" Style="{StaticResource FieldLabel}"/>
                                     <TextBox Text="{Binding TransmittalInput.From, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FieldBox}"
-                                             IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="#5A6C7D"
+                                             IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="{StaticResource YakultTextMutedBrush}"
                                              ToolTip="Fixed value — every form issued from this section comes from the IT department."/>
                                 </StackPanel>
                             </Border>
@@ -324,7 +331,7 @@
                                     </UniformGrid>
                                     <TextBlock Text="FROM (permanent)" Style="{StaticResource FieldLabel}"/>
                                     <TextBox Text="{Binding GatepassInput.From, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FieldBox}"
-                                             IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="#5A6C7D"
+                                             IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="{StaticResource YakultTextMutedBrush}"
                                              ToolTip="Fixed value — every form issued from this section comes from the IT department."/>
                                     <TextBlock Text="ITEM" Style="{StaticResource FieldLabel}"/>
                                     <ListBox Style="{StaticResource ChipList}"
@@ -499,7 +506,7 @@
                                         <StackPanel Margin="0,0,8,0">
                                             <TextBlock Text="DEPARTMENT (permanent)" Style="{StaticResource FieldLabel}"/>
                                             <TextBox Text="{Binding RequisitionInput.Department, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FieldBox}"
-                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="#5A6C7D"
+                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="{StaticResource YakultTextMutedBrush}"
                                                      ToolTip="Fixed value — every requisition issued from this section is on behalf of IT."/>
                                         </StackPanel>
                                         <StackPanel Margin="8,0,0,0">
@@ -535,7 +542,7 @@
                                             <DataGridTextColumn Header="REMARKS" Binding="{Binding Remarks, UpdateSourceTrigger=PropertyChanged}" Width="200"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
-                                    <TextBlock Text="Tip: type the same REMARKS text on consecutive rows to brace them into one cell on the printout." FontSize="11" Foreground="#5A6C7D" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                    <TextBlock Text="Tip: type the same REMARKS text on consecutive rows to brace them into one cell on the printout." FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource SectionCard}">
@@ -563,22 +570,22 @@
                                         <StackPanel Margin="0,0,8,0">
                                             <TextBlock Text="NOTED BY (NAME, permanent)" Style="{StaticResource FieldLabel}"/>
                                             <TextBox Text="{Binding RequisitionInput.NotedByName}" Style="{StaticResource FieldBox}"
-                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="#5A6C7D"/>
+                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="{StaticResource YakultTextMutedBrush}"/>
                                         </StackPanel>
                                         <StackPanel Margin="8,0,0,0">
                                             <TextBlock Text="POSITION (permanent)" Style="{StaticResource FieldLabel}"/>
                                             <TextBox Text="{Binding RequisitionInput.NotedByPosition}" Style="{StaticResource FieldBox}"
-                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="#5A6C7D"/>
+                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="{StaticResource YakultTextMutedBrush}"/>
                                         </StackPanel>
                                         <StackPanel Margin="0,0,8,0">
                                             <TextBlock Text="APPROVED BY (NAME, permanent)" Style="{StaticResource FieldLabel}"/>
                                             <TextBox Text="{Binding RequisitionInput.ApprovedByName}" Style="{StaticResource FieldBox}"
-                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="#5A6C7D"/>
+                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="{StaticResource YakultTextMutedBrush}"/>
                                         </StackPanel>
                                         <StackPanel Margin="8,0,0,0">
                                             <TextBlock Text="POSITION (permanent)" Style="{StaticResource FieldLabel}"/>
                                             <TextBox Text="{Binding RequisitionInput.ApprovedByPosition}" Style="{StaticResource FieldBox}"
-                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="#5A6C7D"/>
+                                                     IsReadOnly="True" Focusable="False" Background="#F2F4F7" Foreground="{StaticResource YakultTextMutedBrush}"/>
                                         </StackPanel>
                                         <StackPanel Margin="0,0,8,0">
                                             <TextBlock Text="RECEIVED BY" Style="{StaticResource FieldLabel}"/>

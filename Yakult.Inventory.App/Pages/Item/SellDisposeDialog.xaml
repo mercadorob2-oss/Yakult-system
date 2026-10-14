@@ -14,10 +14,15 @@
         ResizeMode="CanResize">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FormField" TargetType="TextBox">
             <Setter Property="Height" Value="32"/>
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#C8D2DC"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -30,8 +35,8 @@
                             <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/><Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/></Trigger>
-                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/><Setter Property="Foreground" Value="#A0ADB9"/></Trigger>
+                            <Trigger Property="IsFocused" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/><Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultPageBackgroundBrush}"/><Setter Property="Foreground" Value="#A0ADB9"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -41,10 +46,12 @@
             <Setter Property="Height" Value="Auto"/><Setter Property="MinHeight" Value="72"/><Setter Property="AcceptsReturn" Value="True"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="VerticalScrollBarVisibility" Value="Auto"/><Setter Property="VerticalContentAlignment" Value="Top"/><Setter Property="Padding" Value="8,6"/>
         </Style>
         <Style x:Key="FL" TargetType="TextBlock"><Setter Property="FontSize" Value="9.5"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Foreground" Value="#8A94A6"/><Setter Property="Margin" Value="0,0,0,3"/></Style>
-        <Style x:Key="ST" TargetType="TextBlock"><Setter Property="FontSize" Value="9.5"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Foreground" Value="#3A8EF6"/><Setter Property="Margin" Value="0,0,0,10"/></Style>
-        <Style x:Key="Card" TargetType="Border"><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#DDE3EC"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="16,14"/><Setter Property="Margin" Value="0,0,0,10"/><Setter Property="Effect"><Setter.Value><DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.06" Direction="270" Color="#0A1A2A"/></Setter.Value></Setter></Style>
-        <Style x:Key="PrimaryBtn" TargetType="Button"><Setter Property="Height" Value="38"/><Setter Property="Padding" Value="22,0"/><Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Background" Value="#3A8EF6"/><Setter Property="Foreground" Value="White"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.88"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="Bd" Property="Opacity" Value="0.42"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
-        <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}"><Setter Property="Background" Value="#E8ECF0"/><Setter Property="Foreground" Value="#3A4A5A"/></Style>
+        <Style x:Key="ST" TargetType="TextBlock"><Setter Property="FontSize" Value="9.5"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Foreground" Value="{StaticResource YakultPrimaryBrush}"/><Setter Property="Margin" Value="0,0,0,10"/></Style>
+        <Style x:Key="Card" TargetType="Border"><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="{StaticResource YakultBorderBrush}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="16,14"/><Setter Property="Margin" Value="0,0,0,10"/><Setter Property="Effect"><Setter.Value><DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.06" Direction="270" Color="#0A1A2A"/></Setter.Value></Setter></Style>
+        <Style x:Key="PrimaryBtn" TargetType="Button"><Setter Property="Height" Value="38"/><Setter Property="Padding" Value="22,0"/><Setter Property="FontSize" Value="12"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/><Setter Property="Foreground" Value="White"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.88"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="Bd" Property="Opacity" Value="0.42"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+        <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}"><Setter Property="Background" Value="#E8ECF0"/><Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/></Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Border CornerRadius="10" Background="White" ClipToBounds="True">
@@ -55,8 +62,8 @@
             <Border x:Name="HeaderBar" Grid.Row="0" CornerRadius="10,10,0,0" MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
                 <DockPanel Margin="18,0,10,0" VerticalAlignment="Center">
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center" Cursor="Arrow">
-                        <TextBlock Text="─" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF" Cursor="Hand" Padding="8,0" MouseLeftButtonDown="OnMinimizeClick"/>
-                        <TextBlock Text="✕" FontSize="14" FontWeight="Bold" Foreground="#BDD9FF" Cursor="Hand" Padding="8,0" MouseLeftButtonDown="OnCloseClick"/>
+                        <TextBlock Text="─" FontSize="14" FontWeight="Bold" Foreground="{StaticResource YakultNavigationMutedBrush}" Cursor="Hand" Padding="8,0" MouseLeftButtonDown="OnMinimizeClick"/>
+                        <TextBlock Text="✕" FontSize="14" FontWeight="Bold" Foreground="{StaticResource YakultNavigationMutedBrush}" Cursor="Hand" Padding="8,0" MouseLeftButtonDown="OnCloseClick"/>
                     </StackPanel>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock x:Name="TxtTitle" Text="Sell Item" FontSize="14" FontWeight="Bold" Foreground="White"/>
@@ -65,7 +72,7 @@
                 </DockPanel>
             </Border>
 
-            <ScrollViewer Grid.Row="1" Background="#F0F2F6" VerticalScrollBarVisibility="Auto" Padding="16,14,16,8">
+            <ScrollViewer Grid.Row="1" Background="{StaticResource YakultPageBackgroundBrush}" VerticalScrollBarVisibility="Auto" Padding="16,14,16,8">
                 <StackPanel>
                     <Border x:Name="BulkBanner" Visibility="Collapsed" Background="#FFF3E6" BorderBrush="#F5C842" BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,10">
                         <TextBlock x:Name="TxtBulkBanner" FontSize="11" Foreground="#7A4A00" TextWrapping="Wrap"/>
@@ -81,14 +88,14 @@
                             </DockPanel>
                             <DataGrid x:Name="SelectedItemsGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False"
                                       HeadersVisibility="Column" GridLinesVisibility="All" AlternationCount="2" RowHeaderWidth="0"
-                                      MaxHeight="210" MinHeight="52" FontSize="11" BorderBrush="#DDE3EC" BorderThickness="1"
-                                      HorizontalGridLinesBrush="#EEF1F4" VerticalGridLinesBrush="#E4E8EF" Background="White"
+                                      MaxHeight="210" MinHeight="52" FontSize="11" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
+                                      HorizontalGridLinesBrush="{StaticResource YakultBorderBrush}" VerticalGridLinesBrush="{StaticResource YakultBorderBrush}" Background="White"
                                       CanUserSortColumns="False" CanUserReorderColumns="False" CanUserResizeRows="False">
                                 <DataGrid.ColumnHeaderStyle>
                                     <Style TargetType="DataGridColumnHeader">
-                                        <Setter Property="Background" Value="#F0F2F6"/><Setter Property="Foreground" Value="#5B6A7D"/>
+                                        <Setter Property="Background" Value="{StaticResource YakultPageBackgroundBrush}"/><Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
                                         <Setter Property="FontSize" Value="10"/><Setter Property="FontWeight" Value="SemiBold"/>
-                                        <Setter Property="Padding" Value="8,6"/><Setter Property="BorderBrush" Value="#DDE3EC"/><Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                        <Setter Property="Padding" Value="8,6"/><Setter Property="BorderBrush" Value="{StaticResource YakultBorderBrush}"/><Setter Property="BorderThickness" Value="0,0,1,1"/>
                                         <Setter Property="HorizontalContentAlignment" Value="Left"/>
                                     </Style>
                                 </DataGrid.ColumnHeaderStyle>
@@ -96,7 +103,7 @@
                                     <Style TargetType="DataGridRow">
                                         <Setter Property="Background" Value="White"/><Setter Property="MinHeight" Value="28"/>
                                         <Style.Triggers>
-                                            <Trigger Property="AlternationIndex" Value="1"><Setter Property="Background" Value="#FAFBFC"/></Trigger>
+                                            <Trigger Property="AlternationIndex" Value="1"><Setter Property="Background" Value="{StaticResource YakultSurfaceMutedBrush}"/></Trigger>
                                         </Style.Triggers>
                                     </Style>
                                 </DataGrid.RowStyle>
@@ -155,7 +162,7 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <Border Grid.Row="2" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10">
+            <Border Grid.Row="2" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" CornerRadius="0,0,10,10">
                 <DockPanel Margin="16,0" VerticalAlignment="Center" LastChildFill="False">
                     <Button x:Name="BtnOk" DockPanel.Dock="Right" Style="{StaticResource PrimaryBtn}" Click="OnOkClick" IsDefault="True">
                         <TextBlock x:Name="TxtOkLabel" Text="Confirm"/>

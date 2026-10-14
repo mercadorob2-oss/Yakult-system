@@ -5,12 +5,17 @@
         Width="1600" Height="900"
         WindowStartupLocation="CenterScreen"
         FontFamily="Segoe UI"
-        Background="#F0F2F6">
+        Background="{DynamicResource YakultPageBackgroundBrush}">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FL" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Foreground" Value="#4A5A6A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,10,6"/>
         </Style>
@@ -33,7 +38,7 @@
         </Style>
         <Style x:Key="GroupCard" TargetType="Border">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="BorderBrush" Value="#DDE3EC"/>
+            <Setter Property="BorderBrush" Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="16"/>
@@ -42,13 +47,13 @@
         <Style x:Key="GroupHeader" TargetType="TextBlock">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
         <Style x:Key="PrimaryBtn" TargetType="Button">
             <Setter Property="Height" Value="34"/>
             <Setter Property="Padding" Value="18,0"/>
-            <Setter Property="Background" Value="#3A8EF6"/>
+            <Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -56,17 +61,19 @@
         </Style>
         <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
             <Setter Property="Background" Value="#E8ECF0"/>
-            <Setter Property="Foreground" Value="#3A4A5A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
         <Style x:Key="SmallActionBtn" TargetType="Button">
             <Setter Property="Height" Value="26"/>
             <Setter Property="Padding" Value="10,0"/>
             <Setter Property="Background" Value="#E8ECF0"/>
-            <Setter Property="Foreground" Value="#3A4A5A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Margin" Value="0,0,8,0"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -76,7 +83,7 @@
         </Grid.RowDefinitions>
 
         <!-- ══ Top banner ══════════════════════════════════════════════════ -->
-        <Border Grid.Row="0" Background="#007ACC" Padding="24,14">
+        <Border Grid.Row="0" Background="{StaticResource YakultNavigationBrush}" Padding="24,14">
             <StackPanel>
                 <TextBlock Text="Invoice Details" FontSize="22" FontWeight="Bold" Foreground="White"/>
                 <TextBlock x:Name="LblCreatedBy" Text="Created By: -" FontSize="12" Foreground="White" Margin="0,4,0,0"/>
@@ -105,11 +112,11 @@
                         <UniformGrid Columns="4">
                             <StackPanel Margin="0,0,16,0">
                                 <TextBlock Text="Set Code" Style="{StaticResource FL}"/>
-                                <TextBox x:Name="TxtSetCode" IsReadOnly="True" Background="#F5F7FA"/>
+                                <TextBox x:Name="TxtSetCode" IsReadOnly="True" Background="{StaticResource YakultPageBackgroundBrush}"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,16,0">
                                 <TextBlock Text="Item Count" Style="{StaticResource FL}"/>
-                                <TextBox x:Name="TxtItemCount" IsReadOnly="True" Background="#F5F7FA"/>
+                                <TextBox x:Name="TxtItemCount" IsReadOnly="True" Background="{StaticResource YakultPageBackgroundBrush}"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,16,0">
                                 <TextBlock Text="Document Number" Style="{StaticResource FL}"/>
@@ -235,7 +242,7 @@
                                 </StackPanel>
                                 <StackPanel Margin="0,0,16,0">
                                     <TextBlock Text="Total Amount Due" Style="{StaticResource FL}"/>
-                                    <TextBox x:Name="TxtTotalAmountDue" IsReadOnly="True" Background="#F5F7FA"/>
+                                    <TextBox x:Name="TxtTotalAmountDue" IsReadOnly="True" Background="{StaticResource YakultPageBackgroundBrush}"/>
                                 </StackPanel>
                                 <StackPanel Margin="0,0,16,0">
                                     <TextBlock Text="WHT Amount (%)" Style="{StaticResource FL}"/>
@@ -256,7 +263,7 @@
                             <TextBlock Text="License Expiry" Style="{StaticResource GroupHeader}"/>
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="Days Left" Style="{StaticResource FL}"/>
-                                <TextBox x:Name="TxtDaysLeft" IsReadOnly="True" Background="#F5F7FA" HorizontalContentAlignment="Center" Width="100" HorizontalAlignment="Left"/>
+                                <TextBox x:Name="TxtDaysLeft" IsReadOnly="True" Background="{StaticResource YakultPageBackgroundBrush}" HorizontalContentAlignment="Center" Width="100" HorizontalAlignment="Left"/>
                             </StackPanel>
                             <TextBlock Text="Status" Style="{StaticResource FL}"/>
                             <TextBlock x:Name="LblExpiryWarning" TextWrapping="Wrap" FontWeight="SemiBold"/>
@@ -283,18 +290,18 @@
                                   HeadersVisibility="Column"
                                   AlternatingRowBackground="#F5F9FF"
                                   Background="White"
-                                  BorderBrush="#DDE3EC"
+                                  BorderBrush="{StaticResource YakultBorderBrush}"
                                   BorderThickness="1"
                                   MinRowHeight="36"
                                   MaxHeight="500"
                                   FontSize="12"
-                                  Foreground="#1A2333"
+                                  Foreground="{StaticResource YakultTextDarkBrush}"
                                   AutoGeneratingColumn="DgvItems_AutoGeneratingColumn"
                                   PreviewMouseWheel="DgvItems_PreviewMouseWheel"
                                   SelectionChanged="DgvItems_SelectionChanged">
                             <DataGrid.Resources>
                                 <Style TargetType="DataGridColumnHeader">
-                                    <Setter Property="Background" Value="#3498DB"/>
+                                    <Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
                                     <Setter Property="Foreground" Value="White"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                     <Setter Property="Padding" Value="8,6"/>
@@ -319,11 +326,11 @@
                                         <DataTemplate>
                                             <!-- Selectable (in edit mode) so the whole Sub-Type Group can be picked
                                                  for removal via the Delete Row button — see GroupHeader_Click. -->
-                                            <Border Background="#EAF1FB" BorderBrush="#DDE3EC"
+                                            <Border Background="#EAF1FB" BorderBrush="{StaticResource YakultBorderBrush}"
                                                     BorderThickness="0,0,0,1" Padding="10,6"
                                                     Cursor="Hand" PreviewMouseLeftButtonDown="GroupHeader_Click">
                                                 <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="12"
-                                                           Foreground="#3498DB"/>
+                                                           Foreground="{StaticResource YakultPrimaryBrush}"/>
                                             </Border>
                                         </DataTemplate>
                                     </GroupStyle.HeaderTemplate>

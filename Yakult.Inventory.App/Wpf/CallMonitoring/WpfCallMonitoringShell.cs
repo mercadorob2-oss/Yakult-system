@@ -79,14 +79,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private WpfNotificationDrawer _wpfDrawer;
 
         // Colors
-        private static readonly Color HeaderColor = Color.FromRgb(0, 150, 136);
-        private static readonly Color SidebarColor = Color.FromRgb(41, 58, 74);
-        private static readonly Color SidebarHeaderColor = Color.FromRgb(34, 49, 63);
-        private static readonly Color NavTextColor = Color.FromRgb(189, 195, 199);
-        private static readonly Color NavActiveColor = Color.FromRgb(52, 73, 94);
-        private static readonly Color NavHoverColor = Color.FromRgb(52, 73, 94);
-        private static readonly Color ContentBg = Color.FromRgb(240, 242, 245);
-        private static readonly Color AccentBlue = Color.FromRgb(52, 152, 219);
+        private static readonly Color HeaderColor = WpfThemeResources.Navigation;
+        private static readonly Color SidebarColor = WpfThemeResources.Navigation;
+        private static readonly Color SidebarHeaderColor = WpfThemeResources.NavigationHover;
+        private static readonly Color NavTextColor = WpfThemeResources.NavigationMuted;
+        private static readonly Color NavActiveColor = WpfThemeResources.Primary;
+        private static readonly Color NavHoverColor = WpfThemeResources.NavigationHover;
+        private static readonly Color ContentBg = WpfThemeResources.PageBackground;
+        private static readonly Color AccentBlue = WpfThemeResources.Primary;
 
         public WpfCallMonitoringShell()
         {
@@ -432,8 +432,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var chromeHeader = new Border
             {
                 Background = new LinearGradientBrush(
-                    Color.FromRgb(15, 23, 42),
-                    Color.FromRgb(30, 64, 120),
+                    WpfThemeResources.Navigation,
+                    WpfThemeResources.NavigationHover,
                     new Point(0, 0), new Point(1, 0)),
                 Padding = new Thickness(20, 14, 16, 14)
             };

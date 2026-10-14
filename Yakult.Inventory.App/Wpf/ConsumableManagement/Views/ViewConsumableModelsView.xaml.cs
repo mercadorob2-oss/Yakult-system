@@ -186,7 +186,7 @@ namespace Yakult.Inventory.App.WPF.ConsumableManagement.Views
 
                     var hdr = ws.Range(1, 1, 1, headers.Length);
                     hdr.Style.Font.Bold = true;
-                    hdr.Style.Fill.BackgroundColor = XLColor.FromHtml("#4E9AFC");
+                    hdr.Style.Fill.BackgroundColor = XLColor.FromHtml("#B92335");
                     hdr.Style.Font.FontColor = XLColor.White;
                     hdr.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 

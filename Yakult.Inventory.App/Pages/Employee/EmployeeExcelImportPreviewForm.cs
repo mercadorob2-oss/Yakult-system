@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -83,7 +84,7 @@ namespace Yakult.Inventory.App.Pages.Employee
                 Dock = DockStyle.Top,
                 Height = 26,
                 Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(41, 128, 185),
+                ForeColor = InventoryTheme.Colors.PrimaryHover,
                 Text = "Import Preview",
                 TextAlign = ContentAlignment.MiddleLeft
             };

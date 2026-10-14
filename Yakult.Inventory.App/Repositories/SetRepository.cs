@@ -61,7 +61,8 @@ namespace Yakult.Inventory.App.Repositories
         ///       (Hardware, Software/License, Service) elsewhere.
         /// </summary>
         public async Task<int> CreateSetAsync(int createdByUserId, string remarks = null,
-            DateTime? dispatchDate = null, string status = "Pending", int? distributorId = null)
+            DateTime? dispatchDate = null, string status = "Pending", int? distributorId = null,
+            int? comId = null, int? currentBranchId = null, int? currentDepartmentId = null, int? receivedById = null)
         {
             const string sql = @"
         INSERT INTO dbo.[Set] (CreatedBy, CreatedAt, QRToken, Remarks, DispatchDate, Status)
@@ -104,6 +105,32 @@ namespace Yakult.Inventory.App.Repositories
                 ActivityLogger.Log(createdByUserId, ActivityLogger.Actions.Create,
                     "Set", newSetId,
                     $"Set #{newSetId} created");
+
+                // Org linkage (Company / Branch / Department / Receiver): applied only
+                // when the columns exist in this database (older DBs may predate them).
+                // Same COL_LENGTH-guarded idiom as the DistributorId block above.
+                if (comId.HasValue || currentBranchId.HasValue || currentDepartmentId.HasValue || receivedById.HasValue)
+                {
+                    const string sqlOrg = @"
+                        IF COL_LENGTH('dbo.[Set]', 'ComId') IS NOT NULL AND @ComId IS NOT NULL
+                            UPDATE dbo.[Set] SET ComId = @ComId WHERE SetId = @SetId;
+                        IF COL_LENGTH('dbo.[Set]', 'CurrentBranchId') IS NOT NULL AND @BranchId IS NOT NULL
+                            UPDATE dbo.[Set] SET CurrentBranchId = @BranchId WHERE SetId = @SetId;
+                        IF COL_LENGTH('dbo.[Set]', 'CurrentDepartmentId') IS NOT NULL AND @DeptId IS NOT NULL
+                            UPDATE dbo.[Set] SET CurrentDepartmentId = @DeptId WHERE SetId = @SetId;
+                        IF COL_LENGTH('dbo.[Set]', 'ReceivedById') IS NOT NULL AND @ReceivedById IS NOT NULL
+                            UPDATE dbo.[Set] SET ReceivedById = @ReceivedById WHERE SetId = @SetId;";
+                    using (var orgCmd = new SqlCommand(sqlOrg, con))
+                    {
+                        orgCmd.Parameters.AddWithValue("@SetId", newSetId);
+                        orgCmd.Parameters.AddWithValue("@ComId", (object)comId ?? DBNull.Value);
+                        orgCmd.Parameters.AddWithValue("@BranchId", (object)currentBranchId ?? DBNull.Value);
+                        orgCmd.Parameters.AddWithValue("@DeptId", (object)currentDepartmentId ?? DBNull.Value);
+                        orgCmd.Parameters.AddWithValue("@ReceivedById", (object)receivedById ?? DBNull.Value);
+                        await orgCmd.ExecuteNonQueryAsync();
+                    }
+                }
+
                 return newSetId;
             }
         }

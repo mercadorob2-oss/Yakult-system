@@ -3,7 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
-    Background="#F0F2F6"
+    Background="{DynamicResource YakultPageBackgroundBrush}"
     FontFamily="Segoe UI"
     UseLayoutRounding="True"
     SnapsToDevicePixels="True"
@@ -12,6 +12,11 @@
     RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <!-- ── Converters ────────────────────────────────────────────────── -->
         <conv:StringToColorBrushConverter      x:Key="HexToBrush"/>
         <conv:BoolToVisibilityConverter        x:Key="BoolToVis"/>
@@ -21,7 +26,7 @@
         <!-- ── Global TextBlock ──────────────────────────────────────────── -->
         <Style TargetType="TextBlock">
             <Setter Property="FontFamily"                         Value="Segoe UI"/>
-            <Setter Property="Foreground"                         Value="#1A2333"/>
+            <Setter Property="Foreground"                         Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="TextOptions.TextFormattingMode"     Value="Display"/>
             <Setter Property="TextOptions.TextRenderingMode"      Value="ClearType"/>
         </Style>
@@ -29,7 +34,7 @@
         <!-- ── Summary card ─────────────────────────────────────────────── -->
         <Style x:Key="SummaryCard" TargetType="Border">
             <Setter Property="Background"      Value="#FFFFFF"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius"    Value="8"/>
             <Setter Property="Padding"         Value="14,8"/>
@@ -41,7 +46,7 @@
         <Style x:Key="CardLabel" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="9"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#6B7A8D"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,2"/>
         </Style>
 
@@ -49,13 +54,13 @@
         <Style x:Key="CardValue" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="20"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
 
         <!-- ── Filter bar outer card ─────────────────────────────────── -->
         <Style x:Key="FilterBar" TargetType="Border">
             <Setter Property="Background"      Value="#FFFFFF"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius"    Value="8"/>
             <Setter Property="Padding"         Value="10,6"/>
@@ -63,10 +68,10 @@
 
         <!-- ── Search TextBox ────────────────────────────────────────── -->
         <Style x:Key="SearchBox" TargetType="TextBox">
-            <Setter Property="BorderBrush"              Value="#C2CCDA"/>
+            <Setter Property="BorderBrush"              Value="{StaticResource YakultInputBorderBrush}"/>
             <Setter Property="BorderThickness"          Value="1"/>
-            <Setter Property="Background"               Value="#F8F9FB"/>
-            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Background"               Value="{StaticResource YakultSurfaceMutedBrush}"/>
+            <Setter Property="Foreground"               Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="FontSize"                 Value="11"/>
             <Setter Property="Padding"                  Value="8,5"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -75,10 +80,10 @@
 
         <!-- ── Filter ComboBox ───────────────────────────────────────── -->
         <Style x:Key="FilterCombo" TargetType="ComboBox">
-            <Setter Property="BorderBrush"              Value="#C2CCDA"/>
+            <Setter Property="BorderBrush"              Value="{StaticResource YakultInputBorderBrush}"/>
             <Setter Property="BorderThickness"          Value="1"/>
-            <Setter Property="Background"               Value="#F8F9FB"/>
-            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Background"               Value="{StaticResource YakultSurfaceMutedBrush}"/>
+            <Setter Property="Foreground"               Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="FontSize"                 Value="11"/>
             <Setter Property="Padding"                  Value="6,4"/>
             <Setter Property="Height"                   Value="30"/>
@@ -90,10 +95,10 @@
             <Setter Property="Height"          Value="30"/>
             <Setter Property="MinWidth"        Value="110"/>
             <Setter Property="FontSize"        Value="10.5"/>
-            <Setter Property="Background"      Value="#F8F9FB"/>
-            <Setter Property="BorderBrush"     Value="#C2CCDA"/>
+            <Setter Property="Background"      Value="{StaticResource YakultSurfaceMutedBrush}"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultInputBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Foreground"      Value="#1A2333"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Padding"         Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -131,7 +136,7 @@
                                                 <TextBlock Text="&#xE787;"
                                                            FontFamily="Segoe MDL2 Assets"
                                                            FontSize="11"
-                                                           Foreground="#6B7A8D"
+                                                           Foreground="{StaticResource YakultTextMutedBrush}"
                                                            HorizontalAlignment="Center"
                                                            VerticalAlignment="Center"/>
                                                 <VisualStateManager.VisualStateGroups>
@@ -166,9 +171,9 @@
             <Setter Property="FontFamily"       Value="Segoe UI"/>
             <Setter Property="Cursor"           Value="Hand"/>
             <Setter Property="BorderThickness"  Value="1"/>
-            <Setter Property="BorderBrush"      Value="#C2CCDA"/>
-            <Setter Property="Background"       Value="#F8F9FB"/>
-            <Setter Property="Foreground"       Value="#3A4A5A"/>
+            <Setter Property="BorderBrush"      Value="{StaticResource YakultInputBorderBrush}"/>
+            <Setter Property="Background"       Value="{StaticResource YakultSurfaceMutedBrush}"/>
+            <Setter Property="Foreground"       Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -185,7 +190,7 @@
                                 <Setter TargetName="bd" Property="Background" Value="#EEF1F5"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#DDE3EC"/>
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource YakultBorderBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -196,7 +201,7 @@
         <!-- ── Main content card ─────────────────────────────────────── -->
         <Style x:Key="ContentCard" TargetType="Border">
             <Setter Property="Background"      Value="#FFFFFF"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius"    Value="8"/>
         </Style>
@@ -205,14 +210,14 @@
         <Style x:Key="SectionLabel" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="9.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#6B7A8D"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,2"/>
         </Style>
 
         <!-- ── Detail value text ─────────────────────────────────────── -->
         <Style x:Key="DetailValue" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="12"/>
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
@@ -225,7 +230,7 @@
             <Setter Property="FontFamily"      Value="Segoe UI"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Background"      Value="#3A8EF6"/>
+            <Setter Property="Background"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"      Value="White"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -238,7 +243,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#2E7EE8"/>
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource YakultPrimaryHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="bd" Property="Background" Value="#2470CC"/>
@@ -260,7 +265,7 @@
             <Setter Property="FontFamily"      Value="Segoe UI"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Background"      Value="#3A8EF6"/>
+            <Setter Property="Background"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"      Value="White"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -273,7 +278,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="bd" Property="Background" Value="#2E7EE8"/>
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource YakultPrimaryHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="bd" Property="Background" Value="#2470CC"/>
@@ -289,13 +294,13 @@
 
         <!-- ── DataGrid header style ─────────────────────────────────── -->
         <Style x:Key="GridHeader" TargetType="DataGridColumnHeader">
-            <Setter Property="Background"               Value="#3A8EF6"/>
+            <Setter Property="Background"               Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"               Value="White"/>
             <Setter Property="FontSize"                 Value="10.5"/>
             <Setter Property="FontWeight"               Value="SemiBold"/>
             <Setter Property="Padding"                  Value="10,0"/>
             <Setter Property="Height"                   Value="34"/>
-            <Setter Property="BorderBrush"              Value="#2E7EE8"/>
+            <Setter Property="BorderBrush"              Value="{StaticResource YakultPrimaryHoverBrush}"/>
             <Setter Property="BorderThickness"          Value="0,0,1,0"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Template">
@@ -346,19 +351,19 @@
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="#C8DEFC"/>
-                    <Setter Property="Foreground" Value="#1A2333"/>
+                    <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <!-- ── Notes TextBox ─────────────────────────────────────────── -->
         <Style x:Key="NotesBox" TargetType="TextBox">
-            <Setter Property="Background"         Value="#F8F9FB"/>
-            <Setter Property="BorderBrush"        Value="#C2CCDA"/>
+            <Setter Property="Background"         Value="{StaticResource YakultSurfaceMutedBrush}"/>
+            <Setter Property="BorderBrush"        Value="{StaticResource YakultInputBorderBrush}"/>
             <Setter Property="BorderThickness"    Value="1"/>
             <Setter Property="Padding"            Value="8,6"/>
             <Setter Property="FontSize"           Value="11"/>
-            <Setter Property="Foreground"         Value="#1A2333"/>
+            <Setter Property="Foreground"         Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="AcceptsReturn"      Value="True"/>
             <Setter Property="TextWrapping"       Value="Wrap"/>
             <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
@@ -388,6 +393,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -399,7 +406,7 @@
         </Grid.RowDefinitions>
 
         <!-- ── Page header ──────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1"
+        <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1"
                 Padding="16,8,16,8">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -409,12 +416,12 @@
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="&#xE715;" FontFamily="Segoe MDL2 Assets" FontSize="16"
-                               Foreground="#3A8EF6" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                               Foreground="{StaticResource YakultPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <StackPanel>
                         <TextBlock Text="Send Notifications"
-                                   FontSize="14" FontWeight="Bold" Foreground="#1A2333"/>
+                                   FontSize="14" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
                         <TextBlock Text="Cartridge fulfillment notifications for portal requesters"
-                                   FontSize="9.5" Foreground="#6B7A8D" Margin="0,1,0,0"/>
+                                   FontSize="9.5" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,1,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -463,7 +470,7 @@
                         <TextBlock Text="sets updated today" FontSize="9" Foreground="#9AAABB"/>
                     </StackPanel>
                     <TextBlock Grid.Column="1" Text="{Binding SentTodayCount}"
-                               Style="{StaticResource CardValue}" Foreground="#3A8EF6"
+                               Style="{StaticResource CardValue}" Foreground="{StaticResource YakultPrimaryBrush}"
                                VerticalAlignment="Center" Margin="12,0,0,0"/>
                 </Grid>
             </Border>
@@ -497,7 +504,7 @@
                         <TextBlock Text="data loaded at" FontSize="9" Foreground="#9AAABB"/>
                     </StackPanel>
                     <TextBlock Grid.Column="1" Text="{Binding LastRefresh}"
-                               Style="{StaticResource CardValue}" Foreground="#5A6A7E"
+                               Style="{StaticResource CardValue}" Foreground="{StaticResource YakultTextMutedBrush}"
                                VerticalAlignment="Center" Margin="12,0,0,0"/>
                 </Grid>
             </Border>
@@ -531,14 +538,14 @@
                           Margin="8,0,0,0"/>
 
                 <!-- Date From -->
-                <TextBlock Text="From:" FontSize="10" Foreground="#6B7A8D"
+                <TextBlock Text="From:" FontSize="10" Foreground="{StaticResource YakultTextMutedBrush}"
                            VerticalAlignment="Center" Margin="16,0,6,0"/>
                 <DatePicker Style="{StaticResource CleanDatePicker}"
                             SelectedDate="{Binding DateFrom, Mode=TwoWay}"
                             Width="116"/>
 
                 <!-- Date To -->
-                <TextBlock Text="To:" FontSize="10" Foreground="#6B7A8D"
+                <TextBlock Text="To:" FontSize="10" Foreground="{StaticResource YakultTextMutedBrush}"
                            VerticalAlignment="Center" Margin="10,0,6,0"/>
                 <DatePicker Style="{StaticResource CleanDatePicker}"
                             SelectedDate="{Binding DateTo, Mode=TwoWay}"
@@ -633,7 +640,7 @@
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="FontSize"   Value="10.5"/>
-                                    <Setter Property="Foreground" Value="#3A4A5A"/>
+                                    <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
@@ -648,7 +655,7 @@
                                 <Style TargetType="TextBlock">
                                     <Setter Property="FontSize"   Value="11"/>
                                     <Setter Property="FontWeight" Value="SemiBold"/>
-                                    <Setter Property="Foreground" Value="#1A2333"/>
+                                    <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
@@ -703,7 +710,7 @@
                                     <Border HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding DistributionMethod}"
                                                    FontSize="10" FontWeight="SemiBold"
-                                                   Foreground="#4A5A6A"/>
+                                                   Foreground="{StaticResource YakultTextDarkBrush}"/>
                                     </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -755,7 +762,7 @@
 
                 <!-- ── Pagination bar ──────────────────────────────── -->
                 <Border Grid.Row="1"
-                        Background="#F8F9FB"
+                        Background="{StaticResource YakultSurfaceMutedBrush}"
                         BorderBrush="#EEF1F5"
                         BorderThickness="0,1,0,0"
                         Padding="10,5">
@@ -787,7 +794,7 @@
                     <!-- Page info -->
                     <TextBlock Grid.Column="1"
                                Text="{Binding PageInfo}"
-                               FontSize="10" Foreground="#6B7A8D"
+                               FontSize="10" Foreground="{StaticResource YakultTextMutedBrush}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
 
@@ -823,7 +830,7 @@
                                 VerticalAlignment="Center"
                                 Visibility="{Binding HasSelection, Converter={StaticResource InvBoolToVis}}">
                         <TextBlock Text="&#xE715;" FontFamily="Segoe MDL2 Assets" FontSize="40"
-                                   Foreground="#DDE3EC" HorizontalAlignment="Center"/>
+                                   Foreground="{StaticResource YakultBorderBrush}" HorizontalAlignment="Center"/>
                         <TextBlock Text="Select a row to view details"
                                    FontSize="12" Foreground="#9AAABB"
                                    HorizontalAlignment="Center"
@@ -847,7 +854,7 @@
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="SET DETAILS" Style="{StaticResource CardLabel}"/>
                                     <TextBlock Text="{Binding DetailSetCode}"
-                                               FontSize="16" FontWeight="Bold" Foreground="#1A2333"/>
+                                               FontSize="16" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
                                 </StackPanel>
                                 <Border Grid.Column="1"
                                         Background="{Binding DetailStatusBg, Converter={StaticResource HexToBrush}}"
@@ -885,7 +892,7 @@
                             <TextBlock Text="DISTRIBUTION METHOD" Style="{StaticResource SectionLabel}"/>
                             <Border HorizontalAlignment="Left" Margin="0,0,0,10">
                                 <TextBlock Text="{Binding DetailDistribution}"
-                                           FontSize="12" FontWeight="SemiBold" Foreground="#3A4A5A"/>
+                                           FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource YakultTextDarkBrush}"/>
                             </Border>
 
                             <!-- Received By (read-only display) -->
@@ -907,7 +914,7 @@
                             <!-- ── Receiver picker (PICKUP only) ─────────── -->
                             <StackPanel Visibility="{Binding IsPickup, Converter={StaticResource BoolToVis}}"
                                         Margin="0,0,0,10">
-                                <Border Background="#F0F6FF" BorderBrush="#B8D4F8"
+                                <Border Background="{StaticResource YakultAccentTintBrush}" BorderBrush="#B8D4F8"
                                         BorderThickness="1" CornerRadius="6" Padding="10,8">
                                     <StackPanel>
                                         <TextBlock Text="UPDATE RECEIVED BY" Style="{StaticResource SectionLabel}"
@@ -986,10 +993,10 @@
                                     Visibility="{Binding IsSending, Converter={StaticResource BoolToVis}}">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets"
-                                               FontSize="13" Foreground="#3A8EF6"
+                                               FontSize="13" Foreground="{StaticResource YakultPrimaryBrush}"
                                                VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <TextBlock Text="Sending…"
-                                               FontSize="11" Foreground="#3A8EF6"
+                                               FontSize="11" Foreground="{StaticResource YakultPrimaryBrush}"
                                                VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
@@ -1016,15 +1023,15 @@
         <Border Grid.Row="0" Grid.RowSpan="4"
                 Background="#80F0F2F6"
                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-            <Border Background="#FFFFFF" BorderBrush="#DDE3EC" BorderThickness="1"
+            <Border Background="#FFFFFF" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                     CornerRadius="10" Padding="32,20"
                     HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets"
-                               FontSize="18" Foreground="#3A8EF6"
+                               FontSize="18" Foreground="{StaticResource YakultPrimaryBrush}"
                                VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <TextBlock Text="Loading notifications…"
-                               FontSize="13" Foreground="#3A4A5A"
+                               FontSize="13" Foreground="{StaticResource YakultTextDarkBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>

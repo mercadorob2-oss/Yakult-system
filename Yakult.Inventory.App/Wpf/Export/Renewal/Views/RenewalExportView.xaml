@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls"
              xmlns:local="clr-namespace:Yakult.Inventory.App.WPF.Export.Renewal.Views"
-             Background="#F0F2F6"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
              FontFamily="Segoe UI"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
@@ -13,6 +13,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -71,7 +72,7 @@
         <!-- ══ Toolbar: search only ═════════════════════════════════════════ -->
         <Border Grid.Row="1" Style="{StaticResource FilterBar}">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#7A8A9A"/>
+                <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource YakultTextMutedBrush}"/>
                 <TextBox Style="{StaticResource SearchBox}" Width="360"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          ToolTip="Search by Set Code, Document #, Company, Site, Status, Part #…"/>
@@ -87,10 +88,10 @@
                       ItemsSource="{Binding PagedRows}"
                       Sorting="RenewalsGrid_Sorting">
                 <DataGrid.Resources>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
                 </DataGrid.Resources>
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Width="40" CanUserSort="False" CanUserResize="False" CanUserReorder="False">

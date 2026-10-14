@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -39,7 +40,7 @@ namespace Yakult.Inventory.App.Pages
         private ProgressBar progressBar;
         private Panel pnlProgress;
 
-        private readonly Color PrimaryBlue = Color.FromArgb(41, 128, 185);
+        private readonly Color PrimaryBlue = InventoryTheme.Colors.PrimaryHover;
         private readonly Color WarningRed = Color.FromArgb(220, 53, 69);
         private readonly Color SuccessGreen = Color.FromArgb(39, 174, 96);
         private readonly Color TextMain = Color.FromArgb(44, 62, 80);

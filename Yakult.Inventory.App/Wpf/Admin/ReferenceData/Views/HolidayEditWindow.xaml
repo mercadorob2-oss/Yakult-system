@@ -13,6 +13,11 @@
         TextOptions.TextFormattingMode="Display">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="Foreground"        Value="#374150"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -32,10 +37,12 @@
             <Setter Property="BorderBrush"     Value="#C8CDD2"/>
             <Setter Property="Background"      Value="White"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <DockPanel>
-        <Border DockPanel.Dock="Top" Background="#3498DB" Padding="16,12">
+        <Border DockPanel.Dock="Top" Background="{StaticResource YakultPrimaryBrush}" Padding="16,12">
             <TextBlock x:Name="TxtHeader" Foreground="White" FontSize="15" FontWeight="Bold"/>
         </Border>
 
@@ -87,7 +94,7 @@
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Save" Style="{StaticResource DialogButton}" IsDefault="True"
-                        Background="#3498DB" Foreground="White" BorderThickness="0" FontWeight="Bold"
+                        Background="{StaticResource YakultPrimaryBrush}" Foreground="White" BorderThickness="0" FontWeight="Bold"
                         Click="BtnSave_Click"/>
                 <Button Content="Cancel" Style="{StaticResource DialogButton}" IsCancel="True"/>
             </StackPanel>

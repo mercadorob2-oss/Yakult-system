@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -74,7 +75,7 @@ namespace Yakult.Inventory.App.Pages.Asset
 
             // Title banner
             var banner = new Panel { Dock = DockStyle.Top, Height = 52,
-                BackColor = Color.FromArgb(41, 128, 185) };
+                BackColor = InventoryTheme.Colors.PrimaryHover };
             var lblTitle = new Label {
                 Text = Text, ForeColor = Color.White, AutoSize = false,
                 Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft,
@@ -130,7 +131,7 @@ namespace Yakult.Inventory.App.Pages.Asset
             // Buttons (bottom)
             _btnSave = new Button {
                 Text = "Save", Width = 100, Height = 36,
-                BackColor = Color.FromArgb(41, 128, 185), ForeColor = Color.White,
+                BackColor = InventoryTheme.Colors.PrimaryHover, ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
                 Location = new Point(ClientSize.Width - 230, ClientSize.Height - 52) };

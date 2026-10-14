@@ -358,6 +358,20 @@ interface YakultApiService {
         @Query("empId") empId: Int
     ): retrofit2.Response<EmployeeOrgResponse>
 
+    @POST("call-employee-create.ashx")
+    suspend fun createCallEmployee(@Body request: CreateCallEmployeeRequest): retrofit2.Response<CallEmployeeUpsertResponse>
+
+    @POST("call-employee-update-location.ashx")
+    suspend fun updateCallEmployeeLocation(@Body request: UpdateCallEmployeeLocationRequest): retrofit2.Response<CallEmployeeUpsertResponse>
+
+    @GET("call-ticket-contact-email.ashx")
+    suspend fun getTicketContactEmail(
+        @Query("callerEmpId") callerEmpId: Int? = null,
+        @Query("comId") comId: Int? = null,
+        @Query("deptId") deptId: Int? = null,
+        @Query("branchId") branchId: Int? = null
+    ): retrofit2.Response<ContactEmailResponse>
+
     @GET("call-it-employees.ashx")
     suspend fun getCallItEmployees(): retrofit2.Response<CallLookupResponse>
 
@@ -1086,7 +1100,16 @@ data class CreateTicketRequest(
     @SerializedName("priority") val priority: String = "Medium",
     @SerializedName("assignedToEmpId") val assignedToEmpId: Int? = null,
     @SerializedName("createdByUserId") val createdByUserId: Int? = null,
-    @SerializedName("ticketSource") val ticketSource: String = "CallIT"
+    @SerializedName("ticketSource") val ticketSource: String = "CallIT",
+    @SerializedName("createdAtUtc") val createdAtUtc: String? = null,
+    @SerializedName("callerEmpId") val callerEmpId: Int? = null,
+    @SerializedName("linkContactEmailToCaller") val linkContactEmailToCaller: Boolean? = null
+)
+
+data class ContactEmailResponse(
+    @SerializedName("success") val success: Boolean = false,
+    @SerializedName("email") val email: String? = null,
+    @SerializedName("source") val source: String? = null
 )
 
 data class CallTicketActionRequest(
@@ -1143,6 +1166,40 @@ data class EmployeeOrgResponse(
     @SerializedName("deptId") val deptId: Int? = null,
     @SerializedName("branchId") val branchId: Int? = null,
     @SerializedName("comId") val comId: Int? = null
+)
+
+// ── Call employee quick-add + location update (ticket-create screens, desktop parity) ──
+data class CreateCallEmployeeRequest(
+    @SerializedName("name") val name: String,
+    @SerializedName("employeeNumber") val employeeNumber: String? = null,
+    @SerializedName("position") val position: String? = null,
+    @SerializedName("description") val description: String? = null,
+    @SerializedName("comId") val comId: Int,
+    @SerializedName("branchId") val branchId: Int,
+    @SerializedName("deptId") val deptId: Int? = null,
+    @SerializedName("titleId") val titleId: Int? = null
+)
+
+data class UpdateCallEmployeeLocationRequest(
+    @SerializedName("empId") val empId: Int,
+    @SerializedName("comId") val comId: Int,
+    @SerializedName("branchId") val branchId: Int,
+    @SerializedName("deptId") val deptId: Int? = null
+)
+
+data class CallEmployeeResultDto(
+    @SerializedName("empId") val empId: Int = 0,
+    @SerializedName("name") val name: String? = null,
+    @SerializedName("employeeNumber") val employeeNumber: String? = null,
+    @SerializedName("comId") val comId: Int? = null,
+    @SerializedName("branchId") val branchId: Int? = null,
+    @SerializedName("deptId") val deptId: Int? = null
+)
+
+data class CallEmployeeUpsertResponse(
+    @SerializedName("success") val success: Boolean = false,
+    @SerializedName("message") val message: String? = null,
+    @SerializedName("employee") val employee: CallEmployeeResultDto? = null
 )
 
 data class DispatchSetResponse(

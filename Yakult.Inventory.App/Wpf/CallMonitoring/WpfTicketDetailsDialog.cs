@@ -61,7 +61,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             ResizeMode = ResizeMode.CanResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
-            Background = BrushFromRgb(245, 247, 250);
+            Background = WpfThemeResources.SurfaceMutedBrush;
 
             var root = new DockPanel();
             Content = root;
@@ -116,7 +116,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Ticket Details",
                 FontSize = 21,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 VerticalAlignment = VerticalAlignment.Center
             };
             _statusText = new TextBlock
@@ -129,7 +129,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             };
             _statusBadge = new Border
             {
-                Background = BrushFromRgb(100, 116, 139),
+                Background = WpfThemeResources.TextMutedBrush,
                 CornerRadius = new CornerRadius(12),
                 Padding = new Thickness(0, 5, 0, 5),
                 Margin = new Thickness(14, 1, 0, 0),
@@ -144,7 +144,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Ticket ID: " + _ticketId,
                 Margin = new Thickness(1, 5, 0, 0),
                 FontSize = 12.5,
-                Foreground = BrushFromRgb(100, 116, 139)
+                Foreground = WpfThemeResources.TextMutedBrush
             };
             titleHost.Children.Add(_subtitleText);
 
@@ -187,7 +187,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Loading details...",
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(18, 0, 0, 0),
-                Foreground = BrushFromRgb(100, 116, 139)
+                Foreground = WpfThemeResources.TextMutedBrush
             };
             footer.Children.Add(_statusLine);
 
@@ -497,7 +497,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Margin = new Thickness(12, 10, 12, 2),
                 FontSize = 10.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(100, 116, 139)
+                Foreground = WpfThemeResources.TextMutedBrush
             });
             var valueBlock = new TextBlock
             {
@@ -545,7 +545,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 BorderThickness = new Thickness(0),
                 RowHeaderWidth = 0,
                 Background = Brushes.White,
-                AlternatingRowBackground = BrushFromRgb(248, 250, 252),
+                AlternatingRowBackground = WpfThemeResources.SurfaceMutedBrush,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
             };
@@ -597,8 +597,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 case "overdue": return BrushFromRgb(220, 38, 38);
                 case "escalated": return BrushFromRgb(230, 126, 34);
                 case "waiting on department": return BrushFromRgb(14, 116, 144);
-                case "waiting on vendor": return BrushFromRgb(100, 116, 139);
-                default: return BrushFromRgb(100, 116, 139);
+                case "waiting on vendor": return WpfThemeResources.TextMutedBrush;
+                default: return WpfThemeResources.TextMutedBrush;
             }
         }
 
@@ -610,7 +610,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 case "high": return BrushFromRgb(220, 38, 38);
                 case "medium": return BrushFromRgb(230, 126, 34);
                 case "low": return BrushFromRgb(22, 163, 74);
-                default: return BrushFromRgb(100, 116, 139);
+                default: return WpfThemeResources.TextMutedBrush;
             }
         }
 

@@ -19,6 +19,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/Yakult.Inventory.App;component/WPF/RequestPortal/RequestPortalStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -106,7 +107,7 @@
 
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="{Binding HeaderTitle}" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="{Binding HeaderSubtitle}" FontSize="12" Foreground="#AADDFF" Margin="0,4,0,10"/>
+                    <TextBlock Text="{Binding HeaderSubtitle}" FontSize="12" Foreground="{StaticResource YakultNavigationMutedBrush}" Margin="0,4,0,10"/>
 
                     <StackPanel Orientation="Horizontal">
                         <Border Background="{Binding ExpiryStatusColor, Converter={StaticResource HexBrush}}"
@@ -146,7 +147,7 @@
         </Border>
 
         <!-- ══════════════ ROW 1 · RENEWAL CHAIN STRIP ══════════════ -->
-        <Border Grid.Row="1" Background="#F3F5F8" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="0,10"
+        <Border Grid.Row="1" Background="{StaticResource YakultPageBackgroundBrush}" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="0,10"
                 Visibility="{Binding HasSet, Converter={StaticResource BoolToVis}}">
             <Grid Margin="24,0">
                 <Grid.ColumnDefinitions>
@@ -199,7 +200,7 @@
         </Border>
 
         <!-- ══════════════ ROW 2 · EDITABLE DOCUMENT HEADER ══════════════ -->
-        <Border Grid.Row="2" Background="#F5F8FC" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="24,10"
+        <Border Grid.Row="2" Background="#F5F8FC" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="24,10"
                 Visibility="{Binding HasSet, Converter={StaticResource BoolToVis}}">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Document #:" FontSize="11" Foreground="{StaticResource TextMuted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -216,7 +217,7 @@
         </Border>
 
         <!-- ══════════════ ROW 3 · TAB CONTROL ══════════════ -->
-        <TabControl Grid.Row="3" Background="White" BorderThickness="0,1,0,0" BorderBrush="#DDE3EC"
+        <TabControl Grid.Row="3" Background="White" BorderThickness="0,1,0,0" BorderBrush="{StaticResource YakultBorderBrush}"
                     ItemContainerStyle="{StaticResource ModernTabItem}">
 
             <!-- ── TAB 1 : Invoice Items ── -->
@@ -381,7 +382,7 @@
                                   Visibility="{Binding IsGroupedView, Converter={StaticResource BoolToVis}}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Margin="0,0,0,14" BorderBrush="#DDE3EC" BorderThickness="1"
+                                <Border Margin="0,0,0,14" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                                         CornerRadius="8" Background="White">
                                     <Border.Effect>
                                         <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.06"
@@ -498,7 +499,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
 
-                    <Border Background="#F0F2F8" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="0,0,12,0">
+                    <Border Background="#F0F2F8" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="0,0,12,0">
                         <TextBlock Text="{Binding FinancialStripText}" FontSize="11" Foreground="#373737"
                                    HorizontalAlignment="Right" VerticalAlignment="Center" Height="28"/>
                     </Border>
@@ -508,7 +509,7 @@
 
             <!-- ── TAB 2 : Renewal Details ── -->
             <TabItem Header="Renewal Details">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Background="#F5F7FA">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{StaticResource YakultPageBackgroundBrush}">
                     <StackPanel Margin="20,16,20,20">
 
                         <!-- Invoice Details — shown for a Set-backed renewal (HasSet). Set/invoice-level
@@ -698,7 +699,7 @@
                                         <TextBlock Text="Discount" Style="{StaticResource FieldLabel}" Margin="0,0,0,6"/>
                                         <TextBlock Text="{Binding DiscountAmountDisplay}" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
                                     </StackPanel>
-                                    <Border Grid.Column="4" Background="#EFF6FF" CornerRadius="8" Padding="18,12" Margin="16,0,0,0">
+                                    <Border Grid.Column="4" Background="{StaticResource YakultAccentTintBrush}" CornerRadius="8" Padding="18,12" Margin="16,0,0,0">
                                         <StackPanel>
                                             <TextBlock Text="TOTAL AMOUNT DUE" FontSize="9" FontWeight="Bold" Foreground="{StaticResource YakultBlue}" Margin="0,0,0,6"/>
                                             <TextBlock Text="{Binding TotalAmountDueDisplay}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource YakultBlue}"/>
@@ -769,7 +770,7 @@
 
             <!-- ── TAB 3 : Renewal History ── -->
             <TabItem x:Name="HistoryTab" Header="Renewal History">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Background="#F5F7FA">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{StaticResource YakultPageBackgroundBrush}">
                     <StackPanel>
                         <history:LicenseHistoricalPeriodsControl x:Name="BacklogHistory"/>
                         <TextBlock Text="RECORDED RENEWALS" FontWeight="Bold" FontSize="12" Margin="20,12,20,0"
@@ -845,7 +846,7 @@
         </TabControl>
 
         <!-- ══════════════ ROW 4 · FOOTER ══════════════ -->
-        <Border Grid.Row="4" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="24,12">
+        <Border Grid.Row="4" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="24,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

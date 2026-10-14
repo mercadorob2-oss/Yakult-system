@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -47,9 +48,9 @@ namespace Yakult.Inventory.App.Pages.Renewal
 
         private bool _handlingRadio;
 
-        // The application's standard accent blue (#3498DB) — matches the signatory picker and the
+        // The application's standard accent blue (#B92335) — matches the signatory picker and the
         // column-selection dialogs.
-        private static readonly Color AccentBlue = Color.FromArgb(52, 152, 219);
+        private static readonly Color AccentBlue = InventoryTheme.Colors.Primary;
         // Light tint of AccentBlue, for the subtitle on the coloured header bar.
         private static readonly Color OnAccentMuted = Color.FromArgb(214, 234, 248);
 
@@ -97,7 +98,7 @@ namespace Yakult.Inventory.App.Pages.Renewal
             MinimizeBox     = false;
             StartPosition   = FormStartPosition.CenterParent;
             Font            = new Font("Segoe UI", 9.5f);
-            BackColor       = Color.FromArgb(245, 247, 250);
+            BackColor       = InventoryTheme.Colors.HeaderBack;
 
             // ── Header ──────────────────────────────────────────────────────
             var pnlHeader = new Panel
@@ -434,11 +435,11 @@ namespace Yakult.Inventory.App.Pages.Renewal
         private static void SetHighlight(Panel outer, Panel inner, bool selected)
         {
             outer.BackColor = selected
-                ? Color.FromArgb(59, 130, 246)
+                ? InventoryTheme.Colors.Primary
                 : Color.FromArgb(214, 216, 220);
 
             inner.BackColor = selected
-                ? Color.FromArgb(239, 246, 255)
+                ? InventoryTheme.Colors.OutlineHoverBack
                 : Color.White;
         }
     }

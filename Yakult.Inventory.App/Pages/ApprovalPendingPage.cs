@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -100,7 +101,7 @@ namespace Yakult.Inventory.App.Pages
                 {
                     Text      = label,
                     Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
-                    ForeColor = Color.FromArgb(100, 116, 139),
+                    ForeColor = InventoryTheme.Colors.TextMuted,
                     Size      = new Size(150, 20),
                     Location  = new Point(28, y)
                 });

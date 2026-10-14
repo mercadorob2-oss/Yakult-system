@@ -5,10 +5,15 @@
         Width="420" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#F0F2F6"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         FontFamily="Segoe UI">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -19,12 +24,14 @@
             <Setter Property="Height" Value="30"/>
             <Setter Property="Margin" Value="0,0,0,14"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
-    <Border Background="White" Margin="16" CornerRadius="10" Padding="20" BorderBrush="#DDE3EC" BorderThickness="1">
+    <Border Background="White" Margin="16" CornerRadius="10" Padding="20" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1">
         <StackPanel>
             <TextBlock x:Name="TxtHeading" Text="Add to Contract Group" FontSize="16" FontWeight="Bold" Margin="0,0,0,4"/>
-            <TextBlock x:Name="TxtSummary" Text="0 item(s) selected." Foreground="#7A8A9A" FontSize="12" Margin="0,0,0,16"/>
+            <TextBlock x:Name="TxtSummary" Text="0 item(s) selected." Foreground="{StaticResource YakultTextMutedBrush}" FontSize="12" Margin="0,0,0,16"/>
 
             <TextBlock x:Name="LblReferenceCode" Text="Reference Code" Style="{StaticResource FieldLabel}"/>
             <TextBox x:Name="TxtReferenceCode" Style="{StaticResource FieldBox}" VerticalContentAlignment="Center" Padding="6,0"/>
@@ -49,7 +56,7 @@
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                 <Button x:Name="BtnCancel" Content="Cancel" Width="90" Height="32" Margin="0,0,8,0" Click="BtnCancel_Click"/>
-                <Button x:Name="BtnCreate" Content="Create Group" Width="110" Height="32" Background="#2F6FED" Foreground="White" BorderThickness="0" Click="BtnCreate_Click"/>
+                <Button x:Name="BtnCreate" Content="Create Group" Width="110" Height="32" Background="{StaticResource YakultPrimaryBrush}" Foreground="White" BorderThickness="0" Click="BtnCreate_Click"/>
             </StackPanel>
         </StackPanel>
     </Border>

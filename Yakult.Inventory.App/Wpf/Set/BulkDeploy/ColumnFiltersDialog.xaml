@@ -5,13 +5,14 @@
         Width="460" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#F0F2F6"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         FontFamily="Segoe UI"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True">
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <Style x:Key="FilterCard" TargetType="Border">
@@ -38,7 +39,7 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,10">
-            <TextBlock Text="Column Filters" FontSize="15" FontWeight="Bold" Foreground="#1A2333"/>
+            <TextBlock Text="Column Filters" FontSize="15" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
             <TextBlock Text="Tick the columns present in your paste/import, then close this dialog." FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
         </StackPanel>
 

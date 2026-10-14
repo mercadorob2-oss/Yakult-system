@@ -7,8 +7,13 @@
         WindowStartupLocation="CenterOwner">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="PrimaryBtn" TargetType="Button">
-            <Setter Property="Background" Value="#3A8EF6"/>
+            <Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -25,7 +30,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#2272D9"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultPrimaryHoverBrush}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Bd" Property="Background" Value="#A5C8F8"/>
@@ -38,7 +43,7 @@
 
         <Style x:Key="SecBtn" TargetType="Button">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#5B6A7D"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="18,0"/>
@@ -57,7 +62,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultPageBackgroundBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -66,8 +71,8 @@
         </Style>
 
         <Style x:Key="InlineBtn" TargetType="Button">
-            <Setter Property="Background" Value="#EEF4FF"/>
-            <Setter Property="Foreground" Value="#3A8EF6"/>
+            <Setter Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="10,0"/>
@@ -75,7 +80,7 @@
             <Setter Property="Margin" Value="6,0,0,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#BDD0F8"/>
+            <Setter Property="BorderBrush" Value="{StaticResource YakultAccentBorderBrush}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -96,14 +101,16 @@
         </Style>
 
         <Style x:Key="GridCol" TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="#F0F2F6"/>
-            <Setter Property="Foreground" Value="#5B6A7D"/>
+            <Setter Property="Background" Value="{StaticResource YakultPageBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="FontSize" Value="10"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderBrush" Value="#DDE3EC"/>
+            <Setter Property="BorderBrush" Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Border CornerRadius="10" Background="White" ClipToBounds="True">
@@ -121,22 +128,22 @@
             </Grid.RowDefinitions>
 
             <!-- Header -->
-            <Border Grid.Row="0" Background="#3A8EF6" CornerRadius="10,10,0,0"
+            <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}" CornerRadius="10,10,0,0"
                     MouseLeftButtonDown="OnHeaderDrag" Cursor="SizeAll">
                 <DockPanel Margin="18,0,10,0" VerticalAlignment="Center">
                     <TextBlock DockPanel.Dock="Right" Text="✕" FontSize="14" FontWeight="Bold"
-                               Foreground="#BDD9FF" Cursor="Hand" VerticalAlignment="Center"
+                               Foreground="{StaticResource YakultNavigationMutedBrush}" Cursor="Hand" VerticalAlignment="Center"
                                Padding="8,0" MouseLeftButtonDown="OnCloseClick"/>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="Import Stock Count from CSV" FontSize="13" FontWeight="Bold" Foreground="White"/>
                         <TextBlock Text="Creates missing cartridge/consumable models and items; updates stock for existing ones. Routed by the TYPE column."
-                                   FontSize="10" Foreground="#BDD9FF" Margin="0,2,0,0"/>
+                                   FontSize="10" Foreground="{StaticResource YakultNavigationMutedBrush}" Margin="0,2,0,0"/>
                     </StackPanel>
                 </DockPanel>
             </Border>
 
             <!-- File picker row -->
-            <Border Grid.Row="1" Background="#F7F9FC" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1"
+            <Border Grid.Row="1" Background="#F7F9FC" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1"
                     Padding="16,10">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -146,7 +153,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="TxtCsvPath" Grid.Column="0"
                              IsReadOnly="True" VerticalContentAlignment="Center"
-                             FontSize="11" Foreground="#374151"
+                             FontSize="11" Foreground="{StaticResource YakultTextDarkBrush}"
                              Background="White" BorderBrush="#C8D0DC" BorderThickness="1"
                              Padding="8,0" Height="32"
                              Text="(no file selected)"
@@ -173,7 +180,7 @@
             </Border>
 
             <!-- Preview grid -->
-            <Border Grid.Row="2" Margin="0" Background="#F0F2F6">
+            <Border Grid.Row="2" Margin="0" Background="{StaticResource YakultPageBackgroundBrush}">
                 <Grid>
                     <TextBlock x:Name="LblEmptyState"
                                Text="Select a CSV file and click 'Load Preview' to see what will be imported."
@@ -188,7 +195,7 @@
                               CanUserResizeColumns="True"
                               CanUserReorderColumns="False"
                               GridLinesVisibility="Horizontal"
-                              HorizontalGridLinesBrush="#DDE3EC"
+                              HorizontalGridLinesBrush="{StaticResource YakultBorderBrush}"
                               Background="White"
                               RowBackground="White"
                               AlternatingRowBackground="#FAFBFC"
@@ -204,7 +211,7 @@
                                     <Style TargetType="TextBlock">
                                         <Setter Property="HorizontalAlignment" Value="Center"/>
                                         <Setter Property="VerticalAlignment" Value="Center"/>
-                                        <Setter Property="Foreground" Value="#5B6A7D"/>
+                                        <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
@@ -250,11 +257,11 @@
             </Border>
 
             <!-- Footer -->
-            <Border Grid.Row="4" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0"
+            <Border Grid.Row="4" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0"
                     CornerRadius="0,0,10,10">
                 <DockPanel Margin="20,0" VerticalAlignment="Center" LastChildFill="False">
                     <TextBlock x:Name="LblStatus" DockPanel.Dock="Left"
-                               FontSize="11" Foreground="#5B6A7D" VerticalAlignment="Center"/>
+                               FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center"/>
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
                         <Button Content="Cancel" Style="{StaticResource SecBtn}" Margin="0,0,8,0"
                                 Click="BtnCancel_Click" IsCancel="True"/>

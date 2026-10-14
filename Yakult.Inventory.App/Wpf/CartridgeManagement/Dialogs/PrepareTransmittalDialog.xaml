@@ -7,9 +7,14 @@
         WindowStartupLocation="CenterScreen"
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip"
-        Background="#F0F2F6">
+        Background="{DynamicResource YakultPageBackgroundBrush}">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <!-- Section card style -->
         <Style x:Key="Card" TargetType="Border">
             <Setter Property="Background"       Value="White"/>
@@ -25,7 +30,7 @@
             <Setter Property="FontFamily"   Value="Segoe UI"/>
             <Setter Property="FontSize"     Value="11"/>
             <Setter Property="FontWeight"   Value="SemiBold"/>
-            <Setter Property="Foreground"   Value="#4E9AFC"/>
+            <Setter Property="Foreground"   Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Margin"       Value="0,0,0,10"/>
         </Style>
 
@@ -95,6 +100,8 @@
             <Setter Property="Cursor"      Value="Hand"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid>
@@ -310,7 +317,7 @@
                             Click="OnSkip"/>
                     <Button Style="{StaticResource ActionBtn}"
                             Content="Generate Preview"
-                            Background="#4E9AFC" Foreground="White"
+                            Background="{StaticResource YakultPrimaryBrush}" Foreground="White"
                             BorderBrush="#3D86E0"
                             Click="OnContinue"/>
                 </StackPanel>

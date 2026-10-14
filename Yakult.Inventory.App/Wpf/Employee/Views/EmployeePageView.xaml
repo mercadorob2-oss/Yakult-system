@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:shared="clr-namespace:Yakult.Inventory.App.WPF.Shared.Controls"
              xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
-             Background="#F0F2F6"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
              FontFamily="Segoe UI"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
@@ -13,6 +13,7 @@
     <UserControl.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
@@ -133,17 +134,17 @@
                     <TextBlock Text="🗑  Delete"/>
                 </Button>
 
-                <Border Background="#EBF5FF" CornerRadius="10" Padding="10,5" Margin="0,0,16,8" VerticalAlignment="Center"
+                <Border Background="{StaticResource YakultAccentTintBrush}" CornerRadius="10" Padding="10,5" Margin="0,0,16,8" VerticalAlignment="Center"
                         Cursor="Hand" ToolTip="Click to view and unselect employees"
                         MouseLeftButtonUp="SelectedBadge_Click"
                         Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
-                    <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#4E9AFC" TextDecorations="Underline">
+                    <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource YakultPrimaryBrush}" TextDecorations="Underline">
                         <Run Text="{Binding SelectedCount, Mode=OneWay}"/>
                         <Run Text=" Selected"/>
                     </TextBlock>
                 </Border>
 
-                <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,8" Foreground="#7A8A9A"/>
+                <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,8" Foreground="{StaticResource YakultTextMutedBrush}"/>
                 <TextBox Style="{StaticResource SearchBox}" Width="260" Margin="0,0,8,8"
                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                          ToolTip="Search by Name, Employee #, Position, Company, Branch, or Department..."/>
@@ -156,7 +157,7 @@
                     <Border Background="White" BorderBrush="{StaticResource BorderBrush1}" BorderThickness="1"
                             CornerRadius="8" Padding="18" Width="280">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="#1A2333"/>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.18" Color="{StaticResource YakultTextDarkColor}"/>
                         </Border.Effect>
                         <StackPanel>
                             <TextBlock Text="Advanced Filters" FontSize="13" FontWeight="Bold" Margin="0,0,0,12"/>
@@ -194,10 +195,10 @@
                       MouseDoubleClick="EmployeesGrid_MouseDoubleClick"
                       ButtonBase.Click="EmployeesGrid_HeaderButtonClick">
                 <DataGrid.Resources>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#B8CEED"/>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#1A2333"/>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#CDD8EE"/>
-                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{StaticResource YakultSelectionColor}"/>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
                 </DataGrid.Resources>
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Width="40" CanUserSort="False" CanUserResize="False" CanUserReorder="False" CellStyle="{StaticResource SelectColumnCell}">

@@ -36,8 +36,11 @@ namespace Yakult.Inventory.App.Helpers
 
         public static InsertFragments BuildDistributorInsertFragments(bool hasColumn)
         {
+            // Contract: the comma LEADS the fragment, so callers concatenate
+            // directly after the preceding column with no hardcoded comma.
+            // Off-case is empty, which yields valid SQL in any position.
             return hasColumn
-                ? new InsertFragments("\n                         DistributorId,", "\n                         @DistributorId,")
+                ? new InsertFragments(",\n                         DistributorId", ",\n                         @DistributorId")
                 : new InsertFragments(string.Empty, string.Empty);
         }
 

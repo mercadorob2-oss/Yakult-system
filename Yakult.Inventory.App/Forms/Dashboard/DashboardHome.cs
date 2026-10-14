@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -193,7 +194,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             
             // Create Cards (Modern Colors + Click Actions)
             this.cardOpen = CreateKpiCard("Open Tickets", out this.lblOpenValue, "-", "Active now", 
-                Color.FromArgb(255, 255, 255), Color.FromArgb(52, 152, 219), "📂",
+                Color.FromArgb(255, 255, 255), InventoryTheme.Colors.Primary, "📂",
                 async () => await ShowDrillDown("Open Tickets", () => _repo.GetOpenTicketsListAsync()));
                 
             this.cardCritical = CreateKpiCard("Critical", out this.lblCriticalValue, "-", "Requires attention", 
@@ -242,7 +243,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 Height = 26,
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.White,
-                ForeColor = Color.FromArgb(52, 152, 219),
+                ForeColor = InventoryTheme.Colors.Primary,
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };
@@ -264,7 +265,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 Height = 26,
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.White,
-                ForeColor = Color.FromArgb(52, 152, 219),
+                ForeColor = InventoryTheme.Colors.Primary,
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 Cursor = Cursors.Hand
             };

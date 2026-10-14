@@ -1,4 +1,5 @@
-﻿using Yakult.Inventory.App.Session;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using Yakult.Inventory.App.Session;
 using System;
 using System.Windows.Forms;
 using System.Drawing;
@@ -37,7 +38,7 @@ namespace Yakult.Inventory.App.Pages.Inventory
             MaximizeBox = false;
             MinimizeBox = false;
 
-            BackColor = Color.FromArgb(245, 246, 250);
+            BackColor = InventoryTheme.Colors.HeaderBack;
             Font = new Font("Segoe UI", 9F);
 
             Controls.Clear();

@@ -2,7 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
-             Background="#F0F2F6"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
              FontFamily="Segoe UI"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
@@ -10,6 +10,11 @@
              TextOptions.TextRenderingMode="ClearType">
 
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
 
         <conv:BoolToVisibilityConverter        x:Key="BoolToVis"/>
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
@@ -17,7 +22,7 @@
         <!-- Base TextBlock style -->
         <Style TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
             <Setter Property="TextOptions.TextRenderingMode"  Value="ClearType"/>
         </Style>
@@ -26,7 +31,7 @@
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="9"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,3"/>
             <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
         </Style>
@@ -34,7 +39,7 @@
         <!-- Stat card -->
         <Style x:Key="StatCard" TargetType="Border">
             <Setter Property="Background"      Value="White"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius"    Value="8"/>
             <Setter Property="Padding"         Value="14,8"/>
@@ -81,8 +86,8 @@
             <Setter Property="Height"          Value="28"/>
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="Background"      Value="White"/>
-            <Setter Property="Foreground"      Value="#3A8EF6"/>
-            <Setter Property="BorderBrush"     Value="#CDD5DE"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultPrimaryBrush}"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Margin"          Value="2,0"/>
@@ -98,8 +103,8 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background"  Value="#EBF5FF"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/>
+                                <Setter TargetName="Bd" Property="Background"  Value="{StaticResource YakultAccentTintBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
@@ -113,11 +118,11 @@
         <!-- DataGrid column header -->
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background"      Value="#EEF2F7"/>
-            <Setter Property="Foreground"      Value="#3A4A5A"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="FontSize"        Value="10"/>
             <Setter Property="Padding"         Value="8,7"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
         </Style>
@@ -125,20 +130,20 @@
         <!-- DataGrid row: keep dark foreground on all states so text is always readable -->
         <Style TargetType="DataGridRow">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F0F6FF"/>
+                    <Setter Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#C8DFFE"/>
+                    <Setter Property="Background" Value="{StaticResource YakultSelectionBrush}"/>
                 </Trigger>
                 <MultiTrigger>
                     <MultiTrigger.Conditions>
                         <Condition Property="IsSelected"  Value="True"/>
                         <Condition Property="IsMouseOver" Value="True"/>
                     </MultiTrigger.Conditions>
-                    <Setter Property="Background" Value="#B8D4FC"/>
+                    <Setter Property="Background" Value="{StaticResource YakultSelectionHoverBrush}"/>
                 </MultiTrigger>
             </Style.Triggers>
         </Style>
@@ -147,12 +152,12 @@
         <Style TargetType="DataGridCell">
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding"         Value="0"/>
-            <Setter Property="Foreground"      Value="#1A2333"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultTextDarkBrush}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background"  Value="Transparent"/>
                     <Setter Property="BorderBrush" Value="Transparent"/>
-                    <Setter Property="Foreground"  Value="#1A2333"/>
+                    <Setter Property="Foreground"  Value="{StaticResource YakultTextDarkBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -173,7 +178,7 @@
             <Setter Property="BorderBrush"              Value="#B0BAC8"/>
             <Setter Property="BorderThickness"          Value="1"/>
             <Setter Property="Background"               Value="White"/>
-            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Foreground"               Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="FontSize"                 Value="11"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
@@ -188,7 +193,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter Property="BorderBrush" Value="#3A8EF6"/>
+                                <Setter Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -218,7 +223,7 @@
                                                         <Setter TargetName="Tb" Property="Background" Value="#7A90A4"/>
                                                     </Trigger>
                                                     <Trigger Property="IsDragging" Value="True">
-                                                        <Setter TargetName="Tb" Property="Background" Value="#3A8EF6"/>
+                                                        <Setter TargetName="Tb" Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -241,6 +246,8 @@
             </Setter>
         </Style>
 
+
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -255,17 +262,17 @@
         <!-- Row 0 · Toolbar                                                       -->
         <!-- ══════════════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="0" Background="White"
-                BorderBrush="#DDE3EC" BorderThickness="0,0,0,1"
+                BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1"
                 Padding="14,8">
             <DockPanel LastChildFill="False">
 
                 <!-- Right: Loading badge + Refresh -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#EBF5FF" CornerRadius="4" Padding="8,3" Margin="0,0,8,0"
+                    <Border Background="{StaticResource YakultAccentTintBrush}" CornerRadius="4" Padding="8,3" Margin="0,0,8,0"
                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="#3A8EF6"/>
+                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="{StaticResource YakultPrimaryBrush}"/>
                     </Border>
-                    <Button x:Name="BtnRefresh" Background="#3A8EF6"
+                    <Button x:Name="BtnRefresh" Background="{StaticResource YakultPrimaryBrush}"
                             Style="{StaticResource ActionButton}"
                             ToolTip="Refresh data" Click="BtnRefresh_Click"
                             Content="⟳  Refresh"/>
@@ -278,12 +285,12 @@
                             Style="{StaticResource ActionButton}"
                             Click="BtnCreateBatch_Click" Content="+ Create Batch"/>
 
-                    <Button x:Name="BtnAssignReturns" Background="#3A8EF6"
+                    <Button x:Name="BtnAssignReturns" Background="{StaticResource YakultPrimaryBrush}"
                             Style="{StaticResource ActionButton}"
                             Click="BtnAssignReturns_Click" Content="↩ Assign Returns"/>
 
                     <!-- Divider -->
-                    <Border Width="1" Height="20" Background="#DDE3EC"
+                    <Border Width="1" Height="20" Background="{StaticResource YakultBorderBrush}"
                             VerticalAlignment="Center" Margin="0,0,6,0"/>
 
                     <Button x:Name="BtnEditBatch" Background="#E07020"
@@ -297,10 +304,10 @@
                             IsEnabled="{Binding CanDeleteBatch}"/>
 
                     <!-- Divider -->
-                    <Border Width="1" Height="20" Background="#DDE3EC"
+                    <Border Width="1" Height="20" Background="{StaticResource YakultBorderBrush}"
                             VerticalAlignment="Center" Margin="0,0,6,0"/>
 
-                    <Button x:Name="BtnSendToVendor" Background="#3A8EF6"
+                    <Button x:Name="BtnSendToVendor" Background="{StaticResource YakultPrimaryBrush}"
                             Style="{StaticResource ActionButton}"
                             Click="BtnSendToVendor_Click" Content="✈ Send to Vendor"
                             IsEnabled="{Binding CanSendToVendor}"/>
@@ -325,7 +332,7 @@
         <!-- Row 2 · Stats bar + Filters                                           -->
         <!-- ══════════════════════════════════════════════════════════════════════ -->
         <Border Grid.Row="2" Background="White"
-                BorderBrush="#DDE3EC" BorderThickness="0,0,0,1"
+                BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1"
                 Padding="14,10,14,10">
             <Grid>
                 <Grid.RowDefinitions>
@@ -341,7 +348,7 @@
                         <StackPanel>
                             <TextBlock Text="TOTAL BATCHES" Style="{StaticResource FieldLabel}"/>
                             <TextBlock Text="{Binding TotalBatches}"
-                                       FontSize="22" FontWeight="Bold" Foreground="#2A3A4A"/>
+                                       FontSize="22" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
                         </StackPanel>
                     </Border>
 
@@ -349,7 +356,7 @@
                         <StackPanel>
                             <TextBlock Text="ACTIVE" Style="{StaticResource FieldLabel}"/>
                             <TextBlock Text="{Binding ActiveCount}"
-                                       FontSize="22" FontWeight="Bold" Foreground="#3A8EF6"/>
+                                       FontSize="22" FontWeight="Bold" Foreground="{StaticResource YakultPrimaryBrush}"/>
                         </StackPanel>
                     </Border>
 
@@ -411,13 +418,13 @@
                     </Grid>
 
                     <!-- Divider -->
-                    <Border DockPanel.Dock="Left" Width="1" Height="18" Background="#DDE3EC"
+                    <Border DockPanel.Dock="Left" Width="1" Height="18" Background="{StaticResource YakultBorderBrush}"
                             Margin="0,0,10,0" VerticalAlignment="Center"/>
 
                     <!-- Vendor filter -->
                     <StackPanel DockPanel.Dock="Left" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,10,0">
-                        <TextBlock Text="Vendor" FontSize="10" Foreground="#4A5A6A"
+                        <TextBlock Text="Vendor" FontSize="10" Foreground="{StaticResource YakultTextDarkBrush}"
                                    VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <ComboBox x:Name="CmbVendor"
                                   Style="{StaticResource FilterCombo}"
@@ -427,13 +434,13 @@
                     </StackPanel>
 
                     <!-- Divider -->
-                    <Border DockPanel.Dock="Left" Width="1" Height="18" Background="#DDE3EC"
+                    <Border DockPanel.Dock="Left" Width="1" Height="18" Background="{StaticResource YakultBorderBrush}"
                             Margin="0,0,10,0" VerticalAlignment="Center"/>
 
                     <!-- Status filter -->
                     <StackPanel DockPanel.Dock="Left" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="0,0,10,0">
-                        <TextBlock Text="Status" FontSize="10" Foreground="#4A5A6A"
+                        <TextBlock Text="Status" FontSize="10" Foreground="{StaticResource YakultTextDarkBrush}"
                                    VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <ComboBox x:Name="CmbStatus"
                                   Style="{StaticResource FilterCombo}"
@@ -451,9 +458,9 @@
                             Content="✕ Clear"
                             Height="26" Padding="8,0"
                             FontSize="10" FontWeight="SemiBold"
-                            Foreground="#5A6A7E"
-                            Background="#F0F3F7"
-                            BorderBrush="#CDD5DE" BorderThickness="1"
+                            Foreground="{StaticResource YakultTextMutedBrush}"
+                            Background="{StaticResource YakultPageBackgroundBrush}"
+                            BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                             Cursor="Hand"
                             Click="BtnClearFilters_Click"
                             VerticalContentAlignment="Center">
@@ -470,7 +477,7 @@
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="Bd" Property="Background" Value="#E4E9F0"/>
-                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#3A8EF6"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
@@ -501,18 +508,18 @@
 
                 <!-- Section header -->
                 <Border Grid.Row="0" Background="White" Padding="14,10,14,8"
-                        BorderBrush="#DDE3EC" BorderThickness="0,0,0,1">
+                        BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Left"
                                    Text="Vendor Batches"
-                                   FontSize="13" FontWeight="Bold" Foreground="#3A8EF6"
+                                   FontSize="13" FontWeight="Bold" Foreground="{StaticResource YakultPrimaryBrush}"
                                    VerticalAlignment="Center"/>
                         <Border DockPanel.Dock="Left"
-                                Background="#EBF5FF" CornerRadius="10"
+                                Background="{StaticResource YakultAccentTintBrush}" CornerRadius="10"
                                 Padding="8,2" Margin="8,0,0,0"
                                 VerticalAlignment="Center">
                             <TextBlock Text="{Binding PagedBatches.Count, StringFormat='{}{0} shown'}"
-                                       FontSize="10" Foreground="#3A8EF6"/>
+                                       FontSize="10" Foreground="{StaticResource YakultPrimaryBrush}"/>
                         </Border>
                         <TextBlock DockPanel.Dock="Right"
                                    Text="Click a row to view audit trail →"
@@ -553,7 +560,7 @@
                                 <Style TargetType="TextBlock">
                                     <Setter Property="FontSize"   Value="11"/>
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <Setter Property="Foreground" Value="#2A3A4A"/>
+                                    <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
                                     <Setter Property="HorizontalAlignment" Value="Center"/>
                                     <Setter Property="VerticalAlignment"   Value="Center"/>
                                     <Setter Property="Padding" Value="4,0"/>
@@ -615,7 +622,7 @@
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="FontSize"     Value="10"/>
-                                    <Setter Property="Foreground"   Value="#4A5A6A"/>
+                                    <Setter Property="Foreground"   Value="{StaticResource YakultTextDarkBrush}"/>
                                     <Setter Property="VerticalAlignment" Value="Center"/>
                                     <Setter Property="Padding"      Value="6,0"/>
                                     <Setter Property="TextWrapping" Value="Wrap"/>
@@ -633,7 +640,7 @@
                                             Margin="6,8">
                                         <Border.Style>
                                             <Style TargetType="Border">
-                                                <Setter Property="Background" Value="#3A8EF6"/>
+                                                <Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding Status}" Value="SentForRefill">
                                                         <Setter Property="Background" Value="#E07020"/>
@@ -664,7 +671,7 @@
                                         <Button.Style>
                                             <Style TargetType="Button">
                                                 <Setter Property="Content"    Value="Send to Vendor"/>
-                                                <Setter Property="Background" Value="#3A8EF6"/>
+                                                <Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
                                                 <Setter Property="Visibility" Value="Visible"/>
                                                 <Setter Property="Template">
                                                     <Setter.Value>
@@ -710,8 +717,8 @@
                 </DataGrid>
 
                 <!-- Pagination bar -->
-                <Border Grid.Row="2" Background="#F5F7FA"
-                        BorderBrush="#DDE3EC" BorderThickness="0,1,0,0"
+                <Border Grid.Row="2" Background="{StaticResource YakultPageBackgroundBrush}"
+                        BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0"
                         Padding="12,7">
                     <DockPanel LastChildFill="False">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
@@ -722,12 +729,12 @@
                                 <TextBlock Text="‹" FontSize="14"/>
                             </Button>
 
-                            <Border Background="#EEF3FF" BorderBrush="#DDE3EC"
+                            <Border Background="{StaticResource YakultAccentTintBrush}" BorderBrush="{StaticResource YakultBorderBrush}"
                                     BorderThickness="1" CornerRadius="4"
                                     Padding="12,3" Margin="3,0"
                                     VerticalAlignment="Center">
                                 <TextBlock Text="{Binding PageInfo}"
-                                           FontSize="10" Foreground="#3A4A5A"/>
+                                           FontSize="10" Foreground="{StaticResource YakultTextDarkBrush}"/>
                             </Border>
 
                             <Button Style="{StaticResource PageButton}"
@@ -744,13 +751,13 @@
             <!-- Splitter -->
             <GridSplitter Grid.Column="1"
                           Width="6"
-                          Background="#DDE3EC"
+                          Background="{StaticResource YakultBorderBrush}"
                           ResizeDirection="Columns"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"/>
 
             <!-- ── RIGHT PANEL: Details + Audit Trail ──────────────────────────── -->
-            <Grid Grid.Column="2" Background="#F0F2F6">
+            <Grid Grid.Column="2" Background="{StaticResource YakultPageBackgroundBrush}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>  <!-- Selected batch details -->
                     <RowDefinition Height="*"/>     <!-- Audit trail -->
@@ -759,7 +766,7 @@
                 <!-- ── Selected Batch Details card ── -->
                 <Border Grid.Row="0" Margin="10,10,10,6"
                         Background="White"
-                        BorderBrush="#DDE3EC" BorderThickness="1"
+                        BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                         CornerRadius="8" Padding="14,12"
                         Visibility="{Binding HasSelectedBatch, Converter={StaticResource BoolToVis}}">
                     <Border.Effect>
@@ -777,14 +784,14 @@
                         <DockPanel Grid.Row="0">
                             <TextBlock DockPanel.Dock="Left"
                                        Text="{Binding SelectedBatch.BatchId, StringFormat='Batch #{0}'}"
-                                       FontSize="14" FontWeight="Bold" Foreground="#2A3A4A"
+                                       FontSize="14" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"
                                        VerticalAlignment="Center"/>
                             <Border DockPanel.Dock="Left" Margin="10,0,0,0"
                                     CornerRadius="10" Padding="10,3"
                                     VerticalAlignment="Center">
                                 <Border.Style>
                                     <Style TargetType="Border">
-                                        <Setter Property="Background" Value="#3A8EF6"/>
+                                        <Setter Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SelectedBatch.Status}" Value="SentForRefill">
                                                 <Setter Property="Background" Value="#E07020"/>
@@ -816,7 +823,7 @@
                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
                                 <TextBlock Text="VENDOR" Style="{StaticResource FieldLabel}"/>
                                 <TextBlock Text="{Binding SelectedBatch.VendorName}"
-                                           FontSize="11" Foreground="#1A2333"
+                                           FontSize="11" Foreground="{StaticResource YakultTextDarkBrush}"
                                            TextWrapping="Wrap"/>
                             </StackPanel>
 
@@ -824,7 +831,7 @@
                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,8">
                                 <TextBlock Text="CARTRIDGE MODEL/S" Style="{StaticResource FieldLabel}"/>
                                 <TextBlock Text="{Binding SelectedBatch.CartridgeModel}"
-                                           FontSize="11" Foreground="#1A2333"
+                                           FontSize="11" Foreground="{StaticResource YakultTextDarkBrush}"
                                            TextWrapping="Wrap"/>
                             </StackPanel>
 
@@ -832,7 +839,7 @@
                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
                                 <TextBlock Text="ORIGINAL QTY" Style="{StaticResource FieldLabel}"/>
                                 <TextBlock Text="{Binding SelectedBatch.OriginalQty}"
-                                           FontSize="16" FontWeight="Bold" Foreground="#2A3A4A"/>
+                                           FontSize="16" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
                             </StackPanel>
 
                             <!-- Returned Qty -->
@@ -846,7 +853,7 @@
                             <StackPanel Grid.Row="2" Grid.ColumnSpan="2">
                                 <TextBlock Text="QTY PER CARTRIDGE" Style="{StaticResource FieldLabel}"/>
                                 <TextBlock Text="{Binding SelectedBatch.QtyPerCartridge}"
-                                           FontSize="11" Foreground="#4A5A6A"
+                                           FontSize="11" Foreground="{StaticResource YakultTextDarkBrush}"
                                            TextWrapping="Wrap"/>
                             </StackPanel>
                         </Grid>
@@ -855,7 +862,7 @@
 
                 <!-- Empty state: no batch selected -->
                 <Border Grid.Row="0" Margin="10,10,10,6"
-                        Background="White" BorderBrush="#DDE3EC" BorderThickness="1"
+                        Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                         CornerRadius="8" Padding="20,16"
                         Visibility="{Binding HasSelectedBatch, Converter={StaticResource InvBoolToVis}}">
                     <TextBlock Text="← Select a batch to view its details"
@@ -867,7 +874,7 @@
                 <!-- ── Audit Trail card ── -->
                 <Border Grid.Row="1" Margin="10,0,10,10"
                         Background="White"
-                        BorderBrush="#DDE3EC" BorderThickness="1"
+                        BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                         CornerRadius="8">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="8" ShadowDepth="1"
@@ -886,14 +893,14 @@
                                 <TextBlock DockPanel.Dock="Left"
                                            Text="Requests in Selected Batch"
                                            FontSize="12" FontWeight="Bold"
-                                           Foreground="#3A8EF6" VerticalAlignment="Center"/>
+                                           Foreground="{StaticResource YakultPrimaryBrush}" VerticalAlignment="Center"/>
                                 <Border DockPanel.Dock="Left"
-                                        Background="#EBF5FF" CornerRadius="10"
+                                        Background="{StaticResource YakultAccentTintBrush}" CornerRadius="10"
                                         Padding="8,2" Margin="8,0,0,0"
                                         VerticalAlignment="Center"
                                         Visibility="{Binding HasSelectedBatch, Converter={StaticResource BoolToVis}}">
                                     <TextBlock Text="{Binding AuditTrailItems.Count, StringFormat='{}{0} request(s)'}"
-                                               FontSize="10" Foreground="#3A8EF6"/>
+                                               FontSize="10" Foreground="{StaticResource YakultPrimaryBrush}"/>
                                 </Border>
                                 <TextBlock DockPanel.Dock="Right"
                                            Text="Right-click → transfer or remove"
@@ -932,7 +939,7 @@
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontSize"   Value="10"/>
                                             <Setter Property="FontWeight" Value="Bold"/>
-                                            <Setter Property="Foreground" Value="#2A3A4A"/>
+                                            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
                                             <Setter Property="HorizontalAlignment" Value="Center"/>
                                             <Setter Property="VerticalAlignment"   Value="Center"/>
                                             <Setter Property="Padding" Value="4,6"/>
@@ -990,7 +997,7 @@
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontSize"     Value="10"/>
-                                            <Setter Property="Foreground"   Value="#5A6A7E"/>
+                                            <Setter Property="Foreground"   Value="{StaticResource YakultTextMutedBrush}"/>
                                             <Setter Property="FontStyle"    Value="Italic"/>
                                             <Setter Property="VerticalAlignment" Value="Top"/>
                                             <Setter Property="Padding"      Value="4,6"/>

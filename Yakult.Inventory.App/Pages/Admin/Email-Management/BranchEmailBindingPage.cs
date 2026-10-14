@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -167,7 +168,7 @@ namespace Yakult.Inventory.App.Pages.Admin.EmailManagement
                 SortMode = DataGridViewColumnSortMode.NotSortable,
                 DefaultCellStyle = new DataGridViewCellStyle
                 {
-                    ForeColor = Color.FromArgb(22, 100, 170)
+                    ForeColor = InventoryTheme.Colors.PrimaryHover
                 }
             });
             // Child / Branch email — editable
@@ -182,7 +183,7 @@ namespace Yakult.Inventory.App.Pages.Admin.EmailManagement
                 SortMode = DataGridViewColumnSortMode.NotSortable,
                 DefaultCellStyle = new DataGridViewCellStyle
                 {
-                    ForeColor = Color.FromArgb(22, 100, 170)
+                    ForeColor = InventoryTheme.Colors.PrimaryHover
                 }
             });
 

@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
              xmlns:local="clr-namespace:Yakult.Inventory.App.WPF.Admin.ReferenceData.Views"
-             Background="#F5F7FA"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
              FontFamily="Segoe UI"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
@@ -11,27 +11,32 @@
              TextOptions.TextRenderingMode="ClearType">
 
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <conv:BoolToVisibilityConverter        x:Key="BoolToVis"/>
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
         <local:HolidayDateMarkConverter        x:Key="DayMark"/>
 
         <SolidColorBrush x:Key="RegularBrush" Color="#E74C3C"/>
-        <SolidColorBrush x:Key="SpecialBrush" Color="#3498DB"/>
+        <SolidColorBrush x:Key="SpecialBrush" Color="{StaticResource YakultPrimaryColor}"/>
 
         <Style TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
 
         <Style x:Key="SectionLabel" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="10"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
         </Style>
 
         <Style x:Key="StatCaption" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="11"/>
-            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin"     Value="0,4"/>
         </Style>
 
@@ -43,7 +48,7 @@
 
         <Style x:Key="FilterLabel" TargetType="TextBlock">
             <Setter Property="FontSize"          Value="11"/>
-            <Setter Property="Foreground"        Value="#5A6A7A"/>
+            <Setter Property="Foreground"        Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin"            Value="0,0,6,0"/>
         </Style>
@@ -90,7 +95,7 @@
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background"      Value="#3498DB"/>
+            <Setter Property="Background"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"      Value="White"/>
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="FontSize"        Value="12"/>
@@ -115,7 +120,7 @@
                     <Setter Property="Background" Value="#EAF2FC"/>
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#C8DFFE"/>
+                    <Setter Property="Background" Value="{StaticResource YakultSelectionBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -127,7 +132,7 @@
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background"  Value="Transparent"/>
                     <Setter Property="BorderBrush" Value="Transparent"/>
-                    <Setter Property="Foreground"  Value="#1A2333"/>
+                    <Setter Property="Foreground"  Value="{StaticResource YakultTextDarkBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -137,11 +142,13 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="TextTrimming"      Value="CharacterEllipsis"/>
         </Style>
+
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <!-- ClearTypeHint: WPF drops to greyscale anti-aliasing inside an ElementHost unless told
          the surface is opaque (it is: every panel below has a solid background). -->
-    <Grid RenderOptions.ClearTypeHint="Enabled" Background="#F5F7FA">
+    <Grid RenderOptions.ClearTypeHint="Enabled" Background="{StaticResource YakultPageBackgroundBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300"/>
             <ColumnDefinition Width="*"/>
@@ -150,7 +157,7 @@
         <!-- ═══ Left sidebar ═══ -->
         <Border Grid.Column="0" Background="White" BorderBrush="#DAE0E6" BorderThickness="0,0,1,0">
             <DockPanel LastChildFill="True">
-                <Border DockPanel.Dock="Top" Background="#3498DB" Height="58" Padding="18,0">
+                <Border DockPanel.Dock="Top" Background="{StaticResource YakultPrimaryBrush}" Height="58" Padding="18,0">
                     <TextBlock Text="Company Holidays" Foreground="White" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
                 </Border>
 
@@ -223,9 +230,9 @@
             <!-- Filter bar -->
             <Border Grid.Row="0" Background="White" BorderBrush="#DEE2E6" BorderThickness="0,0,0,1" Padding="14,10">
                 <DockPanel LastChildFill="False">
-                    <Border DockPanel.Dock="Right" Background="#EBF5FF" CornerRadius="4" Padding="8,3" VerticalAlignment="Center"
+                    <Border DockPanel.Dock="Right" Background="{StaticResource YakultAccentTintBrush}" CornerRadius="4" Padding="8,3" VerticalAlignment="Center"
                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="#4E9AFC"/>
+                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="{StaticResource YakultPrimaryBrush}"/>
                     </Border>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="Search:" Style="{StaticResource FilterLabel}"/>
@@ -241,14 +248,14 @@
                         <ComboBox Width="80" Height="26" FontSize="11" VerticalContentAlignment="Center" Margin="0,0,16,0"
                                   ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear}"/>
 
-                        <TextBlock Text="{Binding CountText}" FontSize="11" Foreground="#7A8A9A" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding CountText}" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
                 </DockPanel>
             </Border>
 
             <!-- Actions -->
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="12,8">
-                <Button Content="+  Add"      Style="{StaticResource PillButton}" Background="#4E9AFC" Click="BtnAdd_Click"/>
+                <Button Content="+  Add"      Style="{StaticResource PillButton}" Background="{StaticResource YakultPrimaryBrush}" Click="BtnAdd_Click"/>
                 <Button Content="✎  Edit"     Style="{StaticResource PillButton}" Background="#34495E" Click="BtnEdit_Click"
                         IsEnabled="{Binding HasSelection}"/>
                 <Button Content="✕  Delete"   Style="{StaticResource PillButton}" Background="#E74C3C" Click="BtnDelete_Click"
@@ -281,10 +288,10 @@
                               MouseDoubleClick="HolidayGrid_MouseDoubleClick"
                               Visibility="{Binding IsEmpty, Converter={StaticResource InvBoolToVis}}">
                         <DataGrid.Resources>
-                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"                      Color="#C8DFFE"/>
-                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"                  Color="#1A2333"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}"                      Color="{StaticResource YakultSelectionColor}"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}"                  Color="{StaticResource YakultTextDarkColor}"/>
                             <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}"     Color="#D6E6FC"/>
-                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#1A2333"/>
+                            <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{StaticResource YakultTextDarkColor}"/>
                         </DataGrid.Resources>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Date"         Binding="{Binding DateText}"      Width="17*" ElementStyle="{StaticResource CellText}"/>
@@ -321,8 +328,8 @@
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
-                    <TextBlock Text="{Binding DetailMeta}" FontSize="11" Foreground="#7A8A9A" Margin="0,3,0,0"/>
-                    <TextBlock Text="{Binding DetailNotes}" FontSize="11" FontStyle="Italic" Foreground="#7A8A9A" Margin="0,2,0,0"
+                    <TextBlock Text="{Binding DetailMeta}" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,3,0,0"/>
+                    <TextBlock Text="{Binding DetailNotes}" FontSize="11" FontStyle="Italic" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,2,0,0"
                                TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>

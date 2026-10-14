@@ -77,7 +77,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var rightScroll = new ScrollViewer
             {
-                Background = BrushFromRgb(248, 250, 252),
+                Background = WpfThemeResources.SurfaceMutedBrush,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
@@ -98,14 +98,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Performance Stats",
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
             _periodText = new TextBlock
             {
                 Text = string.Empty,
                 Margin = new Thickness(0, 5, 0, 0),
                 FontSize = 12,
-                Foreground = BrushFromRgb(100, 116, 139)
+                Foreground = WpfThemeResources.TextMutedBrush
             };
             titleStack.Children.Add(_periodText);
             header.Children.Add(titleStack);
@@ -117,7 +117,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             actions.Children.Add(CreateLabel("To"));
             _toPicker = new DatePicker { SelectedDate = DateTime.Today, Width = 142, Margin = new Thickness(8, 0, 14, 0) };
             actions.Children.Add(_toPicker);
-            _refreshButton = CreateButton("Refresh", BrushFromRgb(37, 99, 235));
+            _refreshButton = CreateButton("Refresh", WpfThemeResources.PrimaryBrush);
             _refreshButton.Click += async (_, __) => await LoadAsync();
             actions.Children.Add(_refreshButton);
             var closeButton = CreateButton("Close", BrushFromRgb(71, 85, 105));
@@ -131,7 +131,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Text = string.Empty,
                 FontSize = 12,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0, 0, 0, 16)
             };
             right.Children.Add(_refreshedText);
@@ -151,7 +151,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             right.Children.Add(CreateSectionTitle("Resolution Activity"));
             var resolutionGrid = CreateTwoColumnGrid(new Thickness(0, 0, 0, 18));
-            _openValue = AddMetric(resolutionGrid, 0, "Open Tickets", "Currently assigned", BrushFromRgb(15, 118, 110));
+            _openValue = AddMetric(resolutionGrid, 0, "Open Tickets", "Currently assigned", WpfThemeResources.PrimaryHoverBrush);
             _handledAssigneeValue = AddMetric(resolutionGrid, 1, "Solved (As Assignee)", "Assigned work completed", BrushFromRgb(16, 185, 129));
             right.Children.Add(resolutionGrid);
 
@@ -202,7 +202,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Text = "Loading...",
                 FontSize = 12,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0, 12, 0, 0)
             };
             right.Children.Add(_statusText);
@@ -231,7 +231,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Width = 120,
                 Height = 120,
                 CornerRadius = new CornerRadius(60),
-                Background = new LinearGradientBrush(Color.FromRgb(37, 99, 235), Color.FromRgb(14, 165, 233), new Point(0, 0), new Point(1, 1)),
+                Background = new LinearGradientBrush(WpfThemeResources.Primary, WpfThemeResources.PrimaryHover, new Point(0, 0), new Point(1, 1)),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Child = new TextBlock
                 {
@@ -251,7 +251,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Margin = new Thickness(0, 18, 0, 0),
                 FontSize = 22,
                 FontWeight = FontWeights.Bold,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap
             });
@@ -280,7 +280,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "\"Providing excellent IT support to keep Yakult running smoothly.\"",
                 FontSize = 12,
                 FontStyle = FontStyles.Italic,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 24)
@@ -297,7 +297,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Loading...",
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 TextWrapping = TextWrapping.Wrap
             };
             stack.Children.Add(CreateMetaRow("Email", _emailValueText, null));
@@ -318,7 +318,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _emailEditStatus = new TextBlock
                 {
                     FontSize = 11,
-                    Foreground = BrushFromRgb(100, 116, 139),
+                    Foreground = WpfThemeResources.TextMutedBrush,
                     TextWrapping = TextWrapping.Wrap,
                     Margin = new Thickness(0, 5, 0, 0)
                 };
@@ -342,7 +342,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = value,
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = valueBrush ?? BrushFromRgb(15, 23, 42),
+                Foreground = valueBrush ?? WpfThemeResources.TextDarkBrush,
                 TextWrapping = TextWrapping.Wrap
             };
             return CreateMetaRow(label, valueText, valueBrush);
@@ -358,7 +358,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = label,
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(100, 116, 139)
+                Foreground = WpfThemeResources.TextMutedBrush
             });
             if (valueControl != null)
             {
@@ -570,7 +570,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     Text = "No active tickets assigned.",
                     FontSize = 13,
                     FontStyle = FontStyles.Italic,
-                    Foreground = BrushFromRgb(100, 116, 139),
+                    Foreground = WpfThemeResources.TextMutedBrush,
                     Margin = new Thickness(2, 2, 2, 0)
                 });
                 return;
@@ -601,7 +601,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             grid.MouseLeftButtonUp += (_, __) => OpenSelectedTicket(new TicketRowVm { TicketId = ticket.TicketId });
 
             AddRecentCell(grid, string.IsNullOrWhiteSpace(ticket.TicketCode) ? $"#{ticket.TicketId}" : ticket.TicketCode, 0, false, BrushFromRgb(2, 132, 199));
-            AddRecentCell(grid, string.IsNullOrWhiteSpace(ticket.Issue) ? "-" : ticket.Issue, 1, false, BrushFromRgb(15, 23, 42));
+            AddRecentCell(grid, string.IsNullOrWhiteSpace(ticket.Issue) ? "-" : ticket.Issue, 1, false, WpfThemeResources.TextDarkBrush);
             AddRecentCell(grid, ToLocalString(ticket.UpdatedAt), 2, false, BrushFromRgb(71, 85, 105));
             AddRecentCell(grid, string.IsNullOrWhiteSpace(ticket.Status) ? "-" : ticket.Status, 3, false, GetStatusBrush(ticket.Status));
             return new Border
@@ -632,7 +632,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = text,
                 FontSize = header ? 11 : 12,
                 FontWeight = header ? FontWeights.Bold : FontWeights.SemiBold,
-                Foreground = foreground ?? BrushFromRgb(100, 116, 139),
+                Foreground = foreground ?? WpfThemeResources.TextMutedBrush,
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(column == 0 ? 0 : 8, 0, 0, 0)
@@ -675,7 +675,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "0",
                 FontSize = 28,
                 FontWeight = FontWeights.Bold,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 Margin = new Thickness(0, 8, 0, 0)
             };
 
@@ -702,7 +702,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = subtitle,
                 Margin = new Thickness(0, 5, 0, 0),
                 FontSize = 11.5,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 TextWrapping = TextWrapping.Wrap
             });
 
@@ -735,7 +735,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = text,
                 FontSize = 15,
                 FontWeight = FontWeights.Bold,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 Margin = new Thickness(0, 4, 0, 10)
             };
         }
@@ -758,7 +758,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 RowHeaderWidth = 0,
                 RowHeight = 42,
                 Background = Brushes.White,
-                AlternatingRowBackground = BrushFromRgb(248, 250, 252),
+                AlternatingRowBackground = WpfThemeResources.SurfaceMutedBrush,
                 BorderThickness = new Thickness(0),
                 SelectionMode = DataGridSelectionMode.Single,
                 SelectionUnit = DataGridSelectionUnit.FullRow
@@ -766,7 +766,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var headerStyle = new Style(typeof(DataGridColumnHeader));
             headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.White));
-            headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(100, 116, 139)));
+            headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, WpfThemeResources.TextMutedBrush));
             headerStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.Bold));
             headerStyle.Setters.Add(new Setter(Control.FontSizeProperty, 11.5));
             headerStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 10, 8, 10)));

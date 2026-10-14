@@ -1,4 +1,5 @@
-﻿﻿﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -246,7 +247,7 @@ namespace Yakult.Inventory.App.Forms.Dashboard
                     int totalGood    = summaries.Sum(s => s.Good);
                     int totalDamaged = summaries.Sum(s => s.Damaged);
 
-                    data.Kpis.Add(new DashboardKpi { Title = "Total Items",     Value = totalItems,          AccentColor = Color.FromArgb(52,  152, 219), Icon = "\U0001F4E6" });
+                    data.Kpis.Add(new DashboardKpi { Title = "Total Items",     Value = totalItems,          AccentColor = InventoryTheme.Colors.Primary, Icon = "\U0001F4E6" });
                     data.Kpis.Add(new DashboardKpi { Title = "Active Stock",    Value = totalStock,          AccentColor = Color.FromArgb(46,  204, 113), Icon = "\u2705"     });
                     data.Kpis.Add(new DashboardKpi { Title = "Categories",      Value = summaries.Count,     AccentColor = Color.FromArgb(155,  89, 182), Icon = "\U0001F4C1" });
                     data.Kpis.Add(new DashboardKpi { Title = "Good Condition",  Value = totalGood,           AccentColor = Color.FromArgb(26,  188, 156), Icon = "\U0001F44D" });
@@ -1253,7 +1254,7 @@ ORDER BY i.Name ASC, i.ItemId DESC;", con))
                     int softwareItems = items.Count(i => string.Equals(i.Type, "Software/License", StringComparison.OrdinalIgnoreCase));
                     int servicesItems = items.Count(i => string.Equals(i.Type, "Services", StringComparison.OrdinalIgnoreCase));
 
-                    data.Kpis.Add(new DashboardKpi { Title = "Total Items", Value = totalItems, AccentColor = Color.FromArgb(52, 152, 219), Icon = "\U0001F4E6" });
+                    data.Kpis.Add(new DashboardKpi { Title = "Total Items", Value = totalItems, AccentColor = InventoryTheme.Colors.Primary, Icon = "\U0001F4E6" });
                     data.Kpis.Add(new DashboardKpi { Title = "Active Items", Value = activeItems, AccentColor = Color.FromArgb(46, 204, 113), Icon = "\u2705" });
                     data.Kpis.Add(new DashboardKpi { Title = "Hardware", Value = hardwareItems, AccentColor = Color.FromArgb(155, 89, 182), Icon = "\U0001F4BB" });
                     data.Kpis.Add(new DashboardKpi { Title = "Software", Value = softwareItems, AccentColor = Color.FromArgb(52, 73, 94), Icon = "\U0001F4BF" });
@@ -1296,7 +1297,7 @@ ORDER BY i.Name ASC, i.ItemId DESC;", con))
                     int inactiveItems = totalItems - activeItems;
                     data.Stat1 = new DashboardQuickStat { Label = "Active", Value = activeItems.ToString(), Color = Color.FromArgb(46, 204, 113) };
                     data.Stat2 = new DashboardQuickStat { Label = "Inactive", Value = inactiveItems.ToString(), Color = Color.FromArgb(231, 76, 60) };
-                    data.Stat3 = new DashboardQuickStat { Label = "Categories", Value = byCategory.Count.ToString(), Color = Color.FromArgb(52, 152, 219) };
+                    data.Stat3 = new DashboardQuickStat { Label = "Categories", Value = byCategory.Count.ToString(), Color = InventoryTheme.Colors.Primary };
 
                     // Table (recent items)
                     foreach (var item in items.Take(20))
@@ -1396,7 +1397,7 @@ ORDER BY i.Name ASC, i.ItemId DESC;", con))
                     int positiveCount = movements.Count(m => string.Equals(m.EntryType, "Positive", StringComparison.OrdinalIgnoreCase));
                     int negativeCount = movements.Count(m => string.Equals(m.EntryType, "Negative", StringComparison.OrdinalIgnoreCase));
 
-                    data.Kpis.Add(new DashboardKpi { Title = "Total Movements", Value = totalMovements, AccentColor = Color.FromArgb(52, 152, 219), Icon = "\U0001F4CA" });
+                    data.Kpis.Add(new DashboardKpi { Title = "Total Movements", Value = totalMovements, AccentColor = InventoryTheme.Colors.Primary, Icon = "\U0001F4CA" });
                     data.Kpis.Add(new DashboardKpi { Title = "Positive", Value = positiveCount, AccentColor = Color.FromArgb(46, 204, 113), Icon = "\U0001F4E5" });
                     data.Kpis.Add(new DashboardKpi { Title = "Negative", Value = negativeCount, AccentColor = Color.FromArgb(231, 76, 60), Icon = "\U0001F4E4" });
                     data.Kpis.Add(new DashboardKpi { Title = "Qty In", Value = totalQtyIn, AccentColor = Color.FromArgb(26, 188, 156), Icon = "\U0001F4E5" });
@@ -1439,7 +1440,7 @@ ORDER BY i.Name ASC, i.ItemId DESC;", con))
                             ? Color.FromArgb(46, 204, 113)
                             : string.Equals(m.EntryType, "Negative", StringComparison.OrdinalIgnoreCase)
                                 ? Color.FromArgb(231, 76, 60)
-                                : Color.FromArgb(52, 152, 219);
+                                : InventoryTheme.Colors.Primary;
 
                         data.TableData.Add(new DashboardTableRow
                         {
@@ -1525,7 +1526,7 @@ ORDER BY i.Name ASC, i.ItemId DESC;", con))
                     int underReviewRequests = requests.Count(r => string.Equals(r.Status, "Under Review", StringComparison.OrdinalIgnoreCase));
                     int totalQty = requests.Sum(r => r.Qty);
 
-                    data.Kpis.Add(new DashboardKpi { Title = "Total Requests", Value = totalRequests, AccentColor = Color.FromArgb(52, 152, 219), Icon = "\U0001F4DD" });
+                    data.Kpis.Add(new DashboardKpi { Title = "Total Requests", Value = totalRequests, AccentColor = InventoryTheme.Colors.Primary, Icon = "\U0001F4DD" });
                     data.Kpis.Add(new DashboardKpi { Title = "Submitted", Value = submittedRequests, AccentColor = Color.FromArgb(46, 204, 113), Icon = "\U0001F4E4" });
                     data.Kpis.Add(new DashboardKpi { Title = "Under Review", Value = underReviewRequests, AccentColor = Color.FromArgb(241, 196, 15), Icon = "\u23F3" });
                     data.Kpis.Add(new DashboardKpi { Title = "Total Quantity", Value = totalQty, AccentColor = Color.FromArgb(52, 73, 94), Icon = "\U0001F4E6" });
@@ -1630,7 +1631,7 @@ ORDER BY i.Name ASC, i.ItemId DESC;", con))
                     int expired = renewals.Count(r => r.ExpiryStatus == "Expired");
                     int onHold = renewals.Count(r => r.RenewalStatus == "On Hold");
 
-                    data.Kpis.Add(new DashboardKpi { Title = "Total Items", Value = totalRenewals, AccentColor = Color.FromArgb(52, 152, 219), Icon = "\U0001F504" });
+                    data.Kpis.Add(new DashboardKpi { Title = "Total Items", Value = totalRenewals, AccentColor = InventoryTheme.Colors.Primary, Icon = "\U0001F504" });
                     data.Kpis.Add(new DashboardKpi { Title = "Active", Value = activeRenewals, AccentColor = Color.FromArgb(46, 204, 113), Icon = "\u2705" });
                     data.Kpis.Add(new DashboardKpi { Title = "Expiring 30d", Value = expiringSoon, AccentColor = Color.FromArgb(241, 196, 15), Icon = "\u23F0" });
                     data.Kpis.Add(new DashboardKpi { Title = "Expired", Value = expired, AccentColor = Color.FromArgb(231, 76, 60), Icon = "\u26A0\uFE0F" });
@@ -1870,7 +1871,7 @@ ORDER BY s.DispatchDate DESC, s.SetId DESC;", con))
                     int notApprovedInvoices = totalInvoices - approvedInvoices;
 
                     // KPIs
-                    data.Kpis.Add(new DashboardKpi { Title = "Total Invoices", Value = totalInvoices, AccentColor = Color.FromArgb(52, 152, 219), Icon = "\U0001F4BC" });
+                    data.Kpis.Add(new DashboardKpi { Title = "Total Invoices", Value = totalInvoices, AccentColor = InventoryTheme.Colors.Primary, Icon = "\U0001F4BC" });
                     data.Kpis.Add(new DashboardKpi { Title = "Software", Value = softwareInvoices, AccentColor = Color.FromArgb(155, 89, 182), Icon = "\U0001F4BF" });
                     data.Kpis.Add(new DashboardKpi { Title = "Service", Value = serviceInvoices, AccentColor = Color.FromArgb(230, 126, 34), Icon = "\U0001F527" });
                     data.Kpis.Add(new DashboardKpi { Title = "Approved", Value = approvedInvoices, AccentColor = Color.FromArgb(46, 204, 113), Icon = "\u2705" });
@@ -1995,7 +1996,7 @@ ORDER BY s.DispatchDate DESC, s.SetId DESC;", con))
                     var branches = employees.GroupBy(e => e.Branch).Count();
                     var companies = employees.GroupBy(e => e.Company).Count();
 
-                    data.Kpis.Add(new DashboardKpi { Title = "Total Employees", Value = totalEmployees, AccentColor = Color.FromArgb(52, 152, 219), Icon = "\U0001F465" });
+                    data.Kpis.Add(new DashboardKpi { Title = "Total Employees", Value = totalEmployees, AccentColor = InventoryTheme.Colors.Primary, Icon = "\U0001F465" });
                     data.Kpis.Add(new DashboardKpi { Title = "Active", Value = activeEmployees, AccentColor = Color.FromArgb(46, 204, 113), Icon = "\u2705" });
                     data.Kpis.Add(new DashboardKpi { Title = "Departments", Value = depts, AccentColor = Color.FromArgb(155, 89, 182), Icon = "\U0001F3E2" });
                     data.Kpis.Add(new DashboardKpi { Title = "Branches", Value = branches, AccentColor = Color.FromArgb(230, 126, 34), Icon = "\U0001F3EA" });
@@ -2129,7 +2130,7 @@ ORDER BY s.DispatchDate DESC, s.SetId DESC;", con))
                     int inactiveVendors = totalVendors - activeVendors;
                     int totalItems = vendors.Sum(v => v.ItemCount);
 
-                    data.Kpis.Add(new DashboardKpi { Title = "Total Vendors", Value = totalVendors, AccentColor = Color.FromArgb(52, 152, 219), Icon = "\U0001F3EA" });
+                    data.Kpis.Add(new DashboardKpi { Title = "Total Vendors", Value = totalVendors, AccentColor = InventoryTheme.Colors.Primary, Icon = "\U0001F3EA" });
                     data.Kpis.Add(new DashboardKpi { Title = "Active", Value = activeVendors, AccentColor = Color.FromArgb(46, 204, 113), Icon = "\u2705" });
                     data.Kpis.Add(new DashboardKpi { Title = "Inactive", Value = inactiveVendors, AccentColor = Color.FromArgb(231, 76, 60), Icon = "\u26A0\uFE0F" });
                     data.Kpis.Add(new DashboardKpi { Title = "Items", Value = totalItems, AccentColor = Color.FromArgb(155, 89, 182), Icon = "\U0001F4E6" });
@@ -2249,7 +2250,7 @@ ORDER BY s.DispatchDate DESC, s.SetId DESC;", con))
                     {
                         Title = "Total Archived",
                         Value = totalArchived,
-                        AccentColor = Color.FromArgb(52, 152, 219),
+                        AccentColor = InventoryTheme.Colors.Primary,
                         Icon = "\U0001F5C4\uFE0F"
                     });
 
@@ -2308,7 +2309,7 @@ ORDER BY s.DispatchDate DESC, s.SetId DESC;", con))
 
                     data.Stat1 = new DashboardQuickStat { Label = "This Month", Value = thisMonth.ToString(), Color = Color.FromArgb(231, 76, 60) };
                     data.Stat2 = new DashboardQuickStat { Label = "This Year", Value = thisYear.ToString(), Color = Color.FromArgb(241, 196, 15) };
-                    data.Stat3 = new DashboardQuickStat { Label = "Past Months", Value = pastMonths.ToString(), Color = Color.FromArgb(52, 152, 219) };
+                    data.Stat3 = new DashboardQuickStat { Label = "Past Months", Value = pastMonths.ToString(), Color = InventoryTheme.Colors.Primary };
 
                     // Table
                     foreach (var arc in archived.Take(20))

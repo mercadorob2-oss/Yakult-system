@@ -5,8 +5,13 @@
         Width="520" SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
-        Background="#F0F2F6">
+        Background="{DynamicResource YakultPageBackgroundBrush}">
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="Btn" TargetType="Button">
             <Setter Property="Height" Value="34"/>
             <Setter Property="MinWidth" Value="88"/>
@@ -40,9 +45,11 @@
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Border Background="White">
@@ -58,9 +65,9 @@
             <!-- Title -->
             <StackPanel Grid.Row="0" Margin="0,0,0,22">
                 <TextBlock Text="New Refill Batch"
-                           FontFamily="Segoe UI" FontSize="18" FontWeight="Bold" Foreground="#2A3A4A"/>
+                           FontFamily="Segoe UI" FontSize="18" FontWeight="Bold" Foreground="{StaticResource YakultTextDarkBrush}"/>
                 <TextBlock Text="Select a vendor and the cartridge models to include in this batch."
-                           FontFamily="Segoe UI" FontSize="12" Foreground="#7A8A9A" Margin="0,4,0,0"/>
+                           FontFamily="Segoe UI" FontSize="12" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,4,0,0"/>
             </StackPanel>
 
             <!-- Vendor -->
@@ -93,7 +100,7 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="bd" Property="Background" Value="#F5F7FA"/>
+                                                    <Setter TargetName="bd" Property="Background" Value="{StaticResource YakultPageBackgroundBrush}"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -105,7 +112,7 @@
                             <DataTemplate>
                                 <CheckBox Content="{Binding ModelNumber}"
                                           IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                          FontFamily="Segoe UI" FontSize="13" Foreground="#2A3A4A"
+                                          FontFamily="Segoe UI" FontSize="13" Foreground="{StaticResource YakultTextDarkBrush}"
                                           Padding="6,0"/>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -125,7 +132,7 @@
 
             <!-- Buttons -->
             <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel" Background="#E8EBF0" Foreground="#3A4A5A"
+                <Button Content="Cancel" Background="#E8EBF0" Foreground="{StaticResource YakultTextDarkBrush}"
                         Style="{StaticResource Btn}" Click="BtnCancel_Click" Margin="0,0,8,0"/>
                 <Button Content="+ Create Batch" Background="#1E9E5E"
                         Style="{StaticResource Btn}" Click="BtnCreate_Click"/>

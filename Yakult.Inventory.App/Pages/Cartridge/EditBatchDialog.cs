@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -53,7 +54,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
-            BackColor = Color.FromArgb(245, 246, 250);
+            BackColor = InventoryTheme.Colors.HeaderBack;
             Font = new Font("Segoe UI", 9F);
 
             var rootLayout = new TableLayoutPanel
@@ -226,7 +227,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Text = "Save Changes",
                 Width = 120,
                 Height = 36,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
@@ -261,7 +262,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Height = 36,
                 Font = new Font("Segoe UI", 10F),
                 ReadOnly = readOnly,
-                BackColor = readOnly ? Color.FromArgb(245, 247, 250) : Color.White,
+                BackColor = readOnly ? InventoryTheme.Colors.HeaderBack : Color.White,
                 BorderStyle = BorderStyle.FixedSingle
             };
             layout.Controls.Add(textBox, 0, rowIndex++);

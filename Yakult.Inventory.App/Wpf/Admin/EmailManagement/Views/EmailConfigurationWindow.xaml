@@ -6,7 +6,7 @@
         Width="1300" Height="800"
         MinWidth="1000" MinHeight="650"
         WindowStartupLocation="CenterScreen"
-        Background="#F0F2F6"
+        Background="{DynamicResource YakultPageBackgroundBrush}"
         FontFamily="Segoe UI"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
@@ -16,6 +16,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
                 <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Admin/EmailManagement/Styles/EmailConfigStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
@@ -29,11 +30,11 @@
         </Grid.RowDefinitions>
 
         <!-- Row 0 · Header -->
-        <Border Grid.Row="0" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="18,14,18,12">
+        <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="18,14,18,12">
             <StackPanel>
-                <TextBlock Text="Email Configuration" FontSize="18" FontWeight="Bold" Foreground="#4E9AFC"/>
+                <TextBlock Text="Email Configuration" FontSize="18" FontWeight="Bold" Foreground="{StaticResource YakultPrimaryBrush}"/>
                 <TextBlock Text="Manage email addresses, SMTP profiles, and notification templates"
-                           FontSize="10" Foreground="#5A6A7A" Margin="0,5,0,0"/>
+                           FontSize="10" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,5,0,0"/>
             </StackPanel>
         </Border>
 
@@ -51,12 +52,12 @@
         </TabControl>
 
         <!-- Row 2 · Bottom bar -->
-        <Border Grid.Row="2" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="14,10">
+        <Border Grid.Row="2" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="14,10">
             <DockPanel LastChildFill="False">
                 <Button x:Name="BtnSendTestEmail" DockPanel.Dock="Left" Background="#9575CD"
                         Style="{StaticResource ActionButton}" Content="Send Test Email"
                         Click="BtnSendTestEmail_Click"/>
-                <Button x:Name="BtnClose" DockPanel.Dock="Right" Background="#5A6A7A"
+                <Button x:Name="BtnClose" DockPanel.Dock="Right" Background="{StaticResource YakultTextMutedBrush}"
                         Style="{StaticResource ActionButton}" Content="Close"
                         Click="BtnClose_Click"/>
             </DockPanel>

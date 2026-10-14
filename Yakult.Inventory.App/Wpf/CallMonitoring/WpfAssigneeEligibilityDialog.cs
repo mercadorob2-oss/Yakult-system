@@ -93,7 +93,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 BorderBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
                 BorderThickness = new Thickness(1),
                 Background = Brushes.White,
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             };
 
             _summaryText = new TextBlock
@@ -106,7 +106,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _helperText = new TextBlock
             {
                 FontSize = 12,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 TextWrapping = TextWrapping.Wrap
             };
 
@@ -135,14 +135,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _currentEscalationAssigneeText = new TextBlock
             {
                 FontSize = 12,
-                Foreground = BrushFromRgb(15, 23, 42),
+                Foreground = WpfThemeResources.TextDarkBrush,
                 TextWrapping = TextWrapping.Wrap,
                 Text = "-"
             };
             _escalationAssigneeHelperText = new TextBlock
             {
                 FontSize = 12,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 TextWrapping = TextWrapping.Wrap
             };
 
@@ -171,7 +171,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             MinHeight = 680;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
-            Background = BrushFromRgb(241, 244, 247);
+            Background = WpfThemeResources.PageBackgroundBrush;
 
             var root = new Grid();
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -335,13 +335,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Escalation assignee",
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
             infoStack.Children.Add(new TextBlock
             {
                 Text = "Choose the actual escalation person when there are multiple supervisors or escalation-ready users. This mirrors the original single-person escalation assignee behavior.",
                 FontSize = 12,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0, 8, 0, 0),
                 TextWrapping = TextWrapping.Wrap
             });
@@ -381,7 +381,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Escalation supervisor and manager",
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
             infoStack.Children.Add(new TextBlock
             {
@@ -389,7 +389,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     ? "Manage the default escalation timing and the employee positions used by the escalation engine. These settings apply system-wide."
                     : "Escalation settings schema is not installed. The values below are shown for reference and cannot be edited until the escalation settings script is installed.",
                 FontSize = 12,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0, 8, 0, 0),
                 TextWrapping = TextWrapping.Wrap
             });
@@ -426,7 +426,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var summaryBorder = new Border
             {
-                Background = BrushFromRgb(248, 250, 252),
+                Background = WpfThemeResources.SurfaceMutedBrush,
                 BorderBrush = BrushFromRgb(226, 232, 240),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
@@ -465,7 +465,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Text = "Manage assignees and escalation rules from one dialog.",
                 FontSize = 12,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 VerticalAlignment = VerticalAlignment.Center
             };
             DockPanel.SetDock(info, Dock.Left);
@@ -505,14 +505,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = "Manage IT assignees and escalation",
                 FontSize = 26,
                 FontWeight = FontWeights.Bold,
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             });
 
             textStack.Children.Add(new TextBlock
             {
                 Text = "Use separate tabs to manage assignee eligibility and the escalation supervisor or manager rules.",
                 FontSize = 13,
-                Foreground = BrushFromRgb(100, 116, 139),
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0, 8, 0, 0),
                 TextWrapping = TextWrapping.Wrap
             });
@@ -532,7 +532,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 BorderThickness = new Thickness(0),
                 Background = Brushes.White,
                 RowBackground = Brushes.White,
-                AlternatingRowBackground = BrushFromRgb(248, 250, 252),
+                AlternatingRowBackground = WpfThemeResources.SurfaceMutedBrush,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 Margin = new Thickness(0),
@@ -562,19 +562,19 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             // Row style with hover + softer selection
             grid.RowStyle = new Style(typeof(DataGridRow));
-            grid.RowStyle.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(15, 23, 42)));
+            grid.RowStyle.Setters.Add(new Setter(Control.ForegroundProperty, WpfThemeResources.TextDarkBrush));
             grid.RowStyle.Setters.Add(new Setter(Control.FontSizeProperty, 12.0));
             grid.RowStyle.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(241, 245, 249)));
             grid.RowStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0, 0, 0, 1)));
             grid.RowStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(4)));
 
             var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(DataGridRow.BackgroundProperty, BrushFromRgb(248, 250, 252)));
+            hoverTrigger.Setters.Add(new Setter(DataGridRow.BackgroundProperty, WpfThemeResources.SurfaceMutedBrush));
             grid.RowStyle.Triggers.Add(hoverTrigger);
 
             var selectedTrigger = new Trigger { Property = DataGridRow.IsSelectedProperty, Value = true };
-            selectedTrigger.Setters.Add(new Setter(DataGridRow.BackgroundProperty, BrushFromRgb(239, 246, 255)));
-            selectedTrigger.Setters.Add(new Setter(DataGridRow.BorderBrushProperty, BrushFromRgb(59, 130, 246)));
+            selectedTrigger.Setters.Add(new Setter(DataGridRow.BackgroundProperty, WpfThemeResources.SelectionBrush));
+            selectedTrigger.Setters.Add(new Setter(DataGridRow.BorderBrushProperty, WpfThemeResources.PrimaryBrush));
             selectedTrigger.Setters.Add(new Setter(DataGridRow.BorderThicknessProperty, new Thickness(0, 0, 0, 2)));
             grid.RowStyle.Triggers.Add(selectedTrigger);
 
@@ -1053,7 +1053,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Background = Brushes.White,
                 BorderBrush = BrushFromRgb(203, 213, 225),
                 BorderThickness = new Thickness(1),
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             };
             foreach (var pos in positions)
                 combo.Items.Add(pos);
@@ -1086,7 +1086,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Background = Brushes.White,
                 BorderBrush = BrushFromRgb(203, 213, 225),
                 BorderThickness = new Thickness(1),
-                Foreground = BrushFromRgb(15, 23, 42)
+                Foreground = WpfThemeResources.TextDarkBrush
             };
         }
 
@@ -1163,9 +1163,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
                 Cursor = Cursors.Hand,
-                Background = primary ? BrushFromRgb(37, 99, 235) : Brushes.White,
+                Background = primary ? WpfThemeResources.PrimaryBrush : Brushes.White,
                 Foreground = primary ? Brushes.White : BrushFromRgb(71, 85, 105),
-                BorderBrush = primary ? BrushFromRgb(37, 99, 235) : new SolidColorBrush(Color.FromRgb(203, 213, 225)),
+                BorderBrush = primary ? WpfThemeResources.PrimaryBrush : new SolidColorBrush(Color.FromRgb(203, 213, 225)),
                 BorderThickness = new Thickness(1)
             };
         }

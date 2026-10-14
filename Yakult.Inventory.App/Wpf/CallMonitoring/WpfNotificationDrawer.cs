@@ -115,9 +115,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         // ── Colors ────────────────────────────────────────────────────────────
         private static readonly Color CBorder   = Color.FromRgb(226,232,240);
-        private static readonly Color CTextPri  = Color.FromRgb(15, 23, 42);
-        private static readonly Color CTextSec  = Color.FromRgb(100,116,139);
+        private static readonly Color CTextPri  = WpfThemeResources.TextDark;
+        private static readonly Color CTextSec  = WpfThemeResources.TextMuted;
         private static readonly Color CBlue     = Color.FromRgb(37, 99, 235);
+        private static readonly Color CBrand    = WpfThemeResources.Primary;
         private static readonly Color CRed      = Color.FromRgb(239,68, 68);
         private static readonly Color COrange   = Color.FromRgb(249,115,22);
         private static readonly Color CAmber    = Color.FromRgb(245,158,11);
@@ -129,7 +130,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         // ── Constructor ───────────────────────────────────────────────────────
         public WpfNotificationDrawer()
         {
-            Background = new SolidColorBrush(Color.FromRgb(248,250,252));
+            Background = new SolidColorBrush(WpfThemeResources.SurfaceMuted);
             FontFamily = new FontFamily("Segoe UI");
             BuildLayout();
         }
@@ -151,7 +152,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             };
             var searchBorder = new Border
             {
-                Background = new SolidColorBrush(Color.FromRgb(248,250,252)),
+                Background = new SolidColorBrush(WpfThemeResources.SurfaceMuted),
                 BorderBrush = new SolidColorBrush(CBorder), BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(8), Margin = new Thickness(0,0,0,8), Height = 34,
                 Padding = new Thickness(10,0,10,0)
@@ -199,7 +200,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             // List
             var scroll = new ScrollViewer { VerticalScrollBarVisibility=ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled,
-                Background=new SolidColorBrush(Color.FromRgb(248,250,252)) };
+                Background=new SolidColorBrush(WpfThemeResources.SurfaceMuted) };
             scroll.Resources.MergedDictionaries.Add(WpfThemeResources.GetScrollBarStyle());
             var lo = new StackPanel { Margin=new Thickness(12,8,12,8) };
             _lblEmpty = new TextBlock { Text="No notifications.", FontSize=13,
@@ -223,12 +224,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Foreground=new SolidColorBrush(CTextSec), VerticalAlignment=VerticalAlignment.Center };
             Grid.SetColumn(_lblFooter, 0);
             var bva = new Button { Content="View ticket list \u2192", FontSize=11,
-                Foreground=new SolidColorBrush(CBlue), Background=Brushes.Transparent,
+                Foreground=new SolidColorBrush(CBrand), Background=Brushes.Transparent,
                 BorderThickness=new Thickness(0), Cursor=Cursors.Hand, Margin=new Thickness(8,0,8,0), Padding=new Thickness(0) };
             bva.Click += async (_,__) => { if (OpenTicketListAsync!=null) await OpenTicketListAsync(); };
             Grid.SetColumn(bva, 1);
             var bma = new Button { Content="Mark all read", FontSize=11,
-                Foreground=new SolidColorBrush(CBlue), Background=Brushes.Transparent,
+                Foreground=new SolidColorBrush(CBrand), Background=Brushes.Transparent,
                 BorderThickness=new Thickness(0), Cursor=Cursors.Hand, Padding=new Thickness(0) };
             bma.Click += (_,__) => MarkAllAsRead();
             Grid.SetColumn(bma, 2);
@@ -296,7 +297,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var card = new Border { Background=new SolidColorBrush(Colors.White),
                 BorderBrush=new SolidColorBrush(CBorder), BorderThickness=new Thickness(1),
                 CornerRadius=new CornerRadius(10), Margin=new Thickness(0,0,0,8), Cursor=Cursors.Hand, ClipToBounds=true };
-            card.MouseEnter += (_,__) => { card.Effect=new DropShadowEffect{Color=Color.FromRgb(15,23,42),BlurRadius=10,ShadowDepth=0,Opacity=0.12}; card.BorderBrush=new SolidColorBrush(Color.FromRgb(148,163,184)); };
+            card.MouseEnter += (_,__) => { card.Effect=new DropShadowEffect{Color=WpfThemeResources.TextDark,BlurRadius=10,ShadowDepth=0,Opacity=0.12}; card.BorderBrush=new SolidColorBrush(Color.FromRgb(148,163,184)); };
             card.MouseLeave += (_,__) => { card.Effect=null; card.BorderBrush=new SolidColorBrush(CBorder); };
 
             var row = new Grid();
@@ -343,7 +344,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             // Actions
             var acts = new WrapPanel { Margin=new Thickness(0,0,0,6) };
             var tid = t?.TicketId ?? 0;
-            var bo = ActionBtn("Open \u2192", CBlue);   bo.Click += async (_,__) => await SafeOpen(tid);
+            var bo = ActionBtn("Open \u2192", CBrand);   bo.Click += async (_,__) => await SafeOpen(tid);
             var bm2 = ActionBtn("Modify",   CTextSec);  bm2.Click += async (_,__) => await SafeOpen(tid);
             var bp = ActionBtn(n.IsPinned?"Unpin":"\ud83d\udccc Pin", CTextSec);   bp.Click += (_,__) => TogglePin(tid);
             var bmt = ActionBtn(n.IsMuted?"Unmute":"\ud83d\udd07 Mute", CTextSec); bmt.Click += (_,__) => ToggleMute(tid);
@@ -386,8 +387,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var btn = new Button { Content=label, FontSize=11,
                 FontWeight=active?FontWeights.Bold:FontWeights.Normal,
                 Foreground=new SolidColorBrush(active?Colors.White:CTextPri),
-                Background=new SolidColorBrush(active?CBlue:Colors.White),
-                BorderBrush=new SolidColorBrush(active?CBlue:CBorder),
+                Background=new SolidColorBrush(active?CBrand:Colors.White),
+                BorderBrush=new SolidColorBrush(active?CBrand:CBorder),
                 BorderThickness=new Thickness(1), Padding=new Thickness(8,3,8,3),
                 Margin=new Thickness(0,0,4,4), Cursor=Cursors.Hand };
             btn.Click += (_,__) => { _filter=f; Render(); };

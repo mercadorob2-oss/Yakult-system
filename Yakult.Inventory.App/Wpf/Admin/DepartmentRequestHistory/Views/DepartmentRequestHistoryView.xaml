@@ -2,7 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
-             Background="#F0F2F6"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
              FontFamily="Segoe UI"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
@@ -10,24 +10,29 @@
              TextOptions.TextRenderingMode="ClearType">
 
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <conv:BoolToVisibilityConverter        x:Key="BoolToVis"/>
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
 
         <Style TargetType="TextBlock">
             <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
 
         <Style x:Key="FieldLabel" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="9"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#7A8A9A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,3"/>
         </Style>
 
         <Style x:Key="StatCard" TargetType="Border">
             <Setter Property="Background"      Value="White"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius"    Value="8"/>
             <Setter Property="Padding"         Value="16,10"/>
@@ -96,7 +101,7 @@
 
         <Style x:Key="FilterLabel" TargetType="TextBlock">
             <Setter Property="FontSize"          Value="11"/>
-            <Setter Property="Foreground"        Value="#5A6A7A"/>
+            <Setter Property="Foreground"        Value="{StaticResource YakultTextMutedBrush}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin"            Value="0,0,6,8"/>
         </Style>
@@ -106,48 +111,48 @@
             <Setter Property="Height"          Value="28"/>
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="Background"      Value="White"/>
-            <Setter Property="Foreground"      Value="#3A8EF6"/>
-            <Setter Property="BorderBrush"     Value="#CDD5DE"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultPrimaryBrush}"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="Margin"          Value="2,0"/>
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background"      Value="#4E9AFC"/>
+            <Setter Property="Background"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"      Value="White"/>
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="FontSize"        Value="11"/>
             <Setter Property="Padding"         Value="10,9"/>
-            <Setter Property="BorderBrush"     Value="#3A8EF6"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
         </Style>
 
         <Style TargetType="DataGridRow">
             <Setter Property="Background" Value="White"/>
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Cursor"     Value="Hand"/>
             <Style.Triggers>
                 <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                    <Setter Property="Background" Value="#FAFBFC"/>
+                    <Setter Property="Background" Value="{StaticResource YakultSurfaceMutedBrush}"/>
                 </Trigger>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F0F6FF"/>
+                    <Setter Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
                 </Trigger>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#C8DFFE"/>
+                    <Setter Property="Background" Value="{StaticResource YakultSelectionBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
 
         <Style TargetType="DataGridCell">
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground"      Value="#1A2333"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultTextDarkBrush}"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background"  Value="Transparent"/>
                     <Setter Property="BorderBrush" Value="Transparent"/>
-                    <Setter Property="Foreground"  Value="#1A2333"/>
+                    <Setter Property="Foreground"  Value="{StaticResource YakultTextDarkBrush}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -157,6 +162,8 @@
             <Setter Property="TextWrapping"      Value="Wrap"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
+
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -168,7 +175,7 @@
         </Grid.RowDefinitions>
 
         <!-- Row 0: header and stat cards -->
-        <Border Grid.Row="0" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="18,14,18,12">
+        <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="18,14,18,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -176,11 +183,11 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock Text="Department Request History"
-                               FontSize="18" FontWeight="Bold" Foreground="#4E9AFC"/>
+                               FontSize="18" FontWeight="Bold" Foreground="{StaticResource YakultPrimaryBrush}"/>
                     <TextBlock Text="Request Portal submissions per Company, Department and Branch: Dept. Level requests and employees' requests. This is what the department account sees, including departments with no account yet."
-                               FontSize="10" Foreground="#5A6A7A" Margin="0,5,0,0" TextWrapping="Wrap"/>
+                               FontSize="10" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap"/>
                     <TextBlock Text="{Binding ScopeTitle}" FontSize="12" FontWeight="SemiBold"
-                               Foreground="#1A2333" Margin="0,6,0,0"/>
+                               Foreground="{StaticResource YakultTextDarkBrush}" Margin="0,6,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Border Style="{StaticResource ClickableStatCard}" Tag="{Binding IsAllCardActive}">
@@ -198,7 +205,7 @@
                         </Border.InputBindings>
                         <StackPanel>
                             <TextBlock Text="DEPT. LEVEL" Style="{StaticResource FieldLabel}"/>
-                            <TextBlock Text="{Binding DeptLevelCount}" FontSize="22" FontWeight="Bold" Foreground="#4E9AFC"/>
+                            <TextBlock Text="{Binding DeptLevelCount}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource YakultPrimaryBrush}"/>
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource ClickableStatCard}" Tag="{Binding IsEmployeeCardActive}">
@@ -225,7 +232,7 @@
         </Border>
 
         <!-- Row 1: filters -->
-        <Border Grid.Row="1" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,0,0,1" Padding="14,10,14,2">
+        <Border Grid.Row="1" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="14,10,14,2">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -255,22 +262,22 @@
                         <TextBlock Text="To:" Style="{StaticResource FilterLabel}"/>
                         <DatePicker SelectedDate="{Binding ToDate}" Width="115" Height="28" Margin="0,0,8,8" FontSize="11"/>
                     </StackPanel>
-                    <Button Style="{StaticResource ActionButton}" Background="#4E9AFC"
+                    <Button Style="{StaticResource ActionButton}" Background="{StaticResource YakultPrimaryBrush}"
                             Content="Apply" Command="{Binding LoadCommand}"/>
-                    <Button Style="{StaticResource ActionButton}" Background="#7A8A9A"
+                    <Button Style="{StaticResource ActionButton}" Background="{StaticResource YakultTextMutedBrush}"
                             Content="Clear" Command="{Binding ClearFiltersCommand}"/>
                 </WrapPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
-                    <Border Background="#EBF5FF" CornerRadius="4" Padding="8,3" Margin="0,4,8,0"
+                    <Border Background="{StaticResource YakultAccentTintBrush}" CornerRadius="4" Padding="8,3" Margin="0,4,8,0"
                             VerticalAlignment="Top"
                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="#4E9AFC"/>
+                        <TextBlock Text="⟳ Loading…" FontSize="10" Foreground="{StaticResource YakultPrimaryBrush}"/>
                     </Border>
                     <Border Background="White" BorderBrush="#B0BAC8" BorderThickness="1" CornerRadius="5"
                             Padding="8,0" Height="28" VerticalAlignment="Top">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="#7A8A9A"/>
+                            <TextBlock Text="🔍" FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0" Foreground="{StaticResource YakultTextMutedBrush}"/>
                             <TextBox BorderThickness="0" Background="Transparent"
                                      FontSize="11" Width="190" VerticalContentAlignment="Center"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
@@ -284,7 +291,7 @@
         <!-- Row 2: grid (click a row to see its lines) -->
         <Grid Grid.Row="2">
             <TextBlock Text="No requests found for this filter."
-                       FontSize="13" Foreground="#7A8A9A"
+                       FontSize="13" Foreground="{StaticResource YakultTextMutedBrush}"
                        HorizontalAlignment="Center" VerticalAlignment="Center"
                        Visibility="{Binding HasRows, Converter={StaticResource InvBoolToVis}}"/>
 
@@ -292,7 +299,7 @@
                       Background="White"
                       BorderThickness="0"
                       GridLinesVisibility="Horizontal"
-                      HorizontalGridLinesBrush="#EEF1F4"
+                      HorizontalGridLinesBrush="{StaticResource YakultBorderBrush}"
                       AlternationCount="2"
                       CanUserAddRows="False"
                       CanUserDeleteRows="False"
@@ -337,7 +344,7 @@
                                            VerticalAlignment="Center" TextWrapping="Wrap">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="#1A2333"/>
+                                            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding HasDeptAccount}" Value="False">
@@ -357,7 +364,7 @@
                 <!-- Selected row: its request lines -->
                 <DataGrid.RowDetailsTemplate>
                     <DataTemplate>
-                        <Border Background="#F7FAFF" BorderBrush="#DDE3EC" BorderThickness="0,1,0,1" Padding="24,8,16,10">
+                        <Border Background="#F7FAFF" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,1" Padding="24,8,16,10">
                             <StackPanel>
                                 <TextBlock Text="REQUEST LINES" Style="{StaticResource FieldLabel}"/>
                                 <ItemsControl ItemsSource="{Binding Lines}">
@@ -374,13 +381,13 @@
                                                 <TextBlock Grid.Column="1" FontSize="11" FontWeight="SemiBold">
                                                     <Run Text="Qty "/><Run Text="{Binding Qty, Mode=OneWay}"/>
                                                 </TextBlock>
-                                                <TextBlock Grid.Column="2" Text="{Binding Empties}" FontSize="11" Foreground="#5A6A7A"/>
-                                                <TextBlock Grid.Column="3" Text="{Binding Status}" FontSize="11" Foreground="#5A6A7A"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Empties}" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding Status}" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <TextBlock FontSize="11" Foreground="#5A6A7A" Margin="0,6,0,0" TextWrapping="Wrap">
+                                <TextBlock FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap">
                                     <Run Text="Remarks: " FontWeight="SemiBold"/><Run Text="{Binding Remarks, Mode=OneWay, TargetNullValue='None'}"/>
                                 </TextBlock>
                             </StackPanel>
@@ -391,21 +398,21 @@
         </Grid>
 
         <!-- Row 3: pagination -->
-        <Border Grid.Row="3" Background="White" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="14,8">
+        <Border Grid.Row="3" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="14,8">
             <DockPanel LastChildFill="False">
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="‹" Style="{StaticResource PageButton}"
                             Command="{Binding PreviousPageCommand}" IsEnabled="{Binding CanGoPrev}"/>
-                    <TextBlock Text="{Binding PageInfo}" FontSize="11" Foreground="#5A6A7A"
+                    <TextBlock Text="{Binding PageInfo}" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}"
                                VerticalAlignment="Center" Margin="8,0"/>
                     <Button Content="›" Style="{StaticResource PageButton}"
                             Command="{Binding NextPageCommand}" IsEnabled="{Binding CanGoNext}"/>
-                    <Border Width="1" Height="18" Background="#DDE3EC" Margin="12,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding RowInfo}" FontSize="11" FontWeight="SemiBold" Foreground="#1A2333"
+                    <Border Width="1" Height="18" Background="{StaticResource YakultBorderBrush}" Margin="12,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding RowInfo}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource YakultTextDarkBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
                 <TextBlock DockPanel.Dock="Right" Text="{Binding StatusMessage}"
-                           FontSize="11" Foreground="#5A6A7A" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                           FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
             </DockPanel>
         </Border>
     </Grid>

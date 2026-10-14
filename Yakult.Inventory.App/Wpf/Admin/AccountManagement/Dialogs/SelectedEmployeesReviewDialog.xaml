@@ -11,6 +11,11 @@
         TextOptions.TextRenderingMode="ClearType">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="FooterBtn" TargetType="Button">
             <Setter Property="Height"          Value="32"/>
             <Setter Property="Padding"         Value="16,0"/>
@@ -83,6 +88,8 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <Grid Background="White">
@@ -93,7 +100,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="#4E9AFC" Padding="20,14">
+        <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}" Padding="20,14">
             <StackPanel>
                 <TextBlock Text="Selected Employees" Foreground="White" FontSize="15" FontWeight="Bold"/>
                 <TextBlock x:Name="TxtSubtitle" Foreground="#EAF2FF" FontSize="11" Margin="0,3,0,0"/>
@@ -112,7 +119,7 @@
                   RowHeight="30"
                   FontSize="11"
                   BorderThickness="1"
-                  BorderBrush="#DDE3EC"
+                  BorderBrush="{StaticResource YakultBorderBrush}"
                   AlternatingRowBackground="#FAFBFC">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Emp #"    Binding="{Binding EmployeeNumber}" Width="70"/>
@@ -134,13 +141,13 @@
         </DataGrid>
 
         <!-- Footer -->
-        <Border Grid.Row="2" Background="#F8FAFB" BorderBrush="#DDE3EC" BorderThickness="0,1,0,0" Padding="20,12" Margin="0,12,0,0">
+        <Border Grid.Row="2" Background="#F8FAFB" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0" Padding="20,12" Margin="0,12,0,0">
             <Grid>
                 <Button Content="Remove All" Style="{StaticResource LinkBtn}" HorizontalAlignment="Left"
                         Click="BtnRemoveAll_Click"/>
 
                 <Button Content="Close" Style="{StaticResource FooterBtn}" HorizontalAlignment="Right"
-                        Background="#4E9AFC" Foreground="White" BorderThickness="0"
+                        Background="{StaticResource YakultPrimaryBrush}" Foreground="White" BorderThickness="0"
                         Click="BtnClose_Click"/>
             </Grid>
         </Border>

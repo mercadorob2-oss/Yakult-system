@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -45,7 +46,7 @@ namespace Yakult.Inventory.App.Pages.Admin.Security
         private string _selectedPortalKey;
         private readonly Dictionary<string, Button> _portalButtons = new Dictionary<string, Button>();
 
-        private static readonly Color AccentBlue = Color.FromArgb(78, 154, 252);
+        private static readonly Color AccentBlue = InventoryTheme.Colors.Primary;
         private static readonly Color CardBorder = Color.FromArgb(226, 230, 235);
 
         public PageAccessPanel()

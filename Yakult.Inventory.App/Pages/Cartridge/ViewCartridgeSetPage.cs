@@ -1,4 +1,5 @@
-﻿﻿﻿using Yakult.Inventory.App.Session;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+﻿﻿using Yakult.Inventory.App.Session;
 using Yakult.Inventory.App.Repositories;
 using Yakult.Inventory.App.Services;
 using Yakult.Inventory.App.Helpers;
@@ -186,7 +187,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             DefaultListPageTemplate.AddButtons(_layout.ButtonLeftFlow, new[] { btnOpen, btnArchive, btnDelete });
 
             _cardTotal = UiFactory.CreateSummaryCard("Total", out _lblTotalCount, UiTheme.Colors.Primary);
-            _cardHardware = UiFactory.CreateSummaryCard("Hardware", out _lblHardwareCount, Color.FromArgb(52, 152, 219));
+            _cardHardware = UiFactory.CreateSummaryCard("Hardware", out _lblHardwareCount, InventoryTheme.Colors.Primary);
             _cardSoftwareLicense = UiFactory.CreateSummaryCard("Software/License", out _lblSoftwareLicenseCount, Color.FromArgb(155, 89, 182));
             _cardServices = UiFactory.CreateSummaryCard("Services", out _lblServicesCount, Color.FromArgb(26, 188, 156));
 
@@ -221,19 +222,19 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 ColumnHeadersVisible = true,
                 ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
                 {
-                    BackColor = Color.FromArgb(52, 152, 219),
+                    BackColor = InventoryTheme.Colors.Primary,
                     ForeColor = Color.White,
                     Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                     Alignment = DataGridViewContentAlignment.MiddleCenter
                 },
                 DefaultCellStyle = new DataGridViewCellStyle
                 {
-                    SelectionBackColor = Color.FromArgb(41, 128, 185),
+                    SelectionBackColor = InventoryTheme.Colors.PrimaryHover,
                     SelectionForeColor = Color.White,
                     Font = new Font("Segoe UI", 9F),
                     Padding = new Padding(8, 6, 8, 6)
                 },
-                AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle { BackColor = Color.FromArgb(232, 240, 248) },
+                AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle { BackColor = InventoryTheme.Colors.GridAltRowBack },
                 RowTemplate = { Height = 56, Resizable = DataGridViewTriState.False }
             };
 
@@ -1330,8 +1331,8 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                     r.Width += 1;
                 }
 
-                using (var brush = new SolidBrush(Color.FromArgb(52, 152, 219)))
-                using (var pen = new Pen(Color.FromArgb(52, 152, 219)))
+                using (var brush = new SolidBrush(InventoryTheme.Colors.Primary))
+                using (var pen = new Pen(InventoryTheme.Colors.Primary))
                 {
                     if (isFirstHeaderCell || isLastHeaderCell)
                     {
@@ -1396,7 +1397,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 : Color.FromArgb(232, 245, 233);
 
             if (isSelected)
-                pillColor = Color.FromArgb(41, 128, 185);
+                pillColor = InventoryTheme.Colors.PrimaryHover;
 
             e.Graphics.FillRectangle(Brushes.White, e.CellBounds);
 

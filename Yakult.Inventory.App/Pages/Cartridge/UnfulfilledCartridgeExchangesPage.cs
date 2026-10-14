@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -107,7 +108,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
         {
             SuspendLayout();
             AutoScaleMode = AutoScaleMode.Font;
-            BackColor = Color.FromArgb(245, 247, 250);
+            BackColor = InventoryTheme.Colors.HeaderBack;
             Dock = DockStyle.Fill;
             ResumeLayout(false);
         }
@@ -240,7 +241,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             {
                 Dock      = DockStyle.Fill,
                 AutoScroll = true,
-                BackColor  = Color.FromArgb(245, 247, 250)
+                BackColor  = InventoryTheme.Colors.HeaderBack
             };
             _scrollContainer.Controls.Add(_sessionsFlow);
             _scrollContainer.SizeChanged += ScrollContainer_SizeChanged;
@@ -827,7 +828,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 });
 
                 // ── Scrollable cards area ─────────────────────────────────
-                var scrollPanel = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.FromArgb(245, 247, 250) };
+                var scrollPanel = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = InventoryTheme.Colors.HeaderBack };
                 var cardsFlow = new FlowLayoutPanel
                 {
                     Dock          = DockStyle.Top,
@@ -835,7 +836,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                     AutoSizeMode  = AutoSizeMode.GrowAndShrink,
                     FlowDirection = FlowDirection.TopDown,
                     WrapContents  = false,
-                    BackColor     = Color.FromArgb(245, 247, 250),
+                    BackColor     = InventoryTheme.Colors.HeaderBack,
                     Padding       = new Padding(CardPad, CardPad, CardPad, 4)
                 };
                 foreach (var state in states)
@@ -993,7 +994,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             {
                 Text      = $"Req #{dto.ReqId}  ·  Returned: {dto.ReturnedEmptyQty}  ·  Previously Issued: {dto.IssuedFullQty}  ·  Still Pending: {dto.UnfulfilledQty}",
                 Font      = new Font("Segoe UI", 7.5F),
-                ForeColor = Color.FromArgb(100, 116, 139),
+                ForeColor = InventoryTheme.Colors.TextMuted,
                 AutoSize  = true,
                 Location  = new Point(12, y)
             });

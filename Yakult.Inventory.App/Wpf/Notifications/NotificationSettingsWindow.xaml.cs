@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Windows;
 using System.Windows.Media;
@@ -10,7 +11,7 @@ namespace Yakult.Inventory.App.Wpf.Notifications
 {
     public partial class NotificationSettingsWindow : Window
     {
-        private static readonly SolidColorBrush BrushBlue  = new SolidColorBrush(Color.FromRgb(78, 154, 252));
+        private static readonly SolidColorBrush BrushBlue  = new SolidColorBrush(InventoryTheme.WpfColors.Primary);
         private static readonly SolidColorBrush BrushGray  = new SolidColorBrush(Color.FromRgb(150, 150, 168));
         private static readonly SolidColorBrush BrushGreen = new SolidColorBrush(Color.FromRgb(30, 140, 60));
         private static readonly SolidColorBrush BrushRed   = new SolidColorBrush(Color.FromRgb(213, 0, 50));

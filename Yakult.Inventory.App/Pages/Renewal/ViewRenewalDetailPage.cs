@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -551,7 +552,7 @@ ORDER BY r.CreatedAt DESC";
             {
                 Text = "Save Header",
                 Location = new Point(x, y), Size = new Size(100, ctlH),
-                BackColor = Color.FromArgb(52, 152, 219), ForeColor = Color.White,
+                BackColor = InventoryTheme.Colors.Primary, ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI", 8.5F, FontStyle.Bold)
             };
             btnSave.FlatAppearance.BorderSize = 0;
@@ -684,7 +685,7 @@ ORDER BY r.CreatedAt DESC";
                 else
                 {
                     int capturedSetId = entry.SetId;
-                    lnk.LinkColor = Color.FromArgb(41, 128, 185);
+                    lnk.LinkColor = InventoryTheme.Colors.PrimaryHover;
                     lnk.Click += (s, ev) => new ViewRenewalDetailPage(capturedSetId).Show(this);
                 }
 
@@ -809,7 +810,7 @@ ORDER BY r.CreatedAt DESC";
                 Dock = DockStyle.Right,
                 Width = 130,
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 8.5F, FontStyle.Bold)
             };
@@ -998,7 +999,7 @@ ORDER BY r.CreatedAt DESC";
                         e.CellStyle.Font = new Font(_dgvSetItems.Font.FontFamily, _dgvSetItems.Font.Size, FontStyle.Bold);
                         break;
                     case "Renewed":
-                        e.CellStyle.ForeColor = Color.FromArgb(41, 128, 185);
+                        e.CellStyle.ForeColor = InventoryTheme.Colors.PrimaryHover;
                         break;
                     case "Archived":
                         e.CellStyle.ForeColor = Color.FromArgb(149, 165, 166);
@@ -1650,7 +1651,7 @@ ORDER BY r.CreatedAt DESC";
                         AutoSize = true,
                         Location = new Point(180, 244),
                         Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                        ForeColor = Color.FromArgb(41, 128, 185)
+                        ForeColor = InventoryTheme.Colors.PrimaryHover
                     };
 
                     EventHandler updateEndDate = (s, ev) =>
@@ -1684,7 +1685,7 @@ ORDER BY r.CreatedAt DESC";
                         AutoSize = true,
                         Location = new Point(200, 28),
                         Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                        ForeColor = Color.FromArgb(41, 128, 185)
+                        ForeColor = InventoryTheme.Colors.PrimaryHover
                     };
 
                     var lblSeparator = new Label
@@ -1737,7 +1738,7 @@ ORDER BY r.CreatedAt DESC";
                         Text = "0.00",
                         AutoSize = true,
                         Location = new Point(290, 121),
-                        ForeColor = Color.FromArgb(52, 152, 219)
+                        ForeColor = InventoryTheme.Colors.Primary
                     };
 
                     // WHT %

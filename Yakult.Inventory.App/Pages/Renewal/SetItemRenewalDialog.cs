@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -52,7 +53,7 @@ namespace Yakult.Inventory.App.Pages.Renewal
             {
                 Dock = DockStyle.Top,
                 Height = 72,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding = new Padding(16, 10, 16, 8)
             };
 
@@ -201,9 +202,9 @@ namespace Yakult.Inventory.App.Pages.Renewal
                 Width = 90,
                 TrackVisitedState = false,
                 LinkBehavior = LinkBehavior.HoverUnderline,
-                LinkColor = Color.FromArgb(41, 128, 185),
+                LinkColor = InventoryTheme.Colors.PrimaryHover,
                 ActiveLinkColor = Color.FromArgb(21, 100, 155),
-                VisitedLinkColor = Color.FromArgb(41, 128, 185)
+                VisitedLinkColor = InventoryTheme.Colors.PrimaryHover
             };
             _dgv.Columns.Add(colRenewAction);
 
@@ -215,7 +216,7 @@ namespace Yakult.Inventory.App.Pages.Renewal
             {
                 Dock = DockStyle.Bottom,
                 Height = 52,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding = new Padding(16, 10, 16, 10)
             };
 
@@ -316,7 +317,7 @@ namespace Yakult.Inventory.App.Pages.Renewal
                         e.CellStyle.Font = new Font(_dgv.Font.FontFamily, _dgv.Font.Size, FontStyle.Bold);
                         break;
                     case "Renewed":
-                        e.CellStyle.ForeColor = Color.FromArgb(41, 128, 185);
+                        e.CellStyle.ForeColor = InventoryTheme.Colors.PrimaryHover;
                         break;
                     case "Archived":
                         e.CellStyle.ForeColor = Color.FromArgb(149, 165, 166);
@@ -334,7 +335,7 @@ namespace Yakult.Inventory.App.Pages.Renewal
                 else
                 {
                     e.Value = "Renew Item";
-                    e.CellStyle.ForeColor = Color.FromArgb(41, 128, 185);
+                    e.CellStyle.ForeColor = InventoryTheme.Colors.PrimaryHover;
                 }
                 e.CellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             }

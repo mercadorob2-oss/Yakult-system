@@ -10,6 +10,11 @@
              TextOptions.TextRenderingMode="ClearType">
 
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
 
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
 
@@ -71,7 +76,7 @@
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Bd"  Property="Background" Value="#FFFFFF"/>
                                 <Setter TargetName="Cp"  Property="TextElement.Foreground" Value="#0F172A"/>
-                                <Setter TargetName="Ind" Property="Background" Value="#4E9AFC"/>
+                                <Setter TargetName="Ind" Property="Background" Value="{StaticResource YakultPrimaryBrush}"/>
                                 <Setter Property="Panel.ZIndex" Value="2"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -98,7 +103,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#2980B9"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultPrimaryHoverBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -127,7 +132,7 @@
             <Setter Property="Margin"       Value="0,0,0,6"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Cursor"       Value="Hand"/>
-            <Setter Property="Background"   Value="#FAFBFC"/>
+            <Setter Property="Background"   Value="{StaticResource YakultSurfaceMutedBrush}"/>
             <Setter Property="BorderBrush"  Value="#EEF1F5"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
@@ -163,7 +168,7 @@
                                    FontSize="12.5" FontWeight="SemiBold" Foreground="#0F172A"
                                    TextTrimming="CharacterEllipsis"/>
                         <TextBlock Text="{Binding ItemType}"
-                                   FontSize="10.5" Foreground="#64748B" Margin="0,2,0,0"/>
+                                   FontSize="10.5" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,2,0,0"/>
                     </StackPanel>
 
                     <Border Grid.Column="2" Style="{StaticResource DaysBadge}"
@@ -207,7 +212,7 @@
                                    FontSize="12.5" FontWeight="SemiBold" Foreground="#0F172A"
                                    TextTrimming="CharacterEllipsis"/>
                         <TextBlock Text="{Binding ItemType}"
-                                   FontSize="10.5" Foreground="#64748B" Margin="0,2,0,0"/>
+                                   FontSize="10.5" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,2,0,0"/>
                     </StackPanel>
 
                     <Border Grid.Column="2" Style="{StaticResource DaysBadge}"
@@ -250,7 +255,7 @@
                                    FontSize="12.5" FontWeight="SemiBold" Foreground="#0F172A"
                                    TextTrimming="CharacterEllipsis"/>
                         <TextBlock Text="{Binding SecondaryLine}"
-                                   FontSize="10.5" Foreground="#64748B" Margin="0,2,0,0"
+                                   FontSize="10.5" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,2,0,0"
                                    TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                 </Grid>
@@ -273,7 +278,7 @@
                     </Style>
                 </Border.Style>
                 <TextBlock FontSize="11" Foreground="#334155" TextTrimming="CharacterEllipsis">
-                    <Run Text="•  "/><Run Text="{Binding Name, Mode=OneWay}"/><Run Text="  "/><Run Text="{Binding TypeLabel, Mode=OneWay}" Foreground="#94A3B8"/><Run Text="  "/><Run Text="{Binding QtyLabel, Mode=OneWay}" Foreground="#64748B" FontWeight="SemiBold"/>
+                    <Run Text="•  "/><Run Text="{Binding Name, Mode=OneWay}"/><Run Text="  "/><Run Text="{Binding TypeLabel, Mode=OneWay}" Foreground="#94A3B8"/><Run Text="  "/><Run Text="{Binding QtyLabel, Mode=OneWay}" Foreground="{StaticResource YakultTextMutedBrush}" FontWeight="SemiBold"/>
                 </TextBlock>
             </Border>
         </DataTemplate>
@@ -314,7 +319,7 @@
                                 ToolTip="Show / hide items">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <TextBlock Text="{Binding ExpandGlyph}" FontSize="11" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding ExpandGlyph}" FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}"/>
                                 </ControlTemplate>
                             </Button.Template>
                         </Button>
@@ -324,7 +329,7 @@
                                        FontSize="12.5" FontWeight="{Binding TitleWeight}" Foreground="#0F172A"
                                        TextTrimming="CharacterEllipsis"/>
                             <TextBlock Text="{Binding Message}"
-                                       FontSize="10.5" Foreground="#64748B" Margin="0,2,0,0"
+                                       FontSize="10.5" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,2,0,0"
                                        TextWrapping="Wrap"/>
                             <Border Visibility="{Binding SourceVisibility}"
                                     HorizontalAlignment="Left" Margin="0,4,0,0"
@@ -348,6 +353,8 @@
             </Border>
         </DataTemplate>
 
+
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -357,7 +364,7 @@
         </Grid.RowDefinitions>
 
         <!-- ── Fixed header bar ──────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Background="#4E9AFC">
+        <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}">
             <Border.Effect>
                 <DropShadowEffect Color="#0F172A" BlurRadius="10" ShadowDepth="1" Opacity="0.15" Direction="270"/>
             </Border.Effect>
@@ -489,7 +496,7 @@
                             Content="Mark all as read"
                             Visibility="{Binding HasUnreadActivity, Converter={StaticResource BoolToVisibility}}"
                             Background="Transparent" BorderThickness="0"
-                            Foreground="#2980B9" FontSize="11" Cursor="Hand"/>
+                            Foreground="{StaticResource YakultPrimaryHoverBrush}" FontSize="11" Cursor="Hand"/>
                 </Grid>
 
                 <ScrollViewer Grid.Row="1"

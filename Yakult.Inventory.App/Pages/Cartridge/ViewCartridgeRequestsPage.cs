@@ -1,4 +1,5 @@
-﻿﻿﻿using Yakult.Inventory.App.Session;
+﻿using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
+﻿﻿using Yakult.Inventory.App.Session;
 using Yakult.Inventory.App.Repositories;
 using Yakult.Inventory.App.Helpers;
 using System;
@@ -96,7 +97,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             {
                 Dock = DockStyle.Top,
                 Height = 100,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding = new Padding(12, 10, 12, 10)
             };
 
@@ -172,7 +173,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
             {
                 Dock = DockStyle.Top,
                 Height = 94,
-                BackColor = Color.FromArgb(245, 247, 250),
+                BackColor = InventoryTheme.Colors.HeaderBack,
                 Padding = new Padding(12, 0, 12, 10)
             };
 
@@ -232,7 +233,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Size = new Size(150, 46),
                 Margin = new Padding(0, 6, 12, 0)
             };
-            ConfigurePillHopeButton(btnAdd, Color.FromArgb(52, 152, 219), Color.FromArgb(41, 128, 185));
+            ConfigurePillHopeButton(btnAdd, InventoryTheme.Colors.Primary, InventoryTheme.Colors.PrimaryHover);
             btnAdd.Click += (s, e) => AddNewRequest();
 
             btnEdit = new ReaLTaiizor.Controls.HopeButton
@@ -242,7 +243,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Size = new Size(120, 46),
                 Margin = new Padding(0, 6, 12, 0)
             };
-            ConfigureOutlineHopeButton(btnEdit, Color.FromArgb(41, 128, 185), Color.FromArgb(235, 245, 255));
+            ConfigureOutlineHopeButton(btnEdit, InventoryTheme.Colors.PrimaryHover, InventoryTheme.Colors.OutlineHoverBack);
             btnEdit.Click += (s, e) => EditSelectedRequest();
 
             btnMarkSubmitted = new ReaLTaiizor.Controls.HopeButton
@@ -252,7 +253,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Size = new Size(200, 46),
                 Margin = new Padding(0, 6, 12, 0)
             };
-            ConfigureOutlineHopeButton(btnMarkSubmitted, Color.FromArgb(41, 128, 185), Color.FromArgb(235, 245, 255));
+            ConfigureOutlineHopeButton(btnMarkSubmitted, InventoryTheme.Colors.PrimaryHover, InventoryTheme.Colors.OutlineHoverBack);
             btnMarkSubmitted.Click += (s, e) => MarkAsSubmitted();
 
             btnArchive = new ReaLTaiizor.Controls.HopeButton
@@ -262,7 +263,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Size = new Size(140, 46),
                 Margin = new Padding(0, 6, 12, 0)
             };
-            ConfigureOutlineHopeButton(btnArchive, Color.FromArgb(41, 128, 185), Color.FromArgb(235, 245, 255));
+            ConfigureOutlineHopeButton(btnArchive, InventoryTheme.Colors.PrimaryHover, InventoryTheme.Colors.OutlineHoverBack);
             btnArchive.Click += (s, e) => ArchiveSelectedRequest();
 
             btnDelete = new ReaLTaiizor.Controls.HopeButton
@@ -303,7 +304,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 MaximumSize = new Size(58, 58),
                 Margin = new Padding(0)
             };
-            ConfigurePillHopeButton(btnRefresh, Color.FromArgb(52, 152, 219), Color.FromArgb(41, 128, 185));
+            ConfigurePillHopeButton(btnRefresh, InventoryTheme.Colors.Primary, InventoryTheme.Colors.PrimaryHover);
             btnRefresh.Click += (s, e) => LoadRequests();
             btnRefresh.Resize += (s, e) =>
             {
@@ -341,10 +342,10 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Margin = new Padding(0)
             };
 
-            _cardTotal = CreateSummaryCard("Total", out _lblTotalCount, Color.FromArgb(41, 128, 185));
-            _cardUnderReview = CreateSummaryCard("Under Review", out _lblUnderReviewCount, Color.FromArgb(41, 128, 185));
-            _cardOnHold = CreateSummaryCard("On Hold", out _lblOnHoldCount, Color.FromArgb(41, 128, 185));
-            _cardSubmitted = CreateSummaryCard("Submitted", out _lblSubmittedCount, Color.FromArgb(41, 128, 185));
+            _cardTotal = CreateSummaryCard("Total", out _lblTotalCount, InventoryTheme.Colors.PrimaryHover);
+            _cardUnderReview = CreateSummaryCard("Under Review", out _lblUnderReviewCount, InventoryTheme.Colors.PrimaryHover);
+            _cardOnHold = CreateSummaryCard("On Hold", out _lblOnHoldCount, InventoryTheme.Colors.PrimaryHover);
+            _cardSubmitted = CreateSummaryCard("Submitted", out _lblSubmittedCount, InventoryTheme.Colors.PrimaryHover);
             _cardCompleted = CreateSummaryCard("Completed", out _lblCompletedCount, Color.FromArgb(41, 128, 185));
 
             summaryFlow.Controls.Add(_cardTotal);
@@ -385,17 +386,17 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single
             };
 
-            dgvRequests.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(52, 152, 219);
+            dgvRequests.ColumnHeadersDefaultCellStyle.BackColor = InventoryTheme.Colors.GridHeaderBack;
             dgvRequests.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             dgvRequests.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             dgvRequests.ColumnHeadersHeight = 40;
             dgvRequests.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             dgvRequests.RowTemplate.Height = 56;
             dgvRequests.DefaultCellStyle.Font = new Font("Segoe UI", 9F);
-            dgvRequests.DefaultCellStyle.SelectionBackColor = Color.FromArgb(41, 128, 185);
+            dgvRequests.DefaultCellStyle.SelectionBackColor = InventoryTheme.Colors.PrimaryHover;
             dgvRequests.DefaultCellStyle.SelectionForeColor = Color.White;
             dgvRequests.DefaultCellStyle.Padding = new Padding(8, 6, 8, 6);
-            dgvRequests.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(232, 240, 248);
+            dgvRequests.AlternatingRowsDefaultCellStyle.BackColor = InventoryTheme.Colors.GridAltRowBack;
 
             dgvRequests.CellPainting += DgvRequests_CellPainting;
             dgvRequests.CellFormatting += DgvRequests_CellFormatting;
@@ -948,7 +949,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                     e.CellBounds.Height - 1  // Leave 1px for bottom border
                 );
 
-                using (var brush = new SolidBrush(Color.FromArgb(52, 152, 219)))
+                using (var brush = new SolidBrush(InventoryTheme.Colors.Primary))
                 {
                     e.Graphics.FillRectangle(brush, r);
                 }
@@ -1043,7 +1044,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 : Color.FromArgb(232, 245, 233);  // Light green
 
             if (isSelected)
-                pillColor = Color.FromArgb(41, 128, 185);
+                pillColor = InventoryTheme.Colors.PrimaryHover;
 
             // Fill background with white for border separation
             e.Graphics.FillRectangle(Brushes.White, e.CellBounds);

@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -128,7 +129,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                 Height    = 26,
                 Location  = new Point(16, 5),
                 FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(52, 152, 219),
+                BackColor = InventoryTheme.Colors.Primary,
                 ForeColor = Color.White,
                 Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
                 Cursor    = Cursors.Hand

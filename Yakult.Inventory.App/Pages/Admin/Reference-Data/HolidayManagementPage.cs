@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -21,9 +22,9 @@ namespace Yakult.Inventory.App.Pages.Admin.ReferenceData
         private static readonly Color InactiveFore   = Color.FromArgb(160, 160, 160);
         private static readonly Color InactiveBack   = Color.FromArgb(250, 250, 250);
         private static readonly Color SidebarBack    = Color.White;
-        private static readonly Color SidebarAccent  = Color.FromArgb(52, 152, 219);
+        private static readonly Color SidebarAccent  = InventoryTheme.Colors.Primary;
         private static readonly Color CardBack       = Color.FromArgb(242, 246, 250);
-        private static readonly Color BodyBack       = Color.FromArgb(245, 247, 250);
+        private static readonly Color BodyBack       = InventoryTheme.Colors.HeaderBack;
 
         private readonly HolidayRepository _repo = new HolidayRepository();
 
@@ -786,7 +787,7 @@ namespace Yakult.Inventory.App.Pages.Admin.ReferenceData
             {
                 Dock      = DockStyle.Top,
                 Height    = 48,
-                BackColor = Color.FromArgb(52, 152, 219)
+                BackColor = InventoryTheme.Colors.Primary
             };
             header.Controls.Add(new Label
             {
@@ -909,7 +910,7 @@ namespace Yakult.Inventory.App.Pages.Admin.ReferenceData
                 Text         = "Save",
                 Location     = new Point(totalW - 184, y),
                 Size         = new Size(88, 34),
-                BackColor    = Color.FromArgb(52, 152, 219),
+                BackColor    = InventoryTheme.Colors.Primary,
                 ForeColor    = Color.White,
                 FlatStyle    = FlatStyle.Flat,
                 Font         = new Font("Segoe UI", 10F, FontStyle.Bold),

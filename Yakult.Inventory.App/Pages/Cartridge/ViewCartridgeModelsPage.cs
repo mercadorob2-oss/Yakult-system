@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -673,7 +674,7 @@ namespace Yakult.Inventory.App.Pages.Cartridge
                         Text = "Option A: Mark as Inactive (Safe)",
                         Location = new Point(15, 230),
                         Size = new Size(660, 50),
-                        BackColor = Color.FromArgb(52, 152, 219),
+                        BackColor = InventoryTheme.Colors.Primary,
                         ForeColor = Color.White,
                         Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                         TextAlign = ContentAlignment.MiddleLeft,

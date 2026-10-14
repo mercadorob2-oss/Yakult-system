@@ -1,3 +1,4 @@
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -25,12 +26,12 @@ namespace Yakult.Inventory.App.Pages.Export
     /// </summary>
     public class ReportPickerPage : UserControl
     {
-        private static readonly Color Teal       = Color.FromArgb(58, 134, 232);
-        private static readonly Color PageBg     = Color.FromArgb(245, 247, 250);
+        private static readonly Color Teal       = InventoryTheme.Colors.PrimaryHover;
+        private static readonly Color PageBg     = InventoryTheme.Colors.HeaderBack;
         private static readonly Color CardBg     = Color.White;
         private static readonly Color CardBorder = Color.FromArgb(226, 232, 240);
         private static readonly Color TextDark   = Color.FromArgb(30, 41, 59);
-        private static readonly Color TextMuted  = Color.FromArgb(100, 116, 139);
+        private static readonly Color TextMuted  = InventoryTheme.Colors.TextMuted;
 
         // ── Checkboxes for each report type ───────────────────────────────
         private CheckBox _chkInvoice;

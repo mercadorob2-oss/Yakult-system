@@ -16,10 +16,15 @@
         ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
 
         <!-- ── Base TextBlock ─────────────────────────────────────────────── -->
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#1A2333"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
         </Style>
 
@@ -27,7 +32,7 @@
         <Style x:Key="FormField" TargetType="TextBox">
             <Setter Property="Height"                   Value="32"/>
             <Setter Property="FontSize"                 Value="12"/>
-            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Foreground"               Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Background"               Value="White"/>
             <Setter Property="BorderBrush"              Value="#C8D2DC"/>
             <Setter Property="BorderThickness"          Value="1"/>
@@ -47,11 +52,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="Bd" Property="BorderBrush"     Value="#3A8EF6"/>
+                                <Setter TargetName="Bd" Property="BorderBrush"     Value="{StaticResource YakultPrimaryBrush}"/>
                                 <Setter TargetName="Bd" Property="BorderThickness" Value="1.5"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultPageBackgroundBrush}"/>
                                 <Setter Property="Foreground"                 Value="#A0ADB9"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -75,7 +80,7 @@
         <Style x:Key="FormCombo" TargetType="ComboBox">
             <Setter Property="Height"                   Value="32"/>
             <Setter Property="FontSize"                 Value="12"/>
-            <Setter Property="Foreground"               Value="#1A2333"/>
+            <Setter Property="Foreground"               Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Background"               Value="White"/>
             <Setter Property="Padding"                  Value="6,0"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -90,7 +95,7 @@
         <Style x:Key="FormDate" TargetType="DatePicker">
             <Setter Property="Height"          Value="32"/>
             <Setter Property="FontSize"        Value="12"/>
-            <Setter Property="Foreground"      Value="#1A2333"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="Background"      Value="White"/>
             <Setter Property="BorderBrush"     Value="#C8D2DC"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -129,7 +134,7 @@
                                             <Border x:Name="BtnBd" Background="Transparent"
                                                     CornerRadius="3" Padding="4,3">
                                                 <Path Data="M3,2 L3,0 M9,2 L9,0 M0,4 L12,4 M0,2 L0,12 L12,12 L12,2 Z M2,6 L4,6 M6,6 L8,6 M10,6 L12,6 M2,9 L4,9 M6,9 L8,9"
-                                                      Stroke="#5A6A7A" StrokeThickness="1"
+                                                      Stroke="{StaticResource YakultTextMutedBrush}" StrokeThickness="1"
                                                       Stretch="Uniform" Width="14" Height="14"
                                                       VerticalAlignment="Center"
                                                       HorizontalAlignment="Center"/>
@@ -151,7 +156,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Background" Value="#F5F7FA"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultPageBackgroundBrush}"/>
                                 <Setter Property="Foreground" Value="#A0ADB9"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -163,7 +168,7 @@
         <!-- ── Field label ───────────────────────────────────────────────── -->
         <Style x:Key="FL" TargetType="TextBlock">
             <Setter Property="FontSize"          Value="11.5"/>
-            <Setter Property="Foreground"        Value="#4A5A6A"/>
+            <Setter Property="Foreground"        Value="{StaticResource YakultTextDarkBrush}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin"            Value="0,0,12,0"/>
         </Style>
@@ -172,14 +177,14 @@
         <Style x:Key="ST" TargetType="TextBlock">
             <Setter Property="FontSize"   Value="9.5"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#3A8EF6"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Margin"     Value="0,0,0,10"/>
         </Style>
 
         <!-- ── White card ────────────────────────────────────────────────── -->
         <Style x:Key="Card" TargetType="Border">
             <Setter Property="Background"      Value="White"/>
-            <Setter Property="BorderBrush"     Value="#DDE3EC"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius"    Value="8"/>
             <Setter Property="Padding"         Value="18,12"/>
@@ -200,7 +205,7 @@
             <Setter Property="FontWeight"      Value="SemiBold"/>
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Background"      Value="#3A8EF6"/>
+            <Setter Property="Background"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Foreground"      Value="White"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -229,7 +234,7 @@
         <!-- ── Secondary button (Cancel, Done) ───────────────────────────── -->
         <Style x:Key="SecBtn" TargetType="Button" BasedOn="{StaticResource PrimaryBtn}">
             <Setter Property="Background" Value="#E8ECF0"/>
-            <Setter Property="Foreground" Value="#3A4A5A"/>
+            <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
         </Style>
 
         <!-- ── Small inline button (+Add) ────────────────────────────────── -->
@@ -242,7 +247,7 @@
             <Setter Property="Cursor"          Value="Hand"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Background"      Value="#E8F0FE"/>
-            <Setter Property="Foreground"      Value="#3A8EF6"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Margin"          Value="6,0,0,0"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -268,10 +273,10 @@
             <Setter Property="Padding"         Value="14,0"/>
             <Setter Property="FontSize"        Value="11.5"/>
             <Setter Property="Cursor"          Value="Hand"/>
-            <Setter Property="BorderBrush"     Value="#3A8EF6"/>
+            <Setter Property="BorderBrush"     Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Background"      Value="Transparent"/>
-            <Setter Property="Foreground"      Value="#3A8EF6"/>
+            <Setter Property="Foreground"      Value="{StaticResource YakultPrimaryBrush}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -285,7 +290,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#EEF4FF"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -293,6 +298,8 @@
             </Setter>
         </Style>
 
+
+        </ResourceDictionary>
     </Window.Resources>
 
     <!-- ════════════════════════════════════════════════════════════════════ -->
@@ -314,7 +321,7 @@
             <!-- ════════════════════════════════════════════════════════ -->
             <!-- ROW 0 · HEADER                                          -->
             <!-- ════════════════════════════════════════════════════════ -->
-            <Border Grid.Row="0" Background="#3A8EF6"
+            <Border Grid.Row="0" Background="{StaticResource YakultPrimaryBrush}"
                     CornerRadius="10,10,0,0"
                     MouseLeftButtonDown="OnHeaderDrag"
                     Cursor="SizeAll">
@@ -323,18 +330,18 @@
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                                 VerticalAlignment="Center" Cursor="Arrow">
                         <TextBlock Text="─" FontSize="14" FontWeight="Bold"
-                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   Foreground="{StaticResource YakultNavigationMutedBrush}" Cursor="Hand"
                                    VerticalAlignment="Center"
                                    Padding="8,0"
                                    MouseLeftButtonDown="OnMinimizeClick"/>
                         <TextBlock x:Name="BtnMaximizeGlyph"
                                    Text="□" FontSize="13" FontWeight="Bold"
-                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   Foreground="{StaticResource YakultNavigationMutedBrush}" Cursor="Hand"
                                    VerticalAlignment="Center"
                                    Padding="8,0"
                                    MouseLeftButtonDown="OnMaximizeClick"/>
                         <TextBlock Text="✕" FontSize="14" FontWeight="Bold"
-                                   Foreground="#BDD9FF" Cursor="Hand"
+                                   Foreground="{StaticResource YakultNavigationMutedBrush}" Cursor="Hand"
                                    VerticalAlignment="Center"
                                    Padding="8,0"
                                    MouseLeftButtonDown="OnCloseClick"/>
@@ -345,7 +352,7 @@
                                    Foreground="White"/>
                         <TextBlock x:Name="LblSessionCount"
                                    Text="" FontSize="10"
-                                   Foreground="#BDD9FF" Margin="0,1,0,0"/>
+                                   Foreground="{StaticResource YakultNavigationMutedBrush}" Margin="0,1,0,0"/>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -354,17 +361,17 @@
             <!-- ROW 1 · SCROLLABLE BODY                                 -->
             <!-- ════════════════════════════════════════════════════════ -->
             <ScrollViewer Grid.Row="1"
-                          Background="#F0F2F6"
+                          Background="{StaticResource YakultPageBackgroundBrush}"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           Padding="16,10,16,2">
                 <StackPanel>
 
                     <!-- Info banner ──────────────────────────────────── -->
-                    <Border Background="#EEF4FF" BorderBrush="#BDD0F8"
+                    <Border Background="{StaticResource YakultAccentTintBrush}" BorderBrush="{StaticResource YakultAccentBorderBrush}"
                             BorderThickness="1" CornerRadius="6"
                             Padding="12,7" Margin="0,0,0,5">
-                        <TextBlock FontSize="11" Foreground="#2A5BC8"
+                        <TextBlock FontSize="11" Foreground="{StaticResource YakultPrimaryHoverBrush}"
                                    TextWrapping="Wrap">
                             Add items with serial numbers (one per line) or use Quantity for bulk items.
                             Serial numbers take priority when both are provided.
@@ -532,7 +539,7 @@
                                 <TextBlock Style="{StaticResource FL}"/>
                                 <CheckBox x:Name="ChkServiceContractDates" Grid.Column="1"
                                           Content="Enable Start / End Date for Services"
-                                          FontSize="12" Foreground="#4A5A6A"
+                                          FontSize="12" Foreground="{StaticResource YakultTextDarkBrush}"
                                           Checked="ChkServiceContractDates_Changed"
                                           Unchecked="ChkServiceContractDates_Changed"/>
                             </Grid>
@@ -639,7 +646,7 @@
                                          Style="{StaticResource FormField}" Text="1"/>
                                 <TextBlock Grid.Column="2"
                                            Text="(ignored when serial numbers are provided)"
-                                           FontSize="10.5" Foreground="#8A9AAA"
+                                           FontSize="10.5" Foreground="{StaticResource YakultTextMutedBrush}"
                                            VerticalAlignment="Center" Margin="10,0,0,0"/>
                             </Grid>
 
@@ -657,7 +664,7 @@
                                              MinHeight="64" MaxHeight="140"
                                              AcceptsReturn="True"/>
                                     <TextBlock Text="Enter one serial number per line. Leave empty to use Quantity instead."
-                                               FontSize="10.5" Foreground="#8A9AAA"
+                                               FontSize="10.5" Foreground="{StaticResource YakultTextMutedBrush}"
                                                Margin="2,5,0,0"/>
                                 </StackPanel>
                             </Grid>
@@ -677,13 +684,13 @@
                                               CanUserReorderColumns="False"
                                               HeadersVisibility="Column"
                                               GridLinesVisibility="All"
-                                              VerticalGridLinesBrush="#DDE3EC"
-                                              HorizontalGridLinesBrush="#DDE3EC"
+                                              VerticalGridLinesBrush="{StaticResource YakultBorderBrush}"
+                                              HorizontalGridLinesBrush="{StaticResource YakultBorderBrush}"
                                               RowHeight="32"
                                               ColumnHeaderHeight="30"
                                               FontSize="11.5"
                                               Background="White"
-                                              BorderBrush="#DDE3EC" BorderThickness="1"
+                                              BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                                               MaxHeight="220"
                                               VerticalScrollBarVisibility="Auto"
                                               PreviewKeyDown="DgvCellPhones_PreviewKeyDown"
@@ -700,7 +707,7 @@
                                                 <DataGridTextColumn.ElementStyle>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="HorizontalAlignment" Value="Center"/>
-                                                        <Setter Property="Foreground" Value="#8A9AAA"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
                                                     </Style>
                                                 </DataGridTextColumn.ElementStyle>
                                             </DataGridTextColumn>
@@ -747,14 +754,14 @@
                                                 Click="BtnCellPhonePrevPage_Click"/>
                                         <TextBlock x:Name="TxtCellPhonePageInfo"
                                                    Text="Page 1 of 1  (0 rows)"
-                                                   FontSize="11" Foreground="#5A6A7A"
+                                                   FontSize="11" Foreground="{StaticResource YakultTextMutedBrush}"
                                                    VerticalAlignment="Center" Margin="10,0"/>
                                         <Button x:Name="BtnCellPhoneNextPage" Content="Next ›"
                                                 Style="{StaticResource InlineBtn}"
                                                 Click="BtnCellPhoneNextPage_Click"/>
                                     </StackPanel>
                                     <TextBlock Text="Each row adds one cell phone item. Serial Number is required per row."
-                                               FontSize="10.5" Foreground="#8A9AAA"
+                                               FontSize="10.5" Foreground="{StaticResource YakultTextMutedBrush}"
                                                Margin="2,5,0,0"/>
                             </StackPanel>
 
@@ -775,13 +782,13 @@
                                     <!-- Preview panel (conditional) -->
                                     <Border x:Name="PnlPreview" Visibility="Collapsed"
                                             Background="#F8FAFF"
-                                            BorderBrush="#DDE3EC" BorderThickness="1"
+                                            BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
                                             CornerRadius="6" Padding="12,10"
                                             Margin="0,10,0,0">
                                         <StackPanel>
                                             <TextBlock Text="SERIAL NUMBERS PREVIEW"
                                                        FontSize="9" FontWeight="Bold"
-                                                       Foreground="#6A7A8A"
+                                                       Foreground="{StaticResource YakultTextMutedBrush}"
                                                        Margin="0,0,0,6"/>
                                             <ListBox x:Name="LstPreview"
                                                      Background="Transparent"
@@ -847,7 +854,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Warranty Start" Style="{StaticResource FL}"/>
                                 <CheckBox x:Name="ChkWarrantyStart" Grid.Column="1"
-                                          FontSize="12" Foreground="#4A5A6A"
+                                          FontSize="12" Foreground="{StaticResource YakultTextDarkBrush}"
                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 <DatePicker x:Name="DpWarrantyStart" Grid.Column="2"
                                             Style="{StaticResource FormDate}"
@@ -865,7 +872,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Warranty End" Style="{StaticResource FL}"/>
                                 <CheckBox x:Name="ChkWarrantyEnd" Grid.Column="1"
-                                          FontSize="12" Foreground="#4A5A6A"
+                                          FontSize="12" Foreground="{StaticResource YakultTextDarkBrush}"
                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 <DatePicker x:Name="DpWarrantyEnd" Grid.Column="2"
                                             Style="{StaticResource FormDate}"
@@ -884,7 +891,7 @@
                                 <TextBlock Style="{StaticResource FL}"/>
                                 <CheckBox x:Name="ChkDatePurchased" Grid.Column="1"
                                           Content="Date Purchased"
-                                          FontSize="12" Foreground="#4A5A6A"
+                                          FontSize="12" Foreground="{StaticResource YakultTextDarkBrush}"
                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 <DatePicker x:Name="DpDatePurchased" Grid.Column="2"
                                             Style="{StaticResource FormDate}"
@@ -912,7 +919,7 @@
                                 <TextBlock Style="{StaticResource FL}"/>
                                 <CheckBox x:Name="ChkIsTrackedAsset" Grid.Column="1"
                                           Content="Treat this item as a Fixed Asset"
-                                          FontSize="12" Foreground="#4A5A6A"
+                                          FontSize="12" Foreground="{StaticResource YakultTextDarkBrush}"
                                           ToolTip="Tracked assets are lifecycle-managed, not stock-managed."/>
                             </Grid>
 
@@ -925,7 +932,7 @@
                                 <TextBlock Style="{StaticResource FL}"/>
                                 <CheckBox x:Name="ChkIsBorrowable" Grid.Column="1"
                                           Content="Available for borrowing"
-                                          FontSize="12" Foreground="#4A5A6A"
+                                          FontSize="12" Foreground="{StaticResource YakultTextDarkBrush}"
                                           ToolTip="Shows this item in the Borrow Items &quot;Select from list&quot; picker."/>
                             </Grid>
 
@@ -939,7 +946,7 @@
                         <StackPanel>
                             <TextBlock Text="REMARKS (OPTIONAL)"
                                        FontSize="9.5" FontWeight="Bold"
-                                       Foreground="#8A9AAA" Margin="0,0,0,8"/>
+                                       Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,0,0,8"/>
                             <TextBox x:Name="TxtRemarks"
                                      Style="{StaticResource MultiField}"
                                      MinHeight="46" MaxHeight="100"
@@ -957,7 +964,7 @@
             <!-- ROW 2 · FOOTER                                          -->
             <!-- ════════════════════════════════════════════════════════ -->
             <Border Grid.Row="2" Background="White"
-                    BorderBrush="#DDE3EC" BorderThickness="0,1,0,0"
+                    BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,1,0,0"
                     CornerRadius="0,0,10,10">
                 <DockPanel Margin="20,0" VerticalAlignment="Center" LastChildFill="False">
                     <Button DockPanel.Dock="Left" Content="⬆ Import Stock Count CSV"
