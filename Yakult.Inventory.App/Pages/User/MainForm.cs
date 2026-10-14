@@ -262,6 +262,8 @@ namespace Yakult.Inventory.App.Pages.User
             _homeNotifPoller?.Dispose();
             _homeNotifPoller = null;
 
+            Services.ItcmPresenceReporter.StopAll();
+
             _inventoryActivityPoller?.Dispose();
             _inventoryActivityPoller = null;
 
@@ -1366,6 +1368,8 @@ private void UpdateAdminMenuVisibility()
                         UpdateAccountManagementMenuVisibility();
                         UpdateEmailSmtpMenuVisibility();
                         UpdateAdminMenuVisibility();
+                        // App-wide presence beat so this PC shows up in Connected Devices.
+                        Services.ItcmPresenceReporter.Start("Workspace");
                         return true;
                     }
                     else
@@ -3031,6 +3035,9 @@ private void UpdateAdminMenuVisibility()
 
         private void LogOutOnMenu_Click(object sender, EventArgs e)
         {
+            // Stop the app-wide presence beat; a re-login restarts it.
+            Services.ItcmPresenceReporter.Stop("Workspace");
+
             // 1. Clear the current session
             Yakult.Inventory.App.Session.AppSession.Clear();
 
