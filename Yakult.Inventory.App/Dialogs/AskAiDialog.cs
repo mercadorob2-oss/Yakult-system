@@ -129,13 +129,20 @@ namespace Yakult.Inventory.App.Dialogs
             }
             catch (OperationCanceledException)
             {
-                ReplaceLine(thinkingAt, "AI", "(Cancelled.)", ColorTranslator.FromHtml("#677081"), italic: true);
+                ReplaceLine(thinkingAt, "AI",
+                    ct.IsCancellationRequested ? "(Cancelled.)" : "(The AI took too long to answer — over 3 minutes. Try a shorter question.)",
+                    ColorTranslator.FromHtml("#677081"), italic: true);
             }
             catch (Exception ex)
             {
-                string hint = ex is System.Net.Http.HttpRequestException
-                    ? "Couldn't reach the AI server at " + Core.AppConfig.OllamaBaseUrl + ". Check that Ollama is running and the address is correct."
-                    : "Couldn't get an answer: " + ex.Message;
+                string hint;
+                var hre = ex as System.Net.Http.HttpRequestException;
+                if (hre != null && hre.Message.StartsWith("Ollama error"))
+                    hint = "The AI server replied with an error: " + hre.Message;
+                else if (hre != null)
+                    hint = "Couldn't reach the AI server at " + Core.AppConfig.OllamaBaseUrl + ". Check that Ollama is running and the address is correct.";
+                else
+                    hint = "Couldn't get an answer: " + ex.Message;
                 ReplaceLine(thinkingAt, "AI", hint, Color.Red, italic: true);
             }
             finally

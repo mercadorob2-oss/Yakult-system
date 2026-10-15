@@ -62,7 +62,13 @@ namespace Yakult.Inventory.App.Services
             using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))
             using (var response = await _client.PostAsync(baseUrl + "/api/chat", content, ct).ConfigureAwait(false))
             {
-                response.EnsureSuccessStatusCode();
+                if (!response.IsSuccessStatusCode)
+                {
+                    string body = "";
+                    try { body = await response.Content.ReadAsStringAsync().ConfigureAwait(false); } catch { }
+                    if (body.Length > 200) body = body.Substring(0, 200);
+                    throw new HttpRequestException("Ollama error " + (int)response.StatusCode + ": " + body);
+                }
                 string json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 string reply = (string)JObject.Parse(json).SelectToken("message.content");
                 return (reply ?? "").Trim();
