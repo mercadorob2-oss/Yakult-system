@@ -51,6 +51,37 @@ namespace Yakult.Inventory.App.Core
             }
         }
 
+        // Local AI (Ollama) for the in-app Ask AI assistant.
+        private static string _ollamaBaseUrl;
+        private static string _ollamaModel;
+
+        /// <summary>
+        /// Base URL of the office Ollama server (e.g. "http://192.168.100.50:11434").
+        /// </summary>
+        public static string OllamaBaseUrl
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_ollamaBaseUrl))
+                {
+                    _ollamaBaseUrl = ConfigurationManager.AppSettings["OllamaBaseUrl"] ?? "http://localhost:11434";
+                }
+                return _ollamaBaseUrl;
+            }
+        }
+
+        public static string OllamaModel
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_ollamaModel))
+                {
+                    _ollamaModel = ConfigurationManager.AppSettings["OllamaModel"] ?? "qwen2.5:1.5b";
+                }
+                return _ollamaModel;
+            }
+        }
+
         // API Configuration
         private static string _apiBaseUrl;
 
