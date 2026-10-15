@@ -175,12 +175,17 @@ namespace Yakult.Inventory.App.Dialogs
 
         public static void ShowAlert(AdminAlertDto alert)
         {
+            ShowAlert(alert, playSound: true);
+        }
+
+        public static void ShowAlert(AdminAlertDto alert, bool playSound)
+        {
             if (alert == null) return;
             try
             {
                 var dlg = new AdminAlertDialog(alert);
                 dlg.Show();
-                PlayAlarmSound();
+                if (playSound) PlayAlarmSound();
             }
             catch { }
         }

@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Yakult.Inventory.App.Pages;
 
 namespace Yakult.Inventory.App.Wpf.CallMonitoring
@@ -64,6 +65,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private int _wizardStep;
         private bool _oldActionTouched;
         private bool _suppressOldActionTouched;
+
+        // Stable category-scoped lists backing the searchable combos. The
+        // CollectionView filter attaches to these instances, so they are only
+        // replaced on category change / load, never per keystroke.
+        private List<ItemLookupDto> _searchBaseOld = new List<ItemLookupDto>();
+        private List<ItemLookupDto> _searchBaseNew = new List<ItemLookupDto>();
 
         public string ResolutionType { get; private set; }
         public int? OldItemId { get; private set; }
@@ -360,6 +367,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             PopulateLookups();
             HookPreviewRefresh();
+            AttachItemSearch(_oldItemCombo, () => _searchBaseOld);
+            AttachItemSearch(_newItemCombo, () => _searchBaseNew);
             ApplyAvailabilityGuards();
             UpdateOldItemMode();
             UpdateWizardStep();
@@ -485,6 +494,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var previousId = (_oldItemCombo.SelectedItem as ItemLookupDto)?.ItemId;
             var selectedCategory = _oldCategoryFilter.SelectedItem as string;
             var rows = FilterByCategory(_outHardwareItems, selectedCategory).ToList();
+            _searchBaseOld = rows;
             _oldItemCombo.ItemsSource = rows;
             _oldItemCombo.SelectedValuePath = "ItemId";
             SelectItemByIdOrFirst(_oldItemCombo, rows, previousId);
@@ -521,6 +531,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 return;
             }
             var rows = FilterByCategory(_stockHardwareItems, selectedCategory).ToList();
+            _searchBaseNew = rows;
             _newItemCombo.ItemsSource = rows;
             _newItemCombo.SelectedValuePath = "ItemId";
             SelectItemByIdOrFirst(_newItemCombo, rows, previousId);
@@ -706,11 +717,16 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             OldItemRepairAction = null;
         }
 
-        private bool ValidateAndCaptureReplacement(out string message)
+        private bool ValidateAndCaptureReplacement(out string message, bool commit = false)
         {
             message = null;
             if (_stockHardwareItems.Count == 0)
                 return Invalid("No replacement stock items are available.", out message);
+
+            // Typing does not move SelectedItem: re-resolve the edit text to an
+            // exact match first so stale picks can never validate.
+            ResolveItemCombo(_oldItemCombo, FilterByCategory(_outHardwareItems, _oldCategoryFilter.SelectedItem as string), commit);
+            ResolveItemCombo(_newItemCombo, FilterByCategory(_stockHardwareItems, ParseCategoryDisplay(_newCategoryFilter.SelectedItem as string)), commit);
 
             var newItem = _newItemCombo.SelectedItem as ItemLookupDto;
             if (newItem == null)
@@ -837,7 +853,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             if (_replacementRadio.IsChecked == true)
             {
-                if (!ValidateAndCaptureReplacement(out _))
+                if (!ValidateAndCaptureReplacement(out _, commit: true))
                     return;
             }
             else
@@ -983,10 +999,136 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var combo = CreateCombo();
             combo.IsEditable = true;
-            combo.IsTextSearchEnabled = true;
+            // Borrow-style live filtering (AttachItemSearch) owns the text:
+            // WPF's own text search would append-complete and fight it.
+            combo.IsTextSearchEnabled = false;
             TextSearch.SetTextPath(combo, "DisplayText");
             combo.ItemTemplate = CreateItemTemplate(showStock);
             return combo;
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed) return typed;
+                var result = FindVisualChild<T>(child);
+                if (result != null) return result;
+            }
+            return null;
+        }
+
+        private static string ItemSearchHaystack(ItemLookupDto x)
+        {
+            if (x == null) return "";
+            return string.Join(" ", new[] { x.Name, x.DisplayText, x.ModelNumber, x.Category, x.SerialNumber });
+        }
+
+        /// <summary>
+        /// Borrow-style searchable combo (mirrors AttachEmpSearch in
+        /// WpfBorrowTransactionWorkspace): typing narrows the dropdown with a
+        /// multi-token AND match across name/model/category/serial instead of
+        /// scrolling the full list. getBaseList is the current category scope.
+        /// </summary>
+        private static void AttachItemSearch(ComboBox cb, Func<List<ItemLookupDto>> getBaseList)
+        {
+            // Loaded may already have fired (or never fire before typing in a
+            // pre-shown tree): hook now when loaded, otherwise on Loaded.
+            if (cb.IsLoaded) HookItemSearchBox(cb, getBaseList);
+            else cb.Loaded += (s, e) => HookItemSearchBox(cb, getBaseList);
+        }
+
+        private static void HookItemSearchBox(ComboBox cb, Func<List<ItemLookupDto>> getBaseList)
+        {
+            // Deterministic lookup first (no visual-tree timing involved),
+            // visual-tree walk as fallback.
+            cb.ApplyTemplate();
+            var textBox = cb.Template?.FindName("PART_EditableTextBox", cb) as TextBox
+                          ?? FindVisualChild<TextBox>(cb);
+            if (textBox == null) return;
+
+            // Debounced like the Replacement Items dialog (250ms): filtering
+            // a thousand-row view on every keystroke lags while typing.
+            var debounce = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            debounce.Tick += (s2, e2) =>
+            {
+                try
+                {
+                    debounce.Stop();
+                    RunItemFilter(cb, textBox, getBaseList);
+                }
+                catch { }
+            };
+            cb.Unloaded += (s2, e2) =>
+            {
+                try { debounce.Stop(); } catch { }
+            };
+
+            textBox.TextChanged += (s2, e2) =>
+            {
+                // Selection echo (click picked an item and WPF painted its
+                // text) is not typing: never re-filter on it, or the refresh
+                // lands mid-click and eats the selection.
+                var sel = cb.SelectedItem as ItemLookupDto;
+                if (sel != null && string.Equals(sel.DisplayText ?? "", textBox.Text ?? "", StringComparison.OrdinalIgnoreCase))
+                    return;
+                debounce.Stop();
+                debounce.Start();
+            };
+        }
+
+        private static void RunItemFilter(ComboBox cb, TextBox textBox, Func<List<ItemLookupDto>> getBaseList)
+        {
+            var rawText = textBox.Text ?? string.Empty;
+            var query = rawText.Trim();
+            var baseList = getBaseList() ?? new List<ItemLookupDto>();
+
+            // Filter the live view in place. ItemsSource, SelectedItem and the
+            // edit text are never rewritten, so a clicked pick can never be
+            // blanked by a rebind and typing is never interrupted.
+            var view = CollectionViewSource.GetDefaultView(baseList);
+            if (view == null) return;
+
+            if (query.Length == 0)
+            {
+                view.Filter = null;
+                cb.IsDropDownOpen = false;
+                return;
+            }
+
+            var tokens = query.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            view.Filter = o =>
+            {
+                var x = o as ItemLookupDto;
+                return x != null && tokens.All(token =>
+                    ItemSearchHaystack(x).IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0);
+            };
+
+            if (!view.IsEmpty) cb.IsDropDownOpen = true;
+        }
+
+        /// <summary>
+        /// Typing in an editable combo does not move SelectedItem, so a stale
+        /// pick could validate. Re-resolve the text to an exact display match
+        /// before reading the selection. Live validation (commit:false) only
+        /// ever upgrades null to a match: it must never clear a pick, because
+        /// SelectionChanged fires before WPF repaints the edit text and a
+        /// strict clear would blank a just-clicked row. The explicit Confirm
+        /// path passes commit:true for the strict gate.
+        /// </summary>
+        private static void ResolveItemCombo(ComboBox combo, IEnumerable<ItemLookupDto> baseList, bool commit)
+        {
+            var selected = combo.SelectedItem as ItemLookupDto;
+            string text = (combo.Text ?? "").Trim();
+            if (selected != null)
+            {
+                if (string.Equals(selected.DisplayText ?? "", text, StringComparison.OrdinalIgnoreCase))
+                    return;
+                if (!commit) return;
+            }
+            combo.SelectedItem = text.Length == 0 ? null : (baseList ?? Enumerable.Empty<ItemLookupDto>())
+                .FirstOrDefault(x => string.Equals(x?.DisplayText ?? "", text, StringComparison.OrdinalIgnoreCase));
         }
 
         private static DataTemplate CreateItemTemplate(bool showStock)

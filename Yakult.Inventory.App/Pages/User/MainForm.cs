@@ -169,6 +169,19 @@ namespace Yakult.Inventory.App.Pages.User
             _adminAlertPoller.Start();
         }
 
+        private static void ShowAdminAlert(Repositories.AdminAlertDto alert)
+        {
+            string kind = alert == null ? null : (alert.AlertKind ?? "");
+            if (string.Equals(kind, Repositories.AdminAlertKinds.Bsod, StringComparison.OrdinalIgnoreCase))
+                Dialogs.FakeBsodForm.ShowAlert();
+            else if (string.Equals(kind, Repositories.AdminAlertKinds.Maintenance, StringComparison.OrdinalIgnoreCase))
+                Dialogs.MaintenanceAlertDialog.ShowAlert(alert);
+            else if (string.Equals(kind, Repositories.AdminAlertKinds.StopSilent, StringComparison.OrdinalIgnoreCase))
+                Dialogs.AdminAlertDialog.ShowAlert(alert, playSound: false);
+            else
+                Dialogs.AdminAlertDialog.ShowAlert(alert, playSound: true);
+        }
+
         private async void AdminAlertPoller_Tick(object sender, EventArgs e)
         {
             if (_adminAlertPolling) return;
@@ -186,7 +199,7 @@ namespace Yakult.Inventory.App.Pages.User
                     bool claimed = false;
                     try { claimed = repo.AcknowledgeAlert(alert.BroadcastId, machine, user); } catch { }
                     if (!claimed) continue;
-                    try { Dialogs.AdminAlertDialog.ShowAlert(alert); } catch { }
+                    try { ShowAdminAlert(alert); } catch { }
                 }
             }
             catch { /* best-effort; never break the main form */ }
@@ -365,6 +378,7 @@ namespace Yakult.Inventory.App.Pages.User
                 bool backToPortal;
                 using (var requesterPortal = new RequesterPortalForm())
                 {
+                    Yakult.Inventory.App.Services.YakumiAssistantHost.Register(requesterPortal, "Requests");
                     requesterPortal.ShowDialog();
                     backToPortal = requesterPortal.BackToPortalRequested && !requesterPortal.LogoutRequested;
                 }
@@ -394,6 +408,7 @@ namespace Yakult.Inventory.App.Pages.User
 
                 PortalSelection selectedModule;
                 var portal = new Yakult.Inventory.App.Wpf.Portal.WpfMainDashboardShell();
+                Yakult.Inventory.App.Services.YakumiAssistantHost.Register(portal, "Workspace");
                 portal.ShowDialog();
                 selectedModule = portal.SelectedModule;
 
@@ -408,6 +423,7 @@ namespace Yakult.Inventory.App.Pages.User
                 {
                     var tcs = new TaskCompletionSource<bool>();
                     var callMonitoring = new Yakult.Inventory.App.Wpf.CallMonitoring.WpfCallMonitoringShell();
+                Yakult.Inventory.App.Services.YakumiAssistantHost.Register(callMonitoring, "Tickets");
                     callMonitoring.Closed += (s, e) =>
                     {
                         tcs.TrySetResult(true);
@@ -429,6 +445,7 @@ namespace Yakult.Inventory.App.Pages.User
                 {
                     var tcs = new TaskCompletionSource<bool>();
                     var repairPortal = new Yakult.Inventory.App.Wpf.RepairPortal.Shell.Views.RepairPortalShellWindow();
+                Yakult.Inventory.App.Services.YakumiAssistantHost.Register(repairPortal, "Repairs");
                     repairPortal.Closed += (s, e) =>
                     {
                         tcs.TrySetResult(true);
@@ -458,6 +475,7 @@ namespace Yakult.Inventory.App.Pages.User
                     ReportsForm.ReportsExitAction reportsExit;
                     using (var reports = new ReportsForm())
                     {
+                    Yakult.Inventory.App.Services.YakumiAssistantHost.Register(reports, "Reports");
                         reports.ShowDialog();
                         reportsExit = reports.ExitAction;
                     }
@@ -476,6 +494,7 @@ namespace Yakult.Inventory.App.Pages.User
                 {
                     using (var requesterPortal = new RequesterPortalForm())
                     {
+                    Yakult.Inventory.App.Services.YakumiAssistantHost.Register(requesterPortal, "Requests");
                         requesterPortal.ShowDialog();
 
                         if (requesterPortal.LogoutRequested)
@@ -494,6 +513,7 @@ namespace Yakult.Inventory.App.Pages.User
                     // Management Portal directly inside this window (no separate popup) — see
                     // ConsumableManagementPortalShell for the embedding details.
                     var consumableMgmt = new Yakult.Inventory.App.Wpf.Portal.ConsumableManagementPortalShell();
+                Yakult.Inventory.App.Services.YakumiAssistantHost.Register(consumableMgmt, "Consumables");
                     consumableMgmt.ShowDialog();
 
                     if (consumableMgmt.LogoutRequested)
@@ -510,6 +530,7 @@ namespace Yakult.Inventory.App.Pages.User
                 {
                     using (var reports = new ReportsForm())
                     {
+                    Yakult.Inventory.App.Services.YakumiAssistantHost.Register(reports, "Reports");
                         reports.ShowDialog();
                     }
 
@@ -520,6 +541,7 @@ namespace Yakult.Inventory.App.Pages.User
                 {
                     using (var borrowItems = new BorrowItemsDashboard())
                     {
+                    Yakult.Inventory.App.Services.YakumiAssistantHost.Register(borrowItems, "Borrowing");
                         borrowItems.ShowDialog();
                     }
 
@@ -544,6 +566,7 @@ namespace Yakult.Inventory.App.Pages.User
 
                     using (var adminPortal = new AdminPortalForm())
                     {
+                    Yakult.Inventory.App.Services.YakumiAssistantHost.Register(adminPortal, "Admin");
                         adminPortal.ShowDialog();
 
                         if (adminPortal.ExitAction == AdminPortalExitAction.Logout)

@@ -596,7 +596,7 @@ namespace Yakult.Inventory.App.Forms.Admin
 
         private void ShowConnectedDevicesPage()
         {
-            ShowPage(new Yakult.Inventory.App.Pages.Admin.Monitoring.ConnectedDevicesPage());
+            ShowPage(new Yakult.Inventory.App.Forms.Admin.Monitoring.ConnectedDevicesWpfHost());
         }
 
         private void ShowBranchAcronymPage()

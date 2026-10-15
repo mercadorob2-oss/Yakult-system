@@ -17,6 +17,7 @@ using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Forms.Portal;
 using Yakult.Inventory.App.Pages.User;
 using Yakult.Inventory.App.Security;
+using Yakult.Inventory.App.Services;
 using Yakult.Inventory.App.Session;
 
 namespace Yakult.Inventory.App.Wpf.Portal
@@ -166,7 +167,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
             recent = ActionButton("Recent", null, () => ShowSystemMenu(recent, _preferences.Recent));
             actions.Children.Add(recent);
             actions.Children.Add(ActionButton("Help", "help", ShowHelpDialog));
-            var askAi = ActionButton("Ask AI", "chat", OpenAskAiDialog);
+            var askAi = ActionButton("Ask AI", "chat", ToggleYakumi);
             askAi.ToolTip = "Ask the office AI assistant";
             actions.Children.Add(askAi);
             actions.Children.Add(ActionButton("My account", "person", OpenAccountDialog));
@@ -1050,18 +1051,6 @@ namespace Yakult.Inventory.App.Wpf.Portal
             return path;
         }
 
-        private void OpenAskAiDialog()
-        {
-            try
-            {
-                Yakult.Inventory.App.Dialogs.AskAiDialog.Open(null);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError("[WpfMainDashboardShell] Failed to open Ask AI dialog.", ex);
-            }
-        }
-
         private void OpenAccountDialog()
         {
             try
@@ -1087,6 +1076,10 @@ namespace Yakult.Inventory.App.Wpf.Portal
                 Logger.LogError("[WpfMainDashboardShell] Failed to open Account dialog.", ex);
             }
         }
+
+        // ====================================================================
+        // Shared read-only assistant (available across all desktop modules).
+        private void ToggleYakumi() => YakumiAssistantHost.Open(this);
 
         // ====================================================================
         // DEVELOPER DATABASE RESET

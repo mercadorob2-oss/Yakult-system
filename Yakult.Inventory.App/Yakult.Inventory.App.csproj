@@ -401,9 +401,6 @@
     <Compile Include="Dialogs\MaintenanceAlertDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Dialogs\AskAiDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Include="Forms\CartridgeManagement\CartridgeManagementWpfHost.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -1112,6 +1109,23 @@
     <Compile Include="Repositories\AdminAlertRepository.cs" />
     <Compile Include="Services\CartridgeApprovalService.cs" />
     <Compile Include="Services\OllamaChatService.cs" />
+    <Compile Include="Services\AiContextProviders.cs" />
+    <Compile Include="Services\AiIntentRouter.cs" />
+    <Compile Include="Services\AssistantContracts.cs" />
+    <Compile Include="Services\AssistantCatalog.cs" />
+    <Compile Include="Services\AssistantQueryEngine.cs" />
+    <Compile Include="Services\AssistantKnowledge.cs" />
+    <Compile Include="Services\AssistantPlanner.cs" />
+    <Compile Include="Services\AssistantStockVocabulary.cs" />
+    <Compile Include="Services\AssistantModel.cs" />
+    <Compile Include="Services\YakumiAssistantService.cs" />
+    <Compile Include="Services\YakumiAssistantHost.cs" />
+    <Compile Include="Services\AssistantScreens.cs" />
+    <Compile Include="Services\YakumiChatView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Tests\AiAssistantRegressionTest.cs" />
+    <Compile Include="Tests\ExpandedAssistantTests.cs" />
     <Compile Include="Services\AuthorizationService.cs" />
     <Compile Include="Yakult_Inventory_System_DEVDataSet.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -1872,6 +1886,13 @@
     <Compile Include="Session\SessionContext.cs" />
     <Content Include="Gemini_Generated_Image_8erywn8erywn8ery.ico" />
     <Content Include="Images\yakult_icon.ico" />
+    <EmbeddedResource Include="AI_assets\YakumiKnowledge.json" />
+    <Content Include="AI_assets\YakumiAvatar.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="AI_assets\YakumiChatHeader.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Images\yds image.png" />
     <Content Include="Images\yakult_Name.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -76,10 +76,48 @@ namespace Yakult.Inventory.App.Core
             {
                 if (string.IsNullOrEmpty(_ollamaModel))
                 {
-                    _ollamaModel = ConfigurationManager.AppSettings["OllamaModel"] ?? "qwen2.5:1.5b";
+                    _ollamaModel = ConfigurationManager.AppSettings["OllamaModel"] ?? "qwen2.5:3b";
                 }
                 return _ollamaModel;
             }
+        }
+
+        /// <summary>
+        /// Persists a new Ollama server URL to the running exe.config and refreshes the in-memory cache.
+        /// </summary>
+        public static void SetOllamaBaseUrl(string newUrl)
+        {
+            if (string.IsNullOrWhiteSpace(newUrl))
+                throw new ArgumentException("URL cannot be empty.", nameof(newUrl));
+
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            if (config.AppSettings.Settings["OllamaBaseUrl"] != null)
+                config.AppSettings.Settings["OllamaBaseUrl"].Value = newUrl.TrimEnd('/');
+            else
+                config.AppSettings.Settings.Add("OllamaBaseUrl", newUrl.TrimEnd('/'));
+
+            config.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
+            _ollamaBaseUrl = null;
+        }
+
+        /// <summary>
+        /// Persists a new Ollama model name to the running exe.config and refreshes the in-memory cache.
+        /// </summary>
+        public static void SetOllamaModel(string newModel)
+        {
+            if (string.IsNullOrWhiteSpace(newModel))
+                throw new ArgumentException("Model cannot be empty.", nameof(newModel));
+
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            if (config.AppSettings.Settings["OllamaModel"] != null)
+                config.AppSettings.Settings["OllamaModel"].Value = newModel.Trim();
+            else
+                config.AppSettings.Settings.Add("OllamaModel", newModel.Trim());
+
+            config.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
+            _ollamaModel = null;
         }
 
         // API Configuration

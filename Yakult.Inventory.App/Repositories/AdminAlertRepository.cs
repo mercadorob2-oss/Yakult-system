@@ -6,6 +6,14 @@ using Yakult.Inventory.App.Data;
 
 namespace Yakult.Inventory.App.Repositories
 {
+    public static class AdminAlertKinds
+    {
+        public const string StopSound = "StopSound";
+        public const string StopSilent = "StopSilent";
+        public const string Bsod = "Bsod";
+        public const string Maintenance = "Maintenance";
+    }
+
     public sealed class AdminAlertDto
     {
         public int BroadcastId { get; set; }
@@ -13,6 +21,7 @@ namespace Yakult.Inventory.App.Repositories
         public string Message { get; set; }
         public string CreatedByName { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string AlertKind { get; set; }
     }
 
     /// <summary>
@@ -40,7 +49,25 @@ namespace Yakult.Inventory.App.Repositories
             }
         }
 
-        public int SendStopAlert(string targetMachine, string targetUser, int createdBy, string createdByName, string title = "STOP", string message = null, int expireMinutes = 10)
+        /// <summary>True when the broadcast tables exist on the current database.</summary>
+        public bool BroadcastTablesExist()
+        {
+            try
+            {
+                using (var con = new SqlConnection(GetConnectionString()))
+                {
+                    con.Open();
+                    return TablesExist(con);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("[AdminAlert] BroadcastTablesExist failed.", ex);
+                return false;
+            }
+        }
+
+        public int SendStopAlert(string targetMachine, string targetUser, int createdBy, string createdByName, string title = "STOP", string message = null, int expireMinutes = 10, string alertKind = AdminAlertKinds.StopSound)
         {
             try
             {
@@ -48,23 +75,16 @@ namespace Yakult.Inventory.App.Repositories
                 {
                     con.Open();
                     if (!TablesExist(con)) return 0;
-                    const string sql = @"
-                        INSERT INTO dbo.AdminAlertBroadcast
-                            (Title, Message, TargetMachine, TargetUser, CreatedBy, CreatedByName, ExpiresAt)
-                        VALUES
-                            (@Title, @Message, @TargetMachine, @TargetUser, @CreatedBy, @CreatedByName,
-                             DATEADD(minute, @ExpireMinutes, SYSUTCDATETIME()));
-                        SELECT CAST(SCOPE_IDENTITY() AS INT);";
-                    using (var cmd = new SqlCommand(sql, con))
+                    try
                     {
-                        cmd.Parameters.AddWithValue("@Title", string.IsNullOrEmpty(title) ? (object)"STOP" : (object)title);
-                        cmd.Parameters.AddWithValue("@Message", (object)message ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@TargetMachine", (object)targetMachine ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@TargetUser", (object)targetUser ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@CreatedBy", createdBy);
-                        cmd.Parameters.AddWithValue("@CreatedByName", (object)(createdByName ?? ""));
-                        cmd.Parameters.AddWithValue("@ExpireMinutes", expireMinutes);
-                        return Convert.ToInt32(cmd.ExecuteScalar());
+                        return InsertBroadcast(con, targetMachine, targetUser, createdBy, createdByName, title, message, expireMinutes, alertKind, withKind: true);
+                    }
+                    catch (SqlException)
+                    {
+                        // Pre-AlertKind schema: only the classic STOP exists there.
+                        if (!string.Equals(alertKind, AdminAlertKinds.StopSound, StringComparison.OrdinalIgnoreCase))
+                            return 0;
+                        return InsertBroadcast(con, targetMachine, targetUser, createdBy, createdByName, title, message, expireMinutes, alertKind, withKind: false);
                     }
                 }
             }
@@ -72,6 +92,38 @@ namespace Yakult.Inventory.App.Repositories
             {
                 Logger.LogError("[AdminAlert] SendStopAlert failed.", ex);
                 return 0;
+            }
+        }
+
+        private static int InsertBroadcast(SqlConnection con, string targetMachine, string targetUser, int createdBy, string createdByName, string title, string message, int expireMinutes, string alertKind, bool withKind)
+        {
+            string sql = withKind
+                ? @"
+                    INSERT INTO dbo.AdminAlertBroadcast
+                        (Title, Message, TargetMachine, TargetUser, CreatedBy, CreatedByName, ExpiresAt, AlertKind)
+                    VALUES
+                        (@Title, @Message, @TargetMachine, @TargetUser, @CreatedBy, @CreatedByName,
+                         DATEADD(minute, @ExpireMinutes, SYSUTCDATETIME()), @AlertKind);
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);"
+                : @"
+                    INSERT INTO dbo.AdminAlertBroadcast
+                        (Title, Message, TargetMachine, TargetUser, CreatedBy, CreatedByName, ExpiresAt)
+                    VALUES
+                        (@Title, @Message, @TargetMachine, @TargetUser, @CreatedBy, @CreatedByName,
+                         DATEADD(minute, @ExpireMinutes, SYSUTCDATETIME()));
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
+            using (var cmd = new SqlCommand(sql, con))
+            {
+                cmd.Parameters.AddWithValue("@Title", string.IsNullOrEmpty(title) ? (object)"STOP" : (object)title);
+                cmd.Parameters.AddWithValue("@Message", (object)message ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@TargetMachine", (object)targetMachine ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@TargetUser", (object)targetUser ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@CreatedBy", createdBy);
+                cmd.Parameters.AddWithValue("@CreatedByName", (object)(createdByName ?? ""));
+                cmd.Parameters.AddWithValue("@ExpireMinutes", expireMinutes);
+                if (withKind)
+                    cmd.Parameters.AddWithValue("@AlertKind", (object)(string.IsNullOrEmpty(alertKind) ? AdminAlertKinds.StopSound : alertKind));
+                return Convert.ToInt32(cmd.ExecuteScalar());
             }
         }
 
@@ -84,9 +136,7 @@ namespace Yakult.Inventory.App.Repositories
                 {
                     con.Open();
                     if (!TablesExist(con)) return list;
-                    const string sql = @"
-                        SELECT b.BroadcastId, b.Title, b.Message, b.CreatedByName, b.CreatedAt
-                        FROM dbo.AdminAlertBroadcast b
+                    const string where = @"
                         WHERE b.ExpiresAt > SYSUTCDATETIME()
                           AND (b.TargetMachine IS NULL OR b.TargetMachine = @MachineName)
                           AND (b.TargetUser IS NULL OR b.TargetUser = @UserName)
@@ -96,24 +146,17 @@ namespace Yakult.Inventory.App.Repositories
                                   AND a.MachineName = @MachineName
                                   AND a.UserName = @UserName)
                         ORDER BY b.BroadcastId;";
-                    using (var cmd = new SqlCommand(sql, con))
+                    string sql = "SELECT b.BroadcastId, b.Title, b.Message, b.CreatedByName, b.CreatedAt, b.AlertKind FROM dbo.AdminAlertBroadcast b" + where;
+                    try
                     {
-                        cmd.Parameters.AddWithValue("@MachineName", (object)machineName ?? DBNull.Value);
-                        cmd.Parameters.AddWithValue("@UserName", (object)userName ?? DBNull.Value);
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                list.Add(new AdminAlertDto
-                                {
-                                    BroadcastId = reader.GetInt32(0),
-                                    Title = reader.IsDBNull(1) ? "STOP" : reader.GetString(1),
-                                    Message = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                    CreatedByName = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                                    CreatedAt = reader.IsDBNull(4) ? DateTime.MinValue : reader.GetDateTime(4)
-                                });
-                            }
-                        }
+                        ReadPendingAlerts(con, sql, machineName, userName, withKind: true, list);
+                    }
+                    catch (SqlException)
+                    {
+                        // Pre-AlertKind schema: same query without the column.
+                        list.Clear();
+                        sql = "SELECT b.BroadcastId, b.Title, b.Message, b.CreatedByName, b.CreatedAt FROM dbo.AdminAlertBroadcast b" + where;
+                        ReadPendingAlerts(con, sql, machineName, userName, withKind: false, list);
                     }
                 }
             }
@@ -122,6 +165,30 @@ namespace Yakult.Inventory.App.Repositories
                 Logger.LogError("[AdminAlert] GetPendingAlerts failed.", ex);
             }
             return list;
+        }
+
+        private static void ReadPendingAlerts(SqlConnection con, string sql, string machineName, string userName, bool withKind, List<AdminAlertDto> list)
+        {
+            using (var cmd = new SqlCommand(sql, con))
+            {
+                cmd.Parameters.AddWithValue("@MachineName", (object)machineName ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@UserName", (object)userName ?? DBNull.Value);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(new AdminAlertDto
+                        {
+                            BroadcastId = reader.GetInt32(0),
+                            Title = reader.IsDBNull(1) ? "STOP" : reader.GetString(1),
+                            Message = reader.IsDBNull(2) ? null : reader.GetString(2),
+                            CreatedByName = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                            CreatedAt = reader.IsDBNull(4) ? DateTime.MinValue : reader.GetDateTime(4),
+                            AlertKind = withKind && !reader.IsDBNull(5) ? reader.GetString(5) : AdminAlertKinds.StopSound
+                        });
+                    }
+                }
+            }
         }
 
         /// <summary>
