@@ -42,6 +42,7 @@ Source: "..\bin\Release\System.Runtime.CompilerServices.Unsafe.dll"; DestDir: "{
 ; === Reports ===
 Source: "..\bin\Release\Reports\*"; DestDir: "{app}\Reports"; Flags: ignoreversion
 Source: "..\bin\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\bin\Release\yakult_icon_desktop.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\bin\Release\Azure.Core.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\bin\Release\Azure.Identity.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\bin\Release\ClosedXML.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -111,6 +112,7 @@ Source: "..\bin\Release\System.ValueTuple.dll"; DestDir: "{app}"; Flags: ignorev
 Source: "..\bin\Release\XLParser.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; === Images ===
 Source: "..\bin\Release\Images\*"; DestDir: "{app}\Images"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\bin\Release\AI_assets\*"; DestDir: "{app}\AI_assets"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

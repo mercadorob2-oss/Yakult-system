@@ -10,10 +10,12 @@ namespace Yakult.Inventory.App.Services
 {
     /// <summary>
     /// Presence beat: tells the ITCM web server this desktop is actively
-    /// using Call Monitoring. One anonymous POST per interval while an ITCM
-    /// view is open; best-effort and silent — it must never disturb the UI.
-    /// Identity is self-reported (machine + app user), matching the ping
-    /// endpoint's trust model for this intranet ops display.
+    /// in use. One anonymous POST per interval per owner module while at
+    /// least one owner holds it; best-effort and silent — it must never
+    /// disturb the UI. Identity is self-reported (machine + app user),
+    /// matching the ping endpoint's trust model for this intranet display.
+    /// Call Monitoring owns "CallMonitoring" while its views are open;
+    /// the main shell owns "Workspace" for the whole login session.
     /// </summary>
     public static class ItcmPresenceReporter
     {
@@ -23,20 +25,25 @@ namespace Yakult.Inventory.App.Services
         };
 
         private static System.Threading.Timer _timer;
-        private static int _started;
+        private static readonly System.Collections.Generic.HashSet<string> _owners =
+            new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static readonly object _gate = new object();
 
         public static TimeSpan Interval { get; set; } = TimeSpan.FromMinutes(5);
 
         public static bool Running => _timer != null;
 
-        public static void Start()
+        private static string NormalizeModule(string module)
         {
-            if (Interlocked.Exchange(ref _started, 1) == 1)
-                return;
+            return string.IsNullOrWhiteSpace(module) ? "CallMonitoring" : module.Trim();
+        }
 
+        public static void Start(string module = "CallMonitoring")
+        {
+            module = NormalizeModule(module);
             lock (_gate)
             {
+                _owners.Add(module);
                 if (_timer != null)
                     return;
 
@@ -50,12 +57,34 @@ namespace Yakult.Inventory.App.Services
             }
         }
 
-        public static void Stop()
+        public static void Stop(string module = "CallMonitoring")
         {
-            Interlocked.Exchange(ref _started, 0);
-
+            module = NormalizeModule(module);
             lock (_gate)
             {
+                _owners.Remove(module);
+                if (_owners.Count > 0 || _timer == null)
+                    return;
+
+                try
+                {
+                    _timer.Dispose();
+                }
+                catch
+                {
+                }
+                finally
+                {
+                    _timer = null;
+                }
+            }
+        }
+
+        public static void StopAll()
+        {
+            lock (_gate)
+            {
+                _owners.Clear();
                 try
                 {
                     _timer?.Dispose();
@@ -71,6 +100,20 @@ namespace Yakult.Inventory.App.Services
         }
 
         private static async Task SendBeatAsync()
+        {
+            string[] modules;
+            lock (_gate)
+            {
+                modules = new string[_owners.Count];
+                _owners.CopyTo(modules);
+            }
+            foreach (var module in modules)
+            {
+                await SendBeatForModuleAsync(module).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task SendBeatForModuleAsync(string module)
         {
             try
             {
@@ -103,7 +146,7 @@ namespace Yakult.Inventory.App.Services
 
                 var payload = "{\"machineName\":" + JsonQuote(Environment.MachineName ?? string.Empty)
                     + ",\"userName\":" + JsonQuote(user)
-                    + ",\"module\":\"CallMonitoring\""
+                    + ",\"module\":" + JsonQuote(module)
                     + ",\"clientVersion\":" + JsonQuote(version) + "}";
 
                 using (var content = new StringContent(payload, Encoding.UTF8, "application/json"))

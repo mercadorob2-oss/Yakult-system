@@ -120,7 +120,9 @@ namespace Yakult.Inventory.App
             }
 
             // Start with MainForm which will show login/register dialog
-            Application.Run(new MainForm());
+            var mainForm = new MainForm();
+            Yakult.Inventory.App.Services.YakumiAssistantHost.Install(mainForm);
+            Application.Run(mainForm);
         }
 
         private sealed class DataGridViewSafetyMessageFilter : IMessageFilter

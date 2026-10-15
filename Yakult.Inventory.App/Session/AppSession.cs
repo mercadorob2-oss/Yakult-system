@@ -8,6 +8,7 @@ namespace Yakult.Inventory.App.Session
 {
     public static class AppSession
     {
+        public static event Action SessionCleared;
         public static int CurrentUserId { get; set; }
         public static string CurrentUserName { get; set; }
         public static string CurrentEmail { get; set; }
@@ -128,6 +129,7 @@ namespace Yakult.Inventory.App.Session
             DepartmentAccountBranchId = null;
             NotificationsEnabled = true;
             SuppressActivityLogging = false;
+            SessionCleared?.Invoke();
         }
     }
 }

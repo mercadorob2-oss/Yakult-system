@@ -21,6 +21,7 @@ namespace Yakult.Inventory.App.Pages.User
         private bool _isLoggingIn = false;
         private Label _loginStatus;
         private Button _passwordToggle;
+        private CheckBox _rememberMe;
 
         public LoginPage(UserRepository userRepo)
         {
@@ -49,6 +50,7 @@ namespace Yakult.Inventory.App.Pages.User
 
             LoadBrandLogo();
             ApplyWorkspaceLayout();
+            LoadRememberedLogin();
         }
 
         private void ApplyWorkspaceLayout()
@@ -161,6 +163,8 @@ namespace Yakult.Inventory.App.Pages.User
             _passwordToggle.Click += lblTogglePassword_Click;
             passwordRow.Controls.Add(_passwordToggle, 1, 0);
             Add(passwordRow, 42);
+            _rememberMe = new CheckBox { Text = "Remember me", ForeColor = muted, Font = new Font("Segoe UI", 9.5F), BackColor = Color.White, AutoSize = false, AccessibleName = "Remember me on this computer" };
+            Add(_rememberMe, 26, 4);
             _loginStatus = new Label { Text = "", ForeColor = accent, Font = new Font("Segoe UI", 9F), AccessibleName = "Sign-in status" };
             Add(_loginStatus, 30);
             LoginBtn.TabIndex = 3;
@@ -235,6 +239,66 @@ namespace Yakult.Inventory.App.Pages.User
             catch
             {
                 // Text-only branding remains; logo is decorative.
+            }
+        }
+
+        private sealed class RememberedLogin
+        {
+            public string Username { get; set; }
+            public string ProtectedPassword { get; set; }
+        }
+
+        private static string RememberedLoginPath()
+        {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Yakult", "Workspace", "remembered_login.json");
+        }
+
+        private bool IsRememberMeChecked() => _rememberMe != null && _rememberMe.Checked;
+
+        private void LoadRememberedLogin()
+        {
+            try
+            {
+                string path = RememberedLoginPath();
+                if (!File.Exists(path)) return;
+                var saved = Newtonsoft.Json.JsonConvert.DeserializeObject<RememberedLogin>(File.ReadAllText(path));
+                if (saved == null || string.IsNullOrWhiteSpace(saved.Username)) return;
+                NameLoginField.Text = saved.Username;
+                if (!string.IsNullOrEmpty(saved.ProtectedPassword))
+                {
+                    string pw = Helpers.SecretProtector.UnprotectToString(Convert.FromBase64String(saved.ProtectedPassword));
+                    if (pw != null) PassLoginField.Text = pw;
+                }
+                if (_rememberMe != null) _rememberMe.Checked = true;
+            }
+            catch
+            {
+                // Corrupt or undecryptable file: fall through to a blank login.
+            }
+        }
+
+        private void PersistRememberedLogin(string username, string password)
+        {
+            try
+            {
+                string path = RememberedLoginPath();
+                if (!IsRememberMeChecked())
+                {
+                    if (File.Exists(path)) File.Delete(path);
+                    return;
+                }
+                byte[] protectedPw = Helpers.SecretProtector.ProtectString(password);
+                var saved = new RememberedLogin
+                {
+                    Username = username,
+                    ProtectedPassword = protectedPw == null ? null : Convert.ToBase64String(protectedPw)
+                };
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.WriteAllText(path, Newtonsoft.Json.JsonConvert.SerializeObject(saved));
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("[Login] Could not save remembered login.", ex);
             }
         }
 
@@ -368,6 +432,7 @@ namespace Yakult.Inventory.App.Pages.User
                         MessageBoxIcon.Information
                     );
 
+                    PersistRememberedLogin(name, password);
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                     return;
@@ -482,6 +547,7 @@ namespace Yakult.Inventory.App.Pages.User
                     AppSession.DepartmentAccountDepartmentId = deptId;
                     AppSession.DepartmentAccountBranchId     = branchId;
                     await PermissionResolver.LoadAsync();
+                    PersistRememberedLogin(username, password);
                     return true;
                 }
             }
@@ -589,6 +655,7 @@ namespace Yakult.Inventory.App.Pages.User
                             AppSession.DepartmentAccountDepartmentId = deptId;
                             AppSession.DepartmentAccountBranchId     = branchId;
                             await PermissionResolver.LoadAsync();
+                            PersistRememberedLogin(username, password);
                             return true;
                         }
                         catch

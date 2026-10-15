@@ -185,16 +185,20 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             repLayout.Controls.Add(oldModePanel);
 
             pnlOldItemSelectionContainer = new Panel { AutoSize = true, Width = 840, Padding = new Padding(0, 5, 0, 15) };
-            
+
             cboOldItemListed = new ComboBox
             {
-                DropDownStyle = ComboBoxStyle.DropDownList,
+                // DropDown (editable) so typing filters the list below.
+                // (DropDownList + AutoComplete can throw on some runtimes.)
+                DropDownStyle = ComboBoxStyle.DropDown,
                 DisplayMember = "DisplayText",
                 ValueMember = "ItemId",
                 Width = 600,
                 Height = 30,
                 Font = ModernUiHelper.FontNormal
             };
+            cboOldItemListed.AutoCompleteMode = AutoCompleteMode.None;
+            cboOldItemListed.AutoCompleteSource = AutoCompleteSource.None;
 
             cboOldListedCategory = new ComboBox
             {
@@ -214,7 +218,8 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             cboOldListedCategory.SelectedIndexChanged += (_, __) => ApplyOldItemCategoryFilter();
 
             _filteredOutHardwareItems = _outHardwareItems.ToList();
-            cboOldItemListed.DataSource = _filteredOutHardwareItems;
+            RefillComboItems(cboOldItemListed, _filteredOutHardwareItems);
+            EnableSearchFilter(cboOldItemListed, () => _filteredOutHardwareItems);
             
             pnlOldItemUnlisted = BuildUnlistedOldItemPanel();
 
@@ -315,7 +320,8 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             
             cboNewItem = new ComboBox
             {
-                // Use DropDown to allow built-in autocomplete (DropDownList + AutoComplete can throw on some runtimes).
+                // Use DropDown so typing filters the list via EnableSearchFilter below.
+                // (DropDownList + AutoComplete can throw on some runtimes.)
                 DropDownStyle = ComboBoxStyle.DropDown,
                 DisplayMember = "DisplayText",
                 ValueMember = "ItemId",
@@ -323,11 +329,12 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 Height = 30,
                 Font = ModernUiHelper.FontNormal
             };
-            cboNewItem.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-            cboNewItem.AutoCompleteSource = AutoCompleteSource.ListItems;
+            cboNewItem.AutoCompleteMode = AutoCompleteMode.None;
+            cboNewItem.AutoCompleteSource = AutoCompleteSource.None;
 
             _filteredStockHardwareItems = _stockHardwareItems.ToList();
-            cboNewItem.DataSource = _filteredStockHardwareItems;
+            RefillComboItems(cboNewItem, _filteredStockHardwareItems);
+            EnableSearchFilter(cboNewItem, () => _filteredStockHardwareItems);
             cboNewItem.FormattingEnabled = true;
             cboNewItem.Format += (_, e) =>
             {
@@ -518,11 +525,164 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             return "Repaired";
         }
 
+        /// <summary>
+        /// Borrow-style searchable combo: type to narrow the dropdown
+        /// (multi-token AND match across name/model/category/serial, like the
+        /// borrow system), Enter commits the best match, Esc closes.
+        /// Items-based, never DataSource: resetting DataSource inside
+        /// TextUpdate wipes the edit text and never filters. The full
+        /// category-scoped list lives in combo.Tag (rebuilt by RefillComboItems).
+        /// </summary>
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern int ShowCursor(bool bShow);
+
+        private static void RefillComboItems(ComboBox combo, List<ItemLookupDto> items)
+        {
+            var list = items ?? new List<ItemLookupDto>();
+            combo.Items.Clear();
+            foreach (var x in list)
+                combo.Items.Add(x);
+            combo.Tag = list;
+        }
+
+        private static string ComboSearchHaystack(ItemLookupDto x)
+        {
+            if (x == null) return "";
+            return string.Join(" ", new[] { x.Name, x.DisplayText, x.ModelNumber, x.Category, x.SerialNumber });
+        }
+
+        private static void EnableSearchFilter(ComboBox combo, Func<List<ItemLookupDto>> getFullList)
+        {
+            // Mark arrow/Enter/Escape as input so the form doesn't intercept them.
+            combo.PreviewKeyDown += (s, ev) =>
+            {
+                if (ev.KeyCode == Keys.Up || ev.KeyCode == Keys.Down ||
+                    ev.KeyCode == Keys.Enter || ev.KeyCode == Keys.Escape)
+                    ev.IsInputKey = true;
+            };
+
+            // Enter: commit the best match from the full backing list.
+            combo.KeyDown += (s, ev) =>
+            {
+                if (ev.KeyCode == Keys.Enter)
+                {
+                    string typed = (combo.Text ?? "").Trim();
+                    if (combo.DroppedDown) combo.DroppedDown = false;
+                    if (typed.Length > 0)
+                    {
+                        var all = getFullList() ?? new List<ItemLookupDto>();
+                        int match = -1;
+                        for (int i = 0; i < all.Count; i++)
+                        {
+                            if (string.Equals(all[i]?.DisplayText ?? "", typed, StringComparison.OrdinalIgnoreCase))
+                            { match = i; break; }
+                        }
+                        if (match < 0)
+                        {
+                            for (int i = 0; i < all.Count; i++)
+                            {
+                                if ((all[i]?.DisplayText ?? "").StartsWith(typed, StringComparison.OrdinalIgnoreCase))
+                                { match = i; break; }
+                            }
+                        }
+                        if (match >= 0)
+                        {
+                            RefillComboItems(combo, all);
+                            combo.SelectedIndex = match;
+                        }
+                    }
+                    ev.Handled = true;
+                    ev.SuppressKeyPress = true;
+                }
+                else if (ev.KeyCode == Keys.Escape)
+                {
+                    if (combo.DroppedDown) { combo.DroppedDown = false; ev.Handled = true; ev.SuppressKeyPress = true; }
+                }
+            };
+
+            // Fix cursor-disappear bug on mouse wheel scroll.
+            combo.MouseWheel += (s, ev) =>
+            {
+                if (!combo.Focused) { ((HandledMouseEventArgs)ev).Handled = true; return; }
+                while (ShowCursor(true) < 0) { }
+                Cursor.Current = Cursors.IBeam;
+            };
+
+            // TextUpdate: filter Items from the backing list on every keystroke.
+            combo.TextUpdate += (s, ev) =>
+            {
+                combo.BeginInvoke((Action)(() =>
+                {
+                    if (!combo.Focused) return;
+                    var all = combo.Tag as List<ItemLookupDto>;
+                    if (all == null) return;
+
+                    string savedText = combo.Text ?? "";
+                    var tokens = savedText.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+                    var filtered = tokens.Length == 0
+                        ? all
+                        : all.Where(x => x != null && tokens.All(t =>
+                            ComboSearchHaystack(x).IndexOf(t, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
+
+                    combo.Items.Clear();
+                    foreach (var item in filtered) combo.Items.Add(item);
+
+                    combo.Text = savedText;
+                    combo.SelectionStart = savedText.Length;
+                    combo.SelectionLength = 0;
+
+                    if (!combo.DroppedDown && filtered.Count > 0 && savedText.Length > 0)
+                        combo.DroppedDown = true;
+
+                    // Re-assert after opening the dropdown: the native Win32 combo
+                    // auto-selects the first matching item when DroppedDown=true fires,
+                    // which overwrites the edit box text with a highlighted suggestion.
+                    combo.Text = savedText;
+                    combo.SelectionStart = savedText.Length;
+                    combo.SelectionLength = 0;
+
+                    // Restore cursor — Windows hides it when typing starts.
+                    while (ShowCursor(true) < 0) { }
+                    Cursor.Current = Cursors.IBeam;
+                }));
+            };
+
+            // DropDownClosed: restore full list and re-commit the user's selection.
+            combo.DropDownClosed += (s, ev) =>
+            {
+                var all = combo.Tag as List<ItemLookupDto>;
+                if (all == null || combo.Items.Count == all.Count) return;
+
+                var selectedItem = combo.SelectedItem as ItemLookupDto;
+                string currentText = (combo.Text ?? "").Trim();
+
+                RefillComboItems(combo, all);
+
+                // Re-commit by object reference (mouse click).
+                if (selectedItem != null)
+                {
+                    for (int i = 0; i < combo.Items.Count; i++)
+                    {
+                        if (ReferenceEquals(combo.Items[i], selectedItem))
+                        { if (combo.SelectedIndex != i) combo.SelectedIndex = i; return; }
+                    }
+                }
+                // Or by exact text match (keyboard without explicit selection).
+                if (currentText.Length > 0)
+                {
+                    for (int i = 0; i < combo.Items.Count; i++)
+                    {
+                        if (string.Equals(combo.GetItemText(combo.Items[i]), currentText, StringComparison.OrdinalIgnoreCase))
+                        { combo.SelectedIndex = i; return; }
+                    }
+                }
+            };
+        }
+
         private void ApplyOldItemCategoryFilter()
         {
             if (cboOldItemListed == null)
                 return;
-
             var prevSelected = cboOldItemListed.SelectedValue;
             var selectedCategory = (cboOldListedCategory?.SelectedItem as string) ?? "All Categories";
 
@@ -541,10 +701,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 .OrderBy(x => x.DisplayText, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            cboOldItemListed.DataSource = null;
-            cboOldItemListed.DataSource = _filteredOutHardwareItems;
-            cboOldItemListed.DisplayMember = "DisplayText";
-            cboOldItemListed.ValueMember = "ItemId";
+            RefillComboItems(cboOldItemListed, _filteredOutHardwareItems);
 
             if (prevSelected != null)
             {
@@ -579,10 +736,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 .OrderBy(x => x.DisplayText, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            cboNewItem.DataSource = null;
-            cboNewItem.DataSource = _filteredStockHardwareItems;
-            cboNewItem.DisplayMember = "DisplayText";
-            cboNewItem.ValueMember = "ItemId";
+            RefillComboItems(cboNewItem, _filteredStockHardwareItems);
 
             if (prevSelected != null)
             {

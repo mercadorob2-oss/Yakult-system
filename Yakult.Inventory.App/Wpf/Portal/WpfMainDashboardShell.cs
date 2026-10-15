@@ -11,11 +11,13 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Animation;
 using Newtonsoft.Json;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Forms.Portal;
 using Yakult.Inventory.App.Pages.User;
 using Yakult.Inventory.App.Security;
+using Yakult.Inventory.App.Services;
 using Yakult.Inventory.App.Session;
 
 namespace Yakult.Inventory.App.Wpf.Portal
@@ -105,6 +107,12 @@ namespace Yakult.Inventory.App.Wpf.Portal
             PreviewKeyDown += HandleShortcut;
         }
 
+        private const string EmployeePortalUrl = "http://192.168.100.186:7016";
+        private const string CartridgeWebUrl = "http://192.168.100.186:8080";
+        private const string TicketAutomationUrl = "http://192.168.100.186:7017";
+        private const string MobileApiUrl = "http://192.168.100.186:7014";
+        private static System.Windows.Media.MediaPlayer _alertPlayer;
+
         private void RegisterSystems()
         {
             AddSystem("Inventory System", "Manage assets, stock levels, requests, and inventory movements.", "inventory", "Alt + I", PortalSelection.InventorySystem, PermissionResolver.Portal.InventorySystem);
@@ -159,6 +167,9 @@ namespace Yakult.Inventory.App.Wpf.Portal
             recent = ActionButton("Recent", null, () => ShowSystemMenu(recent, _preferences.Recent));
             actions.Children.Add(recent);
             actions.Children.Add(ActionButton("Help", "help", ShowHelpDialog));
+            var askAi = ActionButton("Ask AI", "chat", ToggleYakumi);
+            askAi.ToolTip = "Ask the office AI assistant";
+            actions.Children.Add(askAi);
             actions.Children.Add(ActionButton("My account", "person", OpenAccountDialog));
             var logout = ActionButton("Log out", "logout", () => SelectAndClose(PortalSelection.Logout));
             actions.Children.Add(logout);
@@ -303,7 +314,292 @@ namespace Yakult.Inventory.App.Wpf.Portal
             menu.Children.Add(Label("PINNED SYSTEMS", 10, Brush("#9DAAC0"), FontWeights.SemiBold, new Thickness(12, 32, 0, 12)));
             _pinnedPanel = new StackPanel();
             menu.Children.Add(_pinnedPanel);
-            dock.Children.Add(menu);
+            menu.Children.Add(Label("WEB SYSTEMS", 10, Brush("#9DAAC0"), FontWeights.SemiBold, new Thickness(12, 24, 0, 12)));
+            menu.Children.Add(CreateWebNavButton("Employee Portal", "person", EmployeePortalUrl));
+            menu.Children.Add(CreateWebNavButton("Request Cartridge Web", "request", CartridgeWebUrl));
+            menu.Children.Add(Label("ADMIN TOOLS", 10, Brush("#9DAAC0"), FontWeights.SemiBold, new Thickness(12, 24, 0, 12)));
+            menu.Children.Add(CreateAdminNavButton("Ticket Automation Handler", "headset", TicketAutomationUrl));
+            menu.Children.Add(CreateAdminNavButton("Mobile API", "grid", MobileApiUrl));
+            var menuScroll = new ScrollViewer { Content = menu, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+            dock.Children.Add(menuScroll);
+        }
+
+        private Button CreateWebNavButton(string title, string icon, string url)
+        {
+            var button = ActionButton(title, icon, () => OpenExternalLink(url, title));
+            button.Foreground = Brush("#DDE3ED");
+            button.FontSize = 11;
+            button.Padding = new Thickness(10, 7, 10, 7);
+            button.Margin = new Thickness(0, 0, 0, 4);
+            button.ToolTip = title + "\n" + url;
+            AutomationProperties.SetName(button, "Open " + title);
+            return button;
+        }
+
+        private Button CreateAdminNavButton(string title, string icon, string url)
+        {
+            var button = ActionButton(title, icon, () => OpenAdminTool(url, title));
+            button.Foreground = Brush("#DDE3ED");
+            button.FontSize = 11;
+            button.Padding = new Thickness(10, 7, 10, 7);
+            button.Margin = new Thickness(0, 0, 0, 4);
+            button.ToolTip = title + "\n" + url;
+            AutomationProperties.SetName(button, "Open " + title);
+            return button;
+        }
+
+        private static bool CanAccessAdminTools() => AppSession.IsDeveloper || AppSession.IsSuperAdmin || AppSession.IsAdmin;
+
+        private void OpenAdminTool(string url, string title)
+        {
+            if (!CanAccessAdminTools())
+            {
+                ShowUnauthorizedAccessDialog(title);
+                return;
+            }
+            OpenExternalLink(url, title);
+        }
+
+        private void ShowUnauthorizedAccessDialog(string toolName)
+        {
+            string originIp = GetLocalIpAddress();
+            string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            string user = AppSession.CurrentUserName ?? "Unknown";
+            Logger.LogError("[Workspace] Unauthorized access attempt by '" + user + "' for '" + toolName + "' from " + originIp + ".");
+            PlayUnauthorizedAlertSound();
+
+            var overlay = new Grid { Background = new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)) };
+            Grid.SetRowSpan(overlay, 3);
+            KeyboardNavigation.SetTabNavigation(overlay, KeyboardNavigationMode.Cycle);
+            var stories = new List<Storyboard>();
+
+            var dialog = new Border
+            {
+                Background      = new SolidColorBrush(Color.FromRgb(31, 43, 69)),
+                BorderBrush     = new SolidColorBrush(Color.FromRgb(229, 57, 53)),
+                BorderThickness = new Thickness(2),
+                CornerRadius    = new CornerRadius(14),
+                Width           = 400,
+                Padding         = new Thickness(0, 10, 0, 20),
+                Effect          = new DropShadowEffect { BlurRadius = 28, ShadowDepth = 0, Opacity = 0.55, Color = Color.FromRgb(229, 57, 53) },
+                RenderTransform = new TranslateTransform()
+            };
+
+            Action closeDialog = null;
+            closeDialog = () =>
+            {
+                try { foreach (var sb in stories) sb.Stop(); } catch { }
+                if (_rootGrid.Children.Contains(overlay)) _rootGrid.Children.Remove(overlay);
+            };
+
+            var stack = new StackPanel();
+
+            // Top bar: siren lights left and right, close X at the far right.
+            var topBar = new Grid { Margin = new Thickness(20, 0, 14, 0) };
+            topBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            topBar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            topBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            topBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var leftLight = new System.Windows.Shapes.Ellipse { Width = 44, Height = 10, Fill = new SolidColorBrush(Color.FromRgb(229, 57, 53)), Margin = new Thickness(0, 0, 0, 0) };
+            var rightLight = new System.Windows.Shapes.Ellipse { Width = 44, Height = 10, Fill = new SolidColorBrush(Color.FromRgb(229, 57, 53)) };
+            var closeX = new Button { Style = ActionStyle, Foreground = Brush("#8A94A8"), Padding = new Thickness(8, 4, 8, 4), Margin = new Thickness(10, 0, 0, 0), Cursor = Cursors.Hand, ToolTip = "Close" };
+            closeX.Content = new TextBlock { Text = "✕", FontSize = 14, Foreground = Brush("#8A94A8"), HorizontalAlignment = HorizontalAlignment.Center };
+            AutomationProperties.SetName(closeX, "Close alert");
+            closeX.Click += (_, __) => closeDialog();
+            topBar.Children.Add(leftLight);
+            Grid.SetColumn(rightLight, 2);
+            topBar.Children.Add(rightLight);
+            Grid.SetColumn(closeX, 3);
+            topBar.Children.Add(closeX);
+            stack.Children.Add(topBar);
+
+            // STOP banner with pulsing red border.
+            var bannerBorderBrush = new SolidColorBrush(Color.FromRgb(229, 57, 53));
+            var banner = new Border
+            {
+                Background      = new SolidColorBrush(Color.FromRgb(20, 29, 51)),
+                BorderBrush     = bannerBorderBrush,
+                BorderThickness = new Thickness(2),
+                CornerRadius    = new CornerRadius(10),
+                Padding         = new Thickness(12, 8, 12, 8),
+                Margin          = new Thickness(24, 8, 24, 0)
+            };
+            var stopText = new TextBlock { Text = "STOP", FontSize = 56, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(229, 57, 53)), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center };
+            stopText.Effect = new DropShadowEffect { BlurRadius = 18, ShadowDepth = 0, Opacity = 0.8, Color = Color.FromRgb(229, 57, 53) };
+            banner.Child = stopText;
+            stack.Children.Add(banner);
+
+            var heading = new TextBlock { Text = "SYSTEM ALERT: Unauthorized Access Attempt Detected.", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, Margin = new Thickness(24, 12, 24, 0) };
+            stack.Children.Add(heading);
+
+            var details = new StackPanel { Margin = new Thickness(24, 12, 24, 0) };
+            details.Children.Add(MakeAlertRow("Tool:", toolName));
+            details.Children.Add(MakeAlertRow("Origin IP:", originIp));
+            details.Children.Add(MakeAlertRow("Timestamp:", timestamp));
+            stack.Children.Add(details);
+
+            var terminate = new Button { Style = ActionStyle, Background = Brush("#C62828"), BorderBrush = Brush("#C62828"), BorderThickness = new Thickness(1), Foreground = Brushes.White, Padding = new Thickness(12, 10, 12, 10), Margin = new Thickness(24, 16, 24, 0), HorizontalContentAlignment = HorizontalAlignment.Center, Cursor = Cursors.Hand };
+            terminate.Content = new TextBlock { Text = "TERMINATE SESSION", FontSize = 13, FontWeight = FontWeights.Bold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center };
+            AutomationProperties.SetName(terminate, "Terminate session");
+            terminate.Click += (_, __) => closeDialog();
+            stack.Children.Add(terminate);
+
+            var review = new Button { Style = ActionStyle, Background = Brushes.Transparent, BorderBrush = Brush("#5A6B8C"), BorderThickness = new Thickness(1), Foreground = Brush("#DDE3ED"), Padding = new Thickness(12, 10, 12, 10), Margin = new Thickness(24, 8, 24, 0), HorizontalContentAlignment = HorizontalAlignment.Center, Cursor = Cursors.Hand };
+            review.Content = new TextBlock { Text = "REVIEW LOGS", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = Brush("#DDE3ED"), HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center };
+            AutomationProperties.SetName(review, "Review logs");
+            review.Click += (_, __) => closeDialog();
+            stack.Children.Add(review);
+
+            dialog.Child = stack;
+            var centerPanel = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            centerPanel.Children.Add(dialog);
+            overlay.Children.Add(centerPanel);
+            overlay.KeyDown += (_, e) => { if (e.Key == Key.Escape) closeDialog(); };
+            overlay.Focusable = true;
+            _rootGrid.Children.Add(overlay);
+
+            // Siren lights flash alternately.
+            var sirenLeft = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
+            var leftFade = new DoubleAnimation(1, 0.15, new Duration(TimeSpan.FromMilliseconds(500))) { AutoReverse = true };
+            Storyboard.SetTarget(leftFade, leftLight);
+            Storyboard.SetTargetProperty(leftFade, new PropertyPath(UIElement.OpacityProperty));
+            sirenLeft.Children.Add(leftFade);
+            stories.Add(sirenLeft);
+            sirenLeft.Begin();
+            var sirenRight = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
+            var rightFade = new DoubleAnimation(1, 0.15, new Duration(TimeSpan.FromMilliseconds(500))) { AutoReverse = true, BeginTime = TimeSpan.FromMilliseconds(500) };
+            Storyboard.SetTarget(rightFade, rightLight);
+            Storyboard.SetTargetProperty(rightFade, new PropertyPath(UIElement.OpacityProperty));
+            sirenRight.Children.Add(rightFade);
+            stories.Add(sirenRight);
+            sirenRight.Begin();
+
+            // STOP text blinks.
+            var blink = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
+            var blinkFade = new DoubleAnimation(1, 0.35, new Duration(TimeSpan.FromMilliseconds(550))) { AutoReverse = true };
+            Storyboard.SetTarget(blinkFade, stopText);
+            Storyboard.SetTargetProperty(blinkFade, new PropertyPath(UIElement.OpacityProperty));
+            blink.Children.Add(blinkFade);
+            stories.Add(blink);
+            blink.Begin();
+
+            // Banner border pulses between bright and dark red.
+            var pulse = new Storyboard { RepeatBehavior = RepeatBehavior.Forever };
+            var glow = new ColorAnimation(Color.FromRgb(229, 57, 53), Color.FromRgb(120, 20, 25), new Duration(TimeSpan.FromMilliseconds(700))) { AutoReverse = true };
+            Storyboard.SetTarget(glow, bannerBorderBrush);
+            Storyboard.SetTargetProperty(glow, new PropertyPath(SolidColorBrush.ColorProperty));
+            pulse.Children.Add(glow);
+            stories.Add(pulse);
+            pulse.Begin();
+
+            // Quick shake on open.
+            var shake = new Storyboard();
+            var shakeX = new DoubleAnimationUsingKeyFrames();
+            shakeX.KeyFrames.Add(new LinearDoubleKeyFrame(-10, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(60))));
+            shakeX.KeyFrames.Add(new LinearDoubleKeyFrame(9, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(120))));
+            shakeX.KeyFrames.Add(new LinearDoubleKeyFrame(-6, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(180))));
+            shakeX.KeyFrames.Add(new LinearDoubleKeyFrame(4, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(240))));
+            shakeX.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(300))));
+            Storyboard.SetTarget(shakeX, dialog);
+            Storyboard.SetTargetProperty(shakeX, new PropertyPath("(UIElement.RenderTransform).(TranslateTransform.X)"));
+            shake.Children.Add(shakeX);
+            shake.Begin();
+
+            terminate.Focus();
+        }
+
+        private static StackPanel MakeAlertRow(string label, string value)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 3, 0, 3) };
+            row.Children.Add(new TextBlock { Text = label, FontSize = 12, Foreground = Brush("#8A94A8"), Width = 90 });
+            row.Children.Add(new TextBlock { Text = value, FontSize = 12, Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap, Width = 230 });
+            return row;
+        }
+
+        private static string GetLocalIpAddress()
+        {
+            try
+            {
+                var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                foreach (var ip in host.AddressList)
+                    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && !System.Net.IPAddress.IsLoopback(ip))
+                        return ip.ToString();
+            }
+            catch { }
+            return "Unknown";
+        }
+
+        private static void PlayUnauthorizedAlertSound()
+        {
+            try
+            {
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string soundPath = null;
+                foreach (var candidate in new[]
+                {
+                    Path.Combine(baseDir, "Images", "Danger Alarm Sound Effect.mp3"),
+                    Path.Combine(baseDir, "images", "Danger Alarm Sound Effect.mp3"),
+                    Path.Combine(baseDir, "Danger Alarm Sound Effect.mp3")
+                })
+                {
+                    if (File.Exists(candidate)) { soundPath = candidate; break; }
+                }
+                if (soundPath != null)
+                {
+                    try
+                    {
+                        if (_alertPlayer != null)
+                        {
+                            try { _alertPlayer.Stop(); _alertPlayer.Close(); } catch { }
+                            _alertPlayer = null;
+                        }
+                        var player = new System.Windows.Media.MediaPlayer { Volume = 1.0 };
+                        _alertPlayer = player;
+                        player.MediaEnded += (_, __) =>
+                        {
+                            try { player.Close(); } catch { }
+                            if (ReferenceEquals(_alertPlayer, player)) _alertPlayer = null;
+                        };
+                        player.MediaFailed += (_, __) => PlayFallbackAlertBeeps();
+                        player.Open(new Uri(soundPath));
+                        player.Play();
+                        return;
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+            PlayFallbackAlertBeeps();
+        }
+
+        private static void PlayFallbackAlertBeeps()
+        {
+            try { System.Media.SystemSounds.Hand.Play(); } catch { }
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        System.Console.Beep(988, 160);
+                        System.Console.Beep(659, 160);
+                    }
+                }
+                catch { }
+            });
+        }
+
+        private static void OpenExternalLink(string url, string title)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("[Workspace] Could not open web system '" + title + "'.", ex);
+                MessageBox.Show("Could not open " + title + " (" + url + ").\n" + ex.Message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void BuildSearch(StackPanel parent)
@@ -746,6 +1042,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
                 case "person": data = "M16,7 A4,4 0 1 1 8,7 A4,4 0 1 1 16,7 M3,22 Q3,14 12,14 Q21,14 21,22"; break;
                 case "logout": data = "M10,3 L3,3 3,21 10,21 M8,12 L22,12 M17,7 L22,12 17,17"; break;
                 case "help": data = "M22,12 A10,10 0 1 1 2,12 A10,10 0 1 1 22,12 M8,8 Q8,4 13,6 Q18,8 12,12 L12,14 M12,17 L12,18"; break;
+                case "chat": data = "M4,4 L20,4 20,14 14,14 10,20 10,14 4,14 Z"; break;
                 default: data = "M3,12 L21,12 M15,6 L21,12 15,18"; break;
             }
             var path = new System.Windows.Shapes.Path { Data = Geometry.Parse(data), StrokeThickness = 1.6, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round, Stretch = Stretch.Uniform, Width = size, Height = size, VerticalAlignment = VerticalAlignment.Center };
@@ -779,6 +1076,10 @@ namespace Yakult.Inventory.App.Wpf.Portal
                 Logger.LogError("[WpfMainDashboardShell] Failed to open Account dialog.", ex);
             }
         }
+
+        // ====================================================================
+        // Shared read-only assistant (available across all desktop modules).
+        private void ToggleYakumi() => YakumiAssistantHost.Open(this);
 
         // ====================================================================
         // DEVELOPER DATABASE RESET

@@ -323,6 +323,24 @@ namespace Yakult.Inventory.App.Security
         /// <summary>Returns true unless this item category is explicitly restricted for the current user.</summary>
         public static bool CanUseItemCategory(string categoryKey) => CheckItemOverride("ItemCategory", categoryKey);
 
+        /// <summary>Cached category restrictions for read queries; does not load or change permissions.</summary>
+        public static List<string> GetRestrictedItemCategories()
+        {
+            var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (_userItemOverrides != null &&
+                _userItemOverrides.TryGetValue(AppSession.CurrentUserId, out var userTypes) &&
+                userTypes.TryGetValue("ItemCategory", out var userKeys))
+                keys.UnionWith(userKeys.Keys);
+            if (_roleItemOverrides != null && AppSession.CurrentUserRoles != null)
+            {
+                foreach (var role in AppSession.CurrentUserRoles)
+                    if (_roleItemOverrides.TryGetValue(role, out var roleTypes) &&
+                        roleTypes.TryGetValue("ItemCategory", out var roleKeys))
+                        keys.UnionWith(roleKeys.Keys);
+            }
+            return keys.Where(key => !CanUseItemCategory(key)).ToList();
+        }
+
         /// <summary>Returns true unless this action is explicitly restricted for the current user.</summary>
         public static bool CanPerformAction(string actionKey) => CheckItemOverride("Action", actionKey);
 

@@ -51,6 +51,75 @@ namespace Yakult.Inventory.App.Core
             }
         }
 
+        // Local AI (Ollama) for the in-app Ask AI assistant.
+        private static string _ollamaBaseUrl;
+        private static string _ollamaModel;
+
+        /// <summary>
+        /// Base URL of the office Ollama server (e.g. "http://192.168.100.50:11434").
+        /// </summary>
+        public static string OllamaBaseUrl
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_ollamaBaseUrl))
+                {
+                    _ollamaBaseUrl = ConfigurationManager.AppSettings["OllamaBaseUrl"] ?? "http://localhost:11434";
+                }
+                return _ollamaBaseUrl;
+            }
+        }
+
+        public static string OllamaModel
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_ollamaModel))
+                {
+                    _ollamaModel = ConfigurationManager.AppSettings["OllamaModel"] ?? "qwen2.5:3b";
+                }
+                return _ollamaModel;
+            }
+        }
+
+        /// <summary>
+        /// Persists a new Ollama server URL to the running exe.config and refreshes the in-memory cache.
+        /// </summary>
+        public static void SetOllamaBaseUrl(string newUrl)
+        {
+            if (string.IsNullOrWhiteSpace(newUrl))
+                throw new ArgumentException("URL cannot be empty.", nameof(newUrl));
+
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            if (config.AppSettings.Settings["OllamaBaseUrl"] != null)
+                config.AppSettings.Settings["OllamaBaseUrl"].Value = newUrl.TrimEnd('/');
+            else
+                config.AppSettings.Settings.Add("OllamaBaseUrl", newUrl.TrimEnd('/'));
+
+            config.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
+            _ollamaBaseUrl = null;
+        }
+
+        /// <summary>
+        /// Persists a new Ollama model name to the running exe.config and refreshes the in-memory cache.
+        /// </summary>
+        public static void SetOllamaModel(string newModel)
+        {
+            if (string.IsNullOrWhiteSpace(newModel))
+                throw new ArgumentException("Model cannot be empty.", nameof(newModel));
+
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            if (config.AppSettings.Settings["OllamaModel"] != null)
+                config.AppSettings.Settings["OllamaModel"].Value = newModel.Trim();
+            else
+                config.AppSettings.Settings.Add("OllamaModel", newModel.Trim());
+
+            config.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
+            _ollamaModel = null;
+        }
+
         // API Configuration
         private static string _apiBaseUrl;
 

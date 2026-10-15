@@ -3664,8 +3664,13 @@ namespace Yakult.Inventory.App.Repositories
                     ISNULL(NULLIF(LTRIM(RTRIM(CRM_MODEL.CartridgeModel)), ''), '') AS CartridgeModel,
                     ISNULL(CRM_MODEL.RequestedQty, ISNULL(TOP_REQ.Quantity, 0)) AS Quantity,
                     ISNULL(recv_emp.Name, '') AS ReceivedByName,
-                    ISNULL(s.IssuedBrandNewQty, 0) + ISNULL(s.IssuedRefilledQty, 0)
-                        AS TotalIssuedQty
+                    -- Consumable (ink/toner) sets are dispatched without writing
+                    -- IssuedBrandNewQty/IssuedRefilledQty (cartridge-exchange-only
+                    -- columns), so fall back to the requested qty instead of showing 0.
+                    CASE WHEN ISNULL(s.IssuedBrandNewQty, 0) + ISNULL(s.IssuedRefilledQty, 0) > 0
+                         THEN ISNULL(s.IssuedBrandNewQty, 0) + ISNULL(s.IssuedRefilledQty, 0)
+                         ELSE ISNULL(CRM_MODEL.RequestedQty, ISNULL(TOP_REQ.Quantity, 0))
+                    END AS TotalIssuedQty
                 FROM dbo.[Set] s
                 CROSS APPLY (
                     SELECT TOP 1 r.ReqId, r.EmpId, r.ReceivedById, r.Description, r.Quantity,
