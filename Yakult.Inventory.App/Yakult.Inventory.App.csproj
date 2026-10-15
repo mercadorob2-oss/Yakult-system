@@ -401,6 +401,9 @@
     <Compile Include="Dialogs\MaintenanceAlertDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Dialogs\AskAiDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Forms\CartridgeManagement\CartridgeManagementWpfHost.cs">
       <SubType>Form</SubType>
     </Compile>
