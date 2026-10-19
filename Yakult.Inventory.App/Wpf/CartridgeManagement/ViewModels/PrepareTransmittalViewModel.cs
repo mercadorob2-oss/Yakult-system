@@ -55,6 +55,22 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
             set => SetField(ref _selectedNotedBy, value);
         }
 
+        // ── Noted By special case: Rod Ang Jr. ─────────────────────────────────
+        // Checked by default. While checked the combo is disabled and ApplyTo
+        // writes the fixed name; unchecking restores manual combo selection.
+        public const string DefaultNotedByName = "ROD ANG";
+
+        private bool _isNotedByRodAngJr = true;
+        public bool IsNotedByRodAngJr
+        {
+            get => _isNotedByRodAngJr;
+            set
+            {
+                if (SetField(ref _isNotedByRodAngJr, value) && value)
+                    SelectedNotedBy = null;
+            }
+        }
+
         // ── Approved By (ApprovalRoleTitle employees, searchable) ─────────────────
         private readonly ObservableCollection<EmployeeSelectItem> _approvedBySource;
         public  ICollectionView ApprovedByView { get; }
@@ -226,8 +242,11 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
                     e.Name.Equals(_receivedBySearch, StringComparison.OrdinalIgnoreCase));
             }
 
-            // Pre-select Noted By / Approved By if re-entering the form with prior edits
-            if (!string.IsNullOrWhiteSpace(_notedBySearch))
+            // Pre-select Noted By / Approved By if re-entering the form with prior edits.
+            // A prior ROD ANG JR value restores the special-case checkbox instead.
+            _isNotedByRodAngJr = string.IsNullOrWhiteSpace(transmittal.NotedBy)
+                || transmittal.NotedBy.Trim().Equals(DefaultNotedByName, StringComparison.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(_notedBySearch) && !_isNotedByRodAngJr)
             {
                 _selectedNotedBy = all.FirstOrDefault(e =>
                     e.Name.Equals(_notedBySearch, StringComparison.OrdinalIgnoreCase));
@@ -245,7 +264,7 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
         {
             vm.IsYakultPhilippines = IsYakultPhilippines;
             vm.IsYakultMarketing   = IsYakultMarketing;
-            vm.NotedBy      = SelectedNotedBy?.Name ?? "";
+            vm.NotedBy      = IsNotedByRodAngJr ? DefaultNotedByName : (SelectedNotedBy?.Name ?? "");
             vm.ApprovedBy   = SelectedApprovedBy?.Name
                               ?? (!string.IsNullOrWhiteSpace(_approvedBySearch)
                                   ? _approvedBySearch : "");

@@ -13,17 +13,29 @@ namespace Yakult.Inventory.App.Services
         private static bool Has(string question,string pattern) { return AiIntentRouter.Has(question,pattern); }
         internal static string Normalize(string question)
         {
-            string text=Regex.Replace(question ?? "",@"\bhow\s+(may|mny|mnay)\b","how many",RegexOptions.IgnoreCase);
-            text=Regex.Replace(text,@"\bsloved\b","solved",RegexOptions.IgnoreCase);
-            return AssistantKnowledge.NormalizeWords(text).Trim();
+            return AssistantQuestionLanguage.Normalize(question);
         }
         internal static bool IsGuidance(string q)
         {
+            q=AssistantQuestionLanguage.WithoutQuotes(q);
             return Has(q,@"\b(how (do|can|should|to)|where (do|can|should)|paano|saan|explain|why|bakit|meaning|difference|workflow|procedure|guide|steps|what can you do)\b") ||
                 Has(q,@"^what (is|are) (a |an |the )?(invoice|request|set|asset|renewal|cartridge|borrow|repair|ticket|parent tag|vat|wht|permission|role)\??$");
         }
         public static AssistantPlan Plan(string question,AssistantContext context,IReadOnlyList<AssistantRequest> previous=null,DateTime? todayOverride=null)
         {
+            var follow=AssistantFollowUpLanguage.Resolve(question,previous);
+            if(follow.Message!=null) return new AssistantPlan {Message=follow.Message};
+            question=follow.Question;previous=follow.Previous;
+            var plan=PlanCore(question,context,previous,todayOverride);
+            var inherited=previous!=null && previous.Count==1 && plan.Requests.Count==1 &&
+                previous[0].Capability==plan.Requests[0].Capability && previous[0].Search==plan.Requests[0].Search && AssistantQuestionLanguage.IsFollowUp(question)
+                ?AssistantQuestionLanguage.SearchTerms(previous[0].Search):new List<string>();
+            AssessMeaning(plan,question,inherited);
+            return plan;
+        }
+        private static AssistantPlan PlanCore(string question,AssistantContext context,IReadOnlyList<AssistantRequest> previous,DateTime? todayOverride)
+        {
+            if((question ?? "").Length>AiIntentRouter.MaxQuestionLength) return new AssistantPlan {Message="Please shorten your question to "+AiIntentRouter.MaxQuestionLength+" characters."};
             string q=Normalize(question);var plan=new AssistantPlan();
             if(q.Length==0) { plan.Message="Please enter a question.";return plan; }
             if(q.Length>AiIntentRouter.MaxQuestionLength) { plan.Message="Please shorten your question to "+AiIntentRouter.MaxQuestionLength+" characters.";return plan; }
@@ -40,6 +52,8 @@ namespace Yakult.Inventory.App.Services
             }
             if(Has(q,@"\boverdue\b") && Has(q,@"\b(borrow|loan)\b"))
             { plan.Message="Borrow records have no due-date field, so I cannot determine overdue status. Ask for open loans or borrow aging.";return plan; }
+            if(AssistantQuestionLanguage.HasUnsupportedExclusion(question))
+            { plan.Message="I can’t apply that exclusion with the available filters. Which single status, item or record type would you like me to include?";return plan; }
             Tuple<string,long> reference;
             try { reference=Reference(q); } catch(ArgumentException ex) { plan.Message=ex.Message;return plan; }
             if(IsGuidance(q))
@@ -93,29 +107,37 @@ namespace Yakult.Inventory.App.Services
             bool page=Has(q,@"^\s*(show |the )?(next( page)?|previous( page)?|more|back)\s*[?.!]*$");
             bool total=Has(q,@"^(and )?(how many (in )?total|what is the total|total|ilan lahat)\??$");
             bool list=Has(q,@"^(show|list) (them|those|the records|the items)\??$");
-            bool filter=Has(q,@"^(and |only |just |what about |same (but )?)") || Has(q,@"^(today|yesterday|this month|last month|this week|last week|this year|last year|assigned to me|by status|by month)( only)?\??$");
+            bool filter=Has(q,@"^(and |only |just |what about |same (but )?)") || Has(q,@"^(today|yesterday|this month|last month|this week|last week|this year|last year|all dates|(?:month|week|year) to date|assigned to me|by status|by month)( only)?\??$");
             if(!page && !total && !list && !filter) return false;
             if(previous==null || previous.Count!=1)
             {
                 if(filter && BestCapability(q)!=null) return false;
-                plan.Message="Please specify one lookup first, then apply the follow-up filter or page.";return true;
+                plan.Message=previous!=null && previous.Count>1?"Which result would you like to refine? Please name its record type.":"Which records would you like to look up first?";return true;
             }
             var current=previous[0].Copy();
             if(filter && BestCapability(q)!=null && BestCapability(q).Id!=current.Capability) return false;
             if(page)
             {
-                if(current.Operation==AssistantOperation.Count) current.Operation=AssistantOperation.List;
-                current.Page=Has(q,@"\b(previous|back)\b")?Math.Max(0,current.Page-1):current.Page+1;
+                if(current.Operation==AssistantOperation.Count) {current.Operation=AssistantOperation.List;current.Page=0;}
+                else current.Page=Has(q,@"\b(previous|back)\b")?Math.Max(0,current.Page-1):current.Page+1;
             }
             else if(total) { current.Operation=AssistantOperation.Count;current.Page=0; }
             else if(list) { current.Operation=AssistantOperation.List;current.Page=0; }
-            else { ApplyFilters(q,current,context,today,false);current.Page=0; }
+            else
+            {
+                string oldSearch=current.Search;
+                string filters=AssistantQuestionLanguage.ReplaceUnquoted(q,@"^(?:same(?: but)?|and|only|just|what about)\s+","");
+                ApplyFilters(filters,current,context,today,true);
+                if(string.IsNullOrWhiteSpace(current.Search)) current.Search=oldSearch;
+                else if(!string.Equals(current.Search,oldSearch,StringComparison.OrdinalIgnoreCase)) current.ModelMatch=null;
+                current.Page=0;
+            }
             plan.Requests.Add(current);return true;
         }
 
         internal static AssistantCapability BestCapability(string q)
         {
-            q=Normalize(q);
+            q=AssistantQuestionLanguage.WithoutQuotes(Normalize(q));
             if(Has(q,@"\b(policy|policies|guideline|handbook|memo|rules)\b")) return AssistantCatalog.Find("policies");
             q=Regex.Replace(q,@"\b(?:group(?:ed)? by|by|per)\s+(status|priority|employee|department|branch|company|category|condition|month|subtype|parent tag|vendor|role|action|entity type)\b"," ");
             q=Regex.Replace(q,@"\b(?:assigned to|handled by|borrowed by|in department|in branch|in company|for employee)\s+.+$"," ");
@@ -131,7 +153,7 @@ namespace Yakult.Inventory.App.Services
 
         internal static IReadOnlyList<AssistantCapability> InterpretationCandidates(string question,AssistantContext context)
         {
-            var tokens=AssistantKnowledge.Tokens(question);
+            var tokens=AssistantKnowledge.Tokens(Normalize(question));
             return AssistantCatalog.All.Where(c=>c.IsAllowed(context)).Select(c=>new { C=c,Score=c.Aliases.Sum(a=>AssistantKnowledge.Tokens(a).Intersect(tokens).Count())+(c.Module==context.Module?1:0) })
                 .OrderByDescending(p=>p.Score).ThenBy(p=>p.C.Id).Take(6).Select(p=>p.C).ToList().AsReadOnly();
         }
@@ -148,7 +170,7 @@ namespace Yakult.Inventory.App.Services
             return CreateRequest(Normalize(question),context,id,today);
         }
 
-        private static AssistantRequest CreateRequest(string q,AssistantContext context,string forcedCapability,DateTime today)
+        internal static AssistantRequest CreateRequest(string q,AssistantContext context,string forcedCapability,DateTime today)
         {
             var reference=Reference(q);
             var capability=forcedCapability==null?BestCapability(q):AssistantCatalog.Find(forcedCapability);
@@ -166,6 +188,8 @@ namespace Yakult.Inventory.App.Services
                 capability=AssistantCatalog.Find(context.SelectedCapability);
                 reference=Tuple.Create(context.SelectedCapability,context.SelectedRecordId.Value);
             }
+            if(capability==null && Has(q,@"\b(how many|in stock)\b") &&
+                Has(q,@"\b(?=[a-z0-9-]*[a-z])(?=[a-z0-9-]*\d)[a-z0-9-]+\b")) capability=AssistantCatalog.Find("items");
             if(capability==null) return null;
             var request=new AssistantRequest { Capability=capability.Id,Operation=Has(q,@"\b(how many|how much|count|total|sum|ilan|ilang|bilang)\b")?AssistantOperation.Count:AssistantOperation.List };
             bool history=Has(q,@"\b(history|changes|activity|contents|line items)\b");
@@ -191,7 +215,7 @@ namespace Yakult.Inventory.App.Services
 
         private static Tuple<string,long> Reference(string q)
         {
-            var matches=Regex.Matches(q,@"\b(TCK|RPR|REQ(?:UEST)?|SET)[-\s#]*(\d+)\b|\b(item|invoice|borrow|employee)\s*#\s*(\d+)\b",RegexOptions.IgnoreCase);
+            var matches=Regex.Matches(AssistantQuestionLanguage.WithoutQuotes(q),@"\b(TCK|RPR|REQ(?:UEST)?|SET)[-\s#]*(\d+)\b|\b(item|invoice|borrow|employee|ticket|request|repair)\s*#\s*(\d+)\b",RegexOptions.IgnoreCase);
             if(matches.Count>1) throw new ArgumentException("Please look up one reference per question, or compare two named date periods.");
             if(matches.Count==0) return null;
             bool numeric=matches[0].Groups[3].Success;
@@ -204,10 +228,13 @@ namespace Yakult.Inventory.App.Services
         private static void ApplyFilters(string q,AssistantRequest r,AssistantContext context,DateTime today,bool extractSearch)
         {
             var c=AssistantCatalog.Find(r.Capability);
-            if(c.Id=="tickets" && Has(q,@"\bresolved\b") && !Has(q,@"\btemporary\b"))
+            string semantic=AssistantQuestionLanguage.WithoutQuotes(q);
+            if(c.Id=="tickets" && AssistantWordMappings.HasAmbiguousTicketStatus(semantic) && !Has(semantic,@"\b(temporary|solved|closed)\b"))
                 throw new ArgumentException("Ticket statuses distinguish Solved, Closed and Resolved (Temporary). Please specify which status you want.");
-            string remaining=Regex.Replace(q,@"\b(TCK|RPR|REQ(?:UEST)?|SET)[-\s#]*\d+\b|\b(item|invoice|borrow|employee)\s*#\s*\d+\b"," ",RegexOptions.IgnoreCase);
-            bool personal=Has(q,@"\b(my|mine|ako|akin|ko|assigned to me|created by me|borrowed by me)\b");
+            if(c.SupportedFilters.Contains("Priority") && AssistantWordMappings.HasAmbiguousPriority(semantic))
+                throw new ArgumentException("Would you like High or Critical priority? Please choose one so I use the right filter.");
+            string remaining=AssistantQuestionLanguage.ReplaceUnquoted(q,@"\b(TCK|RPR|REQ(?:UEST)?|SET)[-\s#]*\d+\b|\b(item|invoice|borrow|employee|ticket|request|repair)\s*#\s*\d+\b"," ");
+            bool personal=Has(semantic,@"\b(my|mine|ako|akin|ko|assigned to me|created by me|borrowed by me)\b");
             if(personal) { r.Personal=true;r.Employee=null; }
             if(Has(q,@"\bassigned to me\b")) r.PersonalRelation="Assigned";
             else if(Has(q,@"\bcreated by me\b")) r.PersonalRelation="Created";
@@ -216,6 +243,10 @@ namespace Yakult.Inventory.App.Services
             r.Department=Extract(ref remaining,@"\b(?:in |for )?(?:the )?department\s+",true) ?? r.Department;
             r.Branch=Extract(ref remaining,@"\b(?:in |for )?(?:the )?branch\s+",true) ?? r.Branch;
             r.Company=Extract(ref remaining,@"\b(?:in |for )?(?:the )?company\s+",true) ?? r.Company;
+            AssistantOrganizationResolution.ClearStale(r);
+            r.Condition=Extract(ref remaining,@"\bcondition\s+",true) ?? r.Condition;
+            Dictionary<string,string> literals;remaining=AssistantQuestionLanguage.MaskQuotes(remaining,out literals);
+            q=semantic;
             var group=Regex.Match(remaining,@"\b(?:group(?:ed)? by|by|per)\s+(status|priority|employee|department|branch|company|category|condition|month|subtype|parent tag|vendor|role|action|entity type)\b",RegexOptions.IgnoreCase);
             if(group.Success)
             {
@@ -223,11 +254,19 @@ namespace Yakult.Inventory.App.Services
                 r.GroupBy=groups[group.Groups[1].Value];r.Operation=AssistantOperation.Summary;remaining=remaining.Remove(group.Index,group.Length);
             }
             if(c.Id=="item-repairs") remaining=Regex.Replace(remaining,@"\brepaired items\b"," ",RegexOptions.IgnoreCase);
+            if(c.Id=="items")
+            {
+                var condition=Regex.Match(remaining,@"\b(used|repaired)\b",RegexOptions.IgnoreCase);
+                if(condition.Success)
+                {r.Condition=condition.Value.Equals("used",StringComparison.OrdinalIgnoreCase)?"Used":"Repaired";remaining=remaining.Remove(condition.Index,condition.Length);}
+            }
             var statuses=new[] { "Resolved (Temporary)","Forwarded to Repair","In Progress","AwaitingParts","WaitingParts","WaitingDiagnosis","CannotRepair","Unrepairable","Diagnosing","Repairing","Completed","Reopened","Escalated","Rejected","Approved","Cancelled","Returned","Unfulfilled","Pending","Solved","Closed","Testing","Waiting","Inactive","Active","Open","Used","Repaired" };
             var matchingStatuses=statuses.Where(status=>Has(remaining,@"(?<![\p{L}\p{Nd}])"+Regex.Escape(status)+@"(?![\p{L}\p{Nd}])")).ToList();
             if(matchingStatuses.Count>1) throw new ArgumentException("Please ask for one status at a time, name two complete lookups, or request a summary by status.");
             if(matchingStatuses.Count==1)
             {
+                if(c.Id=="items" && !new[] {"Active","Inactive"}.Contains(matchingStatuses[0]))
+                    throw new ArgumentException("Items use Active or Inactive status. Did you mean an item condition or a product name in quotes?");
                 r.Status=matchingStatuses[0];remaining=Regex.Replace(remaining,@"(?<![\p{L}\p{Nd}])"+Regex.Escape(r.Status)+@"(?![\p{L}\p{Nd}])"," ",RegexOptions.IgnoreCase);
             }
             if(c.Id=="license-review" && r.Status=="Pending") r.Status="Pending review";
@@ -259,7 +298,7 @@ namespace Yakult.Inventory.App.Services
             {
                 bool stock=Has(q,@"\b(in stock|stock|available|do (?:we|i) have)\b") || r.Operation==AssistantOperation.Count;
                 if(stock && !Has(q,@"\b(low stock|lowest stock|running out)\b")) r.InStockOnly=true;
-                if(stock && Has(q,@"\b(in stock|stock|available)\b")) {r.Personal=false;r.PersonalRelation=null;}
+                if(stock && Has(q,@"\b(in stock|stock|available)\b") && !Has(q,@"\b(assigned to me|created by me|borrowed by me|my|mine)\b")) {r.Personal=false;r.PersonalRelation=null;}
             }
             if(Has(remaining,@"\b(exclude|excluding|without|not) archived\b")) {r.IncludeArchived=false;r.ArchivedOnly=false;remaining=Regex.Replace(remaining,@"\b(exclude|excluding|without|not) archived\b"," ");}
             else if(Has(remaining,@"\barchived\b")) { r.IncludeArchived=true;r.ArchivedOnly=!Has(remaining,@"\b(including|include|with) archived\b"); }
@@ -275,29 +314,74 @@ namespace Yakult.Inventory.App.Services
             else if(!dates && (r.Capability=="renewals" || r.Capability=="warranties") && Has(q,@"\b(expir\w*|upcoming)\b"))
             {r.DateField="EndDate";r.FromLocal=today;r.ToLocalExclusive=today.AddDays(91);}
             if(!extractSearch) return;
-            remaining=Regex.Replace(remaining,@"\b(?:how many|how much|do you know|who is|tell me about|what is|what are|status of|what about)\b"," ",RegexOptions.IgnoreCase);
+            remaining=Regex.Replace(remaining,@"\b(?:how many|how much|do you know|who is|tell me about|what is|what are|status of|what about|named|called|matching|containing|search for)\b"," ",RegexOptions.IgnoreCase);
             string noise="record records list show count sum total summary compare comparison versus vs only just all dates today yesterday this last next month week year currently created submitted posted assigned handled priority grouped per history changes activity contents line details lookup status of outstanding partially fulfilled archived including include expiry expiration expire expires expiring expired upcoming within past soon condition highest lowest low running out personal";
             string domainNoise=r.Capability=="items"?"stock stocks inventory item items equipment product products available quantity quantities unit units level levels":
                 r.Capability=="employees"?AiContextProviders.EmployeeNoise:
                 r.Capability=="policies"?AiContextProviders.PolicyNoise:
                 string.Join(" ",c.Aliases.Where(a=>!new[] {"keyboard","laptop","mouse","monitor","memory","ram","printer","battery","cable"}.Contains(a)).SelectMany(a=>a.Split(' ')));
             var terms=AiIntentRouter.SearchTokens(remaining,noise+" "+domainNoise,true);
-            r.Search=string.Join(" ",terms);
+            r.Search=string.Join(" ",terms.Select(t=>literals.ContainsKey(t)?"\""+literals[t]+"\"":t));
+        }
+
+        internal static void AssessMeaning(AssistantPlan plan,string question,IEnumerable<string> knownTerms=null)
+        {
+            if(plan.Message!=null || plan.Requests.Count==0)
+            {
+                if(plan.Message==null && plan.GuidanceQuestion==null && AiIntentRouter.Has(Normalize(question),@"\b(how many|how much|number of|quantity of|count|list|show|find|status|stock)\b"))
+                {plan.NeedsInterpretation=true;plan.UnresolvedMeaning="Which records would you like me to look up?";}
+                return;
+            }
+            var known=new HashSet<string>(knownTerms ?? new string[0],StringComparer.OrdinalIgnoreCase);
+            string q=Normalize(question);
+            foreach(var request in plan.Requests)
+            {
+                var capability=AssistantCatalog.Find(request.Capability);
+                foreach(var field in new[] {Tuple.Create("employee",request.Employee),Tuple.Create("department",request.Department),Tuple.Create("branch",request.Branch),Tuple.Create("company",request.Company),Tuple.Create("condition",request.Condition)})
+                {
+                    if(string.IsNullOrWhiteSpace(field.Item2) || q.IndexOf(field.Item2,StringComparison.OrdinalIgnoreCase)<0) continue;
+                    bool quoted=AssistantQuestionLanguage.Quotes.Matches(q).Cast<Match>().Any(m=>m.Value.Substring(1,m.Length-2).Equals(field.Item2,StringComparison.OrdinalIgnoreCase));
+                    if(!quoted && Has(field.Item2,@"\b(that|which|who|are|is|was|were|still|except|not|before|after|during)\b"))
+                    {plan.NeedsInterpretation=true;plan.UnresolvedFilter=field.Item1;plan.UnresolvedMeaning="Which "+field.Item1+" name should I use? You can put the full name in quotes.";}
+                }
+                foreach(string word in AssistantQuestionLanguage.ProductNameTerms(question,request)) known.Add(word);
+                foreach(string alias in capability.Aliases)
+                    foreach(string word in AiIntentRouter.SearchTokens(Normalize(alias),"",true)) known.Add(word);
+                string unquoted=AssistantQuestionLanguage.WithoutQuotes(request.Search);
+                bool explicitSearch=Has(q,@"\b(named|called|matching|containing|search for|find)\b");
+                var unexplained=AiIntentRouter.SearchTokens(unquoted).Where(t=>!known.Contains(t) &&
+                    !Regex.IsMatch(t,@"^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z0-9-]+$"));
+                if(!explicitSearch && request.Capability!="employees" && request.Capability!="policies" && unexplained.Any())
+                {plan.NeedsInterpretation=true;plan.UnresolvedMeaning="Should I search for “"+request.Search+"”, or did you mean a particular filter?";}
+            }
         }
 
         private static string Extract(ref string text,string prefix,bool stopAtFilter)
         {
             if(prefix.Contains("department") || prefix.Contains("branch") || prefix.Contains("company")) prefix=@"(?<!by )(?<!per )"+prefix;
-            string ending=@"(?=\s+(?:in |for )?(?:department|branch|company|with |from |since |before |after |today\b|yesterday\b|this |last |next |by |per |high\b|low\b|critical\b|pending\b|solved\b|only\b)|[?.!]|$)";
-            var match=Regex.Match(text,prefix+"(?:\"([^\"]+)\"|'([^']+)'|(.+?))"+ending,RegexOptions.IgnoreCase);
-            if(!match.Success) return null;
+            string ending=@"(?=\s+(?:in |for )?(?:department|branch|company|with |from |since |before |after |today\b|yesterday\b|this |last |next |by |per |high\b|low\b|critical\b|pending\b|solved\b|only\b)|[?.!,;]|$)";
+            var quoted=AssistantQuestionLanguage.Quotes.Matches(text).Cast<Match>().ToList();
+            var match=Regex.Matches(text,prefix+"(?:\"([^\"]+)\"|'([^']+)'|(.+?))"+ending,RegexOptions.IgnoreCase).Cast<Match>()
+                .FirstOrDefault(m=>!quoted.Any(l=>m.Index>l.Index && m.Index<l.Index+l.Length));
+            if(match==null) return null;
             string value=Enumerable.Range(1,3).Select(i=>match.Groups[i].Value).FirstOrDefault(s=>s.Length>0);
             text=text.Remove(match.Index,match.Length);return value==null?null:value.Trim();
         }
 
         internal static bool ApplyDates(ref string q,AssistantRequest request,DateTime today)
         {
+            if(Regex.Matches(q,@"\b(today|yesterday|this month|last month|this week|last week|this year|last year|all dates|(?:month|week|year) to date)\b",RegexOptions.IgnoreCase).Count>1)
+                throw new ArgumentException("Which single date period would you like me to use? You can also ask to compare two periods.");
+            var allDates=Regex.Match(q,@"\ball dates\b",RegexOptions.IgnoreCase);
+            if(allDates.Success)
+            {request.FromLocal=null;request.ToLocalExclusive=null;q=q.Remove(allDates.Index,allDates.Length);return true;}
             DateTime from,to;
+            var toDate=Regex.Match(q,@"\b(month|week|year) to date\b",RegexOptions.IgnoreCase);
+            if(toDate.Success)
+            {
+                from=toDate.Groups[1].Value=="month"?new DateTime(today.Year,today.Month,1):toDate.Groups[1].Value=="year"?new DateTime(today.Year,1,1):today.AddDays(-(((int)today.DayOfWeek+6)%7));
+                request.FromLocal=from;request.ToLocalExclusive=today.AddDays(1);q=q.Remove(toDate.Index,toDate.Length);return true;
+            }
             const string months="january|february|march|april|may|june|july|august|september|october|november|december";
             var named=Regex.Match(q,@"\b(?:in|during|for)\s+("+months+@")(?:\s+(\d{4}))?\b|\b("+months+@")\s+(\d{4})\b",RegexOptions.IgnoreCase);
             if(named.Success)

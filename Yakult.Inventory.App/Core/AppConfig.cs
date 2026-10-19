@@ -64,7 +64,8 @@ namespace Yakult.Inventory.App.Core
             {
                 if (string.IsNullOrEmpty(_ollamaBaseUrl))
                 {
-                    _ollamaBaseUrl = ConfigurationManager.AppSettings["OllamaBaseUrl"] ?? "http://localhost:11434";
+                    string saved = Properties.Settings.Default.OllamaBaseUrl;
+                    _ollamaBaseUrl = string.IsNullOrWhiteSpace(saved) ? ConfigurationManager.AppSettings["OllamaBaseUrl"] ?? "http://localhost:11434" : saved;
                 }
                 return _ollamaBaseUrl;
             }
@@ -76,48 +77,42 @@ namespace Yakult.Inventory.App.Core
             {
                 if (string.IsNullOrEmpty(_ollamaModel))
                 {
-                    _ollamaModel = ConfigurationManager.AppSettings["OllamaModel"] ?? "qwen2.5:3b";
+                    string saved = Properties.Settings.Default.OllamaModel;
+                    _ollamaModel = string.IsNullOrWhiteSpace(saved) ? ConfigurationManager.AppSettings["OllamaModel"] ?? "qwen2.5:3b" : saved;
                 }
                 return _ollamaModel;
             }
         }
 
         /// <summary>
-        /// Persists a new Ollama server URL to the running exe.config and refreshes the in-memory cache.
+        /// Persists the connection in this Windows user's settings, without modifying the installed executable config.
         /// </summary>
-        public static void SetOllamaBaseUrl(string newUrl)
+        public static void SetOllamaConnection(string newUrl, string newModel)
         {
-            if (string.IsNullOrWhiteSpace(newUrl))
-                throw new ArgumentException("URL cannot be empty.", nameof(newUrl));
-
-            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            if (config.AppSettings.Settings["OllamaBaseUrl"] != null)
-                config.AppSettings.Settings["OllamaBaseUrl"].Value = newUrl.TrimEnd('/');
-            else
-                config.AppSettings.Settings.Add("OllamaBaseUrl", newUrl.TrimEnd('/'));
-
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
-            _ollamaBaseUrl = null;
+            string url = Services.OllamaConnectionSettings.NormalizeBaseUrl(newUrl);
+            string model = Services.OllamaConnectionSettings.ValidateModel(newModel);
+            var settings = Properties.Settings.Default;
+            string previousUrl = settings.OllamaBaseUrl, previousModel = settings.OllamaModel;
+            try
+            {
+                settings.OllamaBaseUrl = url;
+                settings.OllamaModel = model;
+                settings.Save();
+            }
+            catch
+            {
+                settings.OllamaBaseUrl = previousUrl;
+                settings.OllamaModel = previousModel;
+                throw;
+            }
+            _ollamaBaseUrl = url;
+            _ollamaModel = model;
         }
 
-        /// <summary>
-        /// Persists a new Ollama model name to the running exe.config and refreshes the in-memory cache.
-        /// </summary>
+        public static void SetOllamaBaseUrl(string newUrl) { SetOllamaConnection(newUrl, OllamaModel); }
         public static void SetOllamaModel(string newModel)
         {
-            if (string.IsNullOrWhiteSpace(newModel))
-                throw new ArgumentException("Model cannot be empty.", nameof(newModel));
-
-            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            if (config.AppSettings.Settings["OllamaModel"] != null)
-                config.AppSettings.Settings["OllamaModel"].Value = newModel.Trim();
-            else
-                config.AppSettings.Settings.Add("OllamaModel", newModel.Trim());
-
-            config.Save(ConfigurationSaveMode.Modified);
-            ConfigurationManager.RefreshSection("appSettings");
-            _ollamaModel = null;
+            SetOllamaConnection(OllamaBaseUrl, newModel);
         }
 
         // API Configuration

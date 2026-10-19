@@ -38,6 +38,18 @@ Unrecognized factual wording may use one model classification for a source sugge
 
 The live smoke test initially caught a wrong source classification. After strengthening the prompt, classification passed; the guide response used the authored-guide fallback. This is limited transport/behavior evidence, not broad model-quality certification. No model, package or Ollama configuration was replaced.
 
+## Desktop AI connection settings
+
+Open Yakumi's existing gear menu. Enter the AI computer's HTTP/HTTPS address and choose an installed model; a plain `host:port` is accepted. The reload button lists models from the entered server. Test connection checks both Ollama's version API and installed models, within a 15-second budget. Save & connect repeats validation before saving and using the connection. A missing model, unreachable server, invalid response or invalid address keeps the previous saved connection. This check establishes API reachability and model availability; it does not run an inference or prove that a large model will fit in server memory.
+
+The URL and model are saved together in Windows user settings. Existing executable-config values remain the defaults until a user saves a connection. The installed executable config is not rewritten. Each Windows user configures their own connection, and subsequent app launches use it automatically. No database table, application role, installer default or model installation is changed by this setting.
+
+Editing fields cancels stale validation; closing chat or changing session cancels outstanding checks. Updating the model list programmatically does not invalidate its own result. Saving a different connection cancels the active chat request and clears the assistant's query/model history. The original floating-card design is retained. A synthetic [connection settings preview](../_build_verify/ai-expanded/yakumi-connection-settings.png) shows the layout.
+
+For the current office setup, enter `http://192.168.27.80:11434` and `qwen2.5:3b`, then Save & connect. The AI server must remain awake and reachable; a stable address or resolvable hostname avoids changes after DHCP renewals. Localhost refers to the desktop running the app. The setting tests connectivity but does not change Windows firewall, office routing or server binding. Another desktop must verify connectivity from its own network.
+
+Run `tools/Test-YakumiConnection.ps1 -ServerUrl 'http://192.168.27.80:11434' -Persistence` for an explicit model-availability check plus persistence verification. The persistence check uses a uniquely named helper executable and a fresh, verified test-only Windows settings profile, checks saved values in separate processes, and removes the test settings file/executable afterward. It never writes the real desktop profile or starts application/database services.
+
 ## Examples
 
 | Question | Result definition |
@@ -85,6 +97,7 @@ The latest counts and artifacts are in [Yakumi-Validation.md](Yakumi-Validation.
 .\tools\Test-YakumiLocalSchema.ps1 -ScriptDomPath 'C:\path\to\Microsoft.SqlServer.TransactSql.ScriptDom.dll'
 .\tools\Test-ExpandedYakumi.ps1 -HostLifecycle
 .\tools\Test-ExpandedYakumi.ps1 -PreviewPath _build_verify\ai-expanded\yakumi-restored-preview.png
+.\tools\Test-ExpandedYakumi.ps1 -PreviewPath _build_verify\ai-expanded\yakumi-connection-settings.png -SettingsPreview
 .\tools\Export-YakumiCoverage.ps1
 ```
 

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
@@ -32,7 +34,7 @@ namespace Yakult.Inventory.App.Tests
         }
         public static string RunAll()
         {
-            _checks=0;Planning();StockVocabulary();SourcesAndPermissions();AggregateResults();Conversation().GetAwaiter().GetResult();Knowledge();
+            _checks=0;Planning();StockVocabulary();SourcesAndPermissions();AggregateResults();Conversation().GetAwaiter().GetResult();ConnectionSettings().GetAwaiter().GetResult();ConnectionSettingsUi();Knowledge();
             return _checks+" expanded assistant offline acceptance checks passed.";
         }
         public static string[] InspectQuestions(string[] questions)
@@ -257,7 +259,7 @@ namespace Yakult.Inventory.App.Tests
         private sealed class Model : IAssistantModel
         {
             internal int Explanations;internal int General;internal bool Fail=true;internal bool Timeout;internal string GuideResponse;internal string Interpretation;
-            public Task<string> InterpretAsync(string question,IReadOnlyList<AssistantCapability> candidates,CancellationToken ct) {if(Interpretation!=null) return Task.FromResult(Interpretation);throw new InvalidOperationException("offline model");}
+            public Task<string> InterpretAsync(string question,IReadOnlyList<AssistantCapability> candidates,AssistantInterpretationContext context,CancellationToken ct) {if(Interpretation!=null) return Task.FromResult(Interpretation);throw new InvalidOperationException("offline model");}
             public Task<string> ExplainAsync(string question,IReadOnlyList<AssistantArticle> articles,CancellationToken ct) {Explanations++;if(Timeout) throw new TaskCanceledException("offline simulated model timeout");if(Fail) throw new InvalidOperationException("offline model");return Task.FromResult(GuideResponse ?? "{}");}
             public Task<string> GeneralAsync(List<ChatMessage> history,string question,CancellationToken ct) {General++;return Task.FromResult("General IT response.");}
         }
@@ -309,6 +311,94 @@ namespace Yakult.Inventory.App.Tests
             Check(AssistantScreens.All.Where(s=>s.Capability!=null).All(s=>AssistantCatalog.Find(s.Capability)!=null),"screen mappings reference registered capabilities");
         }
 
+        private sealed class ConnectionHandler : HttpMessageHandler
+        {
+            internal readonly List<string> Routes=new List<string>();
+            internal Func<string,CancellationToken,Task<HttpResponseMessage>> Respond;
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct)
+            {Check(request.Method==HttpMethod.Get,"connection checks never post prompts or mutate models");Routes.Add(request.RequestUri.AbsolutePath);return Respond(request.RequestUri.AbsolutePath,ct);}
+        }
+        private static Task<HttpResponseMessage> ConnectionReply(string json,HttpStatusCode status=HttpStatusCode.OK)
+        {return Task.FromResult(new HttpResponseMessage(status) {Content=new StringContent(json)});}
+        private static async Task ConnectionSettings()
+        {
+            Check(OllamaConnectionSettings.NormalizeBaseUrl(" 192.168.27.80:11434/ ")=="http://192.168.27.80:11434","plain host and port accepted");
+            Check(OllamaConnectionSettings.NormalizeBaseUrl("https://ai.example.test/ollama/")=="https://ai.example.test/ollama","HTTPS reverse proxy base preserved");
+            int invalidIndex=0;
+            foreach(string invalid in new[] {"","ftp://server","http://user:secret@server:11434","http://server:11434?token=secret","http://server:11434/#x","http://0.0.0.0:11434","http://[::]:11434","http://server:11434/api/tags","http://server:11434/api"})
+            {
+                bool rejected=false;try {OllamaConnectionSettings.NormalizeBaseUrl(invalid);}catch(ArgumentException) {rejected=true;}
+                Check(rejected,"invalid connection address rejected before network access: "+invalidIndex++);
+            }
+            using(var handler=new ConnectionHandler())
+            using(var client=new HttpClient(handler))
+            {
+                handler.Respond=(route,ct)=>ConnectionReply(route.EndsWith("/version",StringComparison.Ordinal)?"{\"version\":\"0.12.0\"}":"{\"models\":[{\"name\":\"qwen2.5:3b\"},{\"name\":\"small:latest\"}]}");
+                var result=await OllamaConnectionSettings.ValidateAsync("ai.test:11434","qwen2.5:3b",client,CancellationToken.None);
+                Check(result.ModelAvailable && result.BaseUrl=="http://ai.test:11434" && result.Version=="0.12.0" && result.Model=="qwen2.5:3b","server and selected model validated together");
+                Check(handler.Routes.SequenceEqual(new[] {"/api/version","/api/tags"}),"test reads only the version and installed model APIs");
+                result=await OllamaConnectionSettings.ValidateAsync("ai.test:11434","small",client,CancellationToken.None);
+                Check(result.Model=="small:latest","implicit latest model resolves to installed name");
+                result=await OllamaConnectionSettings.ValidateAsync("ai.test:11434","missing:3b",client,CancellationToken.None);
+                Check(!result.ModelAvailable && result.Models.Count==2,"reachable server with missing model is not a successful connection");
+                handler.Respond=(route,ct)=>ConnectionReply(route.EndsWith("/version",StringComparison.Ordinal)?"{\"version\":\"0.12.0\"}":"{\"models\":[]}");
+                result=await OllamaConnectionSettings.ValidateAsync("ai.test:11434","qwen2.5:3b",client,CancellationToken.None);
+                Check(!result.ModelAvailable && result.Models.Count==0,"empty model server cannot be saved as ready");
+                foreach(string body in new[] {"<html>Proxy login</html>","{}","{\"version\":123}"})
+                {
+                    handler.Respond=(route,ct)=>ConnectionReply(body);
+                    bool rejected=false;try {await OllamaConnectionSettings.ValidateAsync("ai.test:11434","qwen2.5:3b",client,CancellationToken.None);}catch(InvalidOperationException) {rejected=true;}
+                    Check(rejected,"non-Ollama version response rejected");
+                }
+                handler.Respond=(route,ct)=>ConnectionReply("{}",HttpStatusCode.Forbidden);
+                bool forbidden=false;try {await OllamaConnectionSettings.ValidateAsync("ai.test:11434","qwen2.5:3b",client,CancellationToken.None);}catch(InvalidOperationException ex) {forbidden=ex.Message.Contains("403");}
+                Check(forbidden,"HTTP access failure reported");
+                handler.Respond=(route,ct)=> {throw new HttpRequestException("synthetic internal transport details");};
+                bool unreachable=false;try {await OllamaConnectionSettings.ValidateAsync("ai.test:11434","qwen2.5:3b",client,CancellationToken.None);}catch(InvalidOperationException ex) {unreachable=ex.Message.Contains("firewall") && !ex.Message.Contains("synthetic");}
+                Check(unreachable,"unreachable server gives actionable bounded error");
+                handler.Respond=(route,ct)=>Task.FromCanceled<HttpResponseMessage>(new CancellationToken(true));
+                bool timeout=false;try {await OllamaConnectionSettings.ValidateAsync("ai.test:11434","qwen2.5:3b",client,CancellationToken.None);}catch(TimeoutException) {timeout=true;}
+                Check(timeout,"connection timeout differs from user cancellation");
+                using(var cancel=new CancellationTokenSource())
+                {
+                    cancel.Cancel();bool cancelled=false;
+                    try {await OllamaConnectionSettings.ValidateAsync("ai.test:11434","qwen2.5:3b",client,cancel.Token);}catch(OperationCanceledException) {cancelled=true;}
+                    Check(cancelled,"cancelled checks cannot complete as successful connections");
+                }
+            }
+            foreach(string property in new[] {"OllamaBaseUrl","OllamaModel"})
+                Check(typeof(Properties.Settings).GetProperty(property).IsDefined(typeof(System.Configuration.UserScopedSettingAttribute),false),"AI preference uses Windows user settings: "+property);
+        }
+
+        private static void ConnectionSettingsUi()
+        {
+            var context=Context();
+            using(var view=new YakumiChatView(()=>context,new YakumiAssistantService(new AssistantQueryEngine(new Reader()),new Model(),_=>true)))
+            {
+                var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+                Func<string,object> field=name=>typeof(YakumiChatView).GetField(name,flags).GetValue(view);
+                Func<string,object[],object> call=(name,args)=>typeof(YakumiChatView).GetMethod(name,flags).Invoke(view,args);
+                ((System.Windows.Controls.StackPanel)field("_yakumiSettings")).Visibility=System.Windows.Visibility.Visible;
+                ((System.Windows.FrameworkElement)field("_yakumiBody")).Visibility=System.Windows.Visibility.Collapsed;
+                view.Measure(new System.Windows.Size(350,540));view.Arrange(new System.Windows.Rect(0,0,350,540));view.UpdateLayout();
+                var first=(CancellationTokenSource)call("BeginSettingsCheck",new object[] {"Testing synthetic connection"});
+                call("UpdateConnectionFields",new object[] {"http://ai.test:11434","qwen2.5:3b",new[] {"qwen2.5:3b"}});
+                view.Measure(new System.Windows.Size(350,540));view.Arrange(new System.Windows.Rect(0,0,350,540));view.UpdateLayout();
+                view.Dispatcher.Invoke(new Action(()=>{}),System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                Check(!first.IsCancellationRequested && (bool)call("IsCurrentSettingsCheck",new object[] {first}),"programmatic model updates do not cancel their own connection check");
+                ((System.Windows.Controls.TextBox)field("_setUrlBox")).Text="http://another.test:11434";
+                Check(first.IsCancellationRequested && !(bool)call("IsCurrentSettingsCheck",new object[] {first}),"editing the server invalidates an earlier result before it can save");
+                call("EndSettingsCheck",new object[] {first});
+                first=(CancellationTokenSource)call("BeginSettingsCheck",new object[] {"First synthetic check"});
+                var second=(CancellationTokenSource)call("BeginSettingsCheck",new object[] {"Second synthetic check"});
+                call("EndSettingsCheck",new object[] {first});
+                Check(!((System.Windows.Controls.Button)field("_saveSettingsButton")).IsEnabled,"old check completion cannot enable save during a newer check");
+                view.Cancel();Check(second.IsCancellationRequested,"closing or cancelling chat cancels connection checks");
+                call("EndSettingsCheck",new object[] {second});
+                Check(((System.Windows.Controls.Button)field("_saveSettingsButton")).IsEnabled,"connection controls recover after cancellation");
+            }
+        }
+
         private static Dictionary<string,AssistantSqlQuery> QueryCases()
         {
             var cases=new Dictionary<string,AssistantSqlQuery>();var context=Context();
@@ -339,15 +429,26 @@ namespace Yakult.Inventory.App.Tests
         public static async Task<string> OllamaSmokeAsync(CancellationToken ct)
         {
             var model=new OllamaAssistantModel();var context=Context();
-            const string question="How many helpdesk tickets are there?";
-            var candidates=AssistantPlanner.InterpretationCandidates(question,context);
-            var json=await model.InterpretAsync(question,candidates,ct).ConfigureAwait(false);
-            bool correct=false;
-            try {correct=AssistantPlanner.InterpretJson(question,json,context,candidates,new DateTime(2026,10,15)).Capability=="tickets";} catch(ArgumentException) {}
+            var results=new List<string>();
+            foreach(string question in new[] {"How many support incidents?","Show requests awaiting fulfillment","How many items named \"Still Open\" are in stock?"})
+            {
+                var candidates=AssistantPlanner.InterpretationCandidates(question,context);
+                string json=await model.InterpretAsync(question,candidates,new AssistantInterpretationContext(null),ct).ConfigureAwait(false);
+                try
+                {
+                    var plan=AssistantInterpretation.Validate(question,json,context,candidates,new DateTime(2026,10,16),new AssistantInterpretationContext(null));
+                    bool correct=plan.Message==null && plan.Requests.Count==1;
+                    if(correct && question.Contains("incidents")) correct=plan.Requests[0].Capability=="tickets" && plan.Requests[0].Operation==AssistantOperation.Count && string.IsNullOrEmpty(plan.Requests[0].Search);
+                    if(correct && question.Contains("fulfillment")) correct=plan.Requests[0].Capability=="requests" && plan.Requests[0].OutstandingOnly && string.IsNullOrEmpty(plan.Requests[0].Search);
+                    if(correct && question.Contains("Still Open")) correct=plan.Requests[0].Capability=="items" && plan.Requests[0].Status==null && AssistantQuestionLanguage.SearchTerms(plan.Requests[0].Search).Contains("Still",StringComparer.OrdinalIgnoreCase);
+                    results.Add(question+": "+(correct?"passed typed semantic validation":"clarification required; generic model output: "+json));
+                }
+                catch(ArgumentException ex) {results.Add(question+": safely rejected ("+ex.Message+")");}
+            }
             var guides=AssistantKnowledge.Search("How do I borrow equipment?",context);
-            json=await model.ExplainAsync("How do I borrow equipment?",guides,ct).ConfigureAwait(false);
-            bool cited=OllamaAssistantModel.ValidateExplanation(json,guides)!=null;
-            return "Live Ollama classification "+(correct?"passed.":"failed semantic validation; the application rejects this interpretation.")+" Guide response "+(cited?"passed citation validation.":"used the authored-guide fallback.")+" Only a generic question and curated guides were sent; no database was opened.";
+            var guideJson=await model.ExplainAsync("How do I borrow equipment?",guides,ct).ConfigureAwait(false);
+            results.Add("Guide response: "+(OllamaAssistantModel.ValidateExplanation(guideJson,guides)!=null?"passed citation validation":"authored-guide fallback"));
+            return string.Join("\n",results)+"\nOnly generic questions and curated guides were sent; no database was opened.";
         }
 
         public static string HostLifecycle()
@@ -415,14 +516,27 @@ namespace Yakult.Inventory.App.Tests
             return string.Join("\n",lines);
         }
 
-        public static string RenderPreview(string path,int width=350,int height=540)
+        public static string RenderConnectionPreview(string path) {return RenderPreview(path,350,540,true);}
+        public static string RenderPreview(string path,int width=350,int height=540,bool settings=false)
         {
             if(Thread.CurrentThread.GetApartmentState()!=ApartmentState.STA) throw new InvalidOperationException("UI checks require STA.");
             var context=Context();context.Page="WpfCallMonitoringWorkspace";
             var view=new YakumiChatView(()=>context,new YakumiAssistantService(new AssistantQueryEngine(new Reader()),new Model(),_=>true));
             try
             {
-                view.RefreshContext(context);view.SubmitAsync("How may solved tickets are there?").GetAwaiter().GetResult();
+                view.RefreshContext(context);
+                if(settings)
+                {
+                    Func<string,object> field=name=>typeof(YakumiChatView).GetField(name,System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(view);
+                    ((System.Windows.Controls.StackPanel)field("_yakumiSettings")).Visibility=System.Windows.Visibility.Visible;
+                    ((System.Windows.FrameworkElement)field("_yakumiBody")).Visibility=System.Windows.Visibility.Collapsed;
+                    typeof(YakumiChatView).GetMethod("UpdateConnectionFields",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)
+                        .Invoke(view,new object[] {"http://AI-PC:11434","qwen2.5:3b",new[] {"qwen2.5:3b"}});
+                    var status=(System.Windows.Controls.TextBlock)field("_setStatusText");
+                    status.Text="Connected and saved for this Windows user. qwen2.5:3b is available on AI-PC.";
+                    status.Foreground=System.Windows.Media.Brushes.ForestGreen;
+                }
+                else view.SubmitAsync("How may solved tickets are there?").GetAwaiter().GetResult();
                 view.Width=width;view.Height=height;view.Measure(new System.Windows.Size(width,height));view.Arrange(new System.Windows.Rect(0,0,width,height));view.UpdateLayout();
                 var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap(width,height,96,96,System.Windows.Media.PixelFormats.Pbgra32);bitmap.Render(view);
                 var png=new System.Windows.Media.Imaging.PngBitmapEncoder();png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));

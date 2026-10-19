@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
              FontFamily="Arial"
-             FontSize="11"
+             FontSize="13"
              Background="White">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
@@ -11,45 +11,26 @@
 
     <StackPanel Margin="20,16">
 
-        <!-- ── Company header ─────────────────────────────────────────────────── -->
+        <!-- ── Company header: only the selected company is shown, no boxes ──── -->
         <StackPanel HorizontalAlignment="Center" Margin="0,0,0,6">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <CheckBox IsChecked="{Binding IsYakultPhilippines, Mode=OneWay}"
-                          IsHitTestVisible="False" VerticalAlignment="Center"/>
-                <TextBlock Text="  YAKULT PHILIPPINES INC."
-                           FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0">
-                <CheckBox IsChecked="{Binding IsYakultMarketing, Mode=OneWay}"
-                          IsHitTestVisible="False" VerticalAlignment="Center"/>
-                <TextBlock Text="  YAKULT MARKETING CORP."
-                           FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
-            </StackPanel>
+            <TextBlock Text="YAKULT PHILIPPINES INC."
+                        FontWeight="Bold" FontSize="16" TextAlignment="Center"
+                        Visibility="{Binding IsYakultPhilippines, Converter={StaticResource BoolToVis}}"/>
+            <TextBlock Text="YAKULT MARKETING CORP."
+                        FontWeight="Bold" FontSize="16" TextAlignment="Center"
+                        Visibility="{Binding IsYakultMarketing, Converter={StaticResource BoolToVis}}"/>
         </StackPanel>
 
         <!-- ── GATEPASS / TRANSMITTAL / FILE ──────────────────────────────────── -->
-        <Grid Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <TextBlock Text="GATEPASS" VerticalAlignment="Center"/>
-                <CheckBox IsChecked="{Binding IsGatepassCopy, Mode=OneWay}"
-                          IsHitTestVisible="False" VerticalAlignment="Center" Margin="4,0,0,0"/>
-            </StackPanel>
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                <TextBlock Text="TRANSMITTAL" VerticalAlignment="Center"/>
-                <CheckBox IsChecked="{Binding IsTransmittalCopy, Mode=OneWay}"
-                          IsHitTestVisible="False" VerticalAlignment="Center" Margin="4,0,0,0"/>
-            </StackPanel>
-            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                <TextBlock Text="FILE" VerticalAlignment="Center"/>
-                <CheckBox IsChecked="{Binding IsFileCopy, Mode=OneWay}"
-                          IsHitTestVisible="False" VerticalAlignment="Center" Margin="4,0,0,0"/>
-            </StackPanel>
-        </Grid>
+        <!-- Centered at the top; each copy shows ONLY its own label, no boxes. -->
+        <StackPanel HorizontalAlignment="Center" Margin="0,0,0,10">
+            <TextBlock Text="GATEPASS" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold"
+                        Visibility="{Binding IsGatepassCopy, Converter={StaticResource BoolToVis}}"/>
+            <TextBlock Text="TRANSMITTAL" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold"
+                        Visibility="{Binding IsTransmittalCopy, Converter={StaticResource BoolToVis}}"/>
+            <TextBlock Text="FILE" HorizontalAlignment="Center" FontSize="16" FontWeight="Bold"
+                        Visibility="{Binding IsFileCopy, Converter={StaticResource BoolToVis}}"/>
+        </StackPanel>
 
         <!-- ── TO / DATE ──────────────────────────────────────────────────────── -->
         <Grid Margin="0,0,0,6">
@@ -78,7 +59,7 @@
         </StackPanel>
 
         <!-- ── ITEMS header / QUANTITY header ─────────────────────────────────── -->
-        <Grid Margin="0,0,0,4">
+        <Grid Margin="0,14,0,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="80"/>
@@ -95,33 +76,43 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
                 <StackPanel Orientation="Horizontal">
-                    <CheckBox IsChecked="{Binding IsCartridgeRibbon, Mode=OneWay}"
-                              IsHitTestVisible="False" VerticalAlignment="Center"/>
-                    <TextBlock Text="  CARTRIDGE RIBBON" VerticalAlignment="Center"/>
-                    <TextBlock Text="          LQ2190 " VerticalAlignment="Center"/>
-                    <CheckBox IsChecked="{Binding IsLq2190, Mode=OneWay}"
-                              IsHitTestVisible="False" VerticalAlignment="Center"/>
-                    <TextBlock Text="          LX310 " VerticalAlignment="Center"/>
-                    <CheckBox IsChecked="{Binding IsLx310, Mode=OneWay}"
-                              IsHitTestVisible="False" VerticalAlignment="Center"/>
+                    <TextBlock Text="  CARTRIDGE RIBBON" VerticalAlignment="Center"
+                                Visibility="{Binding IsCartridgeRibbon, Converter={StaticResource BoolToVis}}"/>
+                    <TextBlock Text="  LQ2190" VerticalAlignment="Center"
+                                Visibility="{Binding IsLq2190, Converter={StaticResource BoolToVis}}"/>
+                    <TextBlock Text="  LX310" VerticalAlignment="Center"
+                                Visibility="{Binding IsLx310, Converter={StaticResource BoolToVis}}"/>
                 </StackPanel>
                 <!--
-                    Others row: shown when the model is not in the named-checkbox list.
+                    Others row: shown when the model is not in the named-model list.
                     To add a new named model: add it to KnownNormalizedModels in the VM
-                    and add a checkbox+label in the row above.
+                    and add a label in the row above.
                 -->
                 <StackPanel Orientation="Horizontal"
                             Visibility="{Binding OtherModelVisibility}"
                             Margin="0,3,0,0">
-                    <CheckBox IsChecked="True" IsHitTestVisible="False" VerticalAlignment="Center"/>
                     <TextBlock Text="  Others: " VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding OtherModelName}"
                                FontWeight="SemiBold" VerticalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
             <Border Grid.Column="1" BorderBrush="Black" BorderThickness="0,0,0,1"
-                    HorizontalAlignment="Center" VerticalAlignment="Top" MinWidth="30" Margin="0,2">
-                <TextBlock Text="{Binding Quantity}"
+                    HorizontalAlignment="Center" VerticalAlignment="Bottom" MinWidth="30" Margin="0,10,0,0">
+                <TextBlock Text="{Binding Quantity}" FontSize="16" FontWeight="Bold"
+                           HorizontalAlignment="Center" Padding="0,0,0,1"/>
+            </Border>
+        </Grid>
+
+        <!-- ── TOTAL ──────────────────────────────────────────────────────────── -->
+        <Grid Margin="0,32,0,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="80"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="TOTAL ITEMS :" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+            <Border Grid.Column="1" BorderBrush="Black" BorderThickness="0,0,0,1"
+                    HorizontalAlignment="Center" VerticalAlignment="Bottom" MinWidth="30">
+                <TextBlock Text="{Binding Quantity}" FontSize="16" FontWeight="Bold"
                            HorizontalAlignment="Center" Padding="0,0,0,1"/>
             </Border>
         </Grid>
@@ -222,7 +213,7 @@
              rows are Collapsed above since only Cartridge Ribbon is used today, but
              OTHERS through the signature block must still sit where they do on the
              original printed form, not ride up against the shortened ITEMS block. -->
-        <StackPanel Orientation="Horizontal" Margin="0,100,0,10">
+        <StackPanel Orientation="Horizontal" Margin="0,130,0,10">
             <TextBlock Text="OTHERS :  " VerticalAlignment="Bottom"/>
             <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="380">
                 <TextBlock Text="{Binding Others}" VerticalAlignment="Bottom" Padding="0,0,0,1"/>
@@ -230,7 +221,7 @@
         </StackPanel>
 
         <!-- ── REMARKS ────────────────────────────────────────────────────────── -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,26">
+        <StackPanel Orientation="Horizontal" Margin="0,10,0,26">
             <TextBlock Text="REMARKS :  " VerticalAlignment="Bottom"/>
             <Border BorderBrush="Black" BorderThickness="0,0,0,1" MinWidth="370">
                 <TextBlock Text="{Binding Remarks}" VerticalAlignment="Bottom" Padding="0,0,0,1"/>

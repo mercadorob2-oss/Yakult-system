@@ -50,20 +50,149 @@ namespace Yakult.Inventory.App.Services
                 return false;
             }
         }
+        private const double LauncherSize=56;
+        private sealed class AvatarLauncherButton : WinForms.Button
+        {
+            private readonly System.Drawing.Image _avatar;
+            private readonly WinForms.ToolTip _tip=new WinForms.ToolTip();
+            private bool _hover;
+            internal AvatarLauncherButton()
+            {
+                SetStyle(WinForms.ControlStyles.UserPaint|WinForms.ControlStyles.AllPaintingInWmPaint|WinForms.ControlStyles.OptimizedDoubleBuffer|WinForms.ControlStyles.ResizeRedraw,true);
+                Size=new System.Drawing.Size((int)LauncherSize,(int)LauncherSize);Text="";AccessibleName="Ask Yakumi";
+                AccessibleDescription="Click to open Yakumi. Drag to move.";FlatStyle=WinForms.FlatStyle.Flat;FlatAppearance.BorderSize=0;
+                Cursor=WinForms.Cursors.Hand;BackColor=System.Drawing.Color.White;TabStop=true;
+                _tip.SetToolTip(this,"Ask Yakumi • Click to open; drag to move (Ctrl+Shift+Y)");
+                try
+                {
+                    string path=System.IO.Path.Combine(System.IO.Path.GetDirectoryName(typeof(YakumiAssistantHost).Assembly.Location),"AI_assets","YakumiAvatar.png");
+                    using(var source=System.Drawing.Image.FromFile(path)) _avatar=new System.Drawing.Bitmap(source);
+                }
+                catch(System.IO.IOException) { }
+                catch(ArgumentException) { }
+                UpdateShape();
+            }
+            private void UpdateShape()
+            {
+                if(Width<=0 || Height<=0) return;
+                using(var path=new System.Drawing.Drawing2D.GraphicsPath())
+                {
+                    path.AddEllipse(0,0,Width,Height);var old=Region;Region=new System.Drawing.Region(path);old?.Dispose();
+                }
+            }
+            protected override void OnSizeChanged(EventArgs e) {base.OnSizeChanged(e);UpdateShape();}
+            protected override void OnMouseEnter(EventArgs e) {_hover=true;Invalidate();base.OnMouseEnter(e);}
+            protected override void OnMouseLeave(EventArgs e) {_hover=false;Invalidate();base.OnMouseLeave(e);}
+            protected override void OnGotFocus(EventArgs e) {base.OnGotFocus(e);Invalidate();}
+            protected override void OnLostFocus(EventArgs e) {base.OnLostFocus(e);Invalidate();}
+            protected override void OnPaint(WinForms.PaintEventArgs e)
+            {
+                e.Graphics.SmoothingMode=System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                e.Graphics.InterpolationMode=System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                using(var background=new System.Drawing.SolidBrush(_hover?System.Drawing.Color.FromArgb(255,239,242):System.Drawing.Color.White))
+                    e.Graphics.FillEllipse(background,1,1,Width-2,Height-2);
+                if(_avatar!=null) e.Graphics.DrawImage(_avatar,new System.Drawing.Rectangle(4,4,Width-8,Height-8));
+                else WinForms.TextRenderer.DrawText(e.Graphics,"Y",Font,ClientRectangle,System.Drawing.Color.FromArgb(185,35,53),WinForms.TextFormatFlags.HorizontalCenter|WinForms.TextFormatFlags.VerticalCenter);
+                using(var outline=new System.Drawing.Pen(Focused?System.Drawing.Color.FromArgb(37,86,168):System.Drawing.Color.FromArgb(185,35,53),Focused?3:2))
+                    e.Graphics.DrawEllipse(outline,2,2,Width-5,Height-5);
+            }
+            protected override void Dispose(bool disposing)
+            {if(disposing) {_avatar?.Dispose();_tip.Dispose();}base.Dispose(disposing);}
+        }
         private sealed class AskAdorner : Adorner
         {
             private readonly Button _button;private readonly VisualCollection _visuals;
+            private Point? _position;
+            private Point Position {get {return ClampLauncherPosition(_position ?? new Point(AdornedElement.RenderSize.Width-LauncherSize-16,AdornedElement.RenderSize.Height-LauncherSize-16),AdornedElement.RenderSize,new Size(LauncherSize,LauncherSize));}}
             internal AskAdorner(UIElement element,Action open) : base(element)
             {
-                _button=new Button {Content="Ask Yakumi",Width=130,Height=35,Padding=new Thickness(8),ToolTip="Read-only assistant (Ctrl+Shift+Y)",
-                    Background=new SolidColorBrush(Color.FromRgb(150,27,44)),Foreground=Brushes.White,Cursor=Cursors.Hand};
-                _button.Click+=(_,__)=>open();_visuals=new VisualCollection(this) {_button};
+                _button=CreateWpfLauncher();_visuals=new VisualCollection(this) {_button};
+                AttachWpfLauncherDrag(_button,element,()=>Position,point=> {_position=point;InvalidateArrange();},open);
             }
             protected override int VisualChildrenCount {get{return _visuals.Count;}}
             protected override Visual GetVisualChild(int index) {return _visuals[index];}
-            protected override Size MeasureOverride(Size constraint) {_button.Measure(new Size(130,35));return new Size(AdornedElement.RenderSize.Width,AdornedElement.RenderSize.Height);}
-            protected override Size ArrangeOverride(Size finalSize) {_button.Arrange(new Rect(Math.Max(0,finalSize.Width-146),Math.Max(0,finalSize.Height-51),130,35));return finalSize;}
+            protected override Size MeasureOverride(Size constraint) {_button.Measure(new Size(LauncherSize,LauncherSize));return new Size(AdornedElement.RenderSize.Width,AdornedElement.RenderSize.Height);}
+            protected override Size ArrangeOverride(Size finalSize) {_button.Arrange(new Rect(Position,new Size(LauncherSize,LauncherSize)));return finalSize;}
             protected override HitTestResult HitTestCore(PointHitTestParameters parameters) {return null;}
+        }
+
+        private static Button CreateWpfLauncher()
+        {
+            var surface=new FrameworkElementFactory(typeof(Border),"Circle");
+            surface.SetValue(Border.CornerRadiusProperty,new CornerRadius(LauncherSize/2));
+            surface.SetValue(Border.BackgroundProperty,Brushes.White);surface.SetValue(Border.BorderBrushProperty,new SolidColorBrush(Color.FromRgb(185,35,53)));
+            surface.SetValue(Border.BorderThicknessProperty,new Thickness(2));
+            var content=new FrameworkElementFactory(typeof(ContentPresenter));content.SetValue(FrameworkElement.HorizontalAlignmentProperty,HorizontalAlignment.Center);
+            content.SetValue(FrameworkElement.VerticalAlignmentProperty,VerticalAlignment.Center);surface.AppendChild(content);
+            var template=new ControlTemplate(typeof(Button)) {VisualTree=surface};
+            var hover=new Trigger {Property=UIElement.IsMouseOverProperty,Value=true};hover.Setters.Add(new Setter(Border.BackgroundProperty,new SolidColorBrush(Color.FromRgb(255,239,242)),"Circle"));template.Triggers.Add(hover);
+            var focus=new Trigger {Property=UIElement.IsKeyboardFocusedProperty,Value=true};focus.Setters.Add(new Setter(Border.BorderBrushProperty,new SolidColorBrush(Color.FromRgb(37,86,168)),"Circle"));focus.Setters.Add(new Setter(Border.BorderThicknessProperty,new Thickness(3),"Circle"));template.Triggers.Add(focus);
+            var button=new Button {Width=LauncherSize,Height=LauncherSize,Template=template,
+                ToolTip="Ask Yakumi • Click to open; drag to move (Ctrl+Shift+Y)",Cursor=Cursors.Hand};
+            var avatar=YakumiChatView.YakumiAvatarImage();
+            button.Content=avatar==null?(object)new TextBlock {Text="Y",FontSize=24,Foreground=new SolidColorBrush(Color.FromRgb(185,35,53))}:
+                new Image {Source=avatar,Width=LauncherSize-8,Height=LauncherSize-8,Stretch=Stretch.Uniform,IsHitTestVisible=false};
+            System.Windows.Automation.AutomationProperties.SetName(button,"Ask Yakumi");
+            return button;
+        }
+        private static Point ClampLauncherPosition(Point point,Size bounds,Size button)
+        {
+            double maxX=Math.Max(0,bounds.Width-button.Width-8),maxY=Math.Max(0,bounds.Height-button.Height-8);
+            return new Point(Math.Max(Math.Min(8,maxX),Math.Min(maxX,point.X)),Math.Max(Math.Min(8,maxY),Math.Min(maxY,point.Y)));
+        }
+        private static void AttachWpfLauncherDrag(Button button,UIElement surface,Func<Point> position,Action<Point> move,Action open)
+        {
+            Point start=new Point(),origin=new Point();bool tracking=false,dragging=false;
+            button.Click+=(_,__)=> {if(!dragging) open();};
+            button.PreviewMouseLeftButtonDown+=(_,e)=>
+            {
+                // Let ButtonBase own capture and generate Click for an ordinary press/release.
+                start=e.GetPosition(surface);origin=position();dragging=false;tracking=true;
+            };
+            button.PreviewMouseMove+=(_,e)=>
+            {
+                if(!tracking || e.LeftButton!=MouseButtonState.Pressed) return;
+                Vector delta=e.GetPosition(surface)-start;
+                if(!dragging && Math.Abs(delta.X)<SystemParameters.MinimumHorizontalDragDistance && Math.Abs(delta.Y)<SystemParameters.MinimumVerticalDragDistance) return;
+                dragging=true;button.Cursor=Cursors.SizeAll;move(origin+delta);e.Handled=true;
+            };
+            button.PreviewMouseLeftButtonUp+=(_,e)=>
+            {
+                if(!tracking) return;
+                tracking=false;button.Cursor=Cursors.Hand;
+                if(dragging) {e.Handled=true;button.ReleaseMouseCapture();}
+            };
+            button.LostMouseCapture+=(_,__)=> {tracking=false;dragging=false;button.Cursor=Cursors.Hand;};
+            button.PreviewKeyDown+=(_,e)=> {if(e.Key==Key.Escape && tracking) {tracking=false;button.ReleaseMouseCapture();e.Handled=true;}};
+        }
+        private static void AttachWinFormsLauncherDrag(WinForms.Button button,WinForms.Form root,Action<Point> move,Action open)
+        {
+            System.Drawing.Point start=new System.Drawing.Point(),origin=new System.Drawing.Point();bool tracking=false,dragging=false;int press=0;
+            button.Click+=(_,__)=> {if(!dragging) open();};
+            button.MouseDown+=(_,e)=>
+            {
+                if(e.Button!=WinForms.MouseButtons.Left) return;
+                press++;tracking=true;dragging=false;start=button.PointToScreen(e.Location);origin=button.Location;
+            };
+            button.MouseMove+=(_,e)=>
+            {
+                if(!tracking || e.Button!=WinForms.MouseButtons.Left) return;
+                var point=button.PointToScreen(e.Location);int x=point.X-start.X,y=point.Y-start.Y;
+                if(!dragging && Math.Abs(x)<WinForms.SystemInformation.DragSize.Width && Math.Abs(y)<WinForms.SystemInformation.DragSize.Height) return;
+                dragging=true;button.Cursor=WinForms.Cursors.SizeAll;move(new Point(origin.X+x,origin.Y+y));
+            };
+            button.MouseUp+=(_,e)=>
+            {
+                if(e.Button!=WinForms.MouseButtons.Left) return;
+                // Releasing capture here prevents the native Button from raising Click.
+                tracking=false;button.Cursor=WinForms.Cursors.Hand;
+                // Native Click can run before or after MouseUp. Keep suppression through this mouse message.
+                int completedPress=press;
+                if(button.IsHandleCreated) button.BeginInvoke(new Action(()=> {if(press==completedPress) dragging=false;}));
+            };
+            button.MouseCaptureChanged+=(_,__)=> {if(!button.Capture) {tracking=false;button.Cursor=WinForms.Cursors.Hand;}};
+            button.KeyDown+=(_,__)=>dragging=false;
+            root.Deactivate+=(_,__)=> {tracking=false;button.Capture=false;button.Cursor=WinForms.Cursors.Hand;};
         }
 
         private static readonly Dictionary<object,Registration> Registrations=new Dictionary<object,Registration>();
@@ -102,12 +231,17 @@ namespace Yakult.Inventory.App.Services
             root.Activated+=(_,__)=> {_active=registration;_contextRoot=root;};
             root.FormClosing+=(_,__)=>OwnerClosing(registration);
             root.FormClosed+=(_,__)=> {Registrations.Remove(root);if(ReferenceEquals(_active,registration)) _active=null;};
-            var button=new WinForms.Button {Text="Ask Yakumi",Width=124,Height=34,Anchor=WinForms.AnchorStyles.Bottom|WinForms.AnchorStyles.Right,
-                BackColor=System.Drawing.Color.FromArgb(150,27,44),ForeColor=System.Drawing.Color.White,FlatStyle=WinForms.FlatStyle.Flat,
-                TabStop=true,Visible=AppSession.IsLoggedIn};
+            var button=new AvatarLauncherButton {Anchor=WinForms.AnchorStyles.Top|WinForms.AnchorStyles.Left,Visible=AppSession.IsLoggedIn};
             registration.Launcher=button;
-            Action place=()=> {button.Left=Math.Max(8,root.ClientSize.Width-button.Width-18);button.Top=Math.Max(8,root.ClientSize.Height-button.Height-18);button.BringToFront();};
-            button.Click+=(_,__)=>Open(root);root.Controls.Add(button);root.ClientSizeChanged+=(_,__)=>place();
+            Point? movedPosition=null;
+            Action place=()=>
+            {
+                Point point=ClampLauncherPosition(movedPosition ?? new Point(root.ClientSize.Width-button.Width-18,root.ClientSize.Height-button.Height-18),
+                    new Size(root.ClientSize.Width,root.ClientSize.Height),new Size(button.Width,button.Height));
+                button.Location=new System.Drawing.Point((int)Math.Round(point.X),(int)Math.Round(point.Y));button.BringToFront();
+            };
+            AttachWinFormsLauncherDrag(button,root,point=> {movedPosition=point;place();},()=>Open(root));
+            root.Controls.Add(button);root.ClientSizeChanged+=(_,__)=>place();
             root.VisibleChanged+=(_,__)=> {button.Visible=AppSession.IsLoggedIn;if(root.Visible) place();};place();
         }
         public static void Register(Window root,string module)
@@ -130,8 +264,12 @@ namespace Yakult.Inventory.App.Services
                     var grid=content as Grid;
                     if(grid!=null)
                     {
-                        var button=new Button {Content="Ask Yakumi",HorizontalAlignment=HorizontalAlignment.Right,VerticalAlignment=VerticalAlignment.Bottom,Margin=new Thickness(16),Padding=new Thickness(12,8,12,8)};
-                        button.Click+=(_,__)=>Open(root);Grid.SetRowSpan(button,Math.Max(1,grid.RowDefinitions.Count));Grid.SetColumnSpan(button,Math.Max(1,grid.ColumnDefinitions.Count));Panel.SetZIndex(button,1000);grid.Children.Add(button);
+                        var button=CreateWpfLauncher();button.HorizontalAlignment=HorizontalAlignment.Left;button.VerticalAlignment=VerticalAlignment.Top;
+                        Point? movedPosition=null;
+                        Func<Point> position=()=>ClampLauncherPosition(movedPosition ?? new Point(grid.ActualWidth-LauncherSize-16,grid.ActualHeight-LauncherSize-16),grid.RenderSize,new Size(LauncherSize,LauncherSize));
+                        Action place=()=> {Point point=position();button.Margin=new Thickness(point.X,point.Y,0,0);};
+                        AttachWpfLauncherDrag(button,grid,position,point=> {movedPosition=point;place();},()=>Open(root));
+                        grid.SizeChanged+=(_,__)=>place();Grid.SetRowSpan(button,Math.Max(1,grid.RowDefinitions.Count));Grid.SetColumnSpan(button,Math.Max(1,grid.ColumnDefinitions.Count));Panel.SetZIndex(button,1000);grid.Children.Add(button);place();
                     }
                 }
             };
@@ -201,7 +339,8 @@ namespace Yakult.Inventory.App.Services
             if(visible && ReferenceEquals(_viewOwner,_active)) {HideAssistant();return;}
             if(_view==null)
             {
-                _view=new YakumiChatView(CurrentContext);_view.CloseRequested=HideAssistant;
+                _view=new YakumiChatView(CurrentContext);_view.CloseRequested=HideAssistant;_view.HeightChanged=ResizeFloatingHost;
+                _view.Loaded+=(_,__)=>ResizeFloatingHost(_view.Height);
             }
             _viewOwner=_active;
             DetachView();
@@ -225,13 +364,23 @@ namespace Yakult.Inventory.App.Services
             }
             _view.Margin=new Thickness(0);_elementHost.Child=_view;
             var ownerForm=_active.Root as WinForms.Form;
+            if(!_window.Visible) _window.Show(new HandleOwner(_active.Handle));
+            ResizeFloatingHost(_view.Height);
             if(ownerForm!=null)
             {
-                var point=ownerForm.PointToScreen(new System.Drawing.Point(Math.Max(0,ownerForm.ClientSize.Width-374),Math.Max(0,ownerForm.ClientSize.Height-564)));
+                var dpi=VisualTreeHelper.GetDpi(_view);
+                var point=ownerForm.PointToScreen(new System.Drawing.Point(Math.Max(0,ownerForm.ClientSize.Width-_window.Width-(int)(24*dpi.DpiScaleX)),Math.Max(0,ownerForm.ClientSize.Height-_window.Height-(int)(24*dpi.DpiScaleY))));
                 _window.Location=point;
             }
-            if(!_window.Visible) _window.Show(new HandleOwner(_active.Handle));
             _window.Activate();_view.FocusInput();
+        }
+        private static void ResizeFloatingHost(double height)
+        {
+            if(_window==null || _window.IsDisposed || _elementHost==null || !ReferenceEquals(_elementHost.Child,_view)) return;
+            var dpi=VisualTreeHelper.GetDpi(_view);
+            int bottom=_window.Bottom;
+            _window.ClientSize=new System.Drawing.Size((int)Math.Ceiling(350*dpi.DpiScaleX),(int)Math.Ceiling(height*dpi.DpiScaleY));
+            _window.Top=bottom-_window.Height;
         }
         private static void OwnerClosing(Registration owner)
         {if(ReferenceEquals(owner,_viewOwner) || ReferenceEquals(owner,_active)) {HideAssistant();DetachView();}}
@@ -270,8 +419,15 @@ namespace Yakult.Inventory.App.Services
                 {
                     Register(first,"Inventory");Register(second,"Tickets");_active=Registrations[first];
                     _window=new ChatWindow();_view=new YakumiChatView(()=>context,service);
-                    _window.Controls.Add(new System.Windows.Forms.Integration.ElementHost {Dock=WinForms.DockStyle.Fill,Child=_view});
+                    _elementHost=new System.Windows.Forms.Integration.ElementHost {Dock=WinForms.DockStyle.Fill,Child=_view};_window.Controls.Add(_elementHost);
+                    _view.HeightChanged=ResizeFloatingHost;
                     IntPtr handle=_window.Handle;
+                    _view.Measure(new Size(350,540));_view.Arrange(new Rect(0,0,350,540));_view.UpdateLayout();ResizeFloatingHost(540);
+                    int expandedHeight=_window.ClientSize.Height;int bottom=_window.Bottom;
+                    typeof(YakumiChatView).GetMethod("ToggleYakumiMinimized",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(_view,null);
+                    if(_window.ClientSize.Height>=expandedHeight || _window.Bottom!=bottom || _window.Handle!=handle) throw new InvalidOperationException("Minimize did not shrink the reusable host at the same anchor.");
+                    typeof(YakumiChatView).GetMethod("ToggleYakumiMinimized",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(_view,null);
+                    if(_window.ClientSize.Height!=expandedHeight || _window.Bottom!=bottom || _window.Handle!=handle) throw new InvalidOperationException("Restore did not preserve the reusable host.");
                     if(IntPtr.Size==8) SetWindowLongPtr(handle,-8,first.Handle);else SetWindowLong(handle,-8,first.Handle.ToInt32());
                     first.Close();
                     if(_window.IsDisposed || _window.Handle!=handle) throw new InvalidOperationException("Owner close destroyed the assistant host.");
@@ -281,9 +437,9 @@ namespace Yakult.Inventory.App.Services
                     if(_window.IsDisposed || _window.Handle!=handle) throw new InvalidOperationException("Normal close destroyed the assistant host.");
                     _view.NewConversation("Synthetic signed-out session.");second.Close();
                     if(_window.IsDisposed || _window.Handle!=handle) throw new InvalidOperationException("Module switch destroyed the reusable host.");
-                    return "Isolated host checks passed: owner close, module switch, normal close, conversation reset and final disposal. No application startup or database connection.";
+                    return "Isolated host checks passed: header-only minimize/restore with anchored size and same HWND, owner close, module switch, normal close, conversation reset and final disposal. No application startup or database connection.";
                 }
-                finally {Shutdown();_window=null;_view=null;}
+                finally {Shutdown();_window=null;_view=null;_elementHost=null;}
             }
         }
         [DllImport("user32.dll",EntryPoint="SetWindowLongPtrW")] private static extern IntPtr SetWindowLongPtr(IntPtr handle,int index,IntPtr value);
