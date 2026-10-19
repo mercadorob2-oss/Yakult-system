@@ -195,14 +195,27 @@
                                        FontFamily="Segoe UI" FontSize="11.5"
                                        Foreground="#666" Margin="0,0,0,4"/>
                             <ComboBox x:Name="_notedByCombo"
-                                      Style="{StaticResource ComboInput}"
                                       ItemsSource="{Binding NotedByView}"
                                       SelectedItem="{Binding SelectedNotedBy}"
                                       DisplayMemberPath="Name"
                                       IsEditable="True"
                                       StaysOpenOnEdit="True"
                                       IsTextSearchEnabled="False"
-                                      TextBoxBase.TextChanged="OnNotedByTextChanged"/>
+                                      TextBoxBase.TextChanged="OnNotedByTextChanged">
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox" BasedOn="{StaticResource ComboInput}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsNotedByRodAngJr}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ComboBox.Style>
+                            </ComboBox>
+                            <CheckBox IsChecked="{Binding IsNotedByRodAngJr}"
+                                      FontFamily="Segoe UI" FontSize="12" Foreground="#1A2340"
+                                      Content="Rod Ang (special case)"
+                                      Margin="0,6,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Approved By -->

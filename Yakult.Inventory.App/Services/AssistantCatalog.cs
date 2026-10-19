@@ -64,7 +64,7 @@ namespace Yakult.Inventory.App.Services
             Add(list,"employees","Employees","Inventory","InventorySystem","ViewEmployeesPage",
                 "employee|employees|staff|person|who is|do you know",
                 @"SELECT CAST(e.EmpId AS BIGINT) Id,e.Name Label,e.EmployeeNumber EmployeeNumber,e.Position Position,t.Code Title,
-                d.Name Department,b.Name Branch,co.Name Company,e.DateCreated CreatedAt,CASE WHEN e.Active=1 THEN 'Active' ELSE 'Inactive' END Status
+                d.Name Department,b.Name Branch,co.Name Company,e.ComId CompanyId,e.BranchId BranchId,e.DeptId DepartmentId,e.DateCreated CreatedAt,CASE WHEN e.Active=1 THEN 'Active' ELSE 'Inactive' END Status
                 FROM dbo.Employee e LEFT JOIN dbo.Title t ON t.TitleId=e.TitleId LEFT JOIN dbo.Department d ON d.DeptId=e.DeptId
                 LEFT JOIN dbo.Branch b ON b.BranchId=e.BranchId LEFT JOIN dbo.Company co ON co.ComId=e.ComId",
                 "Id|Label|EmployeeNumber|Position|Title|Department|Branch|Company|CreatedAt|Status","Label|EmployeeNumber","Department|Branch|Company|Position|Status");
@@ -84,7 +84,7 @@ namespace Yakult.Inventory.App.Services
             c=Add(list,"sets","Sets and ownership","Inventory","InventorySystem|Reports","ViewSetsPage",
                 "set|sets|deployed equipment|ownership|assigned equipment|my equipment|my assets",
                 @"SELECT CAST(s.SetId AS BIGINT) Id,s.SetCode Label,s.Status Status,s.SetType SetType,s.CreatedAt CreatedAt,
-                setOwner.EmpId EmployeeId,e.Name Employee,d.Name Department,b.Name Branch,co.Name Company,
+                setOwner.EmpId EmployeeId,e.Name Employee,d.Name Department,b.Name Branch,co.Name Company,s.ComId CompanyId,s.CurrentBranchId BranchId,s.CurrentDepartmentId DepartmentId,
                 CAST(CASE WHEN EXISTS(SELECT 1 FROM dbo.ArchiveStatus ar WHERE ar.EntityType='Set' AND ar.EntityId=s.SetId AND ar.IsArchived=1) THEN 1 ELSE 0 END AS BIT) Archived
                 FROM dbo.[Set] s OUTER APPLY (SELECT TOP (1) ro.EmpId FROM dbo.Request ro WHERE ro.SetId=s.SetId ORDER BY ro.ReqId) setOwner
                 LEFT JOIN dbo.Employee e ON e.EmpId=setOwner.EmpId
@@ -106,12 +106,12 @@ namespace Yakult.Inventory.App.Services
                 @"SELECT CAST(r.ReqId AS BIGINT) Id,CONCAT('REQ-',r.ReqId) Label,i.Name Item,i.ModelNumber Model,i.Category Category,r.Status Status,
                 r.Quantity RequestedUnits,ISNULL(r.IssuedQty,0) IssuedUnits,
                 CASE WHEN ISNULL(s.Status,'')='Dispatched' THEN 0 WHEN r.Quantity>ISNULL(r.IssuedQty,0) THEN r.Quantity-ISNULL(r.IssuedQty,0) ELSE 0 END OutstandingUnits,
-                r.DateCreated CreatedAt,r.CreatedBy CreatedBy,r.EmpId EmployeeId,e.Name Employee,d.Name Department,b.Name Branch,
+                r.DateCreated CreatedAt,r.CreatedBy CreatedBy,r.EmpId EmployeeId,e.Name Employee,d.Name Department,b.Name Branch,co.Name Company,r.ComId CompanyId,r.BranchId BranchId,r.DeptId DepartmentId,
                 CAST(r.SetId AS BIGINT) SetId,r.Active Active FROM dbo.Request r INNER JOIN dbo.Item i ON i.ItemId=r.ItemId
                 LEFT JOIN dbo.[Set] s ON s.SetId=r.SetId LEFT JOIN dbo.Employee e ON e.EmpId=r.EmpId
-                LEFT JOIN dbo.Department d ON d.DeptId=r.DeptId LEFT JOIN dbo.Branch b ON b.BranchId=r.BranchId WHERE r.Active=1",
-                "Id|Label|Item|Model|Category|Status|RequestedUnits|IssuedUnits|OutstandingUnits|CreatedAt|CreatedBy|EmployeeId|Employee|Department|Branch|SetId|Active",
-                "Label|Item|Model|Employee","Status|Category|Employee|Department|Branch","RequestedUnits|IssuedUnits|OutstandingUnits");
+                LEFT JOIN dbo.Department d ON d.DeptId=r.DeptId LEFT JOIN dbo.Branch b ON b.BranchId=r.BranchId LEFT JOIN dbo.Company co ON co.ComId=r.ComId WHERE r.Active=1",
+                "Id|Label|Item|Model|Category|Status|RequestedUnits|IssuedUnits|OutstandingUnits|CreatedAt|CreatedBy|EmployeeId|Employee|Department|Branch|Company|SetId|Active",
+                "Label|Item|Model|Employee","Status|Category|Employee|Department|Branch|Company","RequestedUnits|IssuedUnits|OutstandingUnits");
             c.RequesterScope=true;c.PersonalPredicate="d.CreatedBy=@UserId";c.CategoryScope=true;
 
             c=Add(list,"consumables","Consumable models","Consumables","InventorySystem|CartridgeManagement","ConsumableModelsPage",
@@ -142,7 +142,7 @@ namespace Yakult.Inventory.App.Services
                 "exchange|exchanges|unfulfilled cartridge",
                 @"SELECT CAST(x.UnfulfilledId AS BIGINT) Id,CONCAT('Exchange ',x.UnfulfilledId) Label,x.CartridgeModel Model,x.Status Status,
                 x.CreatedDate CreatedAt,x.RequestedQty RequestedUnits,x.IssuedFullQty IssuedUnits,x.UnfulfilledQty OutstandingUnits,
-                e.Name Employee,x.EmpId EmployeeId,b.Name Branch,d.Name Department,'Cartridge' Category
+                e.Name Employee,x.EmpId EmployeeId,b.Name Branch,d.Name Department,x.BranchId BranchId,x.DeptId DepartmentId,'Cartridge' Category
                 FROM dbo.UnfulfilledCartridgeExchange x LEFT JOIN dbo.Employee e ON e.EmpId=x.EmpId LEFT JOIN dbo.Branch b ON b.BranchId=x.BranchId
                 LEFT JOIN dbo.Department d ON d.DeptId=x.DeptId",
                 "Id|Label|Model|Status|CreatedAt|RequestedUnits|IssuedUnits|OutstandingUnits|Employee|EmployeeId|Branch|Department|Category",
@@ -150,7 +150,7 @@ namespace Yakult.Inventory.App.Services
             c=Add(list,"approvals","Request authorizations","Requests","RequesterPortal|CartridgeManagement","",
                 "approval|approvals|authorization|authorizations",
                 @"SELECT CAST(a.AuthorizationId AS BIGINT) Id,CONCAT('Authorization ',a.AuthorizationId) Label,a.Status Status,a.CreatedDate CreatedAt,
-                a.EmployeeId EmployeeId,e.Name Employee,d.Name Department,a.SubmittedByUserId CreatedBy,a.AssignedToUserId AssignedUserId,
+                a.EmployeeId EmployeeId,e.Name Employee,d.Name Department,a.DepartmentId DepartmentId,a.SubmittedByUserId CreatedBy,a.AssignedToUserId AssignedUserId,
                 LEFT(a.RequestedModels,200) Models FROM dbo.CartridgeAuthorization a LEFT JOIN dbo.Employee e ON e.EmpId=a.EmployeeId
                 LEFT JOIN dbo.Department d ON d.DeptId=a.DepartmentId",
                 "Id|Label|Status|CreatedAt|EmployeeId|Employee|Department|CreatedBy|AssignedUserId|Models","Label|Employee|Models","Status|Employee|Department","","","CreatedAt");
@@ -162,7 +162,7 @@ namespace Yakult.Inventory.App.Services
                 @"SELECT CAST(t.TicketId AS BIGINT) Id,t.TicketCode Label,t.Status Status,t.Priority Priority,t.CallerName Caller,
                 LEFT(t.Issue,500) Issue,LEFT(t.ProvidedSolution,500) Solution,t.CreatedAt CreatedAt,t.UpdatedAt UpdatedAt,t.SolvedAt SolvedAt,
                 t.CreatedByUserId CreatedBy,t.AssignedToUserId AssignedUserId,t.AssignedToEmpId EmployeeId,e.Name Employee,
-                d.Name Department,b.Name Branch,co.Name Company FROM dbo.CallTicket t LEFT JOIN dbo.Employee e ON e.EmpId=t.AssignedToEmpId
+                d.Name Department,b.Name Branch,co.Name Company,t.ComId CompanyId,t.BranchId BranchId,t.DeptId DepartmentId FROM dbo.CallTicket t LEFT JOIN dbo.Employee e ON e.EmpId=t.AssignedToEmpId
                 LEFT JOIN dbo.Department d ON d.DeptId=t.DeptId LEFT JOIN dbo.Branch b ON b.BranchId=t.BranchId LEFT JOIN dbo.Company co ON co.ComId=t.ComId",
                 "Id|Label|Status|Priority|Caller|Issue|Solution|CreatedAt|UpdatedAt|SolvedAt|CreatedBy|AssignedUserId|EmployeeId|Employee|Department|Branch|Company",
                 "Label|Caller|Issue|Employee","Status|Priority|Employee|Department|Branch|Company");
@@ -188,7 +188,7 @@ namespace Yakult.Inventory.App.Services
                 @"SELECT CAST(r.RepairTicketId AS BIGINT) Id,r.TicketCode Label,r.ItemNameSnapshot Item,r.ItemSerialSnapshot Serial,
                 r.Status Status,r.Priority Priority,r.CreatedAt CreatedAt,r.CompletedAt CompletedAt,r.AssignedTechEmpId EmployeeId,e.Name Employee,
                 r.SubmittedByUserId CreatedBy,LEFT(r.Problem,300) Problem,LEFT(r.Diagnosis,300) Diagnosis,LEFT(r.Resolution,300) Resolution,
-                d.Name Department,b.Name Branch,co.Name Company FROM dbo.RepairTicket r LEFT JOIN dbo.Employee e ON e.EmpId=r.AssignedTechEmpId
+                d.Name Department,b.Name Branch,co.Name Company,r.ComId CompanyId,r.BranchId BranchId,r.DeptId DepartmentId FROM dbo.RepairTicket r LEFT JOIN dbo.Employee e ON e.EmpId=r.AssignedTechEmpId
                 LEFT JOIN dbo.Department d ON d.DeptId=r.DeptId LEFT JOIN dbo.Branch b ON b.BranchId=r.BranchId LEFT JOIN dbo.Company co ON co.ComId=r.ComId",
                 "Id|Label|Item|Serial|Status|Priority|CreatedAt|CompletedAt|EmployeeId|Employee|CreatedBy|Problem|Diagnosis|Resolution|Department|Branch|Company",
                 "Label|Item|Serial|Employee","Status|Priority|Employee|Department|Branch|Company","","CreatedAt|CompletedAt");
@@ -366,6 +366,7 @@ namespace Yakult.Inventory.App.Services
             c=list.First(x=>x.Id=="requests");c.AlternatePortal="AdminPortal";c.AlternatePage="DepartmentRequestHistoryPage";
             c=list.First(x=>x.Id=="consumables");c.AlternatePortal="AdminPortal";c.AlternatePage="ConsumableStockMonitorPage";
             foreach(var master in list.Where(x=>new[] { "items","assets","employees","companies","branches","departments","vendors","categories","department-accounts","holidays" }.Contains(x.Id))) master.DefaultStatus="Active";
+            foreach(var linked in list.Where(x=>new[] {"tickets","requests","repairs","employees","sets","exchanges","approvals"}.Contains(x.Id))) linked.OrganizationIds=true;
             return list;
         }
     }

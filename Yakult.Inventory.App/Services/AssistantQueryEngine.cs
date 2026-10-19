@@ -62,13 +62,19 @@ namespace Yakult.Inventory.App.Services
         public AssistantQueryEngine() : this(new SqlAssistantDataReader()) { }
         internal AssistantQueryEngine(IAssistantDataReader reader) { _reader=reader; }
 
-        public async Task<AssistantResult> ExecuteAsync(AssistantRequest request, AssistantContext context, CancellationToken ct)
+        public Task<AssistantResult> ExecuteAsync(AssistantRequest request, AssistantContext context, CancellationToken ct)
+        {return ExecuteAsync(request,context,ct,null);}
+        internal async Task<AssistantResult> ExecuteAsync(AssistantRequest request, AssistantContext context, CancellationToken ct,Func<AssistantRequest,bool> beforeRead)
         {
             ct.ThrowIfCancellationRequested();
             try
             {
                 var query=BuildQuery(request,context);
-                var table=await _reader.ReadAsync(query,ct).ConfigureAwait(false);
+                ct.ThrowIfCancellationRequested();
+                if(beforeRead!=null && !beforeRead(query.Request.Copy()))
+                    return AssistantResult.Message(AssistantOutcome.Cancelled,"Your session changed. Please ask your question again.");
+                ct.ThrowIfCancellationRequested();
+                var table=await AssistantPerformance.TimeAsync("sql",()=>_reader.ReadAsync(query,ct)).ConfigureAwait(false);
                 ct.ThrowIfCancellationRequested();
                 return Render(query,table);
             }
@@ -79,7 +85,7 @@ namespace Yakult.Inventory.App.Services
             {
                 ct.ThrowIfCancellationRequested();
                 try { Logger.LogError("[Yakumi] Read-only capability failed: "+request.Capability,ex); } catch { }
-                return AssistantResult.Message(AssistantOutcome.Unavailable,"Current data is unavailable for this lookup. The connection, deployed schema, or query failed; this does not mean there are zero records. No records were changed.");
+                return AssistantResult.Message(AssistantOutcome.Unavailable,AssistantEnglish.Unavailable);
             }
         }
 
@@ -88,7 +94,10 @@ namespace Yakult.Inventory.App.Services
             if(request==null || context==null) throw new ArgumentException("Please specify a lookup.");
             var c=AssistantCatalog.Find(request.Capability);
             if(c==null) throw new ArgumentException("That lookup is not in Yakumi's read-only capability catalog.");
-            if(!c.IsAllowed(context)) throw new UnauthorizedAccessException("Your account does not have access to "+c.Source+".");
+            if(!c.IsAllowed(context)) throw new UnauthorizedAccessException("You’ll need access to "+c.Title+" to view these records.");
+            var organizations=request.Organizations ?? new AssistantOrganization[0];
+            if(organizations.Count>3 || organizations.GroupBy(o=>o.Field).Any(g=>g.Count()>1) || organizations.Any(o=>!new[] {"Company","Branch","Department"}.Contains(o.Field)))
+                throw new ArgumentException("Please choose one supported organization filter of each type.");
             if(!Enum.IsDefined(typeof(AssistantOperation),request.Operation) || request.Page<0 || request.Page>100000)
                 throw new ArgumentException("Please choose a valid operation and page.");
             if(request.RecordId<=0 || request.ParentRecordId<=0) throw new ArgumentException("Please provide a valid positive record number.");
@@ -106,6 +115,8 @@ namespace Yakult.Inventory.App.Services
             bool ownRequests=c.RequesterScope && !((context.HasPortal("InventorySystem") && context.HasPage("ViewRequestsPage")) ||
                 (context.HasPortal("AdminPortal") && context.HasPage("DepartmentRequestHistoryPage")));
             bool personal=request.Personal || ownRequests;
+            query.Request.Personal=personal;
+            if(ownRequests && request.PersonalRelation==null) query.Request.PersonalRelation="Created";
             if(personal)
             {
                 if(c.PersonalPredicate==null) throw new ArgumentException("This source has no personal ownership filter. Please select an employee or use the ownership/borrow lookup.");
@@ -126,9 +137,10 @@ namespace Yakult.Inventory.App.Services
                 }
                 else if(request.PersonalRelation!=null) throw new ArgumentException("Please specify a supported personal relationship.");
                 predicates.Add(personalPredicate);scope.Add(request.PersonalRelation=="Assigned"?"assigned to your account":request.PersonalRelation=="Created"?"created by your account":"your account's records");
+                if(!request.Personal) query.Qualifications.Add("Limited to your account's records.");
             }
             if(c.ForcedScopePredicate!=null && !context.HasPortal("CartridgeManagement"))
-            { predicates.Add(c.ForcedScopePredicate);scope.Add("authorizations submitted by, for, or assigned to your account"); }
+            { predicates.Add(c.ForcedScopePredicate);scope.Add("authorizations submitted by, for, or assigned to your account");query.Qualifications.Add("Only authorizations submitted by, for, or assigned to your account."); }
             if(request.IncludeArchived && !(context.HasPortal("InventorySystem") && context.HasPage("ViewArchivePage")))
                 throw new UnauthorizedAccessException("Your account does not have access to archived records.");
             if(c.ArchiveColumn!=null && !request.IncludeArchived) predicates.Add("d.["+c.ArchiveColumn+"]=0");
@@ -136,9 +148,12 @@ namespace Yakult.Inventory.App.Services
             if(request.IncludeArchived && c.ArchiveColumn==null && c.Id!="archive")
                 throw new ArgumentException("This source cannot include archived records. Use the archive lookup.");
             if(c.CategoryScope && c.Columns.Contains("Category") && context.DeniedCategories!=null)
+            {
                 foreach(string category in context.DeniedCategories) predicates.Add("ISNULL(d.[Category],'')<>"+Parameter(query,category));
+                if(context.DeniedCategories.Count>0) query.Qualifications.Add("Restricted item categories are excluded.");
+            }
             if(c.DefaultStatus!=null && string.IsNullOrWhiteSpace(request.Status)) predicates.Add("d.[Status]="+Parameter(query,c.DefaultStatus));
-            if(c.Id=="sets" || c.Id=="set-items") scope.Add("employee follows the linked request, as in the Sets grid; current branch/department follow the set");
+            if(c.Id=="sets" || c.Id=="set-items") {scope.Add("employee follows the linked request, as in the Sets grid; current branch/department follow the set");query.Qualifications.Add("Employee follows the linked request; branch and department follow the current set.");}
             if(request.InStockOnly)
             {
                 if(!new[] {"items","consumables","cartridges"}.Contains(c.Id)) throw new ArgumentException("This source has no available-stock filter.");
@@ -147,9 +162,9 @@ namespace Yakult.Inventory.App.Services
             AddFilter(query,predicates,scope,"Status",request.Status);
             AddFilter(query,predicates,scope,"Priority",request.Priority);
             AddFilter(query,predicates,scope,"Employee",request.Employee,true);
-            AddFilter(query,predicates,scope,"Department",request.Department,true);
-            AddFilter(query,predicates,scope,"Branch",request.Branch,true);
-            AddFilter(query,predicates,scope,"Company",request.Company,true);
+            AddOrganizationFilter(query,predicates,scope,"Department",request.Department);
+            AddOrganizationFilter(query,predicates,scope,"Branch",request.Branch);
+            AddOrganizationFilter(query,predicates,scope,"Company",request.Company);
             AddFilter(query,predicates,scope,"Category",request.Category,!request.ExactCategory);
             if(request.Condition!=null && c.Id!="cartridges") AddFilter(query,predicates,scope,"Condition",request.Condition);
             if(request.OutstandingOnly)
@@ -157,7 +172,12 @@ namespace Yakult.Inventory.App.Services
                 if(!c.Columns.Contains("OutstandingUnits")) throw new ArgumentException("This source has no outstanding-quantity filter.");
                 predicates.Add("d.[OutstandingUnits]>0 AND d.[Status] NOT IN ('Rejected','Cancelled','Canceled','Closed')");scope.Add("outstanding quantities");
             }
-            var search=AiIntentRouter.SearchTokens(request.Search);
+            var search=AssistantQuestionLanguage.SearchTerms(AssistantProductMatching.RemainingSearch(request));
+            if(request.ModelMatch!=null)
+            {
+                predicates.Add("UPPER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(d.[Model],' ',''),'-',''),CHAR(9),''),CHAR(13),''),CHAR(10),''))="+Parameter(query,request.ModelMatch.Key));
+                scope.Add("model: "+request.ModelMatch.Key+" (spaces and hyphens equivalent)");
+            }
             if(search.Count>12) throw new ArgumentException("Please use at most twelve meaningful search terms.");
             if(search.Count>0)
             {
@@ -193,6 +213,7 @@ namespace Yakult.Inventory.App.Services
                 if(request.Condition!="Brand New" && request.Condition!="Refilled") throw new ArgumentException("Cartridge condition must be Brand New or Refilled.");
                 baseSql=baseSql.Replace("stock.BrandNewUnits+stock.RefilledUnits Units",request.Condition=="Brand New"?"stock.BrandNewUnits Units":"stock.RefilledUnits Units");
                 scope.Add("issuable "+request.Condition+" units; both condition totals shown separately");
+                query.Qualifications.Add("Stock units use the selected condition; condition totals are also shown separately.");
             }
             string cte="WITH Matches AS ("+baseSql+"), Scoped AS (SELECT * FROM Matches d WHERE "+(predicates.Count==0?"1=1":string.Join(" AND ",predicates.Select(p=>"("+p+")")))+")";
             string aggregates=string.Concat(c.AggregateColumns.Select(a=>",ISNULL(SUM(CAST(["+a+"] AS DECIMAL(28,4))),0) AS [Total_"+a+"]"));
@@ -227,7 +248,7 @@ namespace Yakult.Inventory.App.Services
                 query.CommandText=cte+" SELECT totals.*,page.* FROM ("+metadata+") totals OUTER APPLY (SELECT * FROM Scoped ORDER BY "+order+" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY) page;";
                 query.OutputColumns=c.Columns;
             }
-            if(request.LowestStock) scope.Add("lowest stock first; no threshold inferred");
+            if(request.LowestStock) {scope.Add("lowest stock first; no threshold inferred");query.Qualifications.Add("Lowest stock first; no low-stock threshold is assumed.");}
             if(c.DefaultStatus!=null && request.Status==null) scope.Add("default status: "+c.DefaultStatus);
             if(c.ArchiveColumn!=null) scope.Add(request.IncludeArchived?"including archived":"excluding archived");
             query.AppliedScope=scope.Count==0?"all accessible matching records; all dates":string.Join("; ",scope);
@@ -259,6 +280,17 @@ namespace Yakult.Inventory.App.Services
             else predicates.Add("d.["+field+"]="+Parameter(query,value));
             scope.Add(field+": "+value);
         }
+        private static void AddOrganizationFilter(AssistantSqlQuery query,List<string> predicates,List<string> scope,string field,string value)
+        {
+            var matches=(query.Request.Organizations ?? new AssistantOrganization[0]).Where(o=>o.Field==field).ToList();
+            if(matches.Count==0) {AddFilter(query,predicates,scope,field,value,true);return;}
+            if(matches.Count!=1 || matches[0].Name!=value || matches[0].Id<=0 || !query.Capability.Columns.Contains(field) || string.IsNullOrWhiteSpace(value) || value.Length>160)
+                throw new ArgumentException("Please clarify the "+field.ToLowerInvariant()+" filter.");
+            var match=matches[0];
+            bool linked=match.Id.HasValue && query.Capability.OrganizationIds;
+            predicates.Add("d.["+field+(linked?"Id":"")+"]="+Parameter(query,linked?(object)match.Id.Value:value));
+            scope.Add(field+": "+value+(linked?" (linked record)":match.Id.HasValue?" (stored name)":" (exact name)"));
+        }
 
         internal static AssistantResult Render(AssistantSqlQuery query,DataTable table)
         {
@@ -278,15 +310,15 @@ namespace Yakult.Inventory.App.Services
             }
             long groups=query.IsGrouped?Convert.ToInt64(metadata["TotalGroups"],CultureInfo.InvariantCulture):0;
             var result=new AssistantResult { Outcome=total==0?AssistantOutcome.NoMatches:AssistantOutcome.Success,
-                Source=query.Capability.Source,AppliedScope=query.AppliedScope,RetrievedAtUtc=DateTime.UtcNow,TotalRecords=total,TotalGroups=groups,
+                Source=query.Capability.Source,AppliedScope=query.AppliedScope,RetrievedAtUtc=DateTime.UtcNow,TimeZone=query.TimeZone ?? TimeZoneInfo.Local,TotalRecords=total,TotalGroups=groups,
                 Totals=new ReadOnlyDictionary<string,decimal>(totals),Rows=rows.AsReadOnly(),Request=query.Request.Copy(),
-                HasNextPage=query.Request.Operation!=AssistantOperation.Count && ((long)query.Request.Page+1)*PageSize<(query.IsGrouped?groups:total) };
-            var text=new StringBuilder(query.Capability.Title+": "+total.ToString(CultureInfo.InvariantCulture)+" matching records total.");
-            if(query.Request.InStockOnly && totals.ContainsKey("Units"))
-                text=new StringBuilder(FormatNumber("Units",totals["Units"])+" "+(query.Request.Category ?? "item")+" units in stock"+
-                    (string.IsNullOrWhiteSpace(query.Request.Search)?"":" matching ‘"+query.Request.Search+"’")+".\n"+total+" matching records total.");
+                Qualifications=query.Qualifications.AsReadOnly(),HasNextPage=query.Request.Operation!=AssistantOperation.Count && ((long)query.Request.Page+1)*PageSize<(query.IsGrouped?groups:total) };
+            var text=new StringBuilder(AssistantEnglish.Answer(result));
+            string period=AssistantEnglish.Period(query.Request);
+            if(period!=null) text.Append("\n"+period);
+            text.Append("\n"+total+" matching "+(total==1?"record":"records")+" total.");
             foreach(var item in totals) text.Append("\n"+MetricLabel(item.Key,query.Capability.Id)+" across all matches: "+FormatNumber(item.Key,item.Value)+".");
-            if(rows.Count>0) text.Append("\nShowing "+rows.Count+" "+(query.IsGrouped?"groups":"records")+" on page "+(query.Request.Page+1)+ (query.IsGrouped?" of "+groups+" groups.":"."));
+            if(rows.Count>0) text.Append("\nShowing "+AssistantEnglish.Count(rows.Count,query.IsGrouped?"group":"record",query.IsGrouped?"groups":"records")+" on page "+(query.Request.Page+1)+ (query.IsGrouped?" of "+groups+" groups.":"."));
             else if(total==0) text.Append("\nNo matching records within this scope.");
             else if(query.Request.Operation!=AssistantOperation.Count) text.Append("\nNo rows on this page. Choose Previous page.");
             foreach(var row in rows)

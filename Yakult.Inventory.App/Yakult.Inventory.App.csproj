@@ -1109,14 +1109,28 @@
     <Compile Include="Repositories\AdminAlertRepository.cs" />
     <Compile Include="Services\CartridgeApprovalService.cs" />
     <Compile Include="Services\OllamaChatService.cs" />
+    <Compile Include="Services\OllamaConnectionSettings.cs" />
     <Compile Include="Services\AiContextProviders.cs" />
     <Compile Include="Services\AiIntentRouter.cs" />
     <Compile Include="Services\AssistantContracts.cs" />
+    <Compile Include="Services\AssistantPerformance.cs" />
+    <Compile Include="Services\AssistantReferenceCache.cs" />
+    <Compile Include="Services\AssistantPresentation.cs" />
+    <Compile Include="Services\AssistantAnswerRenderer.cs" />
     <Compile Include="Services\AssistantCatalog.cs" />
     <Compile Include="Services\AssistantQueryEngine.cs" />
     <Compile Include="Services\AssistantKnowledge.cs" />
     <Compile Include="Services\AssistantPlanner.cs" />
+    <Compile Include="Services\AssistantQuestionLanguage.cs" />
+    <Compile Include="Services\AssistantWordMappings.cs" />
+    <Compile Include="Services\AssistantInterpretation.cs" />
+    <Compile Include="Services\AssistantInterpretationExamples.cs" />
+    <Compile Include="Services\AssistantClarifications.cs" />
     <Compile Include="Services\AssistantStockVocabulary.cs" />
+    <Compile Include="Services\AssistantProductMatching.cs" />
+    <Compile Include="Services\AssistantFollowUpLanguage.cs" />
+    <Compile Include="Services\AssistantSearchDescription.cs" />
+    <Compile Include="Services\AssistantOrganizationVocabulary.cs" />
     <Compile Include="Services\AssistantModel.cs" />
     <Compile Include="Services\YakumiAssistantService.cs" />
     <Compile Include="Services\YakumiAssistantHost.cs" />
@@ -1126,6 +1140,14 @@
     </Compile>
     <Compile Include="Tests\AiAssistantRegressionTest.cs" />
     <Compile Include="Tests\ExpandedAssistantTests.cs" />
+    <Compile Include="Tests\AssistantPresentationTests.cs" />
+    <Compile Include="Tests\AssistantPerformanceTests.cs" />
+    <Compile Include="Tests\AssistantUnderstandingTests.cs" />
+    <Compile Include="Tests\AssistantWordMappingTests.cs" />
+    <Compile Include="Tests\AssistantClarificationTests.cs" />
+    <Compile Include="Tests\AssistantProductMatchingTests.cs" />
+    <Compile Include="Tests\AssistantFollowUpTests.cs" />
+    <Compile Include="Tests\AssistantOrganizationTests.cs" />
     <Compile Include="Services\AuthorizationService.cs" />
     <Compile Include="Yakult_Inventory_System_DEVDataSet.Designer.cs">
       <AutoGen>True</AutoGen>

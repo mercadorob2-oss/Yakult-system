@@ -25,6 +25,22 @@ namespace Yakult.Inventory.App.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://192.168.100.186:7019")]
+        public string OllamaBaseUrl {
+            get { return ((string)(this["OllamaBaseUrl"])); }
+            set { this["OllamaBaseUrl"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("qwen2.5:3b")]
+        public string OllamaModel {
+            get { return ((string)(this["OllamaModel"])); }
+            set { this["OllamaModel"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string DbConnectionString {
             get {

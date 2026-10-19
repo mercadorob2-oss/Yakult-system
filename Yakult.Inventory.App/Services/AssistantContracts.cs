@@ -86,6 +86,8 @@ namespace Yakult.Inventory.App.Services
         public long? RecordId { get; set; }
         public long? ParentRecordId { get; set; }
         public string Search { get; set; }
+        internal AssistantModelMatch ModelMatch { get; set; }
+        internal IReadOnlyList<AssistantOrganization> Organizations { get; set; } = new AssistantOrganization[0];
         public string Status { get; set; }
         public string Priority { get; set; }
         public string Employee { get; set; }
@@ -118,12 +120,26 @@ namespace Yakult.Inventory.App.Services
         public string Message { get; set; }
         public bool IsGeneralQuestion { get; set; }
         public bool Compare { get; set; }
+        internal bool NeedsInterpretation { get; set; }
+        internal string UnresolvedMeaning { get; set; }
+        internal string UnresolvedFilter { get; set; }
+    }
+
+    /// <summary>Only request scope is shared with the interpreter, never rows, totals or conversation answers.</summary>
+    internal sealed class AssistantInterpretationContext
+    {
+        internal IReadOnlyList<AssistantRequest> Previous { get; }
+        internal AssistantOrganizationResolution Organizations { get; }
+        internal AssistantInterpretationContext(IEnumerable<AssistantRequest> previous,AssistantOrganizationResolution organizations=null)
+        { Previous=(previous ?? new AssistantRequest[0]).Take(2).Select(r=>r.Copy()).ToList().AsReadOnly();Organizations=organizations; }
     }
 
     public sealed class AssistantResult
     {
         public AssistantOutcome Outcome { get; internal set; }
+        internal AssistantPerformanceReport Performance { get; set; }
         public string Text { get; internal set; }
+        public string MessageText { get; internal set; }
         public string Source { get; internal set; }
         public string AppliedScope { get; internal set; }
         public DateTime RetrievedAtUtc { get; internal set; }
@@ -133,13 +149,43 @@ namespace Yakult.Inventory.App.Services
         public IReadOnlyList<IReadOnlyDictionary<string, object>> Rows { get; internal set; }
         public AssistantRequest Request { get; internal set; }
         public bool HasNextPage { get; internal set; }
+        public IReadOnlyList<AssistantResult> Children { get; internal set; } = new AssistantResult[0];
+        public bool IsComparison { get; internal set; }
+        internal IReadOnlyList<AssistantClarificationChoice> ClarificationChoices { get; set; } = new AssistantClarificationChoice[0];
+        public string ExplanationText { get; internal set; }
+        public IReadOnlyList<AssistantGuideCitation> GuideCitations { get; internal set; } = new AssistantGuideCitation[0];
+        public TimeZoneInfo TimeZone { get; internal set; } = TimeZoneInfo.Local;
+        public IReadOnlyList<string> Qualifications { get; internal set; } = new string[0];
         public bool IsLive { get { return Outcome == AssistantOutcome.Success || Outcome == AssistantOutcome.NoMatches; } }
         public static AssistantResult Message(AssistantOutcome outcome, string text)
         {
-            return new AssistantResult { Outcome = outcome, Text = text, RetrievedAtUtc = DateTime.UtcNow,
+            return new AssistantResult { Outcome = outcome, Text = text, MessageText = text, RetrievedAtUtc = DateTime.UtcNow,
                 Totals = new ReadOnlyDictionary<string, decimal>(new Dictionary<string, decimal>()),
                 Rows = new List<IReadOnlyDictionary<string, object>>().AsReadOnly() };
         }
+    }
+
+    internal sealed class AssistantClarificationChoice
+    {
+        internal string PromptId { get; }
+        internal string Id { get; }
+        internal string Label { get; }
+        internal AssistantClarificationChoice(string promptId,string id,string label)
+        {PromptId=promptId;Id=id;Label=label;}
+    }
+
+    public sealed class AssistantGuideCitation
+    {
+        public string Id { get; internal set; }
+        public string Source { get; internal set; }
+    }
+
+    internal sealed class AssistantExplanation
+    {
+        internal string Text;
+        internal IReadOnlyList<AssistantGuideCitation> Citations;
+        internal string LegacyText;
+        internal string ReadableText { get { return LegacyText ?? Text+"\nGuide sources: "+string.Join("; ",Citations.Select(c=>c.Source+" ["+c.Id+"]"))+"."; } }
     }
 
     public sealed class AssistantCapability
@@ -152,6 +198,7 @@ namespace Yakult.Inventory.App.Services
         public string[] PortalKeys { get; internal set; }
         public string[] Aliases { get; internal set; }
         internal string BaseSql;
+        internal bool OrganizationIds;
         internal string[] Columns;
         internal string[] SearchColumns;
         internal string[] GroupColumns;
@@ -195,5 +242,6 @@ namespace Yakult.Inventory.App.Services
         internal string[] OutputColumns;
         internal bool IsGrouped;
         internal TimeZoneInfo TimeZone;
+        internal readonly List<string> Qualifications = new List<string>();
     }
 }

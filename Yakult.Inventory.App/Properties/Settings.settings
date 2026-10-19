@@ -2,6 +2,12 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Yakult.Inventory.App.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
+    <Setting Name="OllamaBaseUrl" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://192.168.100.186:7019</Value>
+    </Setting>
+    <Setting Name="OllamaModel" Type="System.String" Scope="User">
+      <Value Profile="(Default)">qwen2.5:3b</Value>
+    </Setting>
     <Setting Name="DbConnectionString" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
