@@ -5,6 +5,7 @@ using System.Drawing.Drawing2D;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Yakult.Inventory.App.Helpers;
 using Yakult.Inventory.App.Models;
 using Yakult.Inventory.App.Repositories;
 
@@ -16,11 +17,11 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
         private Panel _scroll;
 
         // ── Palette ───────────────────────────────────────────────────────────
-        private static readonly Color CBlue    = Color.FromArgb(78, 154, 252);
-        private static readonly Color CPage    = Color.FromArgb(247, 249, 252);
-        private static readonly Color CLabel   = Color.FromArgb(110, 118, 140);
-        private static readonly Color CValue   = Color.FromArgb(20, 26, 46);
-        private static readonly Color CDivider = Color.FromArgb(224, 228, 238);
+        private static readonly Color CBlue    = UiTheme.Colors.Primary;
+        private static readonly Color CPage    = UiTheme.Colors.HeaderBack;
+        private static readonly Color CLabel   = UiTheme.Colors.TextMuted;
+        private static readonly Color CValue   = UiTheme.Colors.TextDark;
+        private static readonly Color CDivider = UiTheme.Colors.Border;
         private static readonly Color CCard    = Color.White;
 
         // ── Layout ────────────────────────────────────────────────────────────
@@ -91,14 +92,15 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             {
                 Text      = "Close",
                 Font      = new Font("Segoe UI", 9.5F, FontStyle.Bold),
-                ForeColor = Color.White,
-                BackColor = CBlue,
+                ForeColor = UiTheme.Colors.TextDark,
+                BackColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Size      = new Size(100, 34),
                 Cursor    = Cursors.Hand
             };
-            TourTarget_CloseButton.FlatAppearance.BorderSize         = 0;
-            TourTarget_CloseButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(60, 130, 220);
+            TourTarget_CloseButton.FlatAppearance.BorderSize         = 1;
+            TourTarget_CloseButton.FlatAppearance.BorderColor        = UiTheme.Colors.Border;
+            TourTarget_CloseButton.FlatAppearance.MouseOverBackColor = UiTheme.Colors.GridAltRowBack;
             TourTarget_CloseButton.Click += (s, e) => { DialogResult = DialogResult.OK; };
             footer.Resize  += (s, e) => TourTarget_CloseButton.Location = new Point(footer.Width - 120, 10);
             footer.Controls.Add(TourTarget_CloseButton);
@@ -334,8 +336,8 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             var heading = new Label
             {
                 Text      = title.ToUpper(),
-                Font      = new Font("Segoe UI", 7.5F, FontStyle.Bold),
-                ForeColor = CBlue,
+                Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                ForeColor = CLabel,
                 Dock      = DockStyle.Fill,
                 TextAlign = ContentAlignment.BottomLeft,
                 Margin    = new Padding(0, first ? 14 : 10, 0, 0)

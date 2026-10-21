@@ -317,9 +317,14 @@ namespace Yakult.Inventory.App.Wpf.Portal
             menu.Children.Add(Label("WEB SYSTEMS", 10, Brush("#9DAAC0"), FontWeights.SemiBold, new Thickness(12, 24, 0, 12)));
             menu.Children.Add(CreateWebNavButton("Employee Portal", "person", EmployeePortalUrl));
             menu.Children.Add(CreateWebNavButton("Request Cartridge Web", "request", CartridgeWebUrl));
-            menu.Children.Add(Label("ADMIN TOOLS", 10, Brush("#9DAAC0"), FontWeights.SemiBold, new Thickness(12, 24, 0, 12)));
-            menu.Children.Add(CreateAdminNavButton("Ticket Automation Handler", "headset", TicketAutomationUrl));
-            menu.Children.Add(CreateAdminNavButton("Mobile API", "grid", MobileApiUrl));
+            // Admin tools section is rendered only for developer / super-admin / admin
+            // accounts (same gate as OpenAdminTool). Non-admins never see the entries.
+            if (CanAccessAdminTools())
+            {
+                menu.Children.Add(Label("ADMIN TOOLS", 10, Brush("#9DAAC0"), FontWeights.SemiBold, new Thickness(12, 24, 0, 12)));
+                menu.Children.Add(CreateAdminNavButton("Ticket Automation Handler", "headset", TicketAutomationUrl));
+                menu.Children.Add(CreateAdminNavButton("Mobile API", "grid", MobileApiUrl));
+            }
             var menuScroll = new ScrollViewer { Content = menu, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
             dock.Children.Add(menuScroll);
         }

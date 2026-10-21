@@ -11,7 +11,7 @@ using System.Windows.Input;
 using WinForms = System.Windows.Forms;
 using System.Windows.Markup;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
+using System.Windows.Shapes;
 using Yakult.Inventory.App.Forms.CallMonitoring;
 using Yakult.Inventory.App.Pages.Admin.AccountManagement;
 using Yakult.Inventory.App.Models;
@@ -171,7 +171,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _statusFilterCombo.Items.Add(s);
             _statusFilterCombo.SelectedIndex = 0;
             _searchBox = new TextBox { Padding = new Thickness(10, 8, 10, 8), FontSize = 12, MinWidth = 220 };
-            _refreshButton = CreatePrimaryButton("Refresh Data", WpfThemeResources.PrimaryBrush);
+            _refreshButton = CreatePrimaryButton("Refresh Data");
             _escalationAssigneeButton = new Button
             {
                 Content = "Manage Assignees…", Margin = new Thickness(0, 0, 8, 0),
@@ -179,6 +179,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Foreground = WpfThemeResources.PrimaryBrush, Background = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(191, 219, 254)),
                 BorderThickness = new Thickness(1), Cursor = Cursors.Hand,
+                Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"],
                 Visibility = (AppSession.IsAdmin || AppSession.IsDeveloper) ? Visibility.Visible : Visibility.Collapsed
             };
             _viewProfileCardButton = new Button
@@ -187,7 +188,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Padding = new Thickness(14, 9, 14, 9), FontSize = 12, FontWeight = FontWeights.SemiBold,
                 Foreground = WpfThemeResources.TextDarkBrush, Background = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(229, 231, 235)),
-                BorderThickness = new Thickness(1), Cursor = Cursors.Hand
+                BorderThickness = new Thickness(1), Cursor = Cursors.Hand,
+                Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"]
             };
             _toggleFiltersButton = new Button
             {
@@ -195,15 +197,16 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Padding = new Thickness(14, 9, 14, 9), FontSize = 12, FontWeight = FontWeights.SemiBold,
                 Foreground = BrushFromRgb(71, 85, 105), Background = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
-                BorderThickness = new Thickness(1), Cursor = Cursors.Hand
+                BorderThickness = new Thickness(1), Cursor = Cursors.Hand,
+                Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"]
             };
             _statusText = new TextBlock
             {
                 FontSize = 11.5, Foreground = WpfThemeResources.TextMutedBrush,
                 VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0), Text = "Ready"
             };
-            _applyFiltersButton = CreatePrimaryButton("Apply Filters", WpfThemeResources.PrimaryBrush);
-            _clearFiltersButton = CreatePrimaryButton("Clear", BrushFromRgb(71, 85, 105));
+            _applyFiltersButton = CreatePrimaryButton("Apply Filters");
+            _clearFiltersButton = CreatePrimaryButton("Clear");
             _refreshButton.Margin = new Thickness(0, 0, 8, 0);
 
             var filterOuterGrid = new Grid();
@@ -320,7 +323,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var profileCard = new Border
             {
-                Background = new SolidColorBrush(Color.FromArgb(255, 249, 250, 252)),
+                Background = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
                 BorderThickness = new Thickness(1, 0, 0, 0), Padding = new Thickness(16, 14, 16, 14)
             };
@@ -367,7 +370,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Orientation = Orientation.Horizontal, Margin = new Thickness(0, 18, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Right
             };
-            _profileOpenButton = CreatePrimaryButton("Profile", WpfThemeResources.PrimaryBrush);
+            _profileOpenButton = CreatePrimaryButton("Profile");
             _profileOpenButton.IsEnabled = false;
             _profileOpenButton.Margin = new Thickness(0, 0, 8, 0);
             _profileSummaryButton = new Button
@@ -375,7 +378,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Content = "Summary", Padding = new Thickness(14, 9, 14, 9), FontSize = 12,
                 FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.PrimaryBrush,
                 Background = Brushes.White, BorderBrush = new SolidColorBrush(Color.FromRgb(191, 219, 254)),
-                BorderThickness = new Thickness(1), IsEnabled = false, Cursor = Cursors.Hand
+                BorderThickness = new Thickness(1), IsEnabled = false, Cursor = Cursors.Hand,
+                Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"]
             };
             profileActions.Children.Add(_profileOpenButton);
             profileActions.Children.Add(_profileSummaryButton);
@@ -883,14 +887,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Content = text,
                 Margin = new Thickness(0, 0, 8, 0),
-                Padding = new Thickness(14, 6, 14, 6),
-                FontSize = 11.5,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(51, 65, 85),
-                Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
-                BorderThickness = new Thickness(1),
-                Cursor = Cursors.Hand
+                Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"]
             };
         }
 
@@ -1242,56 +1239,68 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         // ── UI Builders ───────────────────────────────────────────────────────────
         private static Border BuildHero()
         {
-            var card = new Border
-            {
-                Background = new LinearGradientBrush(WpfThemeResources.TextDark, Color.FromRgb(30, 41, 59), new Point(0, 0), new Point(1, 1)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(51, 65, 85)), BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(28), Padding = new Thickness(26, 24, 26, 24),
-                Effect = new DropShadowEffect { BlurRadius = 24, Color = Color.FromArgb(32, 15, 23, 42), ShadowDepth = 0, Opacity = 0.25 }
-            };
             var layout = new Grid();
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            card.Child = layout;
             var textStack = new StackPanel();
-            textStack.Children.Add(new TextBlock { Text = "Tech Profiles", FontSize = 30, FontWeight = FontWeights.Bold, Foreground = Brushes.White });
             textStack.Children.Add(new TextBlock
             {
-                Text = "Per-employee view of open and handled tickets, SLA status, and ticket profile drill-down — same logic as the WinForms profiles form, modernised in WPF.",
-                Margin = new Thickness(0, 8, 0, 0), FontSize = 13,
-                Foreground = new SolidColorBrush(Color.FromRgb(191, 219, 254)), TextWrapping = TextWrapping.Wrap
+                Text = "IT CALL MONITORING", FontSize = 11, FontWeight = FontWeights.SemiBold,
+                Foreground = WpfThemeResources.TextMutedBrush
+            });
+            textStack.Children.Add(new TextBlock
+            {
+                Text = "Employee Profiles", Margin = new Thickness(0, 7, 0, 0),
+                FontSize = 26, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextDarkBrush
+            });
+            textStack.Children.Add(new TextBlock
+            {
+                Text = "Review each employee’s open and handled tickets, SLA status, and ticket details.",
+                Margin = new Thickness(0, 7, 0, 0), FontSize = 12.5,
+                Foreground = WpfThemeResources.TextMutedBrush, TextWrapping = TextWrapping.Wrap
             });
             layout.Children.Add(textStack);
             var chips = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top };
-            chips.Children.Add(CreateHeroChip("Per-employee", BrushFromRgb(14, 165, 233)));
-            chips.Children.Add(CreateHeroChip("Open + Handled", BrushFromRgb(16, 185, 129)));
-            chips.Children.Add(CreateHeroChip("Ticket profile", BrushFromRgb(245, 158, 11)));
+            chips.Children.Add(CreateHeroChip("Open + handled"));
+            chips.Children.Add(CreateHeroChip("SLA status"));
+            chips.Children.Add(CreateHeroChip("Ticket details"));
             Grid.SetColumn(chips, 1);
             layout.Children.Add(chips);
-            return card;
+            return new Border { Background = Brushes.Transparent, Child = layout };
         }
 
-        private static Border CreateHeroChip(string text, Brush background) =>
+        private static Border CreateHeroChip(string text) =>
             new Border
             {
-                Margin = new Thickness(8, 0, 0, 8), Padding = new Thickness(12, 7, 12, 7),
-                CornerRadius = new CornerRadius(999), Background = background,
-                Child = new TextBlock { Text = text, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White }
+                Margin = new Thickness(8, 5, 0, 8), Padding = new Thickness(10, 6, 10, 6),
+                CornerRadius = new CornerRadius(6), Background = Brushes.White,
+                BorderBrush = new SolidColorBrush(WpfThemeResources.Border), BorderThickness = new Thickness(1),
+                Child = new TextBlock { Text = text, FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush }
             };
 
         private Border BuildClickableMetricCard(int column, string title, string subtitle, TextBlock valueBlock, Color accentColor)
         {
             var card = CreateGlassCard();
-            card.Padding = new Thickness(16, 14, 16, 14);
+            card.Padding = new Thickness(16);
             card.Cursor = Cursors.Hand;
             if (column > 0) card.Margin = new Thickness(14, 0, 0, 0);
             var stack = new StackPanel();
             card.Child = stack;
-            stack.Children.Add(new Border { Width = 36, Height = 4, CornerRadius = new CornerRadius(999), Background = new SolidColorBrush(accentColor), HorizontalAlignment = HorizontalAlignment.Left });
-            stack.Children.Add(new TextBlock { Text = title, Margin = new Thickness(0, 12, 0, 0), FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(71, 85, 105) });
-            valueBlock.Margin = new Thickness(0, 6, 0, 0); valueBlock.Text = "0";
+            var titleRow = new StackPanel { Orientation = Orientation.Horizontal };
+            titleRow.Children.Add(new Ellipse
+            {
+                Width = 8, Height = 8, Fill = new SolidColorBrush(accentColor),
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0)
+            });
+            titleRow.Children.Add(new TextBlock
+            {
+                Text = title.ToUpperInvariant(), FontSize = 10.5, FontWeight = FontWeights.SemiBold,
+                Foreground = WpfThemeResources.TextMutedBrush, VerticalAlignment = VerticalAlignment.Center
+            });
+            stack.Children.Add(titleRow);
+            valueBlock.Margin = new Thickness(0, 8, 0, 0); valueBlock.Text = "0";
             stack.Children.Add(valueBlock);
-            stack.Children.Add(new TextBlock { Text = subtitle, Margin = new Thickness(0, 5, 0, 0), FontSize = 11, Foreground = WpfThemeResources.TextMutedBrush, TextWrapping = TextWrapping.Wrap });
+            stack.Children.Add(new TextBlock { Text = subtitle, Margin = new Thickness(0, 6, 0, 0), FontSize = 11, Foreground = WpfThemeResources.TextMutedBrush, TextWrapping = TextWrapping.Wrap });
             Grid.SetColumn(card, column);
             return card;
         }
@@ -1299,14 +1308,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private static Border CreateGlassCard() =>
             new Border
             {
-                Background = new SolidColorBrush(Color.FromArgb(248, 255, 255, 255)),
+                Background = Brushes.White,
                 BorderBrush = new SolidColorBrush(WpfThemeResources.Border), BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(24), Padding = new Thickness(22),
-                Effect = new DropShadowEffect { BlurRadius = 18, Color = Color.FromArgb(28, 15, 23, 42), ShadowDepth = 0, Opacity = 0.2 }
+                CornerRadius = new CornerRadius(10), Padding = new Thickness(18)
             };
 
         private static TextBlock CreateMetricValue() =>
-            new TextBlock { FontSize = 28, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextDarkBrush, Text = "0" };
+            new TextBlock { FontSize = 26, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextDarkBrush, Text = "0" };
 
         private static StackPanel BuildProfileField(string label, TextBlock valueBlock)
         {
@@ -1324,12 +1332,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             return stack;
         }
 
-        private static Button CreatePrimaryButton(string text, Brush background) =>
+        private static Button CreatePrimaryButton(string text) =>
             new Button
             {
                 Content = text, Margin = new Thickness(0, 0, 8, 0), Padding = new Thickness(14, 9, 14, 9),
-                FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White,
-                Background = background, BorderThickness = new Thickness(0), Cursor = Cursors.Hand
+                Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()[text == "Clear" ? "ItcmQuietButton" : "ItcmAccentButton"]
             };
 
         private static ComboBox CreateTextComboBox() =>
@@ -1444,7 +1451,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private static Style BuildTabItemStyle()
         {
-            const string xaml = @"<Style xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"" TargetType=""TabItem""><Setter Property=""Foreground"" Value=""#64748b""/><Setter Property=""FontSize"" Value=""13""/><Setter Property=""Template""><Setter.Value><ControlTemplate TargetType=""TabItem""><Border Name=""Bd"" Padding=""16,8"" Margin=""0,0,4,0"" CornerRadius=""8,8,0,0"" Background=""#e2e8f0""><ContentPresenter x:Name=""Cs"" VerticalAlignment=""Center"" HorizontalAlignment=""Center"" ContentSource=""Header""/></Border><ControlTemplate.Triggers><Trigger Property=""IsSelected"" Value=""True""><Setter TargetName=""Bd"" Property=""Background"" Value=""White""/><Setter Property=""Foreground"" Value=""#0f172a""/><Setter Property=""FontWeight"" Value=""SemiBold""/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>";
+            const string xaml = @"<Style xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"" TargetType=""TabItem""><Setter Property=""Foreground"" Value=""#69707D""/><Setter Property=""FontSize"" Value=""12.5""/><Setter Property=""Template""><Setter.Value><ControlTemplate TargetType=""TabItem""><Grid><Border x:Name=""Bd"" Padding=""16,10"" Margin=""0,0,8,0"" Background=""Transparent""><ContentPresenter VerticalAlignment=""Center"" HorizontalAlignment=""Center"" ContentSource=""Header""/></Border><Border x:Name=""ActiveLine"" Height=""2"" VerticalAlignment=""Bottom"" Margin=""0,0,8,0"" Background=""#B92335"" Visibility=""Collapsed""/></Grid><ControlTemplate.Triggers><Trigger Property=""IsSelected"" Value=""True""><Setter TargetName=""Bd"" Property=""Background"" Value=""White""/><Setter Property=""Foreground"" Value=""#B92335""/><Setter Property=""FontWeight"" Value=""SemiBold""/><Setter TargetName=""ActiveLine"" Property=""Visibility"" Value=""Visible""/></Trigger><Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""Bd"" Property=""Background"" Value=""#F7F7F8""/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>";
             var ctx = new ParserContext();
             ctx.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
             ctx.XmlnsDictionary.Add("x", "http://schemas.microsoft.com/winfx/2006/xaml");

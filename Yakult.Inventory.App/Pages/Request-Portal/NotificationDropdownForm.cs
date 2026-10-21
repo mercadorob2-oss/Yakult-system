@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using Yakult.Inventory.App.Helpers;
 using Yakult.Inventory.App.Models;
 using Yakult.Inventory.App.Repositories;
 
@@ -31,12 +32,12 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
         // ── Colors ────────────────────────────────────────────────────────────
         private static readonly Color CUnreadBg  = Color.FromArgb(255, 249, 240);
         private static readonly Color CReadBg    = Color.White;
-        private static readonly Color CHoverBg   = Color.FromArgb(238, 244, 255);
-        private static readonly Color CAccentRed = Color.FromArgb(213, 0, 50);
-        private static readonly Color CTextDark  = Color.FromArgb(22, 22, 40);
-        private static readonly Color CTextMid   = Color.FromArgb(80, 80, 100);
-        private static readonly Color CTextLight = Color.FromArgb(150, 150, 168);
-        private static readonly Color CBorder    = Color.FromArgb(218, 218, 230);
+        private static readonly Color CHoverBg   = UiTheme.Colors.GridAltRowBack;
+        private static readonly Color CAccentRed = UiTheme.Colors.Primary;
+        private static readonly Color CTextDark  = UiTheme.Colors.TextDark;
+        private static readonly Color CTextMid   = UiTheme.Colors.TextMuted;
+        private static readonly Color CTextLight = Color.FromArgb(138, 146, 162);
+        private static readonly Color CBorder    = UiTheme.Colors.Border;
 
         // ── State ─────────────────────────────────────────────────────────────
         private readonly List<NotificationDto> _notifications;
@@ -260,7 +261,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 {
                     Text      = "Click to view details →",
                     Font      = new Font("Segoe UI", 7.5F, FontStyle.Italic),
-                    ForeColor = Color.FromArgb(78, 154, 252),
+                    ForeColor = CAccentRed,
                     BackColor = Color.Transparent,
                     Location  = new Point(TextLeft, 84),
                     Size      = new Size(TextW, 20),

@@ -16,6 +16,16 @@ namespace Yakult.Inventory.App.Wpf.RequestSetSearch.Views
         /// <summary>Raised when a result card is clicked, so the hosting Form can navigate.</summary>
         public event Action<RequestSetSearchResultDto> CardSelected;
 
+        /// <summary>
+        /// The analytics dashboard shown below the search hero while no search is active — i.e. the
+        /// landing view the portal opens on. RequestSetManagementPortalForm wires its navigation
+        /// callbacks and calls Load() exactly like the other WPF hosts.
+        /// </summary>
+        public RequestSetDashboardView LandingDashboard
+        {
+            get { return HomeDashboardView; }
+        }
+
         public RequestSetSearchView()
         {
             InitializeComponent();

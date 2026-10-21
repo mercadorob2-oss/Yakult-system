@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Markup;
 using System.Windows.Media;
 using Yakult.Inventory.App.Models.CallMonitoring;
 
@@ -217,6 +218,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Background = Brushes.Transparent,
                 BorderThickness = new Thickness(0)
             };
+            tabs.ItemContainerStyle = BuildTabItemStyle();
 
             tabs.Items.Add(new TabItem
             {
@@ -502,18 +504,27 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             textStack.Children.Add(new TextBlock
             {
-                Text = "Manage IT assignees and escalation",
+                Text = "IT CALL MONITORING",
+                FontSize = 11,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = WpfThemeResources.TextMutedBrush
+            });
+
+            textStack.Children.Add(new TextBlock
+            {
+                Text = "Manage Assignees",
+                Margin = new Thickness(0, 7, 0, 0),
                 FontSize = 26,
-                FontWeight = FontWeights.Bold,
+                FontWeight = FontWeights.SemiBold,
                 Foreground = WpfThemeResources.TextDarkBrush
             });
 
             textStack.Children.Add(new TextBlock
             {
                 Text = "Use separate tabs to manage assignee eligibility and the escalation supervisor or manager rules.",
-                FontSize = 13,
+                FontSize = 12.5,
                 Foreground = WpfThemeResources.TextMutedBrush,
-                Margin = new Thickness(0, 8, 0, 0),
+                Margin = new Thickness(0, 7, 0, 0),
                 TextWrapping = TextWrapping.Wrap
             });
         }
@@ -545,11 +556,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             // Column header style
             grid.ColumnHeaderStyle = new Style(typeof(DataGridColumnHeader));
-            grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(241, 245, 249)));
-            grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(51, 65, 85)));
+            grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.White));
+            grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.ForegroundProperty, WpfThemeResources.TextMutedBrush));
             grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
-            grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.FontSizeProperty, 12.0));
-            grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(16, 12, 16, 12)));
+            grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.FontSizeProperty, 11.5));
+            grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 11, 12, 11)));
             grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(226, 232, 240)));
             grid.ColumnHeaderStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0, 0, 0, 1)));
 
@@ -1129,7 +1140,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Background = Brushes.White,
                 BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(18),
+                CornerRadius = new CornerRadius(10),
                 SnapsToDevicePixels = true
             };
         }
@@ -1139,8 +1150,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             return new Border
             {
                 Background = new SolidColorBrush(background),
-                CornerRadius = new CornerRadius(999),
-                Padding = new Thickness(10, 6, 10, 6),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10, 5, 10, 5),
                 Margin = margin ?? new Thickness(0),
                 Child = new TextBlock
                 {
@@ -1158,16 +1169,18 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Content = content,
                 MinWidth = 126,
-                Height = 38,
-                Padding = new Thickness(16, 0, 16, 0),
-                FontSize = 12,
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand,
-                Background = primary ? WpfThemeResources.PrimaryBrush : Brushes.White,
-                Foreground = primary ? Brushes.White : BrushFromRgb(71, 85, 105),
-                BorderBrush = primary ? WpfThemeResources.PrimaryBrush : new SolidColorBrush(Color.FromRgb(203, 213, 225)),
-                BorderThickness = new Thickness(1)
+                Margin = new Thickness(0),
+                Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()[primary ? "ItcmAccentButton" : "ItcmQuietButton"]
             };
+        }
+
+        private static Style BuildTabItemStyle()
+        {
+            const string xaml = @"<Style xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"" TargetType=""TabItem""><Setter Property=""Foreground"" Value=""#69707D""/><Setter Property=""FontSize"" Value=""12.5""/><Setter Property=""Template""><Setter.Value><ControlTemplate TargetType=""TabItem""><Grid><Border x:Name=""Bd"" Padding=""16,10"" Margin=""0,0,8,0"" Background=""Transparent""><ContentPresenter VerticalAlignment=""Center"" HorizontalAlignment=""Center"" ContentSource=""Header""/></Border><Border x:Name=""ActiveLine"" Height=""2"" VerticalAlignment=""Bottom"" Margin=""0,0,8,0"" Background=""#B92335"" Visibility=""Collapsed""/></Grid><ControlTemplate.Triggers><Trigger Property=""IsSelected"" Value=""True""><Setter TargetName=""Bd"" Property=""Background"" Value=""White""/><Setter Property=""Foreground"" Value=""#B92335""/><Setter Property=""FontWeight"" Value=""SemiBold""/><Setter TargetName=""ActiveLine"" Property=""Visibility"" Value=""Visible""/></Trigger><Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""Bd"" Property=""Background"" Value=""#F7F7F8""/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>";
+            var context = new ParserContext();
+            context.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
+            context.XmlnsDictionary.Add("x", "http://schemas.microsoft.com/winfx/2006/xaml");
+            return (Style)XamlReader.Parse(xaml, context);
         }
 
         private static SolidColorBrush BrushFromRgb(byte r, byte g, byte b)

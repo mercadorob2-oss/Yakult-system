@@ -5,7 +5,7 @@
     xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.RequestPortal.NewRequest.ViewModels"
     xmlns:ctrl="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
     xmlns:helpers="clr-namespace:Yakult.Inventory.App.WPF.Shared.Helpers"
-    Background="#F0F2F6"
+    Background="#F6F5F2"
     FontFamily="Segoe UI"
     UseLayoutRounding="True"
     SnapsToDevicePixels="True"
@@ -14,445 +14,11 @@
     RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-
-        <!-- ── Converters ─────────────────────────────────────────────────── -->
-        <ctrl:BoolToVisibilityConverter         x:Key="BoolToVis"/>
-        <ctrl:InverseBoolToVisibilityConverter  x:Key="InvBoolToVis"/>
-        <ctrl:NullToVisibilityConverter         x:Key="NullToVis"/>
-
-        <!-- ── Color resources ──────────────────────────────────────────── -->
-        <SolidColorBrush x:Key="YakultBlue"     Color="#3A8EF6"/>
-        <SolidColorBrush x:Key="YakultDarkBlue" Color="#1A6DD0"/>
-        <SolidColorBrush x:Key="CardBorder"     Color="#DDE3EC"/>
-        <SolidColorBrush x:Key="TextPrimary"    Color="#1A2333"/>
-        <SolidColorBrush x:Key="TextMuted"      Color="#5A6A7E"/>
-        <SolidColorBrush x:Key="ErrorRed"       Color="#E03C31"/>
-        <SolidColorBrush x:Key="SuccessGreen"   Color="#1E9E5E"/>
-        <SolidColorBrush x:Key="WarningAmber"   Color="#E08A00"/>
-        <SolidColorBrush x:Key="SurfaceGray"    Color="#F3F5F8"/>
-
-        <!-- ── Global text style ────────────────────────────────────────── -->
-        <Style TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe UI"/>
-            <Setter Property="FontSize"   Value="12"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-        </Style>
-
-        <!-- ── Section card ─────────────────────────────────────────────── -->
-        <Style x:Key="SectionCard" TargetType="Border">
-            <Setter Property="Background"       Value="White"/>
-            <Setter Property="BorderBrush"      Value="{StaticResource CardBorder}"/>
-            <Setter Property="BorderThickness"  Value="1"/>
-            <Setter Property="CornerRadius"     Value="10"/>
-            <Setter Property="Padding"          Value="28,22"/>
-            <Setter Property="Margin"           Value="0,0,0,16"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.07" Color="#0A1A2A" Direction="270"/>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── Section header label ─────────────────────────────────────── -->
-        <Style x:Key="SectionLabel" TargetType="TextBlock">
-            <Setter Property="FontSize"     Value="11"/>
-            <Setter Property="FontWeight"   Value="Bold"/>
-            <Setter Property="Foreground"   Value="{StaticResource YakultBlue}"/>
-            <Setter Property="Margin"       Value="0,0,0,16"/>
-        </Style>
-
-        <!-- ── Field label ──────────────────────────────────────────────── -->
-        <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="FontSize"          Value="12"/>
-            <Setter Property="FontWeight"        Value="SemiBold"/>
-            <Setter Property="Foreground"        Value="{StaticResource TextMuted}"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-
-        <!-- ── Modern input TextBox ──────────────────────────────────────── -->
-        <Style x:Key="InputBox" TargetType="TextBox">
-            <Setter Property="BorderBrush"              Value="{StaticResource CardBorder}"/>
-            <Setter Property="BorderThickness"          Value="1.5"/>
-            <Setter Property="Padding"                  Value="11,8"/>
-            <Setter Property="FontSize"                 Value="12"/>
-            <Setter Property="Background"               Value="White"/>
-            <Setter Property="Foreground"               Value="{StaticResource TextPrimary}"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="5">
-                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource YakultBlue}"/>
-                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceGray}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── Modern ComboBox ───────────────────────────────────────────── -->
-        <Style x:Key="ModernComboBox" TargetType="ComboBox">
-            <Setter Property="BorderBrush"      Value="{StaticResource CardBorder}"/>
-            <Setter Property="BorderThickness"  Value="1.5"/>
-            <Setter Property="Padding"          Value="11,8"/>
-            <Setter Property="FontSize"         Value="12"/>
-            <Setter Property="Background"       Value="White"/>
-            <Setter Property="Foreground"       Value="{StaticResource TextPrimary}"/>
-            <Setter Property="Height"           Value="38"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <Border x:Name="border"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="5">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="28"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Toggle spans full control — opens dropdown on click -->
-                                    <ToggleButton Grid.ColumnSpan="2"
-                                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay,
-                                                              RelativeSource={RelativeSource TemplatedParent}}"
-                                                  Background="Transparent"
-                                                  BorderThickness="0"
-                                                  Focusable="False"
-                                                  ClickMode="Press"/>
-
-                                    <ContentPresenter x:Name="ContentSite"
-                                                      Content="{TemplateBinding SelectionBoxItem}"
-                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                      Margin="10,0,0,0"
-                                                      VerticalAlignment="Center"
-                                                      IsHitTestVisible="False"/>
-                                    <TextBox x:Name="PART_EditableTextBox"
-                                             Grid.Column="0"
-                                             Margin="8,0,0,0"
-                                             Padding="0"
-                                             VerticalAlignment="Center"
-                                             FontSize="{TemplateBinding FontSize}"
-                                             Background="Transparent"
-                                             BorderThickness="0"
-                                             IsReadOnly="{TemplateBinding IsReadOnly}"
-                                             Visibility="Collapsed"/>
-                                    <Path Grid.Column="1"
-                                          Data="M 0 0 L 4 4 L 8 0 Z"
-                                          Fill="{StaticResource TextMuted}"
-                                          HorizontalAlignment="Center"
-                                          VerticalAlignment="Center"
-                                          Margin="0,1,0,0"
-                                          IsHitTestVisible="False"/>
-                                </Grid>
-                            </Border>
-                            <Popup x:Name="PART_Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="Slide">
-                                <Border Background="White"
-                                        BorderBrush="{StaticResource CardBorder}"
-                                        BorderThickness="1"
-                                        CornerRadius="5"
-                                        MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
-                                        MaxHeight="220">
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.12" Color="Black"/>
-                                    </Border.Effect>
-                                    <ScrollViewer>
-                                        <ItemsPresenter/>
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsEditable" Value="True">
-                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="ContentSite"          Property="Visibility" Value="Collapsed"/>
-                            </Trigger>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource YakultBlue}"/>
-                                <Setter TargetName="border" Property="BorderThickness" Value="2"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceGray}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── ComboBox item hover ────────────────────────────────────────── -->
-        <Style TargetType="ComboBoxItem">
-            <Setter Property="Padding"    Value="11,8"/>
-            <Setter Property="FontSize"   Value="12"/>
-            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-            <Style.Triggers>
-                <Trigger Property="IsHighlighted" Value="True">
-                    <Setter Property="Background" Value="#EBF5FB"/>
-                    <Setter Property="Foreground" Value="{StaticResource YakultDarkBlue}"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- ── Primary action button ──────────────────────────────────────── -->
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background"      Value="{StaticResource YakultBlue}"/>
-            <Setter Property="Foreground"      Value="White"/>
-            <Setter Property="FontSize"        Value="12"/>
-            <Setter Property="FontWeight"      Value="SemiBold"/>
-            <Setter Property="Padding"         Value="22,11"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Height"          Value="40"/>
-            <Setter Property="Cursor"          Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="root"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="5"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="root" Property="Opacity" Value="0.88"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="root" Property="Opacity" Value="0.72"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="root" Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── Secondary (ghost) button ──────────────────────────────────── -->
-        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-            <Setter Property="Background"      Value="White"/>
-            <Setter Property="Foreground"      Value="{StaticResource TextMuted}"/>
-            <Setter Property="BorderBrush"     Value="{StaticResource CardBorder}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="root"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="5"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="root" Property="Background" Value="{StaticResource SurfaceGray}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="root" Property="Opacity" Value="0.8"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="root" Property="Opacity" Value="0.4"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── Add-item (green) button ────────────────────────────────────── -->
-        <Style x:Key="AddButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-            <Setter Property="Background" Value="#27AE60"/>
-            <Setter Property="Padding"    Value="16,9"/>
-        </Style>
-
-        <!-- ── Remove (red ghost) button ──────────────────────────────────── -->
-        <Style x:Key="RemoveButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-            <Setter Property="Foreground"      Value="{StaticResource ErrorRed}"/>
-            <Setter Property="BorderBrush"     Value="#FFCDD2"/>
-            <Setter Property="FontSize"        Value="11"/>
-            <Setter Property="Height"          Value="28"/>
-            <Setter Property="Padding"         Value="10,0"/>
-        </Style>
-
-        <!-- ── Fulfillment radio-toggle ───────────────────────────────────── -->
-        <Style x:Key="FulfillmentRadio" TargetType="RadioButton">
-            <Setter Property="FontSize"   Value="10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Cursor"     Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="root"
-                                CornerRadius="5"
-                                Padding="18,8"
-                                BorderThickness="1.5">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="root" Property="Background"   Value="{StaticResource YakultBlue}"/>
-                                <Setter TargetName="root" Property="BorderBrush"  Value="{StaticResource YakultBlue}"/>
-                                <Setter Property="Foreground" Value="White"/>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="False">
-                                <Setter TargetName="root" Property="Background"   Value="White"/>
-                                <Setter TargetName="root" Property="BorderBrush"  Value="{StaticResource CardBorder}"/>
-                                <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
-                            </Trigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsMouseOver" Value="True"/>
-                                    <Condition Property="IsChecked"   Value="False"/>
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="root" Property="BorderBrush" Value="{StaticResource YakultBlue}"/>
-                                <Setter Property="Foreground" Value="{StaticResource YakultBlue}"/>
-                            </MultiTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── Up/Down arrow button inside spinner ────────────────────────── -->
-        <Style x:Key="SpinArrowBtn" TargetType="Button">
-            <Setter Property="Background"       Value="#F5F5F5"/>
-            <Setter Property="BorderBrush"      Value="#D0D8E0"/>
-            <Setter Property="Foreground"       Value="{StaticResource TextMuted}"/>
-            <Setter Property="FontSize"         Value="6"/>
-            <Setter Property="Padding"          Value="0"/>
-            <Setter Property="Cursor"           Value="Hand"/>
-            <Setter Property="Focusable"        Value="False"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="root"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="root" Property="Background" Value="#E0E8F0"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="root" Property="Background" Value="#C8D8E8"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="root" Property="Opacity" Value="0.35"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- ── DataGrid headers ────────────────────────────────────────────── -->
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background"      Value="#EEF2F7"/>
-            <Setter Property="Foreground"      Value="{StaticResource TextMuted}"/>
-            <Setter Property="FontWeight"      Value="SemiBold"/>
-            <Setter Property="FontSize"        Value="11"/>
-            <Setter Property="Padding"         Value="10,8"/>
-            <Setter Property="BorderBrush"     Value="{StaticResource CardBorder}"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1.5"/>
-        </Style>
-
-        <!-- ── DataGrid rows ──────────────────────────────────────────────── -->
-        <Style TargetType="DataGridRow">
-            <Setter Property="Background" Value="White"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#EBF5FB"/>
-                    <Setter Property="Foreground" Value="{StaticResource YakultDarkBlue}"/>
-                </Trigger>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#F5F9FF"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- ── DataGrid cell ──────────────────────────────────────────────── -->
-        <Style TargetType="DataGridCell">
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding"         Value="0"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- ── Minimalist scrollbar ───────────────────────────────────────── -->
-        <Style TargetType="ScrollBar">
-            <Setter Property="Width"      Value="6"/>
-            <Setter Property="MinWidth"   Value="6"/>
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ScrollBar">
-                        <Grid x:Name="Root" Background="Transparent" Width="6">
-                            <Track x:Name="PART_Track" IsDirectionReversed="True">
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Command="ScrollBar.PageUpCommand"
-                                                  Opacity="0" Focusable="False" IsTabStop="False"/>
-                                </Track.DecreaseRepeatButton>
-                                <Track.Thumb>
-                                    <Thumb>
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="Thumb">
-                                                <Border x:Name="ThumbBorder"
-                                                        Background="#C0C8D0"
-                                                        CornerRadius="3" Margin="1,0"/>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="ThumbBorder" Property="Background" Value="#90A0B0"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                                <Track.IncreaseRepeatButton>
-                                    <RepeatButton Command="ScrollBar.PageDownCommand"
-                                                  Opacity="0" Focusable="False" IsTabStop="False"/>
-                                </Track.IncreaseRepeatButton>
-                            </Track>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="Orientation" Value="Horizontal">
-                                <Setter TargetName="Root"       Property="Width"  Value="Auto"/>
-                                <Setter TargetName="Root"       Property="Height" Value="6"/>
-                                <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Yakult.Inventory.App;component/WPF/RequestPortal/RequestPortalStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -465,30 +31,36 @@
         <!-- PAGE HEADER -->
         <Border Grid.Row="0"
                 Background="White"
-                BorderBrush="#E2E8F0"
+                BorderBrush="{StaticResource CardBorder}"
                 BorderThickness="0,0,0,1"
                 Padding="28,14">
-            <Grid>
+            <Grid MaxWidth="900" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Height="34" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock Text="New Cartridge Request"
-                               FontSize="18" FontWeight="Bold" Foreground="#2272D9"
+                               FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
                                VerticalAlignment="Center"/>
-                </Border>
+                    <TextBlock Text="Choose a category and model, then add each item to your request."
+                               FontSize="11.5" Foreground="{StaticResource TextMuted}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
 
                 <Border Grid.Column="1"
-                        Background="#D6E8FF"
+                        Background="{StaticResource SurfaceGray}"
+                        BorderBrush="{StaticResource CardBorder}"
+                        BorderThickness="1"
                         CornerRadius="14"
                         Padding="14,7"
+                        VerticalAlignment="Center"
                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="⟳" FontSize="15" Foreground="#2272D9"
+                        <TextBlock Text="⟳" FontSize="15" Foreground="{StaticResource TextMuted}"
                                    VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock Text="{Binding StatusMessage}"
-                                   FontSize="11" FontStyle="Italic" Foreground="#2272D9"
+                                   FontSize="11" FontStyle="Italic" Foreground="{StaticResource TextMuted}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -502,7 +74,7 @@
                       HorizontalScrollBarVisibility="Disabled"
                       PanningMode="VerticalFirst">
             <StackPanel MaxWidth="900"
-                        HorizontalAlignment="Center"
+                        HorizontalAlignment="Stretch"
                         Margin="28,18,28,8">
 
                 <!-- Validation error banner -->
@@ -524,7 +96,7 @@
                 </Border>
 
                 <!-- SECTION 1 — REQUESTER IDENTITY -->
-                <Border x:Name="RequestDetailsCard" Style="{StaticResource SectionCard}" Height="215">
+                <Border x:Name="RequestDetailsCard" Style="{StaticResource SectionCard}">
                     <StackPanel>
                         <TextBlock Text="REQUEST DETAILS" Style="{StaticResource SectionLabel}"/>
 
@@ -633,15 +205,15 @@
                                       StaysOpenOnEdit="True"/>
                         </Grid>
 
-                        <Border Background="#EBF5FB"
-                                BorderBrush="#AED6F1"
+                        <Border Background="{StaticResource SurfaceGray}"
+                                BorderBrush="{StaticResource CardBorder}"
                                 BorderThickness="1"
-                                CornerRadius="5"
+                                CornerRadius="6"
                                 Padding="12,8"
                                 Margin="0,0,0,12"
                                 Visibility="{Binding ShowNoStockWarning, Converter={StaticResource BoolToVis}}">
                             <TextBlock FontSize="11" FontStyle="Italic"
-                                       Foreground="{StaticResource YakultDarkBlue}"
+                                       Foreground="{StaticResource TextMuted}"
                                        TextWrapping="Wrap">
                                 ℹ  No current stock for this model. You may still submit your request — the IT team will fulfil it once stock becomes available.
                             </TextBlock>
@@ -801,13 +373,15 @@
                         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
                             <TextBlock x:Name="RequestItemsHeader" Text="REQUEST ITEMS" Style="{StaticResource SectionLabel}"
                                        VerticalAlignment="Center" Margin="0,0,0,0"/>
-                            <Border Background="{StaticResource YakultBlue}"
+                            <Border Background="{StaticResource YakultAccentTintBrush}"
+                                    BorderBrush="{StaticResource YakultAccentBorderBrush}"
+                                    BorderThickness="1"
                                     CornerRadius="10"
                                     Padding="8,2"
                                     Margin="8,0,0,0"
                                     VerticalAlignment="Center">
                                 <TextBlock Text="{Binding RequestItems.Count}"
-                                           Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                           Foreground="{StaticResource YakultBlue}" FontSize="10" FontWeight="Bold"/>
                             </Border>
                         </StackPanel>
 
@@ -824,7 +398,7 @@
                                   SelectionUnit="FullRow"
                                   HeadersVisibility="Column"
                                   GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#F0F3F7"
+                                  HorizontalGridLinesBrush="{StaticResource CardBorder}"
                                   BorderThickness="1"
                                   BorderBrush="{StaticResource CardBorder}"
                                   Background="White"
@@ -850,7 +424,8 @@
 
                                 <DataGridTextColumn Header="Model"
                                                     Binding="{Binding CartridgeModel}"
-                                                    Width="*">
+                                                    Width="*"
+                                                    MinWidth="240">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -1056,13 +631,13 @@
                                 </Grid>
 
                                 <!-- Selected employee chip -->
-                                <Border Background="#E8F5E9" BorderBrush="#4CAF50" BorderThickness="1"
+                                <Border Background="#DCFCE7" BorderBrush="#86EFAC" BorderThickness="1"
                                         CornerRadius="4" Padding="8,4" Margin="0,0,0,4"
                                         Visibility="{Binding SelectedReceivedBy, Converter={StaticResource NullToVis}}">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="✓ " Foreground="#2E7D32" FontWeight="SemiBold"/>
+                                        <TextBlock Text="✓ " Foreground="#15803D" FontWeight="SemiBold"/>
                                         <TextBlock Text="{Binding SelectedReceivedBy.Name}"
-                                                   Foreground="#1B5E20" FontWeight="SemiBold"/>
+                                                   Foreground="#166534" FontWeight="SemiBold"/>
                                         <TextBlock Text=" — " Foreground="#555"/>
                                         <TextBlock Text="{Binding SelectedReceivedBy.DepartmentName}"
                                                    Foreground="#555"/>
@@ -1132,10 +707,7 @@
                 BorderBrush="{StaticResource CardBorder}"
                 BorderThickness="0,1,0,0"
                 Padding="28,12">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="8" ShadowDepth="-2" Opacity="0.05" Color="Black"/>
-            </Border.Effect>
-            <Grid>
+            <Grid MaxWidth="900" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -1144,7 +716,7 @@
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
                            FontSize="12" FontStyle="Italic"
-                           Foreground="{StaticResource YakultBlue}"
+                           Foreground="{StaticResource TextMuted}"
                            VerticalAlignment="Center"
                            Visibility="{Binding StatusMessage, Converter={StaticResource NullToVis}}"/>
 
@@ -1155,8 +727,7 @@
                             Margin="0,0,10,0"/>
                     <Button Content="Submit Request"
                             Command="{Binding SubmitCommand}"
-                            Style="{StaticResource PrimaryButton}"
-                            IsEnabled="{Binding IsLoading, Converter={StaticResource InvBoolToVis}}"/>
+                            Style="{StaticResource PrimaryButton}"/>
                 </StackPanel>
             </Grid>
         </Border>

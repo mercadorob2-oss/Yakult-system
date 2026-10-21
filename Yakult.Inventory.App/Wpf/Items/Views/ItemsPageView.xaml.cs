@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using Microsoft.Win32;
 using Yakult.Inventory.App.Helpers;
 using Yakult.Inventory.App.Pages;
@@ -44,12 +45,54 @@ namespace Yakult.Inventory.App.WPF.Items.Views
             _vm.RequestBulkEditItems += OnRequestBulkEditItems;
             _vm.RequestUpdateCellphoneDetails += OnRequestUpdateCellphoneDetails;
 
+            InitializeSummaryTiles();
+
             Loaded += OnLoaded;
         }
 
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
             await _vm.ReloadAsync();
+        }
+
+        // ── Summary tiles (page header): hover + active-filter visuals. Mirrors the
+        //    redesigned dashboard KPI cards, since the tiles are clickable filters. ──
+
+        private static readonly SolidColorBrush TileHoverBack    = new SolidColorBrush(Color.FromRgb(0xFA, 0xFA, 0xFA));
+        private static readonly SolidColorBrush TileActiveBack   = new SolidColorBrush(Color.FromRgb(0xFC, 0xF0, 0xF1));
+        private static readonly SolidColorBrush TileAccentBorder = new SolidColorBrush(Color.FromRgb(0xE7, 0xB8, 0xC1));
+        private static readonly SolidColorBrush TileIdleBorder   = new SolidColorBrush(Color.FromRgb(0xE5, 0xE6, 0xE8));
+
+        private Border _hoveredTile;
+
+        private void InitializeSummaryTiles()
+        {
+            AttachTileHover(CardTotal);
+            AttachTileHover(CardActive);
+            AttachTileHover(CardInactive);
+
+            _vm.PropertyChanged += (s, e) => RefreshSummaryTileVisuals();
+            RefreshSummaryTileVisuals();
+        }
+
+        private void AttachTileHover(Border tile)
+        {
+            tile.MouseEnter += (s, e) => { _hoveredTile = tile; RefreshSummaryTileVisuals(); };
+            tile.MouseLeave += (s, e) => { if (ReferenceEquals(_hoveredTile, tile)) _hoveredTile = null; RefreshSummaryTileVisuals(); };
+        }
+
+        private void RefreshSummaryTileVisuals()
+        {
+            ApplyTileState(CardTotal,    _vm.IsTotalCardActive);
+            ApplyTileState(CardActive,   _vm.IsActiveCardActive);
+            ApplyTileState(CardInactive, _vm.IsInactiveCardActive);
+        }
+
+        private void ApplyTileState(Border tile, bool active)
+        {
+            bool hover = ReferenceEquals(_hoveredTile, tile);
+            tile.Background  = active ? TileActiveBack : (hover ? TileHoverBack : Brushes.White);
+            tile.BorderBrush = (active || hover) ? TileAccentBorder : TileIdleBorder;
         }
 
         // Purely cosmetic: closes the Import/More Actions split-button popups after a menu item
@@ -867,16 +910,20 @@ namespace Yakult.Inventory.App.WPF.Items.Views
         }
     }
 
-    // Row background for the Category Stock Summary grid: red when out of stock,
-    // yellow when running low — ported from ViewItemsPage.UpdateCategorySummaryPagination().
+    // Row background for the Category Stock Summary grid: soft red when out of stock,
+    // soft amber when running low — ported from ViewItemsPage.UpdateCategorySummaryPagination()
+    // and softened to the workspace palette tints.
     internal sealed class StockLevelToBrushConverter : System.Windows.Data.IValueConverter
     {
+        private static readonly SolidColorBrush OutOfStockBrush = new SolidColorBrush(Color.FromRgb(0xFB, 0xE4, 0xE7));
+        private static readonly SolidColorBrush LowStockBrush   = new SolidColorBrush(Color.FromRgb(0xFF, 0xF6, 0xDC));
+
         public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             if (value is int stock)
             {
-                if (stock <= 0) return System.Windows.Media.Brushes.LightCoral;
-                if (stock < 5) return System.Windows.Media.Brushes.LightYellow;
+                if (stock <= 0) return OutOfStockBrush;
+                if (stock < 5) return LowStockBrush;
             }
             return System.Windows.Media.Brushes.Transparent;
         }

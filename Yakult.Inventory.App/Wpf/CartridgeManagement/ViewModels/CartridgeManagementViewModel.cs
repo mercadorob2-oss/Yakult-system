@@ -782,7 +782,29 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
                 ? (_repo.GetIssuableItemIdsByCondition(modelId, "Refilled", issuedRf) ?? new List<int>())
                 : new List<int>();
 
-            string remarks = CartridgeExchangeRemarks.GenerateRemarks(total, requested, model);
+            // The stock lists must cover the quantities entered; otherwise the commit would
+            // record the full issued quantity while moving fewer units (silent stock drift).
+            if (bnIds.Count < issuedBn)
+            {
+                MessageBox.Show(
+                    $"Only {bnIds.Count} Brand New {model} in stock (tried to issue {issuedBn}).\n\n" +
+                    "Stock may have changed since this request was opened. Select the request again and retry.",
+                    "Insufficient Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+            if (rfIds.Count < issuedRf)
+            {
+                MessageBox.Show(
+                    $"Only {rfIds.Count} Refilled {model} in stock (tried to issue {issuedRf}).\n\n" +
+                    "Stock may have changed since this request was opened. Select the request again and retry.",
+                    "Insufficient Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            string remarks = CartridgeExchangeRemarks.GenerateRemarks(
+                total, requested, model,
+                Math.Max(0, ExchangePanel.AvailableBrandNewStock - issuedBn),
+                Math.Max(0, ExchangePanel.AvailableRefilledStock - issuedRf));
 
             _repo.FulfillCartridgeExchangeByCondition(
                 _selectedRequest.ReqId, requested,
@@ -852,7 +874,29 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
                     ? (_repo.GetIssuableItemIdsByCondition(modelId, "Refilled", issuedRf) ?? new List<int>())
                     : new List<int>();
 
-                string remarks = CartridgeExchangeRemarks.GenerateRemarks(total, requested, model);
+                // Same guard as the single-model path: never record more units
+                // than the stock lists actually returned.
+                if (bnIds.Count < issuedBn)
+                {
+                    MessageBox.Show(
+                        $"Only {bnIds.Count} Brand New {model} in stock (tried to issue {issuedBn}).\n\n" +
+                        "Stock may have changed since this request was opened. Select the request again and retry.",
+                        "Insufficient Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+                if (rfIds.Count < issuedRf)
+                {
+                    MessageBox.Show(
+                        $"Only {rfIds.Count} Refilled {model} in stock (tried to issue {issuedRf}).\n\n" +
+                        "Stock may have changed since this request was opened. Select the request again and retry.",
+                        "Insufficient Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return false;
+                }
+
+                string remarks = CartridgeExchangeRemarks.GenerateRemarks(
+                    total, requested, model,
+                    Math.Max(0, row.AvailableBrandNew - issuedBn),
+                    Math.Max(0, row.AvailableRefilled - issuedRf));
 
                 _repo.FulfillCartridgeExchangeByCondition(
                     req.ReqId, requested,

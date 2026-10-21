@@ -3,7 +3,6 @@ using System.Windows.Controls;
 using System.Windows.Forms.Integration;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using Yakult.Inventory.App.Forms.CartridgeManagement;
 using Yakult.Inventory.App.Forms.ConsumableManagement;
 
@@ -23,10 +22,11 @@ namespace Yakult.Inventory.App.Wpf.Portal
     /// </summary>
     public partial class ConsumableManagementPortalShell : Window
     {
-        private static readonly Color TextPrimary   = Color.FromRgb(15,  23,  42);
-        private static readonly Color TextSecondary = Color.FromRgb(100, 116, 139);
-        private static readonly Color ACartridge    = Color.FromRgb(249, 115,  22);
-        private static readonly Color ARequestSet   = Color.FromRgb(37,  99, 235);
+        // Workspace palette (matches YakultPalette / UiTheme): ink, muted text, brand red, chart blue.
+        private static readonly Color TextPrimary   = Color.FromRgb(32,  38,  53);
+        private static readonly Color TextSecondary = Color.FromRgb(103, 112, 129);
+        private static readonly Color ACartridge    = Color.FromRgb(185, 35,  53);
+        private static readonly Color ARequestSet   = Color.FromRgb(59,  126, 161);
 
         private readonly UIElement _cardGridContent;
 
@@ -252,35 +252,29 @@ namespace Yakult.Inventory.App.Wpf.Portal
 
         private Border MakeCard(string title, string desc, string icon, Color accent, System.Action onClick)
         {
-            var normalShadow = new DropShadowEffect { BlurRadius = 8,  ShadowDepth = 2, Opacity = 0.07, Direction = 270, Color = Colors.Black };
-            var hoverShadow  = new DropShadowEffect { BlurRadius = 20, ShadowDepth = 4, Opacity = 0.15, Direction = 270, Color = Colors.Black };
+            // Flat workspace card: white on the beige page, hairline border, no shadow. Hover lifts
+            // it with an accent border and a soft accent tint, matching the app's clickable cards.
+            var accentBrush = new SolidColorBrush(accent);
+            var hairline    = new SolidColorBrush(Color.FromRgb(229, 230, 232));
+            var hoverFill   = new SolidColorBrush(Color.FromArgb(8, accent.R, accent.G, accent.B));
 
             var card = new Border
             {
                 Width           = 340,
                 Margin          = new Thickness(8, 0, 8, 20),
                 Background      = Brushes.White,
-                BorderBrush     = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
+                BorderBrush     = hairline,
                 BorderThickness = new Thickness(1),
-                CornerRadius    = new CornerRadius(12),
-                Cursor          = Cursors.Hand,
-                Effect          = normalShadow
+                CornerRadius    = new CornerRadius(10),
+                Cursor          = Cursors.Hand
             };
 
-            var innerGrid = new Grid();
-            innerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
-            innerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-
-            var accentBar = new Border { Background = new SolidColorBrush(accent), CornerRadius = new CornerRadius(10, 10, 0, 0) };
-            Grid.SetRow(accentBar, 0);
-            innerGrid.Children.Add(accentBar);
-
-            var body = new StackPanel { Margin = new Thickness(22, 20, 22, 20) };
+            var body = new StackPanel { Margin = new Thickness(22, 22, 22, 22) };
 
             var iconBox = new Border
             {
                 Background          = new SolidColorBrush(Color.FromArgb(32, accent.R, accent.G, accent.B)),
-                CornerRadius        = new CornerRadius(12),
+                CornerRadius        = new CornerRadius(10),
                 Width               = 52,
                 Height              = 52,
                 HorizontalAlignment = HorizontalAlignment.Left,
@@ -300,7 +294,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
             {
                 Text         = title,
                 FontSize     = 15,
-                FontWeight   = FontWeights.Bold,
+                FontWeight   = FontWeights.SemiBold,
                 Foreground   = new SolidColorBrush(TextPrimary),
                 TextWrapping = TextWrapping.Wrap,
                 Margin       = new Thickness(0, 0, 0, 6)
@@ -309,7 +303,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
             body.Children.Add(new TextBlock
             {
                 Text         = desc,
-                FontSize     = 12,
+                FontSize     = 12.5,
                 Foreground   = new SolidColorBrush(TextSecondary),
                 TextWrapping = TextWrapping.Wrap,
                 Margin       = new Thickness(0, 0, 0, 16)
@@ -319,16 +313,14 @@ namespace Yakult.Inventory.App.Wpf.Portal
             {
                 Text       = "Open System →",
                 FontSize   = 12,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(accent)
+                FontWeight = FontWeights.SemiBold,
+                Foreground = accentBrush
             });
 
-            Grid.SetRow(body, 1);
-            innerGrid.Children.Add(body);
-            card.Child = innerGrid;
+            card.Child = body;
 
-            card.MouseEnter += (_, __) => { card.Effect = hoverShadow; card.BorderBrush = new SolidColorBrush(accent); };
-            card.MouseLeave += (_, __) => { card.Effect = normalShadow; card.BorderBrush = new SolidColorBrush(Color.FromRgb(225, 230, 236)); };
+            card.MouseEnter += (_, __) => { card.BorderBrush = accentBrush; card.Background = hoverFill; };
+            card.MouseLeave += (_, __) => { card.BorderBrush = hairline; card.Background = Brushes.White; };
             card.MouseLeftButtonUp += (_, __) => onClick?.Invoke();
 
             return card;

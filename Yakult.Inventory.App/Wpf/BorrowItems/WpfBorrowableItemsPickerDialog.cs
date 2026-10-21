@@ -5,11 +5,11 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using Yakult.Inventory.App.Models.BorrowItems;
 using Yakult.Inventory.App.Pages.Item;
 using Yakult.Inventory.App.Repositories;
+using Yakult.Inventory.App.Wpf.CallMonitoring;
 
 namespace Yakult.Inventory.App.Wpf.BorrowItems
 {
@@ -20,15 +20,14 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
     /// </summary>
     public sealed class WpfBorrowableItemsPickerDialog : Window
     {
-        private static readonly Color PageBack = Color.FromRgb(242, 245, 249);
+        private static readonly Color PageBack = Color.FromRgb(248, 249, 251);
         private static readonly Color CardBack = Colors.White;
-        private static readonly Color BorderSoft = Color.FromRgb(226, 232, 240);
-        private static readonly Color TextHeader = Color.FromRgb(15, 23, 42);
-        private static readonly Color TextMuted = Color.FromRgb(100, 116, 139);
-        private static readonly Color AccentBlue = Color.FromRgb(59, 130, 246);
-        private static readonly Color AccentBlueDark = Color.FromRgb(37, 99, 235);
-        private static readonly Color RowHover = Color.FromRgb(241, 245, 249);
-        private static readonly Color RowSelected = Color.FromRgb(219, 234, 254);
+        private static readonly Color BorderSoft = Color.FromRgb(229, 230, 232);
+        private static readonly Color TextHeader = Color.FromRgb(32, 38, 53);
+        private static readonly Color TextMuted = Color.FromRgb(103, 112, 129);
+        private static readonly Color AccentRed = Color.FromRgb(185, 35, 53);
+        private static readonly Color RowHover = Color.FromRgb(248, 249, 251);
+        private static readonly Color RowSelected = Color.FromRgb(252, 240, 241);
 
         private readonly BorrowItemsRepository _repo;
         private TextBox _searchInput;
@@ -108,21 +107,18 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var inputBorder = new Border
             {
                 Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(191, 219, 254)),
-                BorderThickness = new Thickness(2),
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(14, 9, 8, 9),
-                Effect = new DropShadowEffect { BlurRadius = 12, Color = Color.FromArgb(25, 59, 130, 246), ShadowDepth = 0 }
+                BorderBrush = new SolidColorBrush(BorderSoft),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(14, 9, 8, 9)
             };
             inputBorder.GotKeyboardFocus += (s, e) =>
             {
-                inputBorder.BorderBrush = new SolidColorBrush(AccentBlue);
-                inputBorder.Effect = new DropShadowEffect { BlurRadius = 16, Color = Color.FromArgb(45, 59, 130, 246), ShadowDepth = 0 };
+                inputBorder.BorderBrush = new SolidColorBrush(AccentRed);
             };
             inputBorder.LostKeyboardFocus += (s, e) =>
             {
-                inputBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(191, 219, 254));
-                inputBorder.Effect = new DropShadowEffect { BlurRadius = 12, Color = Color.FromArgb(25, 59, 130, 246), ShadowDepth = 0 };
+                inputBorder.BorderBrush = new SolidColorBrush(BorderSoft);
             };
 
             var inputGrid = new Grid();
@@ -133,7 +129,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var searchIcon = new System.Windows.Shapes.Path
             {
                 Data = Geometry.Parse("M8,2 A6,6 0 1 0 8,14 A6,6 0 1 0 8,2 Z M12.5,12.5 L17,17"),
-                Stroke = new SolidColorBrush(AccentBlue),
+                Stroke = new SolidColorBrush(AccentRed),
                 StrokeThickness = 1.6,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round,
@@ -166,14 +162,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             Grid.SetColumn(_searchInput, 1);
             inputGrid.Children.Add(_searchInput);
 
-            var searchBtn = new Button
-            {
-                Content = "Search", Height = 30, Width = 84,
-                FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White, BorderThickness = new Thickness(0),
-                Background = new LinearGradientBrush(AccentBlue, AccentBlueDark, 90),
-                Cursor = Cursors.Hand
-            };
+            var searchBtn = new Button { Content = "Search", Height = 30, Width = 84, Cursor = Cursors.Hand };
+            searchBtn.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmAccentButton"];
             searchBtn.Click += async (s, e) => await LoadAsync(_searchInput.Text);
             Grid.SetColumn(searchBtn, 2);
             inputGrid.Children.Add(searchBtn);
@@ -191,9 +181,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 Background = new SolidColorBrush(CardBack),
                 BorderBrush = new SolidColorBrush(BorderSoft),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(0),
-                Effect = new DropShadowEffect { BlurRadius = 10, Color = Color.FromArgb(15, 15, 23, 42), ShadowDepth = 0 }
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(0)
             };
 
             var cardGrid = new Grid();
@@ -307,39 +296,20 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            var addNewBtn = new Button
-            {
-                Content = "Add New Item", Height = 36, Padding = new Thickness(16, 0, 16, 0),
-                FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(AccentBlue), BorderThickness = new Thickness(1.5),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(191, 219, 254)), Background = Brushes.White,
-                Cursor = Cursors.Hand
-            };
+            var addNewBtn = new Button { Content = "Add New Item", Height = 36, Cursor = Cursors.Hand };
+            addNewBtn.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"];
             addNewBtn.Click += async (s, e) => await AddNewItemAsync();
             Grid.SetColumn(addNewBtn, 0);
             grid.Children.Add(addNewBtn);
 
             var rightFlow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
 
-            var cancelBtn = new Button
-            {
-                Content = "Cancel", Height = 36, Padding = new Thickness(16, 0, 16, 0),
-                FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(TextMuted), BorderThickness = new Thickness(1.5),
-                BorderBrush = new SolidColorBrush(BorderSoft), Background = Brushes.White,
-                Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 8, 0)
-            };
+            var cancelBtn = new Button { Content = "Cancel", Height = 36, Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 8, 0) };
+            cancelBtn.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"];
             cancelBtn.Click += (s, e) => { DialogResult = false; Close(); };
 
-            _btnSelect = new Button
-            {
-                Content = "Select", Height = 36, Padding = new Thickness(20, 0, 20, 0),
-                FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White, BorderThickness = new Thickness(0),
-                Background = new LinearGradientBrush(AccentBlue, AccentBlueDark, 90),
-                Cursor = Cursors.Hand,
-                IsEnabled = false
-            };
+            _btnSelect = new Button { Content = "Select", Height = 36, Cursor = Cursors.Hand, IsEnabled = false };
+            _btnSelect.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmAccentButton"];
             _btnSelect.Click += (s, e) => AcceptSelection();
 
             rightFlow.Children.Add(cancelBtn);

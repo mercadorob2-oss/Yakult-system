@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Windows.Forms.Integration;
+using InventoryTheme = Yakult.Inventory.App.Helpers.UiTheme;
 
 namespace Yakult.Inventory.App.Forms.ConsumableManagement
 {
@@ -23,6 +24,12 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
     public partial class RequestSetManagementPortalForm : Form
     {
         private const int MENU_WIDTH = 320;
+
+        // Side-menu rail metrics — same values as CartridgeManagementPortalForm / MainForm so all
+        // three hamburger menus share the workspace rail palette (UiTheme.Colors.Rail*).
+        private const int SideMenuItemHeight = 42;
+        private const int SideMenuSubItemHeight = 38;
+        private const int SideMenuSectionHeight = 34;
 
         private Panel _contentPanel;
         private Panel _menuOverlay;
@@ -79,7 +86,7 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
             WindowState = FormWindowState.Maximized;
             FormBorderStyle = FormBorderStyle.Sizable;
             Text = "Request & Set Management";
-            BackColor = Color.White;
+            BackColor = InventoryTheme.Colors.HeaderBack;
             ResumeLayout(false);
         }
 
@@ -91,7 +98,7 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
             {
                 Height = 70,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(78, 154, 252)
+                BackColor = InventoryTheme.Colors.NavigationBack
             };
 
             _hamburgerButton = new Button
@@ -101,11 +108,12 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
                 Size = new Size(50, 50),
                 Location = new Point(10, 10),
                 FlatStyle = FlatStyle.Flat,
-                ForeColor = Color.White,
-                BackColor = Color.Transparent,
+                ForeColor = InventoryTheme.Colors.RailText,
+                BackColor = InventoryTheme.Colors.NavigationBack,
                 Cursor = Cursors.Hand
             };
             _hamburgerButton.FlatAppearance.BorderSize = 0;
+            _hamburgerButton.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.NavigationHover;
             _hamburgerButton.Click += (s, e) => ToggleMenu();
             topBar.Controls.Add(_hamburgerButton);
 
@@ -126,7 +134,7 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
                 Location = new Point(0, topBar.Height),
                 Size = new Size(ClientSize.Width, ClientSize.Height - topBar.Height),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
-                BackColor = Color.White
+                BackColor = InventoryTheme.Colors.HeaderBack
             };
             Controls.Add(_contentPanel);
 
@@ -152,14 +160,14 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
                 Width = MENU_WIDTH,
                 Height = ClientSize.Height - topBar.Height,
                 Location = new Point(0, topBar.Height),
-                BackColor = Color.White,
+                BackColor = InventoryTheme.Colors.RailBack,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left,
                 AutoScroll = true,
                 Visible = false
             };
             _sideMenuPanel.Paint += (s, e) =>
             {
-                using (var pen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                using (var pen = new Pen(InventoryTheme.Colors.RailLine, 1))
                     e.Graphics.DrawLine(pen, _sideMenuPanel.Width - 1, 0, _sideMenuPanel.Width - 1, _sideMenuPanel.Height);
             };
 
@@ -179,26 +187,28 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
 
             // NOTE: Controls are added in BOTTOM-TO-TOP visual order (matches
             // CartridgeManagementPortalForm's PopulateSideMenu convention).
-            int buttonHeight = 50;
+            int buttonHeight = SideMenuSubItemHeight;
 
-            _logoutButton = AddMenuButton("Logout", (s, e) =>
+            // ── LOGOUT (very bottom) — quiet rail row with the workspace's soft-red text ──
+            _logoutButton = AddMenuButton("🚪 Logout", (s, e) =>
             {
                 ExitAction = RequestSetManagementExitAction.Logout;
                 Yakult.Inventory.App.Session.AppSession.Clear();
                 Close();
-            }, isPrimary: true, backColor: Color.FromArgb(220, 53, 69), foreColor: Color.White);
+            }, isPrimary: true, backColor: InventoryTheme.Colors.RailBack, foreColor: InventoryTheme.Colors.RailDanger);
             _sideMenuPanel.Controls.Add(_logoutButton);
 
-            _sideMenuPanel.Controls.Add(new Panel { Height = 10, Dock = DockStyle.Top, BackColor = Color.White });
+            _sideMenuPanel.Controls.Add(new Panel { Height = 10, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
-            _backToPortalButton = AddMenuButton("Back to Portal", (s, e) =>
+            // ── BACK TO PORTAL ───────────────────────────────────────────────────────
+            _backToPortalButton = AddMenuButton("←  Back to Portal", (s, e) =>
             {
                 ExitAction = RequestSetManagementExitAction.BackToPortal;
                 Close();
-            }, isPrimary: true, backColor: Color.FromArgb(52, 152, 219), foreColor: Color.White);
+            }, isPrimary: false, backColor: InventoryTheme.Colors.RailBack, foreColor: InventoryTheme.Colors.RailText);
             _sideMenuPanel.Controls.Add(_backToPortalButton);
 
-            _sideMenuPanel.Controls.Add(new Panel { Height = 8, Dock = DockStyle.Top, BackColor = Color.FromArgb(245, 245, 245) });
+            _sideMenuPanel.Controls.Add(new Panel { Height = 8, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // The three sections below, and which items live in each, mirror MainForm.cs's own
             // PopulateSideMenu() exactly (View History / View Transactions / Add Master Data),
@@ -210,24 +220,24 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
             {
                 Height = 1 * buttonHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = InventoryTheme.Colors.RailBack,
                 Visible = false
             };
             AddSubMenuButton(_viewHistoryPanel, "View Archive", (s, e) => { ShowViewArchivePage(); ToggleMenu(); });
             _sideMenuPanel.Controls.Add(_viewHistoryPanel);
 
-            _viewHistoryButton = AddCollapsibleSection("View History");
+            _viewHistoryButton = AddCollapsibleSection("View History", () => _isViewHistoryExpanded);
             _viewHistoryButton.Click += (s, e) => ToggleSection(ref _isViewHistoryExpanded, _viewHistoryPanel, _viewHistoryButton, "View History");
             _sideMenuPanel.Controls.Add(_viewHistoryButton);
 
-            _sideMenuPanel.Controls.Add(new Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            _sideMenuPanel.Controls.Add(new Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── VIEW TRANSACTIONS ────────────────────────────────────────────────────
             _viewTransactionsPanel = new Panel
             {
                 Height = 6 * buttonHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = InventoryTheme.Colors.RailBack,
                 Visible = false
             };
             AddSubMenuButton(_viewTransactionsPanel, "View Sets", (s, e) => { ShowViewSetsPage(); ToggleMenu(); });
@@ -238,49 +248,66 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
             AddSubMenuButton(_viewTransactionsPanel, "View Requests", (s, e) => { ShowViewRequestsPage(); ToggleMenu(); });
             _sideMenuPanel.Controls.Add(_viewTransactionsPanel);
 
-            _viewTransactionsButton = AddCollapsibleSection("View Transactions");
+            _viewTransactionsButton = AddCollapsibleSection("View Transactions", () => _isViewTransactionsExpanded);
             _viewTransactionsButton.Click += (s, e) => ToggleSection(ref _isViewTransactionsExpanded, _viewTransactionsPanel, _viewTransactionsButton, "View Transactions");
             _sideMenuPanel.Controls.Add(_viewTransactionsButton);
 
-            _sideMenuPanel.Controls.Add(new Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            _sideMenuPanel.Controls.Add(new Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── VIEW MASTER DATA ─────────────────────────────────────────────────────
             _viewMasterDataPanel = new Panel
             {
                 Height = 1 * buttonHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = InventoryTheme.Colors.RailBack,
                 Visible = false
             };
             AddSubMenuButton(_viewMasterDataPanel, "View Items", (s, e) => { ShowViewItemsPage(); ToggleMenu(); });
             _sideMenuPanel.Controls.Add(_viewMasterDataPanel);
 
-            _viewMasterDataButton = AddCollapsibleSection("View Master Data");
+            _viewMasterDataButton = AddCollapsibleSection("View Master Data", () => _isViewMasterDataExpanded);
             _viewMasterDataButton.Click += (s, e) => ToggleSection(ref _isViewMasterDataExpanded, _viewMasterDataPanel, _viewMasterDataButton, "View Master Data");
             _sideMenuPanel.Controls.Add(_viewMasterDataButton);
 
-            _sideMenuPanel.Controls.Add(new Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            _sideMenuPanel.Controls.Add(new Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── ADD MASTER DATA ──────────────────────────────────────────────────────
             _addMasterDataPanel = new Panel
             {
                 Height = 2 * buttonHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = InventoryTheme.Colors.RailBack,
                 Visible = false
             };
             AddSubMenuButton(_addMasterDataPanel, "Add Request", (s, e) => { ShowBatchAddRequestDialog(); ToggleMenu(); });
             AddSubMenuButton(_addMasterDataPanel, "Add Item", (s, e) => { ShowBatchAddItemDialog(); ToggleMenu(); });
             _sideMenuPanel.Controls.Add(_addMasterDataPanel);
 
-            _addMasterDataButton = AddCollapsibleSection("Add Master Data");
+            _addMasterDataButton = AddCollapsibleSection("Add Master Data", () => _isAddMasterDataExpanded);
             _addMasterDataButton.Click += (s, e) => ToggleSection(ref _isAddMasterDataExpanded, _addMasterDataPanel, _addMasterDataButton, "Add Master Data");
             _sideMenuPanel.Controls.Add(_addMasterDataButton);
 
-            _sideMenuPanel.Controls.Add(new Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            _sideMenuPanel.Controls.Add(new Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
-            _homeButton = AddMenuButton("🏠 Home", (s, e) => { ShowHomeView(); ToggleMenu(); }, isPrimary: false, backColor: Color.White, foreColor: Color.FromArgb(60, 60, 60));
+            _homeButton = AddMenuButton("🏠 Home", (s, e) => { ShowHomeView(); ToggleMenu(); }, isPrimary: false, backColor: InventoryTheme.Colors.RailBack, foreColor: InventoryTheme.Colors.RailText);
             _sideMenuPanel.Controls.Add(_homeButton);
+
+            // ── HEADER LABEL (top of menu) — muted micro-caps, like the sibling rail ──
+            var menuHeaderLabel = new Label
+            {
+                Text = "REQUEST && SET MANAGEMENT",
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = InventoryTheme.Colors.RailLabel,
+                Height = 34,
+                AutoSize = false,
+                Dock = DockStyle.Top,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(12, 0, 0, 0)
+            };
+            _sideMenuPanel.Controls.Add(menuHeaderLabel);
+
+            // Top padding spacer — added LAST so it appears at the very top
+            _sideMenuPanel.Controls.Add(new Panel { Height = 20, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
         }
 
         // ====================================================================
@@ -367,13 +394,15 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
         }
 
         // ====================================================================
-        // HOME VIEW — search across Requests and Sets
+        // HOME VIEW — analytics dashboard with the request/set search on top
         // ====================================================================
-        // Hosts Wpf\RequestSetSearch\Views\RequestSetSearchView via ElementHost — a WPF view
-        // whose layout/styling directly mirrors the Inventory System's own homepage search
-        // (Wpf\Search\Views\SearchView.xaml): same pill search box, same card design, same
-        // Initial/Loading/NoResults/Results state machine. Same embedding technique already
-        // used by Pages\Request\ViewRequestsPage (ElementHost wrapping a WPF UserControl).
+        // Hosts Wpf\RequestSetSearch\Views\RequestSetSearchView via ElementHost. Its Initial state
+        // is: search hero (logo + pill search box) on top, RequestSetDashboardView analytics
+        // dashboard filling the page below (same shape as the Inventory System's own homepage,
+        // which shows the main dashboard under its always-visible search bar).
+        //
+        // The dashboard's numbers come from the same repository calls this portal's own pages use,
+        // so its "Open full page" buttons hand off to exactly the rows shown in the table.
 
         private void ShowHomeView()
         {
@@ -391,6 +420,17 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
 
             var host = new ElementHost { Dock = DockStyle.Fill, Child = view };
             _contentPanel.Controls.Add(host);
+
+            // Landing dashboard: wire each drill-down hand-off to the matching portal page, then load.
+            var landing = view.LandingDashboard;
+            if (landing != null)
+            {
+                landing.OnOpenRequestsPage            = ShowViewRequestsPage;
+                landing.OnOpenUnfulfilledPage         = ShowUnfulfilledRequestsPage;
+                landing.OnOpenPartiallyFulfilledPage  = ShowPartiallyFulfilledRequestsPage;
+                landing.OnOpenSetsPage                = () => ShowViewSetsPage();
+                landing.Load();
+            }
         }
 
         // ====================================================================
@@ -412,36 +452,57 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
             {
                 Text = text,
                 Font = new Font("Segoe UI", 10F, isPrimary ? FontStyle.Bold : FontStyle.Regular),
-                Height = 50,
+                Height = SideMenuItemHeight,
                 Dock = DockStyle.Top,
                 BackColor = backColor,
                 ForeColor = foreColor,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(20, 0, 0, 0)
+                Padding = new Padding(12, 0, 0, 0)
             };
             button.FlatAppearance.BorderSize = 0;
+            button.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.RailHover;
             button.Click += onClick;
             return button;
         }
 
-        private Button AddCollapsibleSection(string title)
+        private Button AddCollapsibleSection(string title, Func<bool> isExpanded)
         {
             var button = new Button
             {
-                Text = title + "   ▶",
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                Height = 50,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Height = SideMenuSectionHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(78, 154, 252),
-                ForeColor = Color.White,
+                BackColor = InventoryTheme.Colors.RailBack,
+                ForeColor = InventoryTheme.Colors.RailLabel,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(20, 0, 0, 0)
+                Padding = new Padding(12, 0, 0, 0)
             };
             button.FlatAppearance.BorderSize = 0;
+            button.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.RailHover;
+
+            // Custom paint — uppercase micro-caps group label with a right-aligned arrow that flips
+            // with the section state. Mirrors MainForm / CartridgeManagementPortalForm.
+            button.Paint += (s, e) =>
+            {
+                var btn = (Button)s;
+                bool expanded = isExpanded != null && isExpanded();
+                var textColor = expanded ? InventoryTheme.Colors.RailText : btn.ForeColor;
+
+                TextRenderer.DrawText(e.Graphics, title.Replace("&&", "&").ToUpperInvariant(), btn.Font,
+                    new Rectangle(12, 0, btn.Width - 44, btn.Height),
+                    textColor, TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
+
+                string arrow = expanded ? "▲" : "▼";
+                TextRenderer.DrawText(e.Graphics, arrow, new Font("Segoe UI", 8F, FontStyle.Regular),
+                    new Rectangle(btn.Width - 30, 0, 26, btn.Height),
+                    textColor, TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
+            };
+
+            button.Text = ""; // Cleared — the label and arrow are custom-drawn above.
             return button;
         }
 
@@ -450,18 +511,18 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
             var button = new Button
             {
                 Text = text,
-                Font = new Font("Segoe UI", 9.5F),
-                Height = 50,
+                Font = new Font("Segoe UI", 9F),
+                Height = SideMenuSubItemHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
-                ForeColor = Color.FromArgb(60, 60, 60),
+                BackColor = InventoryTheme.Colors.RailBack,
+                ForeColor = InventoryTheme.Colors.RailText,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(30, 0, 0, 0)
+                Padding = new Padding(34, 0, 0, 0)
             };
             button.FlatAppearance.BorderSize = 0;
-            button.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 240, 240);
+            button.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.RailHover;
             button.Click += onClick;
             parentPanel.Controls.Add(button);
         }
@@ -471,8 +532,10 @@ namespace Yakult.Inventory.App.Forms.ConsumableManagement
             isExpanded = !isExpanded;
             if (panel != null)
                 panel.Visible = isExpanded;
+            // Section headers are custom-painted (micro-caps label + state arrow); repaint so the
+            // arrow flips and the label brightens while the section is expanded.
             if (headerButton != null)
-                headerButton.Text = title + "   " + (isExpanded ? "▼" : "▶");
+                headerButton.Invalidate();
         }
 
         private void ToggleMenu()

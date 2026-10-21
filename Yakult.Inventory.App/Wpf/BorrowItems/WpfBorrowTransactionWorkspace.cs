@@ -7,7 +7,6 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using Yakult.Inventory.App.Models.BorrowItems;
 using Yakult.Inventory.App.Wpf.CallMonitoring;
 
@@ -98,7 +97,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
         public WpfBorrowTransactionWorkspace()
         {
-            Background = BrushFromRgb(242, 245, 249);
+            Background = WpfThemeResources.PageBackgroundBrush;
             Resources.MergedDictionaries.Add(WpfThemeResources.GetScrollBarStyle());
 
             var outer = new Grid { Margin = new Thickness(14, 12, 14, 12) };
@@ -152,8 +151,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             _infoTitle.Text = item.DisplayText;
             _infoSubtitle.Text = string.IsNullOrWhiteSpace(item.ItemDescription)
                 ? "Ready to borrow" : item.ItemDescription.Trim();
-            _infoBanner.Background = BrushFromRgb(239, 246, 255);
-            _infoBanner.BorderBrush = BrushFromRgb(191, 219, 254);
+            _infoBanner.Background = BrushFromRgb(252, 240, 241);
+            _infoBanner.BorderBrush = BrushFromRgb(231, 184, 193);
             _infoBanner.Visibility = Visibility.Visible;
         }
 
@@ -162,8 +161,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             if (row == null) { _infoBanner.Visibility = Visibility.Collapsed; return; }
             _infoTitle.Text = row.ItemDisplay;
             _infoSubtitle.Text = $"Borrowed by {row.BorrowedByEmpName} ({row.BorrowedByDeptName}) @ {row.BorrowedAtLocal}";
-            _infoBanner.Background = BrushFromRgb(240, 253, 244);
-            _infoBanner.BorderBrush = BrushFromRgb(134, 239, 172);
+            _infoBanner.Background = BrushFromRgb(248, 249, 251);
+            _infoBanner.BorderBrush = BrushFromRgb(229, 230, 232);
             _infoBanner.Visibility = Visibility.Visible;
         }
 
@@ -284,13 +283,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
             if (_modelInputBorder != null)
             {
-                _modelInputBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(139, 92, 246));
-                _modelInputBorder.Effect = new DropShadowEffect
-                {
-                    BlurRadius = 14,
-                    Color = Color.FromArgb(40, 139, 92, 246),
-                    ShadowDepth = 0
-                };
+                _modelInputBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(185, 35, 53));
+                _modelInputBorder.Effect = null;
             }
 
             _modelSuggestionsPopup.IsOpen = true;
@@ -303,13 +297,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
             if (_modelInputBorder != null && !_modelHelperInput.IsKeyboardFocused)
             {
-                _modelInputBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240));
-                _modelInputBorder.Effect = new DropShadowEffect
-                {
-                    BlurRadius = 8,
-                    Color = Color.FromArgb(15, 100, 116, 139),
-                    ShadowDepth = 0
-                };
+                _modelInputBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232));
+                _modelInputBorder.Effect = null;
             }
         }
 
@@ -469,7 +458,15 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
         private UIElement BuildScanSection()
         {
-            var stack = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+            var stack = new StackPanel();
+            stack.Children.Add(new TextBlock
+            {
+                Text = "FIND AN ITEM",
+                FontSize = 10.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = WpfThemeResources.TextMutedBrush,
+                Margin = new Thickness(0, 0, 0, 10)
+            });
 
             // ── Optional "Model number" helper ──────────────────────────────────
             // Not a required input and not submitted anywhere — it only helps the
@@ -488,7 +485,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var modelHint = new TextBlock
             {
                 Text = "Optional — helps you find the serial",
-                FontSize = 10.5, Foreground = BrushFromRgb(148, 163, 184),
+                FontSize = 10.5, Foreground = BrushFromRgb(103, 112, 129),
                 VerticalAlignment = VerticalAlignment.Center
             };
             Grid.SetColumn(modelHint, 1);
@@ -498,39 +495,21 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var modelBorder = new Border
             {
                 Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
-                BorderThickness = new Thickness(1.5),
-                CornerRadius = new CornerRadius(12),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(14, 9, 14, 9),
-                Margin = new Thickness(0, 0, 0, 12),
-                Effect = new DropShadowEffect
-                {
-                    BlurRadius = 8,
-                    Color = Color.FromArgb(15, 100, 116, 139),
-                    ShadowDepth = 0
-                }
+                Margin = new Thickness(0, 0, 0, 12)
             };
             modelBorder.GotKeyboardFocus += (s, e) =>
             {
-                modelBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(139, 92, 246));
-                modelBorder.Effect = new DropShadowEffect
-                {
-                    BlurRadius = 14,
-                    Color = Color.FromArgb(40, 139, 92, 246),
-                    ShadowDepth = 0
-                };
+                modelBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(185, 35, 53));
             };
             modelBorder.LostKeyboardFocus += (s, e) =>
             {
                 if (_modelSuggestionsPopup != null && _modelSuggestionsPopup.IsOpen)
                     return;
-                modelBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240));
-                modelBorder.Effect = new DropShadowEffect
-                {
-                    BlurRadius = 8,
-                    Color = Color.FromArgb(15, 100, 116, 139),
-                    ShadowDepth = 0
-                };
+                modelBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232));
             };
 
             var modelInputGrid = new Grid();
@@ -541,7 +520,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             {
                 Data = System.Windows.Media.Geometry.Parse(
                     "M4,4 L16,4 L16,7 L13,7 L13,16 L10,16 L10,9 L7,9 L7,16 L4,16 Z"),
-                Fill = BrushFromRgb(139, 92, 246),
+                Fill = BrushFromRgb(185, 35, 53),
                 Stretch = Stretch.Uniform,
                 Width = 16,
                 Height = 16,
@@ -571,8 +550,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 Background = Brushes.Transparent,
                 FontSize = 13,
                 FontWeight = FontWeights.Medium,
-                Foreground = BrushFromRgb(51, 65, 85),
-                CaretBrush = BrushFromRgb(139, 92, 246),
+                Foreground = BrushFromRgb(32, 38, 53),
+                CaretBrush = BrushFromRgb(185, 35, 53),
                 VerticalContentAlignment = VerticalAlignment.Center
             };
             modelInputHost.Children.Add(_modelHelperInput);
@@ -709,9 +688,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             listItemStyle.Setters.Add(new Setter(ListBoxItem.MarginProperty, new Thickness(0)));
             listItemStyle.Setters.Add(new Setter(FrameworkElement.CursorProperty, Cursors.Hand));
             var hoverTrigger = new Trigger { Property = ListBoxItem.IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(Panel.BackgroundProperty, BrushFromRgb(245, 243, 255)));
+            hoverTrigger.Setters.Add(new Setter(Panel.BackgroundProperty, BrushFromRgb(248, 249, 251)));
             var selectedTrigger = new Trigger { Property = ListBoxItem.IsSelectedProperty, Value = true };
-            selectedTrigger.Setters.Add(new Setter(Panel.BackgroundProperty, BrushFromRgb(237, 233, 254)));
+            selectedTrigger.Setters.Add(new Setter(Panel.BackgroundProperty, BrushFromRgb(252, 240, 241)));
             listItemStyle.Triggers.Add(hoverTrigger);
             listItemStyle.Triggers.Add(selectedTrigger);
             _modelSuggestionsList.ItemContainerStyle = listItemStyle;
@@ -733,16 +712,16 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
             var popupHeader = new Border
             {
-                Background = new LinearGradientBrush(
-                    Color.FromRgb(139, 92, 246), Color.FromRgb(109, 40, 217), 0),
-                CornerRadius = new CornerRadius(10, 10, 0, 0),
+                Background = BrushFromRgb(248, 249, 251),
+                BorderBrush = BrushFromRgb(229, 230, 232),
+                BorderThickness = new Thickness(0, 0, 0, 1),
                 Padding = new Thickness(12, 8, 12, 8)
             };
             _modelSuggestionsHeaderText = new TextBlock
             {
                 Text = "Matching items",
                 FontSize = 11, FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White
+                Foreground = BrushFromRgb(32, 38, 53)
             };
             popupHeader.Child = _modelSuggestionsHeaderText;
 
@@ -759,10 +738,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var popupBorder = new Border
             {
                 Background = Brushes.White,
-                BorderBrush = BrushFromRgb(139, 92, 246),
-                BorderThickness = new Thickness(1.5),
-                CornerRadius = new CornerRadius(10),
-                Effect = new DropShadowEffect { BlurRadius = 22, Opacity = 0.28, ShadowDepth = 4, Color = Color.FromRgb(76, 29, 149) },
+                BorderBrush = BrushFromRgb(229, 230, 232),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
                 Child = popupContentStack
             };
             _modelSuggestionsPopup = new Popup
@@ -783,13 +761,13 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             {
                 Text = "Serial number",
                 FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(71, 85, 105),
+                Foreground = BrushFromRgb(32, 38, 53),
                 VerticalAlignment = VerticalAlignment.Center
             });
             var hint = new TextBlock
             {
                 Text = "Scan or type — press Enter to resolve",
-                FontSize = 10.5, Foreground = BrushFromRgb(148, 163, 184),
+                FontSize = 10.5, Foreground = BrushFromRgb(103, 112, 129),
                 VerticalAlignment = VerticalAlignment.Center
             };
             Grid.SetColumn(hint, 1);
@@ -800,37 +778,19 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var inputBorder = new Border
             {
                 Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(191, 219, 254)),
-                BorderThickness = new Thickness(2),
-                CornerRadius = new CornerRadius(12),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(14, 10, 14, 10),
-                Margin = new Thickness(0, 0, 0, 12),
-                Effect = new DropShadowEffect
-                {
-                    BlurRadius = 12,
-                    Color = Color.FromArgb(25, 59, 130, 246),
-                    ShadowDepth = 0
-                }
+                Margin = new Thickness(0, 0, 0, 12)
             };
             inputBorder.GotKeyboardFocus += (s, e) =>
             {
-                inputBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(59, 130, 246));
-                inputBorder.Effect = new DropShadowEffect
-                {
-                    BlurRadius = 16,
-                    Color = Color.FromArgb(45, 59, 130, 246),
-                    ShadowDepth = 0
-                };
+                inputBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(185, 35, 53));
             };
             inputBorder.LostKeyboardFocus += (s, e) =>
             {
-                inputBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(191, 219, 254));
-                inputBorder.Effect = new DropShadowEffect
-                {
-                    BlurRadius = 12,
-                    Color = Color.FromArgb(25, 59, 130, 246),
-                    ShadowDepth = 0
-                };
+                inputBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232));
             };
 
             var inputGrid = new Grid();
@@ -841,7 +801,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             {
                 Data = System.Windows.Media.Geometry.Parse(
                     "M3,3 L3,8 M3,3 L8,3 M17,3 L17,8 M17,3 L12,3 M3,17 L3,12 M3,17 L8,17 M17,17 L17,12 M17,17 L12,17 M2,10 L18,10"),
-                Stroke = BrushFromRgb(59, 130, 246),
+                Stroke = BrushFromRgb(185, 35, 53),
                 StrokeThickness = 2,
                 StrokeLineJoin = PenLineJoin.Round,
                 Stretch = Stretch.Uniform,
@@ -859,8 +819,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 Background = Brushes.Transparent,
                 FontSize = 16,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(15, 23, 42),
-                CaretBrush = BrushFromRgb(59, 130, 246),
+                Foreground = BrushFromRgb(32, 38, 53),
+                CaretBrush = BrushFromRgb(185, 35, 53),
                 VerticalContentAlignment = VerticalAlignment.Center
             };
             _scanInput.KeyDown += (s, e) =>
@@ -885,46 +845,35 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             btnGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8, GridUnitType.Pixel) });
             btnGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            var resolveBtn = new Button
-            {
-                Content = "Resolve", Height = 36,
-                FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White, BorderThickness = new Thickness(0),
-                Background = new LinearGradientBrush(
-                    Color.FromRgb(59, 130, 246), Color.FromRgb(37, 99, 235), 90),
-                Cursor = Cursors.Hand,
-                Effect = new DropShadowEffect { BlurRadius = 6, ShadowDepth = 0, Opacity = 0.18 }
-            };
+            var resolveBtn = new Button { Content = "Resolve", Height = 36, Cursor = Cursors.Hand };
+            resolveBtn.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmAccentButton"];
             resolveBtn.Click += (s, e) => ResolveClicked?.Invoke(this, EventArgs.Empty);
             Grid.SetColumn(resolveBtn, 0);
             btnGrid.Children.Add(resolveBtn);
 
-            var browseBtn = new Button
-            {
-                Content = "Select from List", Height = 36,
-                FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(59, 130, 246), BorderThickness = new Thickness(1.5),
-                BorderBrush = BrushFromRgb(191, 219, 254), Background = Brushes.White,
-                Cursor = Cursors.Hand
-            };
+            var browseBtn = new Button { Content = "Select from List", Height = 36, Cursor = Cursors.Hand };
+            browseBtn.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"];
             browseBtn.Click += (s, e) => BrowseItemsClicked?.Invoke(this, EventArgs.Empty);
             Grid.SetColumn(browseBtn, 2);
             btnGrid.Children.Add(browseBtn);
 
-            var addNewBtn = new Button
-            {
-                Content = "Add New Item", Height = 36,
-                FontSize = 12, FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(59, 130, 246), BorderThickness = new Thickness(1.5),
-                BorderBrush = BrushFromRgb(191, 219, 254), Background = Brushes.White,
-                Cursor = Cursors.Hand
-            };
+            var addNewBtn = new Button { Content = "Add New Item", Height = 36, Cursor = Cursors.Hand };
+            addNewBtn.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"];
             addNewBtn.Click += (s, e) => AddNewItemClicked?.Invoke(this, EventArgs.Empty);
             Grid.SetColumn(addNewBtn, 4);
             btnGrid.Children.Add(addNewBtn);
 
             stack.Children.Add(btnGrid);
-            return stack;
+            return new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = BrushFromRgb(229, 230, 232),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(14),
+                Margin = new Thickness(0, 0, 0, 10),
+                Child = stack
+            };
         }
 
         private Border BuildInfoBanner()
@@ -955,7 +904,14 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
         private Border BuildBorrowCard()
         {
-            var card = WpfThemeResources.CreateGlassCard(padding: 0);
+            var card = new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(0)
+            };
             card.Margin = new Thickness(0);
             card.ClipToBounds = true;
 
@@ -965,15 +921,16 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             // ── Header band ────────────────────────────────────────────────────
             var header = new Border
             {
-                Background = new LinearGradientBrush(
-                    Color.FromRgb(37, 99, 235), Color.FromRgb(29, 78, 216), 90),
+                Background = BrushFromRgb(248, 249, 251),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232)),
+                BorderThickness = new Thickness(0, 0, 0, 1),
                 Padding = new Thickness(18, 14, 18, 14)
             };
             var headerContent = new StackPanel { Orientation = Orientation.Horizontal };
             var borrowIcon = new System.Windows.Shapes.Path
             {
                 Data = System.Windows.Media.Geometry.Parse("M12,2 L12,14 M8,10 L12,14 L16,10 M4,17 L4,19 Q4,20 5,20 L19,20 Q20,20 20,19 L20,17"),
-                Stroke = Brushes.White, StrokeThickness = 1.8,
+                Stroke = BrushFromRgb(185, 35, 53), StrokeThickness = 1.8,
                 StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round,
                 Stretch = Stretch.Uniform, Width = 16, Height = 16,
@@ -982,15 +939,15 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             headerContent.Children.Add(borrowIcon);
             headerContent.Children.Add(new TextBlock
             {
-                Text = "Borrow Item", FontSize = 14, FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+                Text = "Borrow Item", FontSize = 14, FontWeight = FontWeights.SemiBold,
+                Foreground = BrushFromRgb(32, 38, 53), VerticalAlignment = VerticalAlignment.Center
             });
             header.Child = headerContent;
             DockPanel.SetDock(header, Dock.Top);
             dock.Children.Add(header);
 
             // ── Action button (pinned to bottom) ───────────────────────────────
-            _borrowButton = MakeActionButton("Borrow Item", BrushFromRgb(37, 99, 235), BrushFromRgb(29, 78, 216));
+            _borrowButton = MakeActionButton("Borrow Item");
             _borrowButton.Click += (s, e) =>
             {
                 var deptOnly = _borrowDeptOnlyCheck.IsChecked == true;
@@ -1070,7 +1027,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var addBorrowLink = new TextBlock
             {
                 Text = "Not listed? Add employee", FontSize = 11,
-                Foreground = BrushFromRgb(59, 130, 246), Cursor = Cursors.Hand,
+                Foreground = BrushFromRgb(185, 35, 53), Cursor = Cursors.Hand,
                 TextDecorations = TextDecorations.Underline, Margin = new Thickness(0, 2, 0, 12)
             };
             addBorrowLink.MouseLeftButtonDown += (s, e) => { e.Handled = true; AddEmployeeClicked?.Invoke(this, true); };
@@ -1115,7 +1072,14 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
         private Border BuildReturnCard()
         {
-            var card = WpfThemeResources.CreateGlassCard(padding: 0);
+            var card = new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(0)
+            };
             card.Margin = new Thickness(0);
             card.ClipToBounds = true;
 
@@ -1125,15 +1089,16 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             // ── Header band ────────────────────────────────────────────────────
             var header = new Border
             {
-                Background = new LinearGradientBrush(
-                    Color.FromRgb(16, 185, 129), Color.FromRgb(5, 150, 105), 90),
+                Background = BrushFromRgb(248, 249, 251),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232)),
+                BorderThickness = new Thickness(0, 0, 0, 1),
                 Padding = new Thickness(18, 14, 18, 14)
             };
             var headerContent = new StackPanel { Orientation = Orientation.Horizontal };
             var returnIcon = new System.Windows.Shapes.Path
             {
                 Data = System.Windows.Media.Geometry.Parse("M12,14 L12,2 M8,6 L12,2 L16,6 M4,17 L4,19 Q4,20 5,20 L19,20 Q20,20 20,19 L20,17"),
-                Stroke = Brushes.White, StrokeThickness = 1.8,
+                Stroke = BrushFromRgb(185, 35, 53), StrokeThickness = 1.8,
                 StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round,
                 Stretch = Stretch.Uniform, Width = 16, Height = 16,
@@ -1142,15 +1107,15 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             headerContent.Children.Add(returnIcon);
             headerContent.Children.Add(new TextBlock
             {
-                Text = "Return Item", FontSize = 14, FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+                Text = "Return Item", FontSize = 14, FontWeight = FontWeights.SemiBold,
+                Foreground = BrushFromRgb(32, 38, 53), VerticalAlignment = VerticalAlignment.Center
             });
             header.Child = headerContent;
             DockPanel.SetDock(header, Dock.Top);
             dock.Children.Add(header);
 
             // ── Action button (pinned to bottom) ───────────────────────────────
-            _returnButton = MakeActionButton("Return Item", BrushFromRgb(16, 185, 129), BrushFromRgb(5, 150, 105));
+            _returnButton = MakeActionButton("Return Item");
             _returnButton.Click += (s, e) =>
             {
                 var deptOnly = _returnDeptOnlyCheck.IsChecked == true;
@@ -1361,14 +1326,16 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             branchEvent?.Invoke(this, emp.BranchId > 0 ? emp.BranchId : (int?)null);
         }
 
-        private static Button MakeActionButton(string text, SolidColorBrush from, SolidColorBrush to) => new Button
+        private static Button MakeActionButton(string text)
         {
-            Content = text, Height = 42, FontSize = 13, FontWeight = FontWeights.Bold,
-            Foreground = Brushes.White, BorderThickness = new Thickness(0),
-            Cursor = Cursors.Hand, Margin = new Thickness(0, 6, 0, 0),
-            Background = new LinearGradientBrush(from.Color, to.Color, 90),
-            Effect = new DropShadowEffect { BlurRadius = 8, ShadowDepth = 0, Opacity = 0.2 }
-        };
+            var button = new Button
+            {
+                Content = text, Height = 42, Cursor = Cursors.Hand,
+                Margin = new Thickness(0, 6, 0, 0)
+            };
+            button.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmAccentButton"];
+            return button;
+        }
 
         private static UIElement FieldRow(string label, Control input)
         {

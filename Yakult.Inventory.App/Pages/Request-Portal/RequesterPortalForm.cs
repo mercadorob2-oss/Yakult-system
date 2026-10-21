@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using System.Windows.Forms.Integration;
 using Yakult.Inventory.App.Models;
 using Yakult.Inventory.App.Services;
+using Yakult.Inventory.App.Helpers;
 using Yakult.Inventory.App.WPF.RequestPortal;
 using Yakult.Inventory.App.Session;
 using Yakult.Inventory.App.Wpf.Notifications;
@@ -63,6 +64,27 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
         private Panel  _portalMenuOverlay;
         private bool   _portalMenuOpen;
         private const int PortalMenuWidth = 280;
+        private const int PortalHeaderHeight = 64;
+
+        // Custom flat tab strip. The native TabControl headers are collapsed to a
+        // single pixel and the strip sits above the TabControl in a host panel, so
+        // the strip can use the same typography and red underline as the rest of
+        // the workspace without the 3D borders and focus rectangle the native
+        // control draws.
+        private Panel _tabHost;
+        private Panel _tabStrip;
+        private readonly List<TabStripItem> _tabStripItems = new List<TabStripItem>();
+        private const int TabStripHeight = 44;
+
+        private sealed class TabStripItem
+        {
+            public TabPage Page;
+            public Label   Label;
+            public Panel   ItemPanel;
+            public Font    RegularFont;
+            public Font    ActiveFont;
+            public bool    Active;
+        }
 
         // Side-menu nav rows that track "current page" (Home / Authorize / Submit / History) —
         // updated by RefreshSideMenuActiveState() so the active one gets a highlight, matching
@@ -192,13 +214,146 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             // Viewers can browse history but cannot submit new requests
             if (tabControl != null && tabNewRequest != null)
                 tabControl.TabPages.Remove(tabNewRequest);
+
+            BuildTabStrip();
+        }
+
+        // ──────────────────────────────────────────────────────────────────────
+        // Custom flat tab strip
+        // ──────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Rebuilds the white tab strip that sits above the TabControl's collapsed
+        /// native header. Kept in sync with TabPages so dynamic tab removal
+        /// (Viewer mode) and programmatic navigation both update the visuals.
+        /// </summary>
+        private void BuildTabStrip()
+        {
+            if (tabControl == null || _tabStrip == null) return;
+
+            foreach (var old in _tabStripItems)
+            {
+                old.RegularFont?.Dispose();
+                old.ActiveFont?.Dispose();
+            }
+            _tabStripItems.Clear();
+
+            while (_tabStrip.Controls.Count > 0)
+            {
+                var existing = _tabStrip.Controls[0];
+                _tabStrip.Controls.Remove(existing);
+                existing.Dispose();
+            }
+
+            var flow = new FlowLayoutPanel
+            {
+                Dock          = DockStyle.Fill,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents  = false,
+                BackColor     = Color.White,
+                Padding       = new Padding(16, 0, 0, 0),
+                Margin        = new Padding(0)
+            };
+
+            foreach (TabPage page in tabControl.TabPages)
+            {
+                var regularFont = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+                var activeFont  = new Font("Segoe UI Semibold", 9.5F, FontStyle.Regular);
+
+                int width = Math.Max(
+                    TextRenderer.MeasureText(page.Text, regularFont).Width,
+                    TextRenderer.MeasureText(page.Text, activeFont).Width) + 44;
+
+                var itemPanel = new Panel
+                {
+                    Height    = TabStripHeight,
+                    Width     = width,
+                    BackColor = Color.White,
+                    Margin    = new Padding(0),
+                    Cursor    = Cursors.Hand
+                };
+
+                var label = new Label
+                {
+                    Text      = page.Text,
+                    Font      = regularFont,
+                    ForeColor = UiTheme.Colors.TextMuted,
+                    BackColor = Color.White,
+                    Dock      = DockStyle.Fill,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Cursor    = Cursors.Hand
+                };
+
+                var capturedPage = page;
+                EventHandler select = (s, e) => tabControl.SelectedTab = capturedPage;
+                itemPanel.Click += select;
+                label.Click     += select;
+
+                var stripItem = new TabStripItem
+                {
+                    Page        = page,
+                    Label       = label,
+                    ItemPanel   = itemPanel,
+                    RegularFont = regularFont,
+                    ActiveFont  = activeFont
+                };
+
+                // Draw the active indicator as part of the label paint so it stays
+                // above the label background and cannot be clipped by child z-order.
+                label.Paint += (s, e) =>
+                {
+                    if (!stripItem.Active) return;
+                    using (var brush = new SolidBrush(UiTheme.Colors.Primary))
+                    {
+                        int underlineWidth = Math.Max(0, label.ClientSize.Width - 24);
+                        e.Graphics.FillRectangle(brush, 12, label.ClientSize.Height - 2, underlineWidth, 2);
+                    }
+                };
+
+                label.MouseEnter += (s, e) =>
+                {
+                    if (tabControl.SelectedTab != capturedPage)
+                        label.ForeColor = UiTheme.Colors.TextDark;
+                };
+                label.MouseLeave += (s, e) =>
+                {
+                    if (tabControl.SelectedTab != capturedPage)
+                        label.ForeColor = UiTheme.Colors.TextMuted;
+                };
+
+                itemPanel.Controls.Add(label);
+
+                flow.Controls.Add(itemPanel);
+                _tabStripItems.Add(stripItem);
+            }
+
+            _tabStrip.Controls.Add(flow);
+
+            if (tabControl.SelectedIndex < 0 && tabControl.TabPages.Count > 0)
+                tabControl.SelectedIndex = 0;
+
+            RefreshTabStripSelection();
+        }
+
+        private void RefreshTabStripSelection()
+        {
+            if (_tabStrip == null) return;
+
+            foreach (var item in _tabStripItems)
+            {
+                bool active = tabControl.SelectedTab == item.Page;
+                item.Active          = active;
+                item.Label.Font      = active ? item.ActiveFont : item.RegularFont;
+                item.Label.ForeColor = active ? UiTheme.Colors.Primary : UiTheme.Colors.TextMuted;
+                item.Label.Invalidate();
+            }
         }
 
         // ── Portal hamburger side menu ─────────────────────────────────────────
 
         private void InitializePortalSideMenu()
         {
-            const int headerHeight = 70;
+            const int headerHeight = PortalHeaderHeight;
 
             // Overlay: captures click-outside-to-close, sits behind the side panel
             _portalMenuOverlay = new Panel
@@ -220,7 +375,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 Width      = PortalMenuWidth,
                 Height     = this.ClientSize.Height - headerHeight,
                 Location   = new Point(0, headerHeight),
-                BackColor  = Color.White,
+                BackColor  = UiTheme.Colors.RailBack,
                 Anchor     = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left,
                 AutoScroll = true,
                 Visible    = false
@@ -234,7 +389,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             // Right-edge shadow
             _portalSideMenu.Paint += (s, e) =>
             {
-                using (var pen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                using (var pen = new Pen(UiTheme.Colors.RailEdge, 1))
                     e.Graphics.DrawLine(pen,
                         _portalSideMenu.Width - 1, 0,
                         _portalSideMenu.Width - 1, _portalSideMenu.Height);
@@ -247,12 +402,13 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
         }
 
         // Colors shared by every side-menu row so the icon/label column and the
-        // active/hover states line up consistently across all items.
-        private static readonly Color SideMenuFg          = Color.FromArgb(60, 60, 60);
-        private static readonly Color SideMenuHoverBg     = Color.FromArgb(240, 240, 240);
-        private static readonly Color SideMenuActiveBg    = Color.FromArgb(235, 244, 255);
-        private static readonly Color SideMenuActiveFg    = Color.FromArgb(41, 121, 255);
-        private static readonly Color SideMenuActiveAccent = Color.FromArgb(78, 154, 252);
+        // active/hover states line up consistently across all items. These mirror
+        // the dark rail used by the workspace shell.
+        private static readonly Color SideMenuFg          = UiTheme.Colors.RailText;
+        private static readonly Color SideMenuHoverBg     = UiTheme.Colors.RailHover;
+        private static readonly Color SideMenuActiveBg    = Color.FromArgb(53, 65, 88);
+        private static readonly Color SideMenuActiveFg    = Color.FromArgb(248, 250, 252);
+        private static readonly Color SideMenuActiveAccent = UiTheme.Colors.Primary;
 
         /// <summary>
         /// Builds one side-menu row as [4px accent bar][fixed-width icon column][label], so
@@ -269,12 +425,11 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             Func<bool> isActive = null, Color? bgColor = null, Color? fgColor = null, Color? hoverBgColor = null)
         {
             const int rowH = 50;
-            Color baseBg  = bgColor  ?? Color.White;
+            Color baseBg  = bgColor  ?? UiTheme.Colors.RailBack;
             Color baseFg  = fgColor  ?? SideMenuFg;
             Color hoverBg = hoverBgColor ?? (isActive != null ? SideMenuActiveBg : SideMenuHoverBg);
 
             var row = new Panel { Height = rowH, Dock = DockStyle.Top, BackColor = baseBg, Cursor = Cursors.Hand };
-
             var accent = new Panel { Dock = DockStyle.Left, Width = 4, BackColor = Color.Transparent };
 
             var iconLbl = new Label
@@ -334,7 +489,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             foreach (var item in _sideMenuNavItems)
             {
                 bool active = item.IsActive();
-                Color bg = active ? SideMenuActiveBg : Color.White;
+                Color bg = active ? SideMenuActiveBg : UiTheme.Colors.RailBack;
                 Color fg = active ? SideMenuActiveFg : SideMenuFg;
 
                 item.Accent.BackColor = active ? SideMenuActiveAccent : Color.Transparent;
@@ -355,9 +510,9 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             _portalSideMenu.Controls.Add(CreateSideMenuItem(
                 "🚪", "Logout",
                 () => { TogglePortalMenu(); LogoutRequested = true; this.Close(); },
-                bgColor: Color.FromArgb(220, 53, 69), fgColor: Color.White, hoverBgColor: Color.FromArgb(176, 0, 32)));
+                fgColor: UiTheme.Colors.RailDanger, hoverBgColor: UiTheme.Colors.RailHover));
 
-            _portalSideMenu.Controls.Add(new Panel { Height = 8, Dock = DockStyle.Top, BackColor = Color.White });
+            _portalSideMenu.Controls.Add(new Panel { Height = 8, Dock = DockStyle.Top, BackColor = UiTheme.Colors.RailBack });
 
             // ── NOTIFICATION SETTINGS ─────────────────────────────────────────
             _portalSideMenu.Controls.Add(CreateSideMenuItem(
@@ -455,17 +610,17 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             {
                 Height    = 1,
                 Dock      = DockStyle.Top,
-                BackColor = Color.FromArgb(230, 230, 230)
+                BackColor = UiTheme.Colors.RailLine
             });
 
-            _portalSideMenu.Controls.Add(new Panel { Height = 10, Dock = DockStyle.Top, BackColor = Color.White });
+            _portalSideMenu.Controls.Add(new Panel { Height = 10, Dock = DockStyle.Top, BackColor = UiTheme.Colors.RailBack });
 
             // ── HEADER LABEL (top) ────────────────────────────────────────────
             var lblMenuHeader = new Label
             {
                 Text      = "REQUESTER PORTAL",
-                Font      = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(78, 154, 252),
+                Font      = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = UiTheme.Colors.RailLabel,
                 Height    = 40,
                 AutoSize  = false,
                 Dock      = DockStyle.Top,
@@ -474,7 +629,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             };
             _portalSideMenu.Controls.Add(lblMenuHeader);
 
-            _portalSideMenu.Controls.Add(new Panel { Height = 16, Dock = DockStyle.Top, BackColor = Color.White });
+            _portalSideMenu.Controls.Add(new Panel { Height = 16, Dock = DockStyle.Top, BackColor = UiTheme.Colors.RailBack });
 
             RefreshSideMenuActiveState();
         }
@@ -490,7 +645,8 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 _portalMenuOverlay.BringToFront();
 
                 // Keep main content visible on top of the overlay
-                if (tabControl != null)       tabControl.BringToFront();
+                if (_tabHost != null)         _tabHost.BringToFront();
+                else if (tabControl != null)  tabControl.BringToFront();
                 if (_pnlLanding != null)      _pnlLanding.BringToFront();
                 if (_pnlApproverArea != null) _pnlApproverArea.BringToFront();
                 if (_pnlRequestArea != null)  _pnlRequestArea.BringToFront();
@@ -518,25 +674,36 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             this.WindowState = FormWindowState.Maximized;
             this.StartPosition = FormStartPosition.CenterScreen;
             this.Text = "Requester Portal - Consumable Requests";
-            this.BackColor = Color.FromArgb(245, 246, 250);
+            this.BackColor = UiTheme.Colors.HeaderBack;
             this.Font = new Font("Segoe UI", 9F);
             this.MinimumSize = new Size(1200, 800);
 
-            // Header
+            // Header — dark ink chrome, matching the workspace shell.
             var pnlHeader = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 70,
-                BackColor = Color.FromArgb(78, 154, 252),
-                Padding = new Padding(20, 0, 20, 0)
+                Height = PortalHeaderHeight,
+                BackColor = UiTheme.Colors.NavigationBack,
+                Padding = new Padding(0)
             };
+
+            // Logo sits on a white badge so the brand mark keeps its contrast
+            // against the dark header.
+            var logoBadge = new Panel
+            {
+                Size      = new Size(206, 36),
+                Location  = new Point(64, 14),
+                BackColor = Color.White
+            };
+            using (var badgePath = RoundedRectangle(new Rectangle(0, 0, logoBadge.Width, logoBadge.Height), 6))
+                logoBadge.Region = new Region(badgePath);
 
             var logoBox = new PictureBox
             {
-                Size = new Size(220, 46),
-                Location = new Point(85, 12),
+                Size = new Size(186, 28),
+                Location = new Point(10, 4),
                 SizeMode = PictureBoxSizeMode.Zoom,
-                BackColor = Color.Transparent
+                BackColor = Color.White
             };
             try
             {
@@ -545,32 +712,54 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                     logoBox.Image = Image.FromFile(logoPath);
             }
             catch { }
-            pnlHeader.Controls.Add(logoBox);
+            logoBadge.Controls.Add(logoBox);
+            pnlHeader.Controls.Add(logoBadge);
+
+            var lblPortalEyebrow = new Label
+            {
+                Text      = "REQUESTER PORTAL",
+                Font      = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                ForeColor = UiTheme.Colors.RailLabel,
+                AutoSize  = true,
+                Location  = new Point(286, 13)
+            };
+            pnlHeader.Controls.Add(lblPortalEyebrow);
 
             var lblTitle = new Label
             {
-                Text = "Consumable Request Portal",
-                Font = new Font("Segoe UI", 16F, FontStyle.Bold),
-                ForeColor = Color.White,
-                AutoSize = true,
-                Location = new Point(315, 14)
+                Text      = "Consumable Requests",
+                Font      = new Font("Segoe UI Semibold", 13.5F, FontStyle.Regular),
+                ForeColor = Color.FromArgb(248, 250, 252),
+                AutoSize  = true,
+                Location  = new Point(284, 28)
             };
 
             pnlHeader.Controls.Add(lblTitle);
 
+            // Bottom hairline separates chrome from the content canvas.
+            pnlHeader.Controls.Add(new Panel
+            {
+                Dock      = DockStyle.Bottom,
+                Height    = 1,
+                BackColor = ColorTranslator.FromHtml("#29364D")
+            });
+
             var btnBackToPortal = new Button
             {
                 Text      = "To Portal",
-                Font      = new Font("Segoe UI", 12F, FontStyle.Bold),
+                Font      = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleCenter,
-                ForeColor = Color.White,
-                BackColor = Color.FromArgb(41, 128, 185),
+                ForeColor = Color.FromArgb(248, 250, 252),
+                BackColor = UiTheme.Colors.NavigationBack,
                 FlatStyle = FlatStyle.Flat,
-                Size      = new Size(130, 36),
+                Size      = new Size(104, 34),
                 Anchor    = AnchorStyles.Top | AnchorStyles.Right,
                 Cursor    = Cursors.Hand
             };
-            btnBackToPortal.FlatAppearance.BorderSize = 0;
+            btnBackToPortal.FlatAppearance.BorderSize = 1;
+            btnBackToPortal.FlatAppearance.BorderColor = ColorTranslator.FromHtml("#354158");
+            btnBackToPortal.FlatAppearance.MouseOverBackColor = UiTheme.Colors.NavigationHover;
+            btnBackToPortal.FlatAppearance.MouseDownBackColor = UiTheme.Colors.NavigationHover;
             btnBackToPortal.Click += (s, e) =>
             {
                 // Restore and focus the dashboard before closing this window
@@ -592,7 +781,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             {
                 Child     = _notifBell,
                 Size      = new Size(46, 46),
-                BackColor = Color.FromArgb(78, 154, 252),  // match header colour
+                BackColor = UiTheme.Colors.NavigationBack,  // match header colour
             };
 
             // Help (?) button — launches the guided tour for the current tab
@@ -601,7 +790,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 Text      = string.Empty,
                 Font      = new Font("Segoe UI", 16F, FontStyle.Bold),
                 Size      = new Size(40, 40),
-                BackColor = Color.FromArgb(78, 154, 252),  // same as header — base for alpha blending
+                BackColor = UiTheme.Colors.NavigationBack,  // base for alpha blending
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor    = Cursors.Hand,
@@ -666,16 +855,16 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             var btnHamburger = new Button
             {
                 Text      = "☰",
-                Font      = new Font("Segoe UI", 24F, FontStyle.Bold),
-                Size      = new Size(70, 60),
-                Location  = new Point(5, 5),
-                BackColor = Color.FromArgb(58, 134, 232),
+                Font      = new Font("Segoe UI", 15F, FontStyle.Bold),
+                Size      = new Size(40, 40),
+                Location  = new Point(12, 12),
+                BackColor = UiTheme.Colors.NavigationBack,
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Cursor    = Cursors.Hand
             };
             btnHamburger.FlatAppearance.BorderSize         = 0;
-            btnHamburger.FlatAppearance.MouseOverBackColor = Color.FromArgb(78, 154, 252);
+            btnHamburger.FlatAppearance.MouseOverBackColor = UiTheme.Colors.NavigationHover;
             btnHamburger.Click += (s, e) => TogglePortalMenu();
             pnlHeader.Controls.Add(btnHamburger);
 
@@ -700,33 +889,60 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             pnlHeader.Resize += (s, e) => PositionBackButton();
 
 
-            // Tab control
-            tabControl = new TabControl
+            // Tab control — native headers are collapsed and the custom strip sits
+            // above it inside a host panel (TabControl only accepts TabPage children).
+            _tabHost = new Panel
             {
-                Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 10F),
-                Padding = new Point(20, 8)
+                Dock      = DockStyle.Fill,
+                BackColor = UiTheme.Colors.HeaderBack
             };
 
-            tabNewRequest = new TabPage("New Request");
-            tabMyRequests = new TabPage("Request History");
+            _tabStrip = new Panel
+            {
+                Dock      = DockStyle.Top,
+                Height    = TabStripHeight,
+                BackColor = Color.White
+            };
+            _tabStrip.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(UiTheme.Colors.Border, 1))
+                    e.Graphics.DrawLine(pen, 0, _tabStrip.Height - 1, _tabStrip.Width, _tabStrip.Height - 1);
+            };
+
+            tabControl = new TabControl
+            {
+                Dock       = DockStyle.Fill,
+                Font       = new Font("Segoe UI", 9.5F),
+                Padding    = new Point(0, 0),
+                Appearance = TabAppearance.FlatButtons,
+                ItemSize   = new Size(1, 1),
+                SizeMode   = TabSizeMode.Fixed,
+                Multiline  = false,
+                BackColor  = Color.White
+            };
+
+            // Docking order: Fill first, then Top.
+            _tabHost.Controls.Add(tabControl);
+            _tabHost.Controls.Add(_tabStrip);
+
+            tabNewRequest  = new TabPage("New Request")              { BackColor = UiTheme.Colors.HeaderBack };
+            tabMyRequests  = new TabPage("Request History")          { BackColor = UiTheme.Colors.HeaderBack };
 
             tabControl.TabPages.Add(tabNewRequest);
 
             if (AppSession.IsITStaff)
             {
-                tabAssistedRequest = new TabPage("⚡ Assisted Request");
-                tabAssistedRequest.BackColor = Color.FromArgb(235, 244, 255);
+                tabAssistedRequest = new TabPage("⚡ Assisted Request") { BackColor = UiTheme.Colors.HeaderBack };
                 tabControl.TabPages.Add(tabAssistedRequest);
             }
 
             tabControl.TabPages.Add(tabMyRequests);
 
             // Requests encoded for the user's whole department (no specific employee).
-            tabDeptRequests = new TabPage("My Department History");
+            tabDeptRequests = new TabPage("My Department History") { BackColor = UiTheme.Colors.HeaderBack };
             tabControl.TabPages.Add(tabDeptRequests);
 
-            tabAuthHistory = new TabPage("Authorization History");
+            tabAuthHistory = new TabPage("Authorization History") { BackColor = UiTheme.Colors.HeaderBack };
             tabControl.TabPages.Add(tabAuthHistory);
 
             InitializeSelfRequestTab();
@@ -735,6 +951,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             InitializeMyRequestsTab();
             InitializeDeptRequestsTab();
             InitializeAuthHistoryTab();
+            BuildTabStrip();
 
             // Refresh model availability whenever the user navigates back to a request tab
             // so the count reflects any fulfillments that occurred while the form was open.
@@ -745,6 +962,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 var selected = tabControl.SelectedTab;
                 if (selected == tabNewRequest || selected == tabAssistedRequest)
                     RefreshCartridgeModelDropdowns();
+                RefreshTabStripSelection();
                 RefreshSideMenuActiveState();
             };
 
@@ -764,7 +982,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
             }
             else
             {
-                this.Controls.Add(tabControl);
+                this.Controls.Add(_tabHost);
             }
             this.Controls.Add(pnlHeader);
 
@@ -3673,13 +3891,29 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
 
         private Panel BuildLandingPanel()
         {
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(245, 246, 250) };
+            var panel = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Colors.HeaderBack };
+
+            var lblEyebrow = new Label
+            {
+                Text      = "APPROVER HOME",
+                Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = UiTheme.Colors.TextMuted,
+                AutoSize  = true
+            };
 
             var lblSub = new Label
             {
                 Text      = "What would you like to do today?",
-                Font      = new Font("Segoe UI", 11F),
-                ForeColor = Color.FromArgb(100, 100, 100),
+                Font      = new Font("Segoe UI Semibold", 20F, FontStyle.Regular),
+                ForeColor = UiTheme.Colors.TextDark,
+                AutoSize  = true
+            };
+
+            var lblHint = new Label
+            {
+                Text      = "Choose a workspace to continue.",
+                Font      = new Font("Segoe UI", 10.5F),
+                ForeColor = UiTheme.Colors.TextMuted,
                 AutoSize  = true
             };
 
@@ -3697,7 +3931,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 "Authorize Cartridge Requests",
                 "Review and sign off on cartridge request authorizations from your department.",
                 "✏",
-                Color.FromArgb(213, 0, 50),
+                UiTheme.Colors.Primary,
                 (s, e) => ShowApproverArea());
             flp.Controls.Add(_landingCardAuthorize);
 
@@ -3705,7 +3939,7 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 "Submit a Request",
                 "Submit a new cartridge request or track your previous requests.",
                 "📋",
-                Color.FromArgb(78, 154, 252),
+                UiTheme.Colors.Primary,
                 (s, e) => ShowRequestArea());
             flp.Controls.Add(_landingCardSubmit);
 
@@ -3713,17 +3947,24 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
                 "Authorization History",
                 "View all your past cartridge authorizations — approved, rejected, and pending.",
                 "🕓",
-                Color.FromArgb(8, 145, 178),
+                UiTheme.Colors.Primary,
                 (s, e) => { ShowRequestArea(); tabControl.SelectedTab = tabAuthHistory; });
             flp.Controls.Add(_landingCardHistory);
 
+            panel.Controls.Add(lblEyebrow);
             panel.Controls.Add(lblSub);
+            panel.Controls.Add(lblHint);
             panel.Controls.Add(flp);
 
             panel.Resize += (s, e) =>
             {
-                lblSub.Location = new Point((panel.Width - lblSub.Width) / 2, 52);
-                flp.Location    = new Point(Math.Max(0, (panel.Width - flp.Width) / 2), 96);
+                int contentWidth = Math.Min(panel.Width, 3 * 320 + 2 * 20 + 20);
+                int left         = Math.Max(0, (panel.Width - contentWidth) / 2);
+
+                lblEyebrow.Location = new Point(left, 44);
+                lblSub.Location     = new Point(left, 62);
+                lblHint.Location    = new Point(left, 102);
+                flp.Location        = new Point(left, 138);
             };
 
             return panel;
@@ -3731,30 +3972,36 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
 
         private Panel BuildApproverAreaPanel()
         {
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(245, 246, 250) };
+            var panel = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Colors.HeaderBack };
 
             // Nav bar with Home button
             var pnlNav = new Panel
             {
                 Dock      = DockStyle.Top,
-                Height    = 46,
-                BackColor = Color.FromArgb(235, 237, 242),
-                Padding   = new Padding(10, 6, 10, 6)
+                Height    = 48,
+                BackColor = Color.White,
+                Padding   = new Padding(20, 7, 20, 7)
             };
             var btnHome = new Button
             {
-                Text      = "⌂  Home",
+                Text      = "←  Home",
                 Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(44, 62, 80),
+                ForeColor = UiTheme.Colors.TextDark,
                 BackColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Size      = new Size(95, 32),
-                Location  = new Point(10, 7),
+                Size      = new Size(96, 32),
+                Location  = new Point(20, 8),
                 Cursor    = Cursors.Hand
             };
-            btnHome.FlatAppearance.BorderColor = Color.FromArgb(180, 180, 180);
+            btnHome.FlatAppearance.BorderColor = UiTheme.Colors.Border;
+            btnHome.FlatAppearance.MouseOverBackColor = UiTheme.Colors.GridAltRowBack;
             btnHome.Click += (s, e) => ShowLanding();
             pnlNav.Controls.Add(btnHome);
+            pnlNav.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(UiTheme.Colors.Border))
+                    e.Graphics.DrawLine(pen, 0, pnlNav.Height - 1, pnlNav.Width, pnlNav.Height - 1);
+            };
 
             // Content area — WPF AuthorizeRequestView hosted inside an ElementHost
             var pnlContent = new Panel { Dock = DockStyle.Fill };
@@ -3776,109 +4023,169 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
 
         private Panel BuildRequestAreaPanel()
         {
-            var panel = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(245, 246, 250) };
+            var panel = new Panel { Dock = DockStyle.Fill, BackColor = UiTheme.Colors.HeaderBack };
 
             // Nav bar with Home button
             var pnlNav = new Panel
             {
                 Dock      = DockStyle.Top,
-                Height    = 46,
-                BackColor = Color.FromArgb(235, 237, 242),
-                Padding   = new Padding(10, 6, 10, 6)
+                Height    = 48,
+                BackColor = Color.White,
+                Padding   = new Padding(20, 7, 20, 7)
             };
             var btnHome = new Button
             {
-                Text      = "⌂  Home",
+                Text      = "←  Home",
                 Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(44, 62, 80),
+                ForeColor = UiTheme.Colors.TextDark,
                 BackColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Size      = new Size(95, 32),
-                Location  = new Point(10, 7),
+                Size      = new Size(96, 32),
+                Location  = new Point(20, 8),
                 Cursor    = Cursors.Hand
             };
-            btnHome.FlatAppearance.BorderColor = Color.FromArgb(180, 180, 180);
+            btnHome.FlatAppearance.BorderColor = UiTheme.Colors.Border;
+            btnHome.FlatAppearance.MouseOverBackColor = UiTheme.Colors.GridAltRowBack;
             btnHome.Click += (s, e) => ShowLanding();
             pnlNav.Controls.Add(btnHome);
+            pnlNav.Paint += (s, e) =>
+            {
+                using (var pen = new Pen(UiTheme.Colors.Border))
+                    e.Graphics.DrawLine(pen, 0, pnlNav.Height - 1, pnlNav.Width, pnlNav.Height - 1);
+            };
 
             tabControl.Dock = DockStyle.Fill;
 
             // Docking order: Fill first, then Top
-            panel.Controls.Add(tabControl);
+            panel.Controls.Add(_tabHost);
             panel.Controls.Add(pnlNav);
             return panel;
         }
 
         private Panel CreatePortalCard(string title, string desc, string icon, Color accent, EventHandler onClick)
         {
+            // One restrained accent across the landing cards; the card hierarchy
+            // carries the emphasis instead of three competing hues.
+            accent = UiTheme.Colors.Primary;
+
             var card = new Panel
             {
-                Size      = new Size(340, 240),
+                Size      = new Size(320, 210),
                 BackColor = Color.White,
                 Cursor    = Cursors.Hand,
-                Margin    = new Padding(20)
+                Margin    = new Padding(10)
             };
+            using (var path = RoundedRectangle(new Rectangle(0, 0, card.Width, card.Height), 10))
+                card.Region = new Region(path);
 
-            var bar = new Panel { Dock = DockStyle.Top, Height = 6, BackColor = accent };
+            var iconTile = new Panel
+            {
+                Size      = new Size(46, 46),
+                Location  = new Point(22, 22),
+                BackColor = UiTheme.Colors.OutlineHoverBack
+            };
+            using (var path = RoundedRectangle(new Rectangle(0, 0, iconTile.Width, iconTile.Height), 10))
+                iconTile.Region = new Region(path);
+
+            var lblIcon = new Label
+            {
+                Text      = icon,
+                Dock      = DockStyle.Fill,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font      = new Font("Segoe UI Emoji", 18F),
+                ForeColor = accent,
+                BackColor = Color.Transparent,
+                Cursor    = Cursors.Hand
+            };
+            iconTile.Controls.Add(lblIcon);
 
             var lblTitle = new Label
             {
                 Text        = title,
-                Font        = new Font("Segoe UI", 11F, FontStyle.Bold),
-                ForeColor   = Color.FromArgb(64, 64, 64),
-                Location    = new Point(20, 22),
+                Font        = new Font("Segoe UI Semibold", 13F, FontStyle.Regular),
+                ForeColor   = UiTheme.Colors.TextDark,
+                Location    = new Point(22, 82),
                 AutoSize    = true,
-                MaximumSize = new Size(280, 0),
-                BackColor   = Color.Transparent
+                MaximumSize = new Size(276, 0),
+                BackColor   = Color.Transparent,
+                Cursor      = Cursors.Hand
+            };
+
+            var lblDesc = new Label
+            {
+                Text      = desc,
+                Font      = new Font("Segoe UI", 10F),
+                ForeColor = UiTheme.Colors.TextMuted,
+                Location  = new Point(22, 110),
+                Size      = new Size(276, 48),
+                BackColor = Color.Transparent,
+                Cursor    = Cursors.Hand
             };
 
             var lblAction = new Label
             {
-                Text      = "Click to Open →",
-                Font      = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Text      = "Open  →",
+                Font      = new Font("Segoe UI", 9.5F, FontStyle.Bold),
                 ForeColor = accent,
-                Location  = new Point(20, 195),
+                Location  = new Point(22, 172),
                 AutoSize  = true,
-                BackColor = Color.Transparent
+                BackColor = Color.Transparent,
+                Cursor    = Cursors.Hand
             };
 
-            var descFont = new Font("Segoe UI", 9.5F);
-            var iconFont = new Font("Segoe UI Emoji", 52F);
+            bool hovered = false;
             card.Paint += (s, e) =>
             {
-                var g = e.Graphics;
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
-                using (var b = new SolidBrush(Color.Gray))
-                    g.DrawString(desc, descFont, b, new RectangleF(22, 76, 270, 100),
-                        new StringFormat { Trimming = StringTrimming.Word });
-                using (var b = new SolidBrush(Color.FromArgb(218, 218, 218)))
-                    g.DrawString(icon, iconFont, b, new PointF(230, 110));
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var pen = new Pen(hovered ? UiTheme.Colors.InputBorder : UiTheme.Colors.Border, 1))
+                using (var path = RoundedRectangle(new Rectangle(0, 0, card.Width - 1, card.Height - 1), 10))
+                    e.Graphics.DrawPath(pen, path);
             };
 
-            card.Controls.Add(bar);
+            card.Controls.Add(iconTile);
             card.Controls.Add(lblTitle);
+            card.Controls.Add(lblDesc);
             card.Controls.Add(lblAction);
 
-            card.Click += onClick;
-            foreach (Control c in card.Controls)
-                c.Click += onClick;
+            void WireClick(Control control)
+            {
+                control.Click += onClick;
+                control.Cursor = Cursors.Hand;
+                foreach (Control child in control.Controls)
+                    WireClick(child);
+            }
+            WireClick(card);
 
             void SetHover(bool on)
             {
-                card.BackColor   = on ? Color.FromArgb(248, 250, 252) : Color.White;
-                card.BorderStyle = on ? BorderStyle.FixedSingle : BorderStyle.None;
+                hovered = on;
+                card.BackColor = on ? Color.FromArgb(250, 251, 252) : Color.White;
                 card.Invalidate();
             }
 
-            card.MouseEnter += (s, e) => SetHover(true);
-            card.MouseLeave += (s, e) => SetHover(false);
-            foreach (Control c in card.Controls)
+            void WireHover(Control control)
             {
-                c.MouseEnter += (s, e) => SetHover(true);
-                c.MouseLeave += (s, e) => SetHover(false);
+                control.MouseEnter += (s, e) => SetHover(true);
+                control.MouseLeave += (s, e) => SetHover(false);
+                foreach (Control child in control.Controls)
+                    WireHover(child);
             }
+            WireHover(card);
 
             return card;
+        }
+
+        /// <summary>Builds a rounded-rectangle path used for flat WinForms cards and badges.</summary>
+        private static GraphicsPath RoundedRectangle(Rectangle bounds, int radius)
+        {
+            int diameter = radius * 2;
+            var path = new GraphicsPath();
+            path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
+            path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+            path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
+            path.CloseFigure();
+            return path;
         }
 
         private void ShowLanding()

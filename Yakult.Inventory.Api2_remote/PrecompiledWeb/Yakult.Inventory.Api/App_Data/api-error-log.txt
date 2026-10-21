@@ -1,0 +1,44 @@
+2025-12-17 14:29:15 - System.ArgumentException: Directory does not exist.
+Parameter name: directoryVirtualPath
+   at System.Web.Optimization.Bundle.Include(String virtualPath, IItemTransform[] transforms)
+   at Yakult.Inventory.Api.BundleConfig.RegisterBundles(BundleCollection bundles) in C:\Users\User\source\Yakult-System-for-Merging\Latest sys\Yakult_Inventory_Monitoring_System\Yakult.Inventory.Api\App_Start\BundleConfig.cs:line 11
+   at Yakult.Inventory.Api.WebApiApplication.Application_Start() in C:\Users\User\source\Yakult-System-for-Merging\Latest sys\Yakult_Inventory_Monitoring_System\Yakult.Inventory.Api\Global.asax.cs:line 21
+-------------------------
+2025-12-17 14:31:01 - System.ArgumentException: Directory does not exist.
+Parameter name: directoryVirtualPath
+   at System.Web.Optimization.Bundle.Include(String virtualPath, IItemTransform[] transforms)
+   at Yakult.Inventory.Api.BundleConfig.RegisterBundles(BundleCollection bundles) in C:\Users\User\source\Yakult-System-for-Merging\Latest sys\Yakult_Inventory_Monitoring_System\Yakult.Inventory.Api\App_Start\BundleConfig.cs:line 11
+   at Yakult.Inventory.Api.WebApiApplication.Application_Start() in C:\Users\User\source\Yakult-System-for-Merging\Latest sys\Yakult_Inventory_Monitoring_System\Yakult.Inventory.Api\Global.asax.cs:line 21
+-------------------------
+2025-12-17 14:53:45 - System.InvalidOperationException: The view 'Index' or its master was not found or no view engine supports the searched locations. The following locations were searched:
+~/Views/Home/Index.aspx
+~/Views/Home/Index.ascx
+~/Views/Shared/Index.aspx
+~/Views/Shared/Index.ascx
+~/Views/Home/Index.cshtml
+~/Views/Home/Index.vbhtml
+~/Views/Shared/Index.cshtml
+~/Views/Shared/Index.vbhtml
+   at System.Web.Mvc.ViewResult.FindView(ControllerContext context)
+   at System.Web.Mvc.ViewResultBase.ExecuteResult(ControllerContext context)
+   at System.Web.Mvc.ControllerActionInvoker.InvokeActionResultFilterRecursive(IList`1 filters, Int32 filterIndex, ResultExecutingContext preContext, ControllerContext controllerContext, ActionResult actionResult)
+   at System.Web.Mvc.ControllerActionInvoker.InvokeActionResultFilterRecursive(IList`1 filters, Int32 filterIndex, ResultExecutingContext preContext, ControllerContext controllerContext, ActionResult actionResult)
+   at System.Web.Mvc.ControllerActionInvoker.InvokeActionResultWithFilters(ControllerContext controllerContext, IList`1 filters, ActionResult actionResult)
+   at System.Web.Mvc.Async.AsyncControllerActionInvoker.<>c__DisplayClass3_1.<BeginInvokeAction>b__1(IAsyncResult asyncResult)
+   at System.Web.Mvc.Async.AsyncControllerActionInvoker.EndInvokeAction(IAsyncResult asyncResult)
+   at System.Web.Mvc.Controller.<>c.<BeginExecuteCore>b__152_1(IAsyncResult asyncResult, ExecuteCoreState innerState)
+   at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncVoid`1.CallEndDelegate(IAsyncResult asyncResult)
+   at System.Web.Mvc.Controller.EndExecuteCore(IAsyncResult asyncResult)
+   at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncVoid`1.CallEndDelegate(IAsyncResult asyncResult)
+   at System.Web.Mvc.Controller.EndExecute(IAsyncResult asyncResult)
+   at System.Web.Mvc.MvcHandler.<>c.<BeginProcessRequest>b__20_1(IAsyncResult asyncResult, ProcessRequestState innerState)
+   at System.Web.Mvc.Async.AsyncResultWrapper.WrappedAsyncVoid`1.CallEndDelegate(IAsyncResult asyncResult)
+   at System.Web.Mvc.MvcHandler.EndProcessRequest(IAsyncResult asyncResult)
+   at System.Web.HttpApplication.CallHandlerExecutionStep.System.Web.HttpApplication.IExecutionStep.Execute()
+   at System.Web.HttpApplication.ExecuteStepImpl(IExecutionStep step)
+   at System.Web.HttpApplication.ExecuteStep(IExecutionStep step, Boolean& completedSynchronously)
+-------------------------
+2025-12-18 16:29:38 - System.Web.HttpException (0x80004005): A potentially dangerous Request.Path value was detected from the client (<).
+   at System.Web.HttpRequest.ValidateInputIfRequiredByConfig()
+   at System.Web.HttpApplication.PipelineStepManager.ValidateHelper(HttpContext context)
+-------------------------

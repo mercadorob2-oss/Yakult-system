@@ -8,13 +8,22 @@
         MinHeight="700"
         FontFamily="Segoe UI">
     <Window.Background>
-        <SolidColorBrush Color="#F5F7FB"/>
+        <SolidColorBrush Color="#F6F5F2"/>
     </Window.Background>
     <Window.Resources>
-        <LinearGradientBrush x:Key="HeaderGradient" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#0F172A" Offset="0"/>
-            <GradientStop Color="#1E4078" Offset="1"/>
-        </LinearGradientBrush>
+        <!-- Flat navy header band, matching the workspace top bars (was a navy-to-blue gradient). -->
+        <SolidColorBrush x:Key="HeaderBack" Color="#182235"/>
+        <SolidColorBrush x:Key="HeaderLine" Color="#2C3850"/>
+
+        <!-- Quiet rail-style pill for the Back action: soft fill that brightens on hover. -->
+        <Style x:Key="HeaderPillStyle" TargetType="Border">
+            <Setter Property="Background" Value="#29364D"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3A4760"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -23,7 +32,8 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border x:Name="HeaderBorder" Grid.Row="0" Background="{StaticResource HeaderGradient}" Padding="28,0">
+        <Border x:Name="HeaderBorder" Grid.Row="0" Background="{StaticResource HeaderBack}" Padding="28,0"
+                BorderBrush="{StaticResource HeaderLine}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -32,18 +42,18 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                    <TextBlock Text="Consumable Management" FontSize="17" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="Choose a consumable system to manage." FontSize="11.5" Foreground="#CBD5E1"/>
+                    <TextBlock Text="Consumable Management" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock Text="Choose a consumable system to manage." FontSize="11.5" Foreground="#9DAAC0"/>
                 </StackPanel>
 
                 <Border Grid.Column="2"
-                        Background="#1CFFFFFF"
+                        Style="{StaticResource HeaderPillStyle}"
                         CornerRadius="6"
                         Padding="14,8"
                         Cursor="Hand"
                         VerticalAlignment="Center"
                         MouseLeftButtonUp="BackBtn_MouseLeftButtonUp">
-                    <TextBlock x:Name="BackBtnText" Text="← Back" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock x:Name="BackBtnText" Text="← Back" FontSize="12" FontWeight="SemiBold" Foreground="#DDE3ED"/>
                 </Border>
             </Grid>
         </Border>

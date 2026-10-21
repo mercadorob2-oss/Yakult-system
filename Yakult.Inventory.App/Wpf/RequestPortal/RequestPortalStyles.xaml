@@ -13,15 +13,17 @@
     <ctrl:NullToVisibilityConverter        x:Key="NullToVis"/>
 
     <!-- ── Color resources ─────────────────────────────────────────────────── -->
+    <!-- Key names are legacy (blue era) but now resolve to the current Yakult
+         palette: ink text, warm off-white surfaces, restrained brand red. -->
     <SolidColorBrush x:Key="YakultBlue"     Color="{StaticResource YakultPrimaryColor}"/>
     <SolidColorBrush x:Key="YakultDarkBlue" Color="{StaticResource YakultPrimaryHoverColor}"/>
     <SolidColorBrush x:Key="CardBorder"     Color="{StaticResource YakultBorderColor}"/>
     <SolidColorBrush x:Key="TextPrimary"    Color="{StaticResource YakultTextDarkColor}"/>
     <SolidColorBrush x:Key="TextMuted"      Color="{StaticResource YakultTextMutedColor}"/>
-    <SolidColorBrush x:Key="ErrorRed"       Color="#E03C31"/>
-    <SolidColorBrush x:Key="SuccessGreen"   Color="#1E9E5E"/>
-    <SolidColorBrush x:Key="WarningAmber"   Color="#E08A00"/>
-    <SolidColorBrush x:Key="SurfaceGray"    Color="{StaticResource YakultPageBackgroundColor}"/>
+    <SolidColorBrush x:Key="ErrorRed"       Color="#B92335"/>
+    <SolidColorBrush x:Key="SuccessGreen"   Color="#15803D"/>
+    <SolidColorBrush x:Key="WarningAmber"   Color="#A16207"/>
+    <SolidColorBrush x:Key="SurfaceGray"    Color="{StaticResource YakultSurfaceMutedColor}"/>
 
     <!-- ── Global TextBlock ────────────────────────────────────────────────── -->
     <Style TargetType="TextBlock">
@@ -36,26 +38,21 @@
         <Setter Property="BorderBrush"     Value="{StaticResource CardBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius"    Value="10"/>
-        <Setter Property="Padding"         Value="28,22"/>
-        <Setter Property="Margin"          Value="0,0,0,16"/>
-        <Setter Property="Effect">
-            <Setter.Value>
-                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.07" Color="#0A1A2A" Direction="270"/>
-            </Setter.Value>
-        </Setter>
+        <Setter Property="Padding"         Value="24,20"/>
+        <Setter Property="Margin"          Value="0,0,0,14"/>
     </Style>
 
     <!-- ── SectionLabel ────────────────────────────────────────────────────── -->
     <Style x:Key="SectionLabel" TargetType="TextBlock">
-        <Setter Property="FontSize"   Value="11"/>
+        <Setter Property="FontSize"   Value="10"/>
         <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="Foreground" Value="{StaticResource YakultBlue}"/>
-        <Setter Property="Margin"     Value="0,0,0,16"/>
+        <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+        <Setter Property="Margin"     Value="0,0,0,14"/>
     </Style>
 
     <!-- ── FieldLabel ──────────────────────────────────────────────────────── -->
     <Style x:Key="FieldLabel" TargetType="TextBlock">
-        <Setter Property="FontSize"          Value="12"/>
+        <Setter Property="FontSize"          Value="11.5"/>
         <Setter Property="FontWeight"        Value="SemiBold"/>
         <Setter Property="Foreground"        Value="{StaticResource TextMuted}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -63,9 +60,9 @@
 
     <!-- ── InputBox ─────────────────────────────────────────────────────────── -->
     <Style x:Key="InputBox" TargetType="TextBox">
-        <Setter Property="BorderBrush"              Value="{StaticResource CardBorder}"/>
-        <Setter Property="BorderThickness"          Value="1.5"/>
-        <Setter Property="Padding"                  Value="11,8"/>
+        <Setter Property="BorderBrush"              Value="{StaticResource YakultInputBorderBrush}"/>
+        <Setter Property="BorderThickness"          Value="1"/>
+        <Setter Property="Padding"                  Value="10,7"/>
         <Setter Property="FontSize"                 Value="12"/>
         <Setter Property="Background"               Value="White"/>
         <Setter Property="Foreground"               Value="{StaticResource TextPrimary}"/>
@@ -77,13 +74,12 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="5">
+                            CornerRadius="6">
                         <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsFocused" Value="True">
+                        <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource YakultBlue}"/>
-                            <Setter TargetName="border" Property="BorderThickness" Value="2"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceGray}"/>
@@ -96,13 +92,13 @@
 
     <!-- ── ModernComboBox ───────────────────────────────────────────────────── -->
     <Style x:Key="ModernComboBox" TargetType="ComboBox">
-        <Setter Property="BorderBrush"     Value="{StaticResource CardBorder}"/>
-        <Setter Property="BorderThickness" Value="1.5"/>
-        <Setter Property="Padding"         Value="11,8"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource YakultInputBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding"         Value="10,7"/>
         <Setter Property="FontSize"        Value="12"/>
         <Setter Property="Background"      Value="White"/>
         <Setter Property="Foreground"      Value="{StaticResource TextPrimary}"/>
-        <Setter Property="Height"          Value="38"/>
+        <Setter Property="Height"          Value="36"/>
         <Setter Property="VirtualizingPanel.IsVirtualizing"     Value="True"/>
         <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
         <Setter Property="ScrollViewer.CanContentScroll"        Value="True"/>
@@ -121,7 +117,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="5">
+                                CornerRadius="6">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -172,11 +168,11 @@
                             <Border Background="White"
                                     BorderBrush="{StaticResource CardBorder}"
                                     BorderThickness="1"
-                                    CornerRadius="5"
+                                    CornerRadius="6"
                                     MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                                     MaxHeight="220">
                                 <Border.Effect>
-                                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.12" Color="Black"/>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.10" Color="Black"/>
                                 </Border.Effect>
                                 <ScrollViewer CanContentScroll="True">
                                     <ItemsPresenter/>
@@ -189,9 +185,8 @@
                             <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="ContentSite"          Property="Visibility" Value="Collapsed"/>
                         </Trigger>
-                        <Trigger Property="IsFocused" Value="True">
+                        <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource YakultBlue}"/>
-                            <Setter TargetName="border" Property="BorderThickness" Value="2"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="border" Property="Background" Value="{StaticResource SurfaceGray}"/>
@@ -204,46 +199,56 @@
 
     <!-- ── ComboBoxItem ─────────────────────────────────────────────────────── -->
     <Style TargetType="ComboBoxItem">
-        <Setter Property="Padding"    Value="11,8"/>
+        <Setter Property="Padding"    Value="10,7"/>
         <Setter Property="FontSize"   Value="12"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-        <Style.Triggers>
-            <Trigger Property="IsHighlighted" Value="True">
-                <Setter Property="Background" Value="#EBF5FB"/>
-                <Setter Property="Foreground" Value="{StaticResource YakultDarkBlue}"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="row" Background="Transparent" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="row" Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource YakultBlue}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ── PrimaryButton ────────────────────────────────────────────────────── -->
     <Style x:Key="PrimaryButton" TargetType="Button">
-        <Setter Property="Background"      Value="{StaticResource YakultBlue}"/>
+        <Setter Property="Background"      Value="{StaticResource YakultPrimaryBrush}"/>
         <Setter Property="Foreground"      Value="White"/>
         <Setter Property="FontSize"        Value="12"/>
         <Setter Property="FontWeight"      Value="SemiBold"/>
-        <Setter Property="Padding"         Value="22,11"/>
+        <Setter Property="Padding"         Value="20,10"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Height"          Value="40"/>
+        <Setter Property="Height"          Value="38"/>
         <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="root"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="5"
+                            CornerRadius="7"
                             Padding="{TemplateBinding Padding}"
                             TextElement.Foreground="{TemplateBinding Foreground}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="root" Property="Opacity" Value="0.88"/>
+                            <Setter TargetName="root" Property="Background" Value="{StaticResource YakultPrimaryHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="root" Property="Opacity" Value="0.72"/>
+                            <Setter TargetName="root" Property="Background" Value="#8A1A28"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="root" Property="Opacity" Value="0.45"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -254,14 +259,97 @@
     <!-- ── SecondaryButton ──────────────────────────────────────────────────── -->
     <Style x:Key="SecondaryButton" TargetType="Button">
         <Setter Property="Background"      Value="White"/>
-        <Setter Property="Foreground"      Value="{StaticResource TextMuted}"/>
+        <Setter Property="Foreground"      Value="{StaticResource TextPrimary}"/>
         <Setter Property="BorderBrush"     Value="{StaticResource CardBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="FontSize"        Value="12"/>
         <Setter Property="FontWeight"      Value="SemiBold"/>
-        <Setter Property="Padding"         Value="22,11"/>
-        <Setter Property="Height"          Value="40"/>
+        <Setter Property="Padding"         Value="20,10"/>
+        <Setter Property="Height"          Value="38"/>
         <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="7"
+                            Padding="{TemplateBinding Padding}"
+                            TextElement.Foreground="{TemplateBinding Foreground}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="root" Property="Background" Value="{StaticResource SurfaceGray}"/>
+                            <Setter TargetName="root" Property="BorderBrush" Value="{StaticResource YakultInputBorderBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="root" Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="root" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ── AddButton ────────────────────────────────────────────────────────── -->
+    <!-- Primary form action in the portal: soft brand tint, not a solid block. -->
+    <Style x:Key="AddButton" TargetType="Button">
+        <Setter Property="Background"      Value="{StaticResource YakultAccentTintBrush}"/>
+        <Setter Property="Foreground"      Value="{StaticResource YakultPrimaryBrush}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource YakultAccentBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FontSize"        Value="12"/>
+        <Setter Property="FontWeight"      Value="SemiBold"/>
+        <Setter Property="Padding"         Value="16,8"/>
+        <Setter Property="Height"          Value="34"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="7"
+                            Padding="{TemplateBinding Padding}"
+                            TextElement.Foreground="{TemplateBinding Foreground}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="root" Property="Background" Value="{StaticResource YakultSelectionBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="root" Property="Background" Value="{StaticResource YakultSelectionHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="root" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ── RemoveButton ─────────────────────────────────────────────────────── -->
+    <Style x:Key="RemoveButton" TargetType="Button">
+        <Setter Property="Background"      Value="White"/>
+        <Setter Property="Foreground"      Value="{StaticResource ErrorRed}"/>
+        <Setter Property="BorderBrush"     Value="{StaticResource YakultAccentBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="FontSize"        Value="10.5"/>
+        <Setter Property="FontWeight"      Value="SemiBold"/>
+        <Setter Property="Padding"         Value="10,0"/>
+        <Setter Property="Height"          Value="26"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -276,13 +364,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="root" Property="Background" Value="{StaticResource SurfaceGray}"/>
+                            <Setter TargetName="root" Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="root" Property="Opacity" Value="0.8"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="root" Property="Opacity" Value="0.4"/>
+                            <Setter TargetName="root" Property="Background" Value="{StaticResource YakultSelectionHoverBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -290,25 +375,10 @@
         </Setter>
     </Style>
 
-    <!-- ── AddButton ────────────────────────────────────────────────────────── -->
-    <Style x:Key="AddButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-        <Setter Property="Background" Value="{StaticResource SuccessGreen}"/>
-        <Setter Property="Padding"    Value="16,9"/>
-    </Style>
-
-    <!-- ── RemoveButton ─────────────────────────────────────────────────────── -->
-    <Style x:Key="RemoveButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
-        <Setter Property="Foreground"      Value="{StaticResource ErrorRed}"/>
-        <Setter Property="BorderBrush"     Value="#FFCDD2"/>
-        <Setter Property="FontSize"        Value="11"/>
-        <Setter Property="Height"          Value="28"/>
-        <Setter Property="Padding"         Value="10,0"/>
-    </Style>
-
     <!-- ── SpinArrowBtn ─────────────────────────────────────────────────────── -->
     <Style x:Key="SpinArrowBtn" TargetType="Button">
-        <Setter Property="Background"  Value="#F5F5F5"/>
-        <Setter Property="BorderBrush" Value="#D0D8E0"/>
+        <Setter Property="Background"  Value="{StaticResource SurfaceGray}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource CardBorder}"/>
         <Setter Property="Foreground"  Value="{StaticResource TextMuted}"/>
         <Setter Property="FontSize"    Value="6"/>
         <Setter Property="Padding"     Value="0"/>
@@ -326,10 +396,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="root" Property="Background" Value="#E0E8F0"/>
+                            <Setter TargetName="root" Property="Background" Value="#E9EBEF"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="root" Property="Background" Value="#C8D8E8"/>
+                            <Setter TargetName="root" Property="Background" Value="{StaticResource YakultSelectionHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="root" Property="Opacity" Value="0.35"/>
@@ -349,30 +419,27 @@
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
                     <Border x:Name="root"
-                            CornerRadius="5"
-                            Padding="18,8"
-                            BorderThickness="1.5"
-                            TextElement.Foreground="{TemplateBinding Foreground}">
+                            CornerRadius="6"
+                            Padding="16,7"
+                            BorderThickness="1"
+                            Background="White"
+                            BorderBrush="{StaticResource CardBorder}"
+                            TextElement.Foreground="{StaticResource TextMuted}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="root" Property="Background"  Value="{StaticResource YakultBlue}"/>
-                            <Setter TargetName="root" Property="BorderBrush" Value="{StaticResource YakultBlue}"/>
-                            <Setter Property="Foreground" Value="White"/>
-                        </Trigger>
-                        <Trigger Property="IsChecked" Value="False">
-                            <Setter TargetName="root" Property="Background"  Value="White"/>
-                            <Setter TargetName="root" Property="BorderBrush" Value="{StaticResource CardBorder}"/>
-                            <Setter Property="Foreground" Value="{StaticResource TextMuted}"/>
+                            <Setter TargetName="root" Property="Background"  Value="{StaticResource YakultAccentTintBrush}"/>
+                            <Setter TargetName="root" Property="BorderBrush" Value="{StaticResource YakultAccentBorderBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource YakultPrimaryBrush}"/>
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
                                 <Condition Property="IsMouseOver" Value="True"/>
                                 <Condition Property="IsChecked"   Value="False"/>
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="root" Property="BorderBrush" Value="{StaticResource YakultBlue}"/>
-                            <Setter Property="Foreground" Value="{StaticResource YakultBlue}"/>
+                            <Setter TargetName="root" Property="BorderBrush" Value="{StaticResource YakultInputBorderBrush}"/>
+                            <Setter TargetName="root" Property="Background"  Value="{StaticResource SurfaceGray}"/>
                         </MultiTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -382,26 +449,34 @@
 
     <!-- ── DataGridColumnHeader ─────────────────────────────────────────────── -->
     <Style TargetType="DataGridColumnHeader">
-        <Setter Property="Background"      Value="#EEF2F7"/>
+        <Setter Property="Background"      Value="{StaticResource SurfaceGray}"/>
         <Setter Property="Foreground"      Value="{StaticResource TextMuted}"/>
         <Setter Property="FontWeight"      Value="SemiBold"/>
-        <Setter Property="FontSize"        Value="11"/>
-        <Setter Property="Padding"         Value="10,8"/>
+        <Setter Property="FontSize"        Value="10"/>
+        <Setter Property="Padding"         Value="10,9"/>
         <Setter Property="BorderBrush"     Value="{StaticResource CardBorder}"/>
-        <Setter Property="BorderThickness" Value="0,0,0,1.5"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
     </Style>
 
     <!-- ── DataGridRow ───────────────────────────────────────────────────────── -->
     <Style TargetType="DataGridRow">
         <Setter Property="Background" Value="White"/>
         <Style.Triggers>
-            <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="#EBF5FB"/>
-                <Setter Property="Foreground" Value="{StaticResource YakultDarkBlue}"/>
-            </Trigger>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#F5F9FF"/>
+                <Setter Property="Background" Value="#FAFBFC"/>
             </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsSelected"  Value="True"/>
+                    <Condition Property="IsMouseOver" Value="True"/>
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="{StaticResource YakultSelectionBrush}"/>
+            </MultiTrigger>
         </Style.Triggers>
     </Style>
 
@@ -413,6 +488,7 @@
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -436,11 +512,11 @@
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
                                             <Border x:Name="ThumbBorder"
-                                                    Background="#C0C8D0"
+                                                    Background="#C7CBD1"
                                                     CornerRadius="3" Margin="1,0"/>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#90A0B0"/>
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#9AA1AC"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>

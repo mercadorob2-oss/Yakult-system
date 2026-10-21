@@ -7,8 +7,9 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Markup;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
+using System.Windows.Shapes;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Helpers;
 using Yakult.Inventory.App.Models.CallMonitoring;
@@ -77,7 +78,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var rightScroll = new ScrollViewer
             {
-                Background = WpfThemeResources.SurfaceMutedBrush,
+                Background = WpfThemeResources.PageBackgroundBrush,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
@@ -95,15 +96,23 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var titleStack = new StackPanel();
             titleStack.Children.Add(new TextBlock
             {
-                Text = "Performance Stats",
+                Text = "IT CALL MONITORING",
+                FontSize = 11,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = WpfThemeResources.TextMutedBrush
+            });
+            titleStack.Children.Add(new TextBlock
+            {
+                Text = "Performance overview",
+                Margin = new Thickness(0, 7, 0, 0),
                 FontSize = 24,
-                FontWeight = FontWeights.Bold,
+                FontWeight = FontWeights.SemiBold,
                 Foreground = WpfThemeResources.TextDarkBrush
             });
             _periodText = new TextBlock
             {
                 Text = string.Empty,
-                Margin = new Thickness(0, 5, 0, 0),
+                Margin = new Thickness(0, 6, 0, 0),
                 FontSize = 12,
                 Foreground = WpfThemeResources.TextMutedBrush
             };
@@ -117,10 +126,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             actions.Children.Add(CreateLabel("To"));
             _toPicker = new DatePicker { SelectedDate = DateTime.Today, Width = 142, Margin = new Thickness(8, 0, 14, 0) };
             actions.Children.Add(_toPicker);
-            _refreshButton = CreateButton("Refresh", WpfThemeResources.PrimaryBrush);
+            _refreshButton = CreateButton("Refresh");
             _refreshButton.Click += async (_, __) => await LoadAsync();
             actions.Children.Add(_refreshButton);
-            var closeButton = CreateButton("Close", BrushFromRgb(71, 85, 105));
+            var closeButton = CreateButton("Close");
             closeButton.Margin = new Thickness(8, 0, 0, 0);
             closeButton.Click += (_, __) => Close();
             actions.Children.Add(closeButton);
@@ -163,9 +172,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var tabs = new TabControl
             {
                 Background = Brushes.Transparent,
-                BorderBrush = BrushFromRgb(226, 232, 240),
+                BorderThickness = new Thickness(0),
                 MinHeight = 330
             };
+            tabs.ItemContainerStyle = BuildTabItemStyle();
             _openGrid = CreateGrid();
             AddTextColumn(_openGrid, "Ticket", "TicketCode", 120);
             AddTextColumn(_openGrid, "Status", "Status", 115);
@@ -228,17 +238,19 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var avatar = new Border
             {
-                Width = 120,
-                Height = 120,
-                CornerRadius = new CornerRadius(60),
-                Background = new LinearGradientBrush(WpfThemeResources.Primary, WpfThemeResources.PrimaryHover, new Point(0, 0), new Point(1, 1)),
+                Width = 88,
+                Height = 88,
+                CornerRadius = new CornerRadius(44),
+                Background = new SolidColorBrush(Color.FromRgb(252, 240, 241)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(231, 184, 193)),
+                BorderThickness = new Thickness(1),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Child = new TextBlock
                 {
                     Text = GetInitials(_employee.EmployeeName),
-                    FontSize = 34,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.White,
+                    FontSize = 28,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = WpfThemeResources.PrimaryBrush,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 }
@@ -248,9 +260,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             stack.Children.Add(new TextBlock
             {
                 Text = string.IsNullOrWhiteSpace(_employee.EmployeeName) ? "Employee" : _employee.EmployeeName.Trim(),
-                Margin = new Thickness(0, 18, 0, 0),
-                FontSize = 22,
-                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(0, 16, 0, 0),
+                FontSize = 19,
+                FontWeight = FontWeights.SemiBold,
                 Foreground = WpfThemeResources.TextDarkBrush,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap
@@ -260,9 +272,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Text = string.IsNullOrWhiteSpace(_employee.Position) ? "IT Support Specialist" : _employee.Position.Trim(),
                 Margin = new Thickness(0, 6, 0, 18),
-                FontSize = 13,
+                FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(220, 38, 38),
+                Foreground = WpfThemeResources.PrimaryBrush,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap
             };
@@ -310,7 +322,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     FontSize = 12,
                     ToolTip = "Leave blank to clear the employee's primary email."
                 };
-                _saveEmailButton = CreateButton("Save Email", BrushFromRgb(16, 185, 129));
+                _saveEmailButton = CreateButton("Save Email");
                 _saveEmailButton.MinWidth = 112;
                 _saveEmailButton.HorizontalAlignment = HorizontalAlignment.Left;
                 _saveEmailButton.Margin = new Thickness(0, 6, 0, 0);
@@ -673,35 +685,37 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var value = new TextBlock
             {
                 Text = "0",
-                FontSize = 28,
-                FontWeight = FontWeights.Bold,
+                FontSize = 26,
+                FontWeight = FontWeights.SemiBold,
                 Foreground = WpfThemeResources.TextDarkBrush,
                 Margin = new Thickness(0, 8, 0, 0)
             };
 
             var stack = new StackPanel();
-            stack.Children.Add(new Border
+            var titleRow = new StackPanel { Orientation = Orientation.Horizontal };
+            titleRow.Children.Add(new Ellipse
             {
-                Width = 36,
-                Height = 4,
-                CornerRadius = new CornerRadius(99),
-                Background = accent,
-                HorizontalAlignment = HorizontalAlignment.Left
+                Width = 8,
+                Height = 8,
+                Fill = accent,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 0)
             });
-            stack.Children.Add(new TextBlock
+            titleRow.Children.Add(new TextBlock
             {
-                Text = label,
-                Margin = new Thickness(0, 12, 0, 0),
-                FontSize = 12,
-                FontWeight = FontWeights.Bold,
-                Foreground = BrushFromRgb(71, 85, 105)
+                Text = label.ToUpperInvariant(),
+                FontSize = 10.5,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = WpfThemeResources.TextMutedBrush,
+                VerticalAlignment = VerticalAlignment.Center
             });
+            stack.Children.Add(titleRow);
             stack.Children.Add(value);
             stack.Children.Add(new TextBlock
             {
                 Text = subtitle,
-                Margin = new Thickness(0, 5, 0, 0),
-                FontSize = 11.5,
+                Margin = new Thickness(0, 6, 0, 0),
+                FontSize = 11,
                 Foreground = WpfThemeResources.TextMutedBrush,
                 TextWrapping = TextWrapping.Wrap
             });
@@ -723,7 +737,6 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Padding = new Thickness(16),
                 Margin = margin,
                 MinHeight = minHeight,
-                Effect = new DropShadowEffect { BlurRadius = 12, ShadowDepth = 0, Color = Color.FromArgb(20, 15, 23, 42), Opacity = 0.18 },
                 Child = child
             };
         }
@@ -767,9 +780,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var headerStyle = new Style(typeof(DataGridColumnHeader));
             headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.White));
             headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, WpfThemeResources.TextMutedBrush));
-            headerStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.Bold));
+            headerStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
             headerStyle.Setters.Add(new Setter(Control.FontSizeProperty, 11.5));
             headerStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 10, 8, 10)));
+            headerStyle.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(226, 232, 240)));
+            headerStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0, 0, 0, 1)));
             grid.ColumnHeaderStyle = headerStyle;
             return grid;
         }
@@ -779,19 +794,23 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             grid.Columns.Add(new DataGridTextColumn { Header = header, Binding = new Binding(binding), Width = new DataGridLength(width) });
         }
 
-        private static Button CreateButton(string text, Brush background)
+        private static Button CreateButton(string text)
         {
             return new Button
             {
                 Content = text,
                 MinWidth = 96,
-                Padding = new Thickness(14, 8, 14, 8),
-                Background = background,
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand
+                Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()[text == "Close" ? "ItcmQuietButton" : "ItcmAccentButton"]
             };
+        }
+
+        private static Style BuildTabItemStyle()
+        {
+            const string xaml = @"<Style xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"" TargetType=""TabItem""><Setter Property=""Foreground"" Value=""#69707D""/><Setter Property=""FontSize"" Value=""12.5""/><Setter Property=""Template""><Setter.Value><ControlTemplate TargetType=""TabItem""><Grid><Border x:Name=""Bd"" Padding=""16,10"" Margin=""0,0,8,0"" Background=""Transparent""><ContentPresenter VerticalAlignment=""Center"" HorizontalAlignment=""Center"" ContentSource=""Header""/></Border><Border x:Name=""ActiveLine"" Height=""2"" VerticalAlignment=""Bottom"" Margin=""0,0,8,0"" Background=""#B92335"" Visibility=""Collapsed""/></Grid><ControlTemplate.Triggers><Trigger Property=""IsSelected"" Value=""True""><Setter TargetName=""Bd"" Property=""Background"" Value=""White""/><Setter Property=""Foreground"" Value=""#B92335""/><Setter Property=""FontWeight"" Value=""SemiBold""/><Setter TargetName=""ActiveLine"" Property=""Visibility"" Value=""Visible""/></Trigger><Trigger Property=""IsMouseOver"" Value=""True""><Setter TargetName=""Bd"" Property=""Background"" Value=""#F7F7F8""/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>";
+            var context = new ParserContext();
+            context.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
+            context.XmlnsDictionary.Add("x", "http://schemas.microsoft.com/winfx/2006/xaml");
+            return (Style)XamlReader.Parse(xaml, context);
         }
 
         private static string BuildPeriodHint(DateTime fromUtc, DateTime toUtc)

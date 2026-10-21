@@ -58,38 +58,38 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
 
         private static readonly BorrowThemePalette LightPalette = new BorrowThemePalette
         {
-            PageBack = Color.FromArgb(242, 245, 249),
-            HeaderBack = Color.FromArgb(40, 60, 86),
-            HeaderText = Color.White,
-            HeaderSubText = Color.FromArgb(220, 230, 240),
+            PageBack = Color.FromArgb(248, 249, 251),
+            HeaderBack = Color.White,
+            HeaderText = Color.FromArgb(32, 38, 53),
+            HeaderSubText = Color.FromArgb(103, 112, 129),
             SurfaceBack = Color.White,
-            SurfaceAltBack = Color.FromArgb(249, 250, 251),
-            Border = Color.FromArgb(220, 224, 229),
-            TextPrimary = Color.FromArgb(44, 62, 80),
-            TextSecondary = Color.FromArgb(90, 100, 110),
+            SurfaceAltBack = Color.FromArgb(245, 246, 248),
+            Border = Color.FromArgb(229, 230, 232),
+            TextPrimary = Color.FromArgb(32, 38, 53),
+            TextSecondary = Color.FromArgb(103, 112, 129),
             InputBack = Color.White,
-            InputFore = Color.FromArgb(44, 62, 80),
-            InputBorder = Color.FromArgb(210, 215, 222),
+            InputFore = Color.FromArgb(32, 38, 53),
+            InputBorder = Color.FromArgb(229, 230, 232),
             GridBack = Color.White,
-            GridFore = Color.FromArgb(44, 62, 80),
-            GridHeaderBack = Color.FromArgb(249, 250, 251),
-            GridHeaderFore = Color.FromArgb(80, 90, 100),
-            GridSelectionBack = Color.FromArgb(239, 246, 255),
-            GridSelectionFore = Color.FromArgb(44, 62, 80),
-            StatusFore = Color.FromArgb(90, 100, 110),
-            EmptyFore = Color.FromArgb(110, 120, 130),
+            GridFore = Color.FromArgb(32, 38, 53),
+            GridHeaderBack = Color.FromArgb(248, 249, 251),
+            GridHeaderFore = Color.FromArgb(103, 112, 129),
+            GridSelectionBack = Color.FromArgb(252, 240, 241),
+            GridSelectionFore = Color.FromArgb(32, 38, 53),
+            StatusFore = Color.FromArgb(103, 112, 129),
+            EmptyFore = Color.FromArgb(127, 134, 147),
             TabActiveBack = Color.White,
-            TabInactiveBack = Color.FromArgb(234, 239, 245),
-            TabActiveFore = Color.FromArgb(44, 62, 80),
-            TabInactiveFore = Color.FromArgb(100, 110, 120),
-            TabBorder = Color.FromArgb(215, 220, 226),
-            PrimaryButton = Color.FromArgb(60, 120, 190),
-            SecondaryButton = Color.FromArgb(95, 105, 115),
-            SuccessButton = Color.FromArgb(20, 150, 125),
-            InfoButton = Color.FromArgb(52, 152, 219),
-            ToggleButton = Color.FromArgb(120, 90, 180),
-            KpiOpen = Color.FromArgb(42, 119, 191),
-            KpiOldest = Color.FromArgb(70, 82, 99)
+            TabInactiveBack = Color.White,
+            TabActiveFore = Color.FromArgb(185, 35, 53),
+            TabInactiveFore = Color.FromArgb(103, 112, 129),
+            TabBorder = Color.FromArgb(229, 230, 232),
+            PrimaryButton = Color.FromArgb(252, 240, 241),
+            SecondaryButton = Color.FromArgb(255, 255, 255),
+            SuccessButton = Color.FromArgb(252, 240, 241),
+            InfoButton = Color.FromArgb(252, 240, 241),
+            ToggleButton = Color.FromArgb(245, 246, 248),
+            KpiOpen = Color.FromArgb(185, 35, 53),
+            KpiOldest = Color.FromArgb(32, 38, 53)
         };
 
         private static readonly BorrowThemePalette DarkPalette = new BorrowThemePalette
@@ -161,27 +161,34 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
 
             var palette = Current;
             button.FlatStyle = FlatStyle.Flat;
-            button.ForeColor = Color.White;
-            button.FlatAppearance.BorderSize = 0;
+            button.FlatAppearance.BorderSize = IsDarkMode ? 0 : 1;
             button.UseVisualStyleBackColor = false;
 
             switch (kind)
             {
                 case BorrowButtonKind.Primary:
                     button.BackColor = palette.PrimaryButton;
+                    button.ForeColor = IsDarkMode ? Color.White : Color.FromArgb(185, 35, 53);
+                    button.FlatAppearance.BorderColor = IsDarkMode ? palette.PrimaryButton : Color.FromArgb(231, 184, 193);
                     break;
                 case BorrowButtonKind.Success:
                     button.BackColor = palette.SuccessButton;
+                    button.ForeColor = IsDarkMode ? Color.White : Color.FromArgb(185, 35, 53);
+                    button.FlatAppearance.BorderColor = IsDarkMode ? palette.SuccessButton : Color.FromArgb(231, 184, 193);
                     break;
                 case BorrowButtonKind.Info:
                     button.BackColor = palette.InfoButton;
+                    button.ForeColor = IsDarkMode ? Color.White : Color.FromArgb(185, 35, 53);
+                    button.FlatAppearance.BorderColor = IsDarkMode ? palette.InfoButton : Color.FromArgb(231, 184, 193);
                     break;
                 default:
                     button.BackColor = palette.SecondaryButton;
+                    button.ForeColor = IsDarkMode ? Color.White : palette.TextPrimary;
+                    button.FlatAppearance.BorderColor = IsDarkMode ? palette.SecondaryButton : palette.Border;
                     break;
             }
 
-            button.FlatAppearance.MouseOverBackColor = Blend(button.BackColor, Color.White, IsDarkMode ? 0.10 : 0.08);
+            button.FlatAppearance.MouseOverBackColor = Blend(button.BackColor, Color.White, IsDarkMode ? 0.10 : 0.12);
             button.FlatAppearance.MouseDownBackColor = Blend(button.BackColor, Color.Black, IsDarkMode ? 0.16 : 0.12);
         }
 
@@ -192,9 +199,9 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
 
             var palette = Current;
             button.FlatStyle = FlatStyle.Flat;
-            button.ForeColor = IsDarkMode ? palette.TextPrimary : Color.White;
+            button.ForeColor = IsDarkMode ? palette.TextPrimary : palette.TextSecondary;
             button.FlatAppearance.BorderSize = 1;
-            button.FlatAppearance.BorderColor = Blend(palette.ToggleButton, Color.Black, IsDarkMode ? 0.20 : 0.10);
+            button.FlatAppearance.BorderColor = IsDarkMode ? Blend(palette.ToggleButton, Color.Black, 0.20) : palette.Border;
             button.FlatAppearance.MouseOverBackColor = Blend(palette.ToggleButton, Color.White, IsDarkMode ? 0.08 : 0.10);
             button.FlatAppearance.MouseDownBackColor = Blend(palette.ToggleButton, Color.Black, IsDarkMode ? 0.15 : 0.10);
             button.UseVisualStyleBackColor = false;
@@ -403,7 +410,7 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
 
             using (var back = new SolidBrush(backColor))
             using (var border = new Pen(IsDarkMode ? Blend(palette.SurfaceBack, palette.TabBorder, 0.65) : palette.TabBorder))
-            using (var accent = new SolidBrush(palette.PrimaryButton))
+            using (var accent = new SolidBrush(IsDarkMode ? palette.PrimaryButton : Color.FromArgb(185, 35, 53)))
             {
                 e.Graphics.FillRectangle(back, rect);
                 if (selected)
