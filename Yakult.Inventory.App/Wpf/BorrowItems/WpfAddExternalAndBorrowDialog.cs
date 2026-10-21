@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using Yakult.Inventory.App.Core;
 using Yakult.Inventory.App.Models.BorrowItems;
 using Yakult.Inventory.App.Pages;
@@ -14,6 +14,7 @@ using Yakult.Inventory.App.Pages.Category;
 using Yakult.Inventory.App.Pages.Employee;
 using Yakult.Inventory.App.Repositories;
 using Yakult.Inventory.App.Session;
+using Yakult.Inventory.App.Wpf.CallMonitoring;
 using WinForms = System.Windows.Forms;
 using CompanyDtoModel = Yakult.Inventory.App.Models.CompanyDto;
 
@@ -27,13 +28,13 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
     /// </summary>
     public sealed class WpfAddExternalAndBorrowDialog : Window, IDisposable
     {
-        private static readonly Color PageBack = Color.FromRgb(240, 242, 246);
+        private static readonly Color PageBack = Color.FromRgb(248, 249, 251);
         private static readonly Color CardBack = Colors.White;
-        private static readonly Color BorderSoft = Color.FromRgb(200, 210, 220);
-        private static readonly Color TextHeader = Color.FromRgb(26, 35, 51);
-        private static readonly Color TextMuted = Color.FromRgb(74, 90, 106);
-        private static readonly Color TextFaint = Color.FromRgb(138, 154, 170);
-        private static readonly Color AccentBlue = Color.FromRgb(58, 142, 246);
+        private static readonly Color BorderSoft = Color.FromRgb(229, 230, 232);
+        private static readonly Color TextHeader = Color.FromRgb(32, 38, 53);
+        private static readonly Color TextMuted = Color.FromRgb(103, 112, 129);
+        private static readonly Color TextFaint = Color.FromRgb(127, 134, 147);
+        private static readonly Color AccentRed = Color.FromRgb(185, 35, 53);
 
         private readonly BorrowItemsRepository _borrowRepo;
         private readonly ItemConditionRepository _condRepo = new ItemConditionRepository();
@@ -142,14 +143,22 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // card
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // footer
 
-            var header = new TextBlock
+            var header = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
+            header.Children.Add(new TextBlock
             {
-                Text = "Item Being Borrowed",
-                FontSize = 26,
+                Text = "BORROW MANAGEMENT",
+                FontSize = 10.5,
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(TextHeader),
-                Margin = new Thickness(0, 0, 0, 14)
-            };
+                Foreground = new SolidColorBrush(TextMuted),
+                Margin = new Thickness(0, 0, 0, 4)
+            });
+            header.Children.Add(new TextBlock
+            {
+                Text = "Add or select an item",
+                FontSize = 25,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(TextHeader)
+            });
             Grid.SetRow(header, 0);
             root.Children.Add(header);
 
@@ -159,8 +168,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 BorderBrush = new SolidColorBrush(BorderSoft),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(16),
-                Effect = new DropShadowEffect { BlurRadius = 14, Color = Color.FromArgb(20, 15, 23, 42), ShadowDepth = 0 }
+                Padding = new Thickness(16)
             };
             Grid.SetRow(card, 1);
             root.Children.Add(card);
@@ -204,6 +212,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
         private TabControl BuildTabs()
         {
             var tabs = new TabControl { Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
+            tabs.ItemContainerStyle = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmTabItem"];
 
             var tabItem = new TabItem { Header = "Item", Content = BuildItemTab() };
             tabs.Items.Add(tabItem);
@@ -274,10 +283,11 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 Height = 32,
                 FontSize = 11.5,
                 Background = Brushes.White,
-                Foreground = new SolidColorBrush(AccentBlue),
+                Foreground = new SolidColorBrush(AccentRed),
                 BorderBrush = new SolidColorBrush(BorderSoft),
                 Cursor = Cursors.Hand
             };
+            btnAddCategory.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"];
             btnAddCategory.Click += (s, e) => AddCategory();
             Grid.SetColumn(btnAddCategory, 1);
             catRow.Children.Add(btnAddCategory);
@@ -413,11 +423,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 Height = 32,
                 VerticalAlignment = VerticalAlignment.Bottom,
                 FontSize = 11.5,
-                Background = new SolidColorBrush(AccentBlue),
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
                 Cursor = Cursors.Hand
             };
+            _btnListedResolve.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmAccentButton"];
             _btnListedResolve.Click += async (s, e) => await SearchListedAsync();
             Grid.SetColumn(_btnListedResolve, 4);
             filters.Children.Add(_btnListedResolve);
@@ -440,7 +448,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             {
                 BorderBrush = new SolidColorBrush(BorderSoft),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
+                CornerRadius = new CornerRadius(8),
                 MinHeight = 140,
                 MaxHeight = 220,
                 Child = _gridListedResults
@@ -487,14 +495,40 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 HorizontalGridLinesBrush = new SolidColorBrush(BorderSoft),
                 RowBackground = Brushes.White,
                 AlternatingRowBackground = Brushes.White,
+                Foreground = new SolidColorBrush(TextHeader),
                 BorderThickness = new Thickness(0),
                 Background = Brushes.White,
                 FontSize = 12,
-                RowHeight = 30,
-                ColumnHeaderHeight = 28,
+                RowHeight = 36,
+                ColumnHeaderHeight = 34,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
+
+            var headerStyle = new Style(typeof(DataGridColumnHeader));
+            headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(PageBack)));
+            headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(TextMuted)));
+            headerStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
+            headerStyle.Setters.Add(new Setter(Control.FontSizeProperty, 11.0));
+            headerStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 0, 0, 0)));
+            headerStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0, 0, 0, 1)));
+            headerStyle.Setters.Add(new Setter(Control.BorderBrushProperty, new SolidColorBrush(BorderSoft)));
+            grid.ColumnHeaderStyle = headerStyle;
+
+            var rowStyle = new Style(typeof(DataGridRow));
+            var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(PageBack)));
+            var selectedTrigger = new Trigger { Property = DataGridRow.IsSelectedProperty, Value = true };
+            selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromRgb(252, 240, 241))));
+            rowStyle.Triggers.Add(hoverTrigger);
+            rowStyle.Triggers.Add(selectedTrigger);
+            grid.RowStyle = rowStyle;
+
+            var cellStyle = new Style(typeof(DataGridCell));
+            cellStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+            cellStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 0, 0, 0)));
+            cellStyle.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+            grid.CellStyle = cellStyle;
 
             grid.Columns.Add(new DataGridTextColumn { Header = "Name", Binding = new System.Windows.Data.Binding("ItemName"), Width = new DataGridLength(2, DataGridLengthUnitType.Star) });
             grid.Columns.Add(new DataGridTextColumn { Header = "Serial", Binding = new System.Windows.Data.Binding("SerialNumber"), Width = new DataGridLength(1.2, DataGridLengthUnitType.Star) });
@@ -589,10 +623,11 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 Padding = new Thickness(12, 0, 12, 0),
                 FontSize = 11.5,
                 Background = Brushes.White,
-                Foreground = new SolidColorBrush(AccentBlue),
+                Foreground = new SolidColorBrush(AccentRed),
                 BorderBrush = new SolidColorBrush(BorderSoft),
                 Cursor = Cursors.Hand
             };
+            btnAddEmp.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"];
             btnAddEmp.Click += async (s, e) => await AddEmployeeAndSelectAsync();
             addRow.Children.Add(btnAddEmp);
             addRow.Children.Add(new TextBlock
@@ -615,24 +650,12 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            var btnCancel = new Button
-            {
-                Content = "Cancel", Height = 38, Width = 110,
-                FontSize = 12.5, FontWeight = FontWeights.SemiBold,
-                Background = Brushes.White, Foreground = new SolidColorBrush(TextMuted),
-                BorderBrush = new SolidColorBrush(BorderSoft), BorderThickness = new Thickness(1.5),
-                Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 8, 0)
-            };
+            var btnCancel = new Button { Content = "Cancel", Height = 38, Width = 110, Cursor = Cursors.Hand, Margin = new Thickness(0, 0, 8, 0) };
+            btnCancel.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"];
             btnCancel.Click += (s, e) => { DialogResult = false; Close(); };
 
-            _btnPrimary = new Button
-            {
-                Content = "Save", Height = 38, Width = 130,
-                FontSize = 12.5, FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White, BorderThickness = new Thickness(0),
-                Background = new SolidColorBrush(AccentBlue),
-                Cursor = Cursors.Hand
-            };
+            _btnPrimary = new Button { Content = "Save", Height = 38, Width = 130, Cursor = Cursors.Hand };
+            _btnPrimary.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmAccentButton"];
             _btnPrimary.Click += (s, e) => OnPrimaryClick();
 
             var flow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };

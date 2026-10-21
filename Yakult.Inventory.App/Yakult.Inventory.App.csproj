@@ -872,6 +872,9 @@
     <Compile Include="Wpf\EDocs\Views\EDocsDashboardView.xaml.cs">
       <DependentUpon>EDocsDashboardView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Wpf\Dashboard\Views\AnalyticsDashboardView.xaml.cs">
+      <DependentUpon>AnalyticsDashboardView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Wpf\EDocs\Views\EDocsPrintPreviewDialog.xaml.cs">
       <DependentUpon>EDocsPrintPreviewDialog.xaml</DependentUpon>
     </Compile>
@@ -1270,6 +1273,9 @@
     <Compile Include="Forms\Dashboard\DashboardHome.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="Forms\Dashboard\DashboardWpfHost.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Forms\CallMonitoringDashboard.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -1393,6 +1399,9 @@
     <Compile Include="Wpf\RequestSetSearch\Converters\RequestSetTypeToBrushConverter.cs" />
     <Compile Include="Wpf\RequestSetSearch\Views\RequestSetSearchView.xaml.cs">
       <DependentUpon>RequestSetSearchView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Wpf\RequestSetSearch\Views\RequestSetDashboardView.xaml.cs">
+      <DependentUpon>RequestSetDashboardView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Wpf\CallMonitoring\WpfCallMonitoringWorkspace.cs" />
     <Compile Include="Wpf\CallMonitoring\WpfTicketDetailsDialog.cs" />
@@ -2485,6 +2494,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="Wpf\Dashboard\Views\AnalyticsDashboardView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Wpf\EDocs\Views\EDocsPrintPreviewDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -2606,6 +2619,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Wpf\RequestSetSearch\Views\RequestSetSearchView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Wpf\RequestSetSearch\Views\RequestSetDashboardView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

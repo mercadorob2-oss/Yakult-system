@@ -33,7 +33,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
         public WpfBorrowBoardWorkspace()
         {
-            Background = BrushFromRgb(241, 244, 247);
+            Background = WpfThemeResources.PageBackgroundBrush;
             Resources.MergedDictionaries.Add(WpfThemeResources.GetScrollBarStyle());
 
             var root = new Grid { Margin = new Thickness(20, 12, 20, 16) };
@@ -180,10 +180,10 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
         {
             void SetActive(Button btn, bool active)
             {
-                btn.Background = active ? BrushFromRgb(14, 165, 233) : Brushes.Transparent;
-                btn.Foreground = active ? Brushes.White : BrushFromRgb(71, 85, 105);
-                btn.BorderBrush = active ? BrushFromRgb(14, 165, 233) : BrushFromRgb(210, 219, 230);
-                btn.FontWeight = active ? FontWeights.Bold : FontWeights.SemiBold;
+                btn.Background = active ? BrushFromRgb(252, 240, 241) : Brushes.White;
+                btn.Foreground = active ? BrushFromRgb(185, 35, 53) : BrushFromRgb(103, 112, 129);
+                btn.BorderBrush = active ? BrushFromRgb(231, 184, 193) : BrushFromRgb(229, 230, 232);
+                btn.FontWeight = active ? FontWeights.SemiBold : FontWeights.Normal;
             }
             SetActive(_btnAge, _currentGroupBy == BoardGroupBy.Age);
             SetActive(_btnDept, _currentGroupBy == BoardGroupBy.Department);
@@ -274,8 +274,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             // Header
             var headerBorder = new Border
             {
-                Background = BrushFromRgb(30, 41, 59),
-                CornerRadius = new CornerRadius(10, 10, 0, 0),
+                Background = Brushes.White,
+                BorderBrush = BrushFromRgb(229, 230, 232),
+                BorderThickness = new Thickness(0, 0, 0, 1),
                 Padding = new Thickness(16, 12, 16, 12)
             };
             var headerGrid = new Grid();
@@ -287,13 +288,13 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             {
                 Width = 32, Height = 32,
                 CornerRadius = new CornerRadius(8),
-                Background = BrushFromRgb(51, 65, 85),
+                Background = BrushFromRgb(252, 240, 241),
                 Margin = new Thickness(0, 0, 10, 0),
                 Child = new TextBlock
                 {
                     Text = groupName.Length > 0 ? groupName[0].ToString().ToUpper() : "?",
                     FontSize = 14, FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.White,
+                    Foreground = BrushFromRgb(185, 35, 53),
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
                 }
@@ -302,7 +303,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             nameStack.Children.Add(new TextBlock
             {
                 Text = groupName, FontSize = 14, FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center
+                Foreground = BrushFromRgb(32, 38, 53), VerticalAlignment = VerticalAlignment.Center
             });
             Grid.SetColumn(nameStack, 0);
             headerGrid.Children.Add(nameStack);
@@ -310,13 +311,13 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var countBadge = new Border
             {
                 CornerRadius = new CornerRadius(999),
-                Background = BrushFromRgb(14, 165, 233),
+                Background = BrushFromRgb(252, 240, 241),
                 Padding = new Thickness(10, 4, 10, 4),
                 VerticalAlignment = VerticalAlignment.Center,
                 Child = new TextBlock
                 {
                     Text = $"{rows.Count} item{(rows.Count != 1 ? "s" : "")}",
-                    FontSize = 11, FontWeight = FontWeights.Bold, Foreground = Brushes.White
+                    FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(185, 35, 53)
                 }
             };
             Grid.SetColumn(countBadge, 1);
@@ -421,10 +422,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
         private UIElement BuildEmployeeTile(string empName, List<BorrowLogRow> rows)
         {
             var oldestAge = rows.Count > 0 ? rows.Max(r => GetAgeDays(r)) : 0;
-            var accentColor = oldestAge < 1 ? Color.FromRgb(52, 152, 219)
-                            : oldestAge < 4 ? Color.FromRgb(46, 204, 113)
-                            : oldestAge < 8 ? Color.FromRgb(243, 156, 18)
-                            : Color.FromRgb(231, 76, 60);
+            var accentColor = oldestAge < 4 ? Color.FromRgb(103, 112, 129)
+                            : oldestAge < 8 ? Color.FromRgb(174, 117, 38)
+                            : Color.FromRgb(185, 35, 53);
             var deptName = rows.Count > 0 ? (rows[0].BorrowedByDeptName ?? "") : "";
 
             var tile = new Border
@@ -656,10 +656,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
         private Color GetAccentColor(BorrowLogRow row)
         {
             var age = GetAgeDays(row);
-            if (age < 1) return Color.FromRgb(52, 152, 219);
-            if (age < 4) return Color.FromRgb(46, 204, 113);
-            if (age < 8) return Color.FromRgb(243, 156, 18);
-            return Color.FromRgb(231, 76, 60);
+            if (age < 4) return Color.FromRgb(103, 112, 129);
+            if (age < 8) return Color.FromRgb(174, 117, 38);
+            return Color.FromRgb(185, 35, 53);
         }
 
         private UIElement BuildColumn(string headerText, List<BorrowLogRow> rows)
@@ -677,27 +676,36 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             inner.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             inner.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-            var headerBrush = new SolidColorBrush(GetColumnAccent(_currentGroupBy, headerText));
             var headerBar = new Border
             {
-                Background = headerBrush,
-                CornerRadius = new CornerRadius(10, 10, 0, 0),
+                Background = Brushes.White,
+                BorderBrush = BrushFromRgb(229, 230, 232),
+                BorderThickness = new Thickness(0, 0, 0, 1),
                 Padding = new Thickness(14, 10, 14, 10)
             };
             var headerGrid = new Grid();
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+            var headerStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            headerStack.Children.Add(new System.Windows.Shapes.Ellipse
+            {
+                Width = 7, Height = 7,
+                Fill = new SolidColorBrush(GetColumnAccent(_currentGroupBy, headerText)),
+                Margin = new Thickness(0, 0, 8, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            });
             var headerLabel = new TextBlock
             {
                 Text = $"{headerText}  ({rows.Count})",
                 FontSize = 13,
-                FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = BrushFromRgb(32, 38, 53),
                 VerticalAlignment = VerticalAlignment.Center
             };
-            Grid.SetColumn(headerLabel, 0);
-            headerGrid.Children.Add(headerLabel);
+            headerStack.Children.Add(headerLabel);
+            Grid.SetColumn(headerStack, 0);
+            headerGrid.Children.Add(headerStack);
 
             headerBar.Child = headerGrid;
             Grid.SetRow(headerBar, 0);
@@ -741,10 +749,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
         {
             if (groupBy == BoardGroupBy.Age)
             {
-                if (header == "Today") return Color.FromRgb(52, 152, 219);
-                if (header == "1-3 Days") return Color.FromRgb(46, 204, 113);
-                if (header == "4-7 Days") return Color.FromRgb(243, 156, 18);
-                if (header == "8+ Days") return Color.FromRgb(231, 76, 60);
+                if (header == "Today" || header == "1-3 Days") return Color.FromRgb(103, 112, 129);
+                if (header == "4-7 Days") return Color.FromRgb(174, 117, 38);
+                if (header == "8+ Days") return Color.FromRgb(185, 35, 53);
             }
             return Color.FromRgb(100, 116, 139);
         }
@@ -850,9 +857,10 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             {
                 Tag = row,
                 Height = 26,
-                Background = new SolidColorBrush(Color.FromRgb(20, 150, 125)),
-                BorderThickness = new Thickness(0),
-                CornerRadius = new CornerRadius(4),
+                Background = BrushFromRgb(252, 240, 241),
+                BorderBrush = BrushFromRgb(231, 184, 193),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
                 Cursor = Cursors.Hand,
                 Padding = new Thickness(8, 0, 8, 0),
                 HorizontalAlignment = HorizontalAlignment.Left
@@ -862,7 +870,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 Text = "↩ Return",
                 FontSize = 10.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White,
+                Foreground = BrushFromRgb(185, 35, 53),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -898,9 +906,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 FontWeight = FontWeights.SemiBold,
                 Cursor = Cursors.Hand,
                 BorderThickness = new Thickness(1),
-                BorderBrush = BrushFromRgb(210, 219, 230),
-                Foreground = BrushFromRgb(71, 85, 105),
-                Background = Brushes.Transparent
+                BorderBrush = BrushFromRgb(229, 230, 232),
+                Foreground = BrushFromRgb(103, 112, 129),
+                Background = Brushes.White
             };
         }
 

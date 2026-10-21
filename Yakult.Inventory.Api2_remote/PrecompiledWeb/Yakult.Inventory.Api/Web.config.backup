@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <appSettings>
+    <add key="AuthTokenSecret" value="CHANGE_ME_TO_A_LONG_RANDOM_SECRET" />
+    <add key="AuthTokenExpiryHours" value="12" />
+  </appSettings>
+  <connectionStrings>
+    <add name="Yakult_Inventory_System" connectionString="Data Source=.\SQLEXPRESS;Initial Catalog=Yakult_Inventory_System;Integrated Security=True;Encrypt=False;TrustServerCertificate=True" providerName="System.Data.SqlClient" />
+  </connectionStrings>
+  <system.web>
+    <compilation debug="true" targetFramework="4.7.2" />
+    <httpRuntime targetFramework="4.7.2" />
+    <authentication mode="None" />
+    <authorization>
+      <allow users="*" />
+    </authorization>
+  </system.web>
+  <system.webServer>
+    <handlers>
+      <remove name="ExtensionlessUrlHandler-Integrated-4.0" />
+      <remove name="OPTIONSVerbHandler" />
+      <remove name="TRACEVerbHandler" />
+      <add name="ExtensionlessUrlHandler-Integrated-4.0" path="*." verb="*" type="System.Web.Handlers.TransferRequestHandler" preCondition="integratedMode,runtimeVersionv4.0" />
+    </handlers>
+    <modules>
+      <remove name="WebDAVModule" />
+      <remove name="FormsAuthentication" />
+      <remove name="WindowsAuthentication" />
+    </modules>
+    <security>
+      <authentication>
+        <anonymousAuthentication enabled="true" />
+        <windowsAuthentication enabled="false" />
+        <formsAuthentication enabled="false" />
+      </authentication>
+      <authorization>
+        <add accessType="Allow" users="*" />
+      </authorization>
+    </security>
+  </system.webServer>
+  </configuration>

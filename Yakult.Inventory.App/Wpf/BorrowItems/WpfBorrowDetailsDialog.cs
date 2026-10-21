@@ -2,26 +2,26 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Yakult.Inventory.App.Models.BorrowItems;
+using Yakult.Inventory.App.Wpf.CallMonitoring;
 
 namespace Yakult.Inventory.App.Wpf.BorrowItems
 {
     public sealed class WpfBorrowDetailsDialog : Window
     {
         private readonly BorrowLogRow _row;
+        private DispatcherTimer _copyResetTimer;
 
         // Palette matching WinForms
-        private static readonly Color PageBack = Color.FromRgb(242, 245, 249);
+        private static readonly Color PageBack = Color.FromRgb(248, 249, 251);
         private static readonly Color CardBack = Colors.White;
-        private static readonly Color BorderColor = Color.FromRgb(210, 220, 230);
-        private static readonly Color MutedText = Color.FromRgb(100, 116, 139);
-        private static readonly Color BodyText = Color.FromRgb(30, 40, 50);
-        private static readonly Color HeaderText = Color.FromRgb(15, 23, 42);
-        private static readonly Color AccentTeal = Color.FromRgb(20, 150, 125);
-        private static readonly Color AccentSlate = Color.FromRgb(100, 116, 139);
-        private static readonly Color AccentBlue = Color.FromRgb(45, 137, 196);
-        private static readonly Color SoftSurface = Color.FromRgb(248, 250, 252);
-        private static readonly Color CloseBtnBack = Color.FromRgb(100, 116, 139);
+        private static readonly Color BorderColor = Color.FromRgb(229, 230, 232);
+        private static readonly Color MutedText = Color.FromRgb(103, 112, 129);
+        private static readonly Color BodyText = Color.FromRgb(32, 38, 53);
+        private static readonly Color HeaderText = Color.FromRgb(32, 38, 53);
+        private static readonly Color AccentRed = Color.FromRgb(185, 35, 53);
+        private static readonly Color SoftSurface = Color.FromRgb(248, 249, 251);
 
         public WpfBorrowDetailsDialog(BorrowLogRow row)
         {
@@ -95,7 +95,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             };
             var badge = NewStatusBadge(
                 _row.IsOpen ? "OPEN" : "RETURNED",
-                _row.IsOpen ? AccentTeal : AccentSlate);
+                _row.IsOpen);
             badge.Margin = new Thickness(12, 0, 0, 0);
             titleRow.Children.Add(title);
             titleRow.Children.Add(badge);
@@ -113,13 +113,35 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             left.Children.Add(titleRow);
             left.Children.Add(subtitle);
 
-            // Right: Serial card (Plain border, no accent)
+            // Right: Serial card with a one-click copy button
+            var serialValue = new TextBlock
+            {
+                Text = Safe(_row.SerialNumber),
+                FontSize = 20,
+                FontWeight = FontWeights.Bold,
+                FontFamily = new FontFamily("Consolas"),
+                Foreground = new SolidColorBrush(HeaderText),
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var serialRow = new Grid();
+            serialRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            serialRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var copySerialButton = NewCopySerialButton(_row.SerialNumber);
+            Grid.SetColumn(copySerialButton, 1);
+
+            serialRow.Children.Add(serialValue);
+            serialRow.Children.Add(copySerialButton);
+
             var serialCard = new Border
             {
                 Background = new SolidColorBrush(CardBack),
                 BorderBrush = new SolidColorBrush(BorderColor),
                 BorderThickness = new Thickness(1),
-                Width = 200,
+                CornerRadius = new CornerRadius(8),
+                Width = 250,
                 Height = 84,
                 Child = new StackPanel 
                 { 
@@ -134,14 +156,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                             Foreground = new SolidColorBrush(MutedText),
                             Margin = new Thickness(0, 0, 0, 6)
                         },
-                        new TextBlock
-                        {
-                            Text = Safe(_row.SerialNumber),
-                            FontSize = 20,
-                            FontWeight = FontWeights.Bold,
-                            FontFamily = new FontFamily("Consolas"),
-                            Foreground = new SolidColorBrush(HeaderText)
-                        }
+                        serialRow
                     }
                 }
             };
@@ -174,7 +189,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 metrics.Children.Add(tiles[i]);
             }
 
-            var card = NewSectionCard("Quick Overview", "Borrow summary", "A compact snapshot of the item, borrower, and transaction timing.", metrics, AccentBlue);
+            var card = NewSectionCard("Quick Overview", "Borrow summary", "A compact snapshot of the item, borrower, and transaction timing.", metrics);
             card.Margin = new Thickness(0, 0, 0, 14);
             return card;
         }
@@ -197,7 +212,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             AddField(itemContent, 3, "Model Number", Safe(_row.ModelNumber));
             AddField(itemContent, 4, "Description", Safe(_row.ItemDescription), true);
 
-            var itemCard = NewSectionCard("Item Snapshot", "Hardware details", "Core identifying information for the borrowed item.", itemContent, AccentTeal);
+            var itemCard = NewSectionCard("Item Snapshot", "Hardware details", "Core identifying information for the borrowed item.", itemContent);
 
             // Borrow Timeline
             var auditContent = new Grid();
@@ -214,7 +229,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             AddField(auditContent, auditRow++, "Return Encoded By", Safe(_row.ReturnEncodedByUserName));
             AddField(auditContent, auditRow++, "Return Time", Safe(_row.ReturnedAtLocal));
 
-            var auditCard = NewSectionCard("Borrow Timeline", "Activity and ownership", "Who borrowed the item, who encoded it, and when it was returned.", auditContent, AccentSlate);
+            var auditCard = NewSectionCard("Borrow Timeline", "Activity and ownership", "Who borrowed the item, who encoded it, and when it was returned.", auditContent);
 
             grid.Children.Add(itemCard); Grid.SetColumn(itemCard, 0);
             grid.Children.Add(auditCard); Grid.SetColumn(auditCard, 2);
@@ -238,19 +253,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            var closeBtn = new Button
-            {
-                Content = "Close",
-                Width = 132,
-                Height = 40,
-                FontSize = 13,
-                FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
-                Background = new SolidColorBrush(CloseBtnBack),
-                BorderThickness = new Thickness(0),
-                Cursor = System.Windows.Input.Cursors.Hand,
-                VerticalAlignment = VerticalAlignment.Center
-            };
+            var closeBtn = new Button { Content = "Close", Width = 132, Height = 40, Cursor = System.Windows.Input.Cursors.Hand, VerticalAlignment = VerticalAlignment.Center };
+            closeBtn.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"];
             closeBtn.Click += (_, __) => DialogResult = true;
 
             grid.Children.Add(status);
@@ -261,32 +265,77 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
         // ── Helpers ───────────────────────────────────────────────
 
-        private static Border NewCard(Color accent, double? width = null, double? height = null)
+        private Button NewCopySerialButton(string serialNumber)
+        {
+            var glyph = new TextBlock
+            {
+                Text = "\uE8C8", // Segoe MDL2 Assets: Copy
+                FontFamily = new FontFamily("Segoe MDL2 Assets"),
+                FontSize = 14
+            };
+
+            var button = new Button
+            {
+                Content = glyph,
+                Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"],
+                Width = 30,
+                Height = 30,
+                Padding = new Thickness(0),
+                Margin = new Thickness(8, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                IsEnabled = !string.IsNullOrWhiteSpace(serialNumber),
+                ToolTip = "Copy serial number"
+            };
+
+            button.Click += (_, __) => CopySerialNumber(button, glyph, serialNumber);
+            return button;
+        }
+
+        private void CopySerialNumber(Button button, TextBlock glyph, string serialNumber)
+        {
+            if (string.IsNullOrWhiteSpace(serialNumber))
+                return;
+
+            try
+            {
+                Clipboard.SetText(serialNumber.Trim());
+            }
+            catch
+            {
+                return;
+            }
+
+            glyph.Text = "\uE73E"; // check mark
+            button.ToolTip = "Copied!";
+
+            _copyResetTimer?.Stop();
+            _copyResetTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1.6) };
+            _copyResetTimer.Tick += (_, __) =>
+            {
+                _copyResetTimer.Stop();
+                glyph.Text = "\uE8C8";
+                button.ToolTip = "Copy serial number";
+            };
+            _copyResetTimer.Start();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            _copyResetTimer?.Stop();
+            base.OnClosed(e);
+        }
+
+        private static Border NewCard(double? width = null, double? height = null)
         {
             var border = new Border
             {
                 Background = new SolidColorBrush(CardBack),
                 BorderBrush = new SolidColorBrush(BorderColor),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(0)
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(18)
             };
-
-            var grid = new Grid();
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(4) });
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-
-            var accentBar = new Border
-            {
-                Background = new SolidColorBrush(accent)
-            };
-            Grid.SetRow(accentBar, 0);
-            grid.Children.Add(accentBar);
-
-            var contentPresenter = new ContentPresenter();
-            Grid.SetRow(contentPresenter, 1);
-            grid.Children.Add(contentPresenter);
-
-            border.Child = grid;
+            border.Child = new ContentPresenter();
 
             if (width.HasValue) border.Width = width.Value;
             if (height.HasValue) border.Height = height.Value;
@@ -294,11 +343,11 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             return border;
         }
 
-        private static Border NewSectionCard(string overline, string title, string subtitle, UIElement content, Color accent)
+        private static Border NewSectionCard(string overline, string title, string subtitle, UIElement content)
         {
-            var card = NewCard(accent);
+            var card = NewCard();
 
-            var stack = new StackPanel { Margin = new Thickness(18, 16, 18, 18) };
+            var stack = new StackPanel();
 
             stack.Children.Add(new TextBlock
             {
@@ -336,14 +385,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
             stack.Children.Add(content);
 
-            if (card.Child is Grid g && g.Children.Count > 1)
-            {
-                var presenter = g.Children[1] as ContentPresenter;
-                if (presenter != null)
-                {
-                    presenter.Content = stack;
-                }
-            }
+            card.Child = stack;
 
             return card;
         }
@@ -353,6 +395,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var border = new Border
             {
                 Background = new SolidColorBrush(SoftSurface),
+                BorderBrush = new SolidColorBrush(BorderColor),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(7),
                 Margin = new Thickness(0, 0, 12, 12),
                 Padding = new Thickness(14, 12, 14, 12)
             };
@@ -389,19 +434,22 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             return border;
         }
 
-        private static Border NewStatusBadge(string text, Color backColor)
+        private static Border NewStatusBadge(string text, bool isOpen)
         {
             return new Border
             {
-                Background = new SolidColorBrush(backColor),
-                Padding = new Thickness(14, 7, 14, 7),
+                Background = new SolidColorBrush(isOpen ? Color.FromRgb(252, 240, 241) : Color.FromRgb(245, 246, 248)),
+                BorderBrush = new SolidColorBrush(isOpen ? Color.FromRgb(231, 184, 193) : BorderColor),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10, 5, 10, 5),
                 VerticalAlignment = VerticalAlignment.Center,
                 Child = new TextBlock
                 {
                     Text = text,
                     FontSize = 12,
                     FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.White,
+                    Foreground = new SolidColorBrush(isOpen ? AccentRed : MutedText),
                     VerticalAlignment = VerticalAlignment.Center
                 }
             };

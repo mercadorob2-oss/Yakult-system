@@ -93,13 +93,6 @@ b.ReturnEncodedByUserId,b.ReturnEncodedByUserName,b.ReturnedAtUtc";
         }
     }
 
-    private sealed class BorrowEligibility
-    {
-        public bool Eligible;
-        public string Code;
-        public string Message;
-    }
-
     private sealed class MobileApiIdentity
     {
         public int UserId;
@@ -216,110 +209,6 @@ b.ReturnEncodedByUserId,b.ReturnEncodedByUserName,b.ReturnedAtUtc";
     {
         var value = reader[column];
         return value == DBNull.Value ? (DateTime?)null : DateTime.SpecifyKind(Convert.ToDateTime(value), DateTimeKind.Utc);
-    }
-
-    private static bool HasColumn(SqlConnection connection, SqlTransaction transaction, string tableName, string columnName)
-    {
-        using (var command = new SqlCommand("SELECT CASE WHEN COL_LENGTH(@TableName,@ColumnName) IS NULL THEN 0 ELSE 1 END;", connection, transaction))
-        {
-            Add(command, "@TableName", tableName);
-            Add(command, "@ColumnName", columnName);
-            return Convert.ToInt32(command.ExecuteScalar()) == 1;
-        }
-    }
-
-    private static bool HasTable(SqlConnection connection, SqlTransaction transaction, string objectName)
-    {
-        using (var command = new SqlCommand("SELECT CASE WHEN OBJECT_ID(@ObjectName,'U') IS NULL THEN 0 ELSE 1 END;", connection, transaction))
-        {
-            Add(command, "@ObjectName", objectName);
-            return Convert.ToInt32(command.ExecuteScalar()) == 1;
-        }
-    }
-
-    private static string BuildActiveAssignmentPredicate(SqlConnection connection, SqlTransaction transaction, string itemReference)
-    {
-        if (!HasTable(connection, transaction, "dbo.Set")) return string.Empty;
-
-        var hasArchiveStatus = HasTable(connection, transaction, "dbo.ArchiveStatus");
-        var archiveJoin = hasArchiveStatus
-            ? " LEFT JOIN dbo.ArchiveStatus archS ON archS.EntityType='Set' AND archS.EntityId=s.SetId AND archS.IsArchived=1"
-            : string.Empty;
-        var archiveFilter = hasArchiveStatus ? " AND archS.EntityId IS NULL" : string.Empty;
-        var clauses = new List<string>();
-
-        if (HasTable(connection, transaction, "dbo.SetItem"))
-        {
-            clauses.Add(@"SELECT 1
-FROM dbo.SetItem si
-INNER JOIN dbo.[Set] s ON s.SetId=si.SetId" + archiveJoin + @"
-WHERE si.ItemId=" + itemReference + @" AND s.Active=1" + archiveFilter);
-        }
-
-        if (HasTable(connection, transaction, "dbo.Request"))
-        {
-            clauses.Add(@"SELECT 1
-FROM dbo.Request r
-INNER JOIN dbo.[Set] s ON s.SetId=r.SetId" + archiveJoin + @"
-WHERE r.ItemId=" + itemReference + @" AND r.Active=1 AND r.SetId IS NOT NULL AND s.Active=1" + archiveFilter);
-        }
-
-        return clauses.Count == 0
-            ? string.Empty
-            : "NOT EXISTS (" + string.Join(" UNION ALL ", clauses.ToArray()) + ")";
-    }
-
-    private static BorrowEligibility EvaluateBorrowEligibility(SqlConnection connection, SqlTransaction transaction, ItemRow item)
-    {
-        if (item == null || item.ItemId <= 0)
-            return new BorrowEligibility { Eligible = false, Code = "item_not_found", Message = "Item not found for the given serial number." };
-
-        if (string.IsNullOrWhiteSpace(item.SerialNumber))
-            return new BorrowEligibility { Eligible = false, Code = "serial_required", Message = "This item does not have a usable serial number." };
-
-        if (!HasColumn(connection, transaction, "dbo.Item", "IsBorrowable"))
-            return new BorrowEligibility { Eligible = false, Code = "borrow_eligibility_unavailable", Message = "Borrow eligibility is unavailable because the inventory schema is missing IsBorrowable." };
-
-        var active = false;
-        var borrowable = false;
-        using (var command = new SqlCommand(@"
-SELECT TOP 1
-    CASE WHEN ISNULL(i.Active,0)=1 THEN 1 ELSE 0 END AS IsActive,
-    CASE WHEN ISNULL(i.IsBorrowable,0)=1 THEN 1 ELSE 0 END AS IsBorrowable
-FROM dbo.Item i
-WHERE i.ItemId=@ItemId;", connection, transaction))
-        {
-            Add(command, "@ItemId", item.ItemId);
-            using (var reader = command.ExecuteReader())
-            {
-                if (!reader.Read())
-                    return new BorrowEligibility { Eligible = false, Code = "item_not_found", Message = "Item not found for the given serial number." };
-                active = Convert.ToInt32(reader["IsActive"]) == 1;
-                borrowable = Convert.ToInt32(reader["IsBorrowable"]) == 1;
-            }
-        }
-
-        if (!active)
-            return new BorrowEligibility { Eligible = false, Code = "item_inactive", Message = "This item is inactive and cannot be borrowed." };
-        if (!borrowable)
-            return new BorrowEligibility { Eligible = false, Code = "item_not_borrowable", Message = "This item is not marked as borrowable." };
-
-        var assignmentPredicate = BuildActiveAssignmentPredicate(connection, transaction, "@ItemId");
-        if (assignmentPredicate.Length > 0)
-        {
-            using (var command = new SqlCommand(@"
-SELECT CASE WHEN EXISTS (
-    SELECT 1 FROM dbo.Item i
-    WHERE i.ItemId=@ItemId AND " + assignmentPredicate + @"
-) THEN 1 ELSE 0 END;", connection, transaction))
-            {
-                Add(command, "@ItemId", item.ItemId);
-                if (Convert.ToInt32(command.ExecuteScalar()) != 1)
-                    return new BorrowEligibility { Eligible = false, Code = "item_assigned", Message = "This item is assigned to an active Set or Request and cannot be borrowed." };
-            }
-        }
-
-        return new BorrowEligibility { Eligible = true, Code = null, Message = null };
     }
 
     private static void Add(SqlCommand command, string name, object value)
@@ -651,66 +540,6 @@ ORDER BY e.Name;", connection))
         }
     }
 
-    private static void SearchModel(HttpContext context)
-    {
-        var model = (context.Request.QueryString["model"] ?? string.Empty).Trim();
-        if (model.Length == 0) { Ok(context, new List<object>()); return; }
-
-        var maxRows = Math.Min(100, Math.Max(1, ReadInt(context.Request.QueryString["maxRows"], 25)));
-        using (var connection = new SqlConnection(Cs()))
-        {
-            connection.Open();
-            if (!HasColumn(connection, null, "dbo.Item", "IsBorrowable"))
-            {
-                Ok(context, new List<object>());
-                return;
-            }
-
-            var assignmentPredicate = BuildActiveAssignmentPredicate(connection, null, "i.ItemId");
-            var assignmentSql = assignmentPredicate.Length == 0 ? string.Empty : " AND " + assignmentPredicate;
-            var sql = @"
-SELECT TOP (@MaxRows)
-    i.ItemId,
-    i.SerialNumber,
-    i.Name,
-    i.Description,
-    i.ModelNumber
-FROM dbo.Item i
-WHERE i.IsBorrowable=1
-  AND i.Active=1
-  AND i.SerialNumber IS NOT NULL
-  AND LTRIM(RTRIM(i.SerialNumber))<>''
-  AND NOT EXISTS (
-      SELECT 1 FROM dbo.BorrowLog bl
-      WHERE bl.ItemId=i.ItemId AND bl.ReturnedAtUtc IS NULL
-  )" + assignmentSql + @"
-  AND i.ModelNumber LIKE @Model
-ORDER BY i.ModelNumber,i.SerialNumber;";
-
-            var rows = new List<object>();
-            using (var command = new SqlCommand(sql, connection))
-            {
-                Add(command, "@MaxRows", maxRows);
-                Add(command, "@Model", "%" + model + "%");
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        rows.Add(new ItemRow
-                        {
-                            ItemId = Convert.ToInt32(reader["ItemId"]),
-                            SerialNumber = Text(reader, "SerialNumber"),
-                            Name = Text(reader, "Name"),
-                            Description = Text(reader, "Description"),
-                            ModelNumber = Text(reader, "ModelNumber")
-                        }.ToDto());
-                    }
-                }
-            }
-            Ok(context, rows);
-        }
-    }
-
     private static void Resolve(HttpContext context)
     {
         var serial = (context.Request.QueryString["serial"] ?? string.Empty).Trim();
@@ -720,29 +549,8 @@ ORDER BY i.ModelNumber,i.SerialNumber;";
             connection.Open();
             var item = GetItem(connection, null, serial);
             BorrowRow open = null;
-            BorrowEligibility eligibility = null;
-            if (item != null)
-            {
-                open = GetOpenByItem(connection, null, item.ItemId, false);
-                eligibility = EvaluateBorrowEligibility(connection, null, item);
-            }
-
-            var canBorrow = item != null && open == null && eligibility != null && eligibility.Eligible;
-            var eligibilityCode = item == null
-                ? "item_not_found"
-                : (open != null ? "open_borrow_exists" : eligibility.Code);
-            var eligibilityMessage = item == null
-                ? "Item not found for the given serial number."
-                : (open != null ? "This item is already borrowed (open record exists)." : eligibility.Message);
-
-            Ok(context, new
-            {
-                item = item == null ? null : item.ToDto(),
-                openBorrow = open == null ? null : open.ToDto(),
-                canBorrow = canBorrow,
-                eligibilityCode = eligibilityCode,
-                eligibilityMessage = eligibilityMessage
-            });
+            if (item != null) open = GetOpenByItem(connection, null, item.ItemId, false);
+            Ok(context, new { item = item == null ? null : item.ToDto(), openBorrow = open == null ? null : open.ToDto() });
         }
     }
 
@@ -782,15 +590,6 @@ ORDER BY i.ModelNumber,i.SerialNumber;";
                         }
                         transaction.Rollback();
                         Error(context, 409, "This item is already borrowed (open record exists).", "open_borrow_exists");
-                        return;
-                    }
-
-                    var eligibility = EvaluateBorrowEligibility(connection, transaction, item);
-                    if (!eligibility.Eligible)
-                    {
-                        transaction.Rollback();
-                        var status = eligibility.Code == "borrow_eligibility_unavailable" ? 503 : 409;
-                        Error(context, status, eligibility.Message, eligibility.Code);
                         return;
                     }
 
@@ -1010,7 +809,6 @@ WHERE BorrowId=@BorrowId AND ReturnedAtUtc IS NULL;", connection, transaction))
             else if (method == "GET" && operation == "departments") Departments(context);
             else if (method == "GET" && operation == "employees") Employees(context);
             else if (method == "POST" && operation == "employees") CreateEmployee(context);
-            else if (method == "GET" && operation == "model") SearchModel(context);
             else if (method == "GET" && operation == "resolve") Resolve(context);
             else if (method == "POST" && operation == "borrow") Borrow(context, identity);
             else if (method == "POST" && operation == "return") Return(context, identity);

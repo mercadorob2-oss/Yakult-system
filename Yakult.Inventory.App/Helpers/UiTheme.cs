@@ -16,6 +16,16 @@ namespace Yakult.Inventory.App.Helpers
             internal static readonly Color Primary = ColorTranslator.FromHtml("#B92335");
             internal static readonly Color PrimaryHover = ColorTranslator.FromHtml("#9E1E2E");
 
+            // Side-menu rail — mirrors the WPF portal sidebar (WpfMainDashboardShell) so the
+            // inventory hamburger menu and the workspace home share one visual language.
+            internal static readonly Color RailBack = ColorTranslator.FromHtml("#202B3E");
+            internal static readonly Color RailHover = ColorTranslator.FromHtml("#29364D");
+            internal static readonly Color RailEdge = ColorTranslator.FromHtml("#17202F");
+            internal static readonly Color RailLine = ColorTranslator.FromHtml("#2C3850");
+            internal static readonly Color RailText = ColorTranslator.FromHtml("#DDE3ED");
+            internal static readonly Color RailLabel = ColorTranslator.FromHtml("#9DAAC0");
+            internal static readonly Color RailDanger = ColorTranslator.FromHtml("#FF9AA8");
+
             internal static readonly Color Danger = Color.FromArgb(231, 76, 60);
             internal static readonly Color DangerHoverBack = Color.FromArgb(255, 240, 240);
 

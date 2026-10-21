@@ -59,7 +59,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
         public WpfBorrowWorkspace()
         {
-            Background = BrushFromRgb(241, 244, 247);
+            Background = WpfThemeResources.PageBackgroundBrush;
             Resources.MergedDictionaries.Add(WpfThemeResources.GetScrollBarStyle());
 
             var root = new Grid { Margin = new Thickness(28, 24, 28, 28) };
@@ -77,10 +77,10 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var kpiGrid = new Grid { Margin = new Thickness(0, 0, 0, 20) };
             for (int i = 0; i < 4; i++) kpiGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             
-            var kpi1 = BuildKpiCard("Open Borrows", out _kpiOpenCount, BrushFromRgb(14, 116, 144)); // Teal
-            var kpi2 = BuildKpiCard("Borrowed Today", out _kpiTodayCount, BrushFromRgb(59, 130, 246)); // Blue
-            var kpi3 = BuildKpiCard("Overdue (8+ days)", out _kpiOverdueCount, BrushFromRgb(239, 68, 68)); // Red
-            var kpi4 = BuildKpiCard("Returned Today", out _kpiReturnedTodayCount, BrushFromRgb(34, 197, 94)); // Green
+            var kpi1 = BuildKpiCard("Open Borrows", out _kpiOpenCount, BrushFromRgb(185, 35, 53));
+            var kpi2 = BuildKpiCard("Borrowed Today", out _kpiTodayCount, BrushFromRgb(103, 112, 129));
+            var kpi3 = BuildKpiCard("Overdue (8+ days)", out _kpiOverdueCount, BrushFromRgb(185, 35, 53));
+            var kpi4 = BuildKpiCard("Returned Today", out _kpiReturnedTodayCount, BrushFromRgb(103, 112, 129));
             
             Grid.SetColumn(kpi1, 0); Grid.SetColumn(kpi2, 1); Grid.SetColumn(kpi3, 2); Grid.SetColumn(kpi4, 3);
             kpiGrid.Children.Add(kpi1); kpiGrid.Children.Add(kpi2); kpiGrid.Children.Add(kpi3); kpiGrid.Children.Add(kpi4);
@@ -180,40 +180,44 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
         {
             var border = new Border
             {
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(24, 20, 24, 20),
-                Background = new LinearGradientBrush(
-                    Color.FromRgb(14, 116, 144), // Teal-700
-                    Color.FromRgb(30, 64, 175),  // Blue-800
-                    45.0)
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(0, 2, 0, 16),
+                Background = Brushes.Transparent
             };
 
             var grid = new Grid();
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            // Left side
             var leftStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            leftStack.Children.Add(new TextBlock
+            {
+                Text = "BORROW MANAGEMENT",
+                FontSize = 10.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = WpfThemeResources.TextMutedBrush,
+                Margin = new Thickness(0, 0, 0, 5)
+            });
             var title = new TextBlock
             {
-                Text = "Borrow Items Dashboard",
-                FontSize = 26,
+                Text = "Borrow overview",
+                FontSize = 25,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White,
+                Foreground = WpfThemeResources.TextDarkBrush,
                 Margin = new Thickness(0, 0, 0, 4)
             };
             summaryText = new TextBlock
             {
                 Text = "Loading...",
-                FontSize = 14,
-                Foreground = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)),
+                FontSize = 13,
+                Foreground = WpfThemeResources.TextMutedBrush,
                 Margin = new Thickness(0, 0, 0, 2)
             };
             refreshedText = new TextBlock
             {
                 Text = "Last refreshed: --",
-                FontSize = 12,
-                Foreground = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255))
+                FontSize = 11.5,
+                Foreground = WpfThemeResources.TextMutedBrush
             };
             leftStack.Children.Add(title);
             leftStack.Children.Add(summaryText);
@@ -224,16 +228,16 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             // Right side (Actions)
             var rightWrap = new WrapPanel { VerticalAlignment = VerticalAlignment.Center, Orientation = Orientation.Horizontal };
             
-            var btnReturn = CreateHeroAction("Return Selected", BrushFromRgb(255, 255, 255), true);
+            var btnReturn = CreateHeroAction("Return Selected", true);
             btnReturn.Click += (s, e) => ReturnSelectedClicked?.Invoke(this, EventArgs.Empty);
             
-            var btnDelete = CreateHeroAction("Delete Borrow", BrushFromRgb(255, 255, 255), false);
+            var btnDelete = CreateHeroAction("Delete Borrow", false);
             btnDelete.Click += (s, e) => DeleteBorrowClicked?.Invoke(this, EventArgs.Empty);
 
-            var btnCsv = CreateHeroAction("CSV Export", BrushFromRgb(255, 255, 255), false);
+            var btnCsv = CreateHeroAction("CSV Export", false);
             btnCsv.Click += (s, e) => ExportCsvClicked?.Invoke(this, EventArgs.Empty);
 
-            var btnRefresh = CreateHeroAction("Refresh", BrushFromRgb(255, 255, 255), false);
+            var btnRefresh = CreateHeroAction("Refresh", false);
             btnRefresh.Click += (s, e) => RefreshClicked?.Invoke(this, EventArgs.Empty);
 
             rightWrap.Children.Add(btnReturn);
@@ -258,26 +262,31 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             
-            var titleBlock = new TextBlock
+            var titleRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
+            titleRow.Children.Add(new System.Windows.Shapes.Ellipse
             {
-                Text = title,
-                FontSize = 13,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(100, 116, 139),
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-            Grid.SetRow(titleBlock, 0);
+                Width = 7, Height = 7, Fill = accentColor,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 0)
+            });
+            titleRow.Children.Add(new TextBlock
+            {
+                Text = title.ToUpperInvariant(), FontSize = 10.5,
+                FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextMutedBrush,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+            Grid.SetRow(titleRow, 0);
             
             valueBlock = new TextBlock
             {
                 Text = "0",
-                FontSize = 28,
+                FontSize = 27,
                 FontWeight = FontWeights.Bold,
-                Foreground = accentColor
+                Foreground = WpfThemeResources.TextDarkBrush
             };
             Grid.SetRow(valueBlock, 1);
 
-            grid.Children.Add(titleBlock);
+            grid.Children.Add(titleRow);
             grid.Children.Add(valueBlock);
             card.Child = grid;
             return card;
@@ -291,8 +300,8 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
             var header = new Border
             {
-                Background = BrushFromRgb(248, 250, 252),
-                BorderBrush = BrushFromRgb(226, 232, 240),
+                Background = BrushFromRgb(248, 249, 251),
+                BorderBrush = BrushFromRgb(229, 230, 232),
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 Padding = new Thickness(16, 12, 16, 12),
                 CornerRadius = new CornerRadius(8, 8, 0, 0)
@@ -302,7 +311,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
                 Text = "Active Borrows (Oldest First)",
                 FontSize = 14,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(51, 65, 85)
+                Foreground = BrushFromRgb(32, 38, 53)
             };
             Grid.SetRow(header, 0);
             grid.Children.Add(header);
@@ -331,7 +340,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             
             var cardFactory = new FrameworkElementFactory(typeof(Border));
             cardFactory.SetValue(Border.BackgroundProperty, Brushes.White);
-            cardFactory.SetValue(Border.BorderBrushProperty, BrushFromRgb(226, 232, 240));
+            cardFactory.SetValue(Border.BorderBrushProperty, BrushFromRgb(229, 230, 232));
             cardFactory.SetValue(Border.BorderThicknessProperty, new Thickness(1));
             cardFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(6));
             cardFactory.SetValue(Border.MarginProperty, new Thickness(8, 4, 8, 8));
@@ -352,7 +361,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             elapsedText.SetBinding(TextBlock.TextProperty, new Binding("ElapsedText"));
             elapsedText.SetValue(TextBlock.FontSizeProperty, 12.0);
             elapsedText.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
-            elapsedText.SetValue(TextBlock.ForegroundProperty, BrushFromRgb(239, 68, 68)); // Red for emphasis
+            elapsedText.SetValue(TextBlock.ForegroundProperty, BrushFromRgb(185, 35, 53));
             elapsedText.SetValue(DockPanel.DockProperty, Dock.Right);
             topDock.AppendChild(elapsedText);
 
@@ -368,14 +377,14 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             itemText.SetBinding(TextBlock.TextProperty, new Binding("ItemDisplay"));
             itemText.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
             itemText.SetValue(TextBlock.FontSizeProperty, 13.0);
-            itemText.SetValue(TextBlock.ForegroundProperty, BrushFromRgb(71, 85, 105));
+            itemText.SetValue(TextBlock.ForegroundProperty, BrushFromRgb(32, 38, 53));
             itemText.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 2, 0, 4));
             stack.AppendChild(itemText);
 
             var borrowerText = new FrameworkElementFactory(typeof(TextBlock));
             borrowerText.SetBinding(TextBlock.TextProperty, new Binding("BorrowedByEmpName"));
             borrowerText.SetValue(TextBlock.FontSizeProperty, 12.0);
-            borrowerText.SetValue(TextBlock.ForegroundProperty, BrushFromRgb(100, 116, 139));
+            borrowerText.SetValue(TextBlock.ForegroundProperty, BrushFromRgb(103, 112, 129));
             stack.AppendChild(borrowerText);
 
             cardFactory.AppendChild(stack);
@@ -458,11 +467,11 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             };
             openGrid = CreateDataGrid();
             var openGridLocal = openGrid;
-            openGrid.Columns.Add(CreateTemplateColumn("Serial", "<DataTemplate><TextBlock Text=\"{Binding SerialNumber}\" FontWeight=\"Bold\" Foreground=\"#0f172a\" VerticalAlignment=\"Center\" /></DataTemplate>", 1.05, DataGridLengthUnitType.Star));
-            openGrid.Columns.Add(CreateTemplateColumn("Item", "<DataTemplate><StackPanel VerticalAlignment=\"Center\"><TextBlock Text=\"{Binding ItemName}\" FontWeight=\"SemiBold\" Foreground=\"#1e293b\" TextTrimming=\"CharacterEllipsis\" /><TextBlock Text=\"{Binding ModelNumber}\" FontSize=\"11\" Foreground=\"#64748b\" TextTrimming=\"CharacterEllipsis\" /></StackPanel></DataTemplate>", 1.9, DataGridLengthUnitType.Star));
-            openGrid.Columns.Add(CreateTemplateColumn("Borrower", "<DataTemplate><StackPanel VerticalAlignment=\"Center\"><TextBlock Text=\"{Binding BorrowedByEmpName}\" FontWeight=\"SemiBold\" Foreground=\"#334155\" TextTrimming=\"CharacterEllipsis\" /><TextBlock Text=\"{Binding BorrowedByDeptName}\" FontSize=\"11\" Foreground=\"#94a3b8\" TextTrimming=\"CharacterEllipsis\" /></StackPanel></DataTemplate>", 1.45, DataGridLengthUnitType.Star));
-            openGrid.Columns.Add(CreateTemplateColumn("Elapsed", "<DataTemplate><Border CornerRadius=\"999\" Padding=\"10,4,10,4\" HorizontalAlignment=\"Left\" VerticalAlignment=\"Center\" Background=\"#eff6ff\"><Border.Style><Style TargetType=\"Border\"><Setter Property=\"Background\" Value=\"#eff6ff\" /><Style.Triggers><DataTrigger Binding=\"{Binding ElapsedText}\" Value=\"\"><Setter Property=\"Background\" Value=\"#f8fafc\" /></DataTrigger></Style.Triggers></Style></Border.Style><TextBlock Text=\"{Binding ElapsedText}\" FontSize=\"11\" FontWeight=\"SemiBold\" Foreground=\"#1d4ed8\" VerticalAlignment=\"Center\" /></Border></DataTemplate>", 110, DataGridLengthUnitType.Pixel));
-            openGrid.Columns.Add(CreateTemplateColumn("Borrowed", "<DataTemplate><StackPanel VerticalAlignment=\"Center\"><TextBlock Text=\"{Binding BorrowedAtLocal}\" FontWeight=\"SemiBold\" Foreground=\"#334155\" /><TextBlock Text=\"Open borrow\" FontSize=\"11\" Foreground=\"#10b981\" /></StackPanel></DataTemplate>", 145, DataGridLengthUnitType.Pixel));
+            openGrid.Columns.Add(CreateTemplateColumn("Serial", "<DataTemplate><TextBlock Text=\"{Binding SerialNumber}\" FontWeight=\"Bold\" Foreground=\"#202635\" VerticalAlignment=\"Center\" /></DataTemplate>", 1.05, DataGridLengthUnitType.Star));
+            openGrid.Columns.Add(CreateTemplateColumn("Item", "<DataTemplate><StackPanel VerticalAlignment=\"Center\"><TextBlock Text=\"{Binding ItemName}\" FontWeight=\"SemiBold\" Foreground=\"#202635\" TextTrimming=\"CharacterEllipsis\" /><TextBlock Text=\"{Binding ModelNumber}\" FontSize=\"11\" Foreground=\"#677081\" TextTrimming=\"CharacterEllipsis\" /></StackPanel></DataTemplate>", 1.9, DataGridLengthUnitType.Star));
+            openGrid.Columns.Add(CreateTemplateColumn("Borrower", "<DataTemplate><StackPanel VerticalAlignment=\"Center\"><TextBlock Text=\"{Binding BorrowedByEmpName}\" FontWeight=\"SemiBold\" Foreground=\"#303747\" TextTrimming=\"CharacterEllipsis\" /><TextBlock Text=\"{Binding BorrowedByDeptName}\" FontSize=\"11\" Foreground=\"#8B91A0\" TextTrimming=\"CharacterEllipsis\" /></StackPanel></DataTemplate>", 1.45, DataGridLengthUnitType.Star));
+            openGrid.Columns.Add(CreateTemplateColumn("Elapsed", "<DataTemplate><Border CornerRadius=\"6\" Padding=\"8,4,8,4\" HorizontalAlignment=\"Left\" VerticalAlignment=\"Center\" Background=\"#F5F6F8\"><TextBlock Text=\"{Binding ElapsedText}\" FontSize=\"11\" FontWeight=\"SemiBold\" Foreground=\"#677081\" VerticalAlignment=\"Center\" /></Border></DataTemplate>", 110, DataGridLengthUnitType.Pixel));
+            openGrid.Columns.Add(CreateTemplateColumn("Borrowed", "<DataTemplate><StackPanel VerticalAlignment=\"Center\"><TextBlock Text=\"{Binding BorrowedAtLocal}\" FontWeight=\"SemiBold\" Foreground=\"#303747\" /><TextBlock Text=\"Open borrow\" FontSize=\"11\" Foreground=\"#B92335\" /></StackPanel></DataTemplate>", 145, DataGridLengthUnitType.Pixel));
             openGridLocal.SelectionChanged += (s, e) => { if (openGridLocal.SelectedItem is BorrowLogRow row) BorrowRowSelected?.Invoke(this, row); };
             openGridLocal.MouseDoubleClick += (s, e) => { if (openGridLocal.SelectedItem is BorrowLogRow row) BorrowRowDoubleClicked?.Invoke(this, row); };
             openTab.Content = BuildGridWithPaging(openGrid, "No open borrows.", out openPrev, out openNext, out openPageText, out openEmptyText, isOpenTab: true);
@@ -477,12 +486,12 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             };
             historyGrid = CreateDataGrid();
             var historyGridLocal = historyGrid;
-            historyGrid.Columns.Add(CreateTemplateColumn("Serial", "<DataTemplate><TextBlock Text=\"{Binding SerialNumber}\" FontWeight=\"Bold\" Foreground=\"#0f172a\" VerticalAlignment=\"Center\" /></DataTemplate>", 1.05, DataGridLengthUnitType.Star));
-            historyGrid.Columns.Add(CreateTemplateColumn("Item", "<DataTemplate><TextBlock Text=\"{Binding ItemDisplay}\" FontWeight=\"SemiBold\" Foreground=\"#1e293b\" TextTrimming=\"CharacterEllipsis\" VerticalAlignment=\"Center\" /></DataTemplate>", 1.95, DataGridLengthUnitType.Star));
-            historyGrid.Columns.Add(CreateTemplateColumn("Borrower", "<DataTemplate><TextBlock Text=\"{Binding BorrowedByEmpName}\" FontWeight=\"SemiBold\" Foreground=\"#334155\" TextTrimming=\"CharacterEllipsis\" VerticalAlignment=\"Center\" /></DataTemplate>", 1.2, DataGridLengthUnitType.Star));
-            historyGrid.Columns.Add(CreateTemplateColumn("Borrowed", "<DataTemplate><TextBlock Text=\"{Binding BorrowedAtLocal}\" Foreground=\"#475569\" VerticalAlignment=\"Center\" HorizontalAlignment=\"Left\" /></DataTemplate>", 150, DataGridLengthUnitType.Pixel));
-            historyGrid.Columns.Add(CreateTemplateColumn("Returned", "<DataTemplate><TextBlock Text=\"{Binding ReturnedAtLocal}\" Foreground=\"#475569\" VerticalAlignment=\"Center\" HorizontalAlignment=\"Left\" /></DataTemplate>", 150, DataGridLengthUnitType.Pixel));
-            historyGrid.Columns.Add(CreateTemplateColumn("Returned By", "<DataTemplate><StackPanel Orientation=\"Horizontal\" VerticalAlignment=\"Center\"><Border Width=\"8\" Height=\"8\" CornerRadius=\"4\" Background=\"#10b981\" Margin=\"0,0,8,0\" VerticalAlignment=\"Center\" /><TextBlock Text=\"{Binding ReturnedByEmpName}\" FontWeight=\"SemiBold\" Foreground=\"#334155\" TextTrimming=\"CharacterEllipsis\" VerticalAlignment=\"Center\" /></StackPanel></DataTemplate>", 1.45, DataGridLengthUnitType.Star));
+            historyGrid.Columns.Add(CreateTemplateColumn("Serial", "<DataTemplate><TextBlock Text=\"{Binding SerialNumber}\" FontWeight=\"Bold\" Foreground=\"#202635\" VerticalAlignment=\"Center\" /></DataTemplate>", 1.05, DataGridLengthUnitType.Star));
+            historyGrid.Columns.Add(CreateTemplateColumn("Item", "<DataTemplate><TextBlock Text=\"{Binding ItemDisplay}\" FontWeight=\"SemiBold\" Foreground=\"#202635\" TextTrimming=\"CharacterEllipsis\" VerticalAlignment=\"Center\" /></DataTemplate>", 1.95, DataGridLengthUnitType.Star));
+            historyGrid.Columns.Add(CreateTemplateColumn("Borrower", "<DataTemplate><TextBlock Text=\"{Binding BorrowedByEmpName}\" FontWeight=\"SemiBold\" Foreground=\"#303747\" TextTrimming=\"CharacterEllipsis\" VerticalAlignment=\"Center\" /></DataTemplate>", 1.2, DataGridLengthUnitType.Star));
+            historyGrid.Columns.Add(CreateTemplateColumn("Borrowed", "<DataTemplate><TextBlock Text=\"{Binding BorrowedAtLocal}\" Foreground=\"#677081\" VerticalAlignment=\"Center\" HorizontalAlignment=\"Left\" /></DataTemplate>", 150, DataGridLengthUnitType.Pixel));
+            historyGrid.Columns.Add(CreateTemplateColumn("Returned", "<DataTemplate><TextBlock Text=\"{Binding ReturnedAtLocal}\" Foreground=\"#677081\" VerticalAlignment=\"Center\" HorizontalAlignment=\"Left\" /></DataTemplate>", 150, DataGridLengthUnitType.Pixel));
+            historyGrid.Columns.Add(CreateTemplateColumn("Returned By", "<DataTemplate><StackPanel Orientation=\"Horizontal\" VerticalAlignment=\"Center\"><Border Width=\"7\" Height=\"7\" CornerRadius=\"4\" Background=\"#8B91A0\" Margin=\"0,0,8,0\" VerticalAlignment=\"Center\" /><TextBlock Text=\"{Binding ReturnedByEmpName}\" FontWeight=\"SemiBold\" Foreground=\"#303747\" TextTrimming=\"CharacterEllipsis\" VerticalAlignment=\"Center\" /></StackPanel></DataTemplate>", 1.45, DataGridLengthUnitType.Star));
             historyGridLocal.MouseDoubleClick += (s, e) => { if (historyGridLocal.SelectedItem is BorrowLogRow row) BorrowRowDoubleClicked?.Invoke(this, row); };
             historyTab.Content = BuildGridWithPaging(historyGrid, "No history rows.", out historyPrev, out historyNext, out historyPageText, out historyEmptyText, isOpenTab: false);
             tabControl.Items.Add(historyTab);
@@ -591,7 +600,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             grid.RowStyle = CreateDataGridRowStyle();
             grid.CellStyle = CreateDataGridCellStyle();
 
-            var baseCellText = CreateTextBlockCellStyle(BrushFromRgb(51, 65, 85));
+            var baseCellText = CreateTextBlockCellStyle(BrushFromRgb(32, 38, 53));
             grid.Resources[typeof(TextBlock)] = baseCellText;
 
             return grid;
@@ -599,18 +608,9 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 
         private Button CreatePagerButton(string text)
         {
-            return new Button
-            {
-                Content = text,
-                Padding = new Thickness(12, 7, 12, 7),
-                Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(210, 219, 230)),
-                BorderThickness = new Thickness(1),
-                Foreground = BrushFromRgb(51, 65, 85),
-                FontSize = 11.5,
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand
-            };
+            var button = new Button { Content = text, Cursor = Cursors.Hand };
+            button.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"];
+            return button;
         }
 
         private static Button CreateTabPillButton(string text)
@@ -618,13 +618,13 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             var button = new Button
             {
                 Content = text,
-                Padding = new Thickness(18, 10, 18, 10),
+                Padding = new Thickness(14, 9, 14, 9),
                 MinWidth = 116,
-                Background = BrushFromRgb(241, 245, 249),
-                BorderBrush = BrushFromRgb(226, 232, 240),
-                BorderThickness = new Thickness(1),
-                Foreground = BrushFromRgb(71, 85, 105),
-                FontSize = 13.5,
+                Background = Brushes.Transparent,
+                BorderBrush = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Foreground = BrushFromRgb(103, 112, 129),
+                FontSize = 12.5,
                 FontWeight = FontWeights.SemiBold,
                 Cursor = Cursors.Hand
             };
@@ -637,9 +637,11 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             if (button == null)
                 return;
 
-            button.Background = isSelected ? BrushFromRgb(14, 165, 233) : BrushFromRgb(241, 245, 249);
-            button.BorderBrush = isSelected ? BrushFromRgb(14, 165, 233) : BrushFromRgb(226, 232, 240);
-            button.Foreground = isSelected ? Brushes.White : BrushFromRgb(71, 85, 105);
+            button.Tag = isSelected;
+            button.Background = Brushes.Transparent;
+            button.BorderBrush = Brushes.Transparent;
+            button.Foreground = isSelected ? BrushFromRgb(185, 35, 53) : BrushFromRgb(103, 112, 129);
+            button.FontWeight = isSelected ? FontWeights.SemiBold : FontWeights.Normal;
         }
 
         private static ControlTemplate CreateTabPillButtonTemplate()
@@ -652,51 +654,47 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
 <ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'
                  xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
                  TargetType='Button'>
-  <Border x:Name='PillBorder'
-          Background='{TemplateBinding Background}'
-          BorderBrush='{TemplateBinding BorderBrush}'
-          BorderThickness='{TemplateBinding BorderThickness}'
-          CornerRadius='18'
-          SnapsToDevicePixels='True'>
-    <ContentPresenter Margin='{TemplateBinding Padding}'
-                      HorizontalAlignment='Center'
-                      VerticalAlignment='Center'
-                      RecognizesAccessKey='True'/>
-  </Border>
+  <Grid>
+    <ContentPresenter Margin='{TemplateBinding Padding}' HorizontalAlignment='Center' VerticalAlignment='Center' RecognizesAccessKey='True'/>
+    <Border x:Name='ActiveLine' Height='2' Background='#B92335' VerticalAlignment='Bottom' Visibility='Collapsed'/>
+  </Grid>
   <ControlTemplate.Triggers>
+    <DataTrigger Binding='{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}' Value='True'>
+      <Setter TargetName='ActiveLine' Property='Visibility' Value='Visible'/>
+    </DataTrigger>
     <Trigger Property='IsMouseOver' Value='True'>
-      <Setter TargetName='PillBorder' Property='Opacity' Value='0.95'/>
-    </Trigger>
-    <Trigger Property='IsPressed' Value='True'>
-      <Setter TargetName='PillBorder' Property='Opacity' Value='0.88'/>
+      <Setter Property='Opacity' Value='0.82'/>
     </Trigger>
     <Trigger Property='IsEnabled' Value='False'>
-      <Setter TargetName='PillBorder' Property='Opacity' Value='0.55'/>
+      <Setter Property='Opacity' Value='0.55'/>
     </Trigger>
   </ControlTemplate.Triggers>
 </ControlTemplate>", ctx);
         }
 
-        private Button CreateHeroAction(string text, SolidColorBrush fg, bool isPrimary)
+        private Button CreateHeroAction(string text, bool isPrimary)
         {
             var btn = new Button
             {
                 Content = text,
-                Foreground = fg,
-                Background = isPrimary ? new SolidColorBrush(Color.FromArgb(50, 255, 255, 255)) : Brushes.Transparent,
-                BorderBrush = new SolidColorBrush(Color.FromArgb(80, 255, 255, 255)),
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(16, 8, 16, 8),
-                Margin = new Thickness(0, 0, 8, 0),
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand
+                Margin = new Thickness(0, 0, 8, 0)
             };
+            var styles = WpfThemeResources.GetWorkspaceCommandStyles();
+            var styleKey = isPrimary ? "ItcmAccentButton" : (text == "Delete Borrow" ? "ItcmDangerButton" : "ItcmQuietButton");
+            btn.Style = (Style)styles[styleKey];
             return btn;
         }
 
         private Border BuildGlassCard()
         {
-            return WpfThemeResources.CreateGlassCard();
+            return new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = new SolidColorBrush(Color.FromRgb(229, 230, 232)),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(18)
+            };
         }
 
         private static SolidColorBrush BrushFromRgb(byte r, byte g, byte b)
@@ -722,12 +720,12 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
         {
             var headerStyle = new Style(typeof(DataGridColumnHeader));
             headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.White));
-            headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(100, 116, 139)));
+            headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(103, 112, 129)));
             headerStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
             headerStyle.Setters.Add(new Setter(Control.FontSizeProperty, 11.5));
             headerStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(14, 12, 14, 12)));
             headerStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0, 0, 0, 1)));
-            headerStyle.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(226, 232, 240)));
+            headerStyle.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(229, 230, 232)));
             headerStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
             headerStyle.Setters.Add(new Setter(Control.HeightProperty, 44.0));
             return headerStyle;
@@ -745,7 +743,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             rowStyle.Triggers.Add(hoverTrigger);
 
             var selectedTrigger = new Trigger { Property = DataGridRow.IsSelectedProperty, Value = true };
-            selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(239, 246, 255)));
+            selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(252, 240, 241)));
             rowStyle.Triggers.Add(selectedTrigger);
 
             return rowStyle;
@@ -760,7 +758,7 @@ namespace Yakult.Inventory.App.Wpf.BorrowItems
             cellStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
 
             var selectedTrigger = new Trigger { Property = DataGridCell.IsSelectedProperty, Value = true };
-            selectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(15, 23, 42)));
+            selectedTrigger.Setters.Add(new Setter(Control.ForegroundProperty, BrushFromRgb(32, 38, 53)));
             selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
             selectedTrigger.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
             cellStyle.Triggers.Add(selectedTrigger);

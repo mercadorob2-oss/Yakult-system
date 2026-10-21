@@ -97,7 +97,10 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
             => UnfulfilledQty < 0 ? $"{UnfulfilledQty} ⚠ INVALID" : UnfulfilledQty.ToString();
 
         public string Remarks
-            => CartridgeExchangeRemarks.GenerateRemarks(IssuedFullQty, RequestedQty, DisplayModel);
+            => CartridgeExchangeRemarks.GenerateRemarks(
+                IssuedFullQty, RequestedQty, DisplayModel,
+                Math.Max(0, AvailableBrandNew - _issuedBrandNewQty),
+                Math.Max(0, AvailableRefilled - _issuedRefilledQty));
 
         public MultiModelRowViewModel(CartridgeRequestDto req, int availBrandNew, int availRefilled)
         {

@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
 using Yakult.Inventory.App.Pages;
 using Yakult.Inventory.App.Repositories;
 using Yakult.Inventory.App.Wpf.Search.ViewModels;
@@ -19,6 +17,16 @@ namespace Yakult.Inventory.App.Wpf.Search.Views
 
         /// <summary>Raised when the user clicks "Go to [Destination]" on a selected card.</summary>
         public event Action<ItemDto, string, string> NavigateRequested;
+
+        /// <summary>
+        /// The dashboard shown below the search bar while no search is active — i.e. the landing
+        /// view the portal opens on. MainForm wires its callbacks and loads it exactly like the
+        /// standalone Dashboard page (ShowDashboard), so both entry points stay in lockstep.
+        /// </summary>
+        public Yakult.Inventory.App.WPF.Dashboard.Views.AnalyticsDashboardView LandingDashboard
+        {
+            get { return HomeDashboardView; }
+        }
 
         // Cancels the in-flight debounce/DB fetch for the AutoCompleteBox suggestions whenever the
         // user types another character — only ever one suggestion request is "live" at a time.
@@ -43,8 +51,7 @@ namespace Yakult.Inventory.App.Wpf.Search.Views
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            LoadLogo();
-            CenterAutoBox.Focus();
+            HeaderAutoBox.Focus();
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -52,24 +59,6 @@ namespace Yakult.Inventory.App.Wpf.Search.Views
             _suggestCts?.Cancel();
             // Cancel any in-flight search/suggest operations
             _vm.ResetView();
-        }
-
-        private void LoadLogo()
-        {
-            var logoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Images", "yakult_Name.png");
-            if (File.Exists(logoPath))
-            {
-                try
-                {
-                    var bmp = new BitmapImage();
-                    bmp.BeginInit();
-                    bmp.UriSource   = new Uri(logoPath, UriKind.Absolute);
-                    bmp.CacheOption = BitmapCacheOption.OnLoad;
-                    bmp.EndInit();
-                    LogoImage.Source = bmp;
-                }
-                catch { }
-            }
         }
 
         // ── AutoCompleteBox suggestions — debounced, cancellable, off-thread ───────────────────

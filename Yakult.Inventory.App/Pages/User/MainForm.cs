@@ -77,6 +77,12 @@ namespace Yakult.Inventory.App.Pages.User
         private System.Windows.Forms.Button hamburgerButton;
         private bool isMenuOpen = false;
         private const int MENU_WIDTH = 320;
+
+        // Side-menu row rhythm — matches the workspace rail's compact rows rather than
+        // the old 50px blocks: top-level items, sub items, and collapsible group headers.
+        private const int SideMenuItemHeight = 42;
+        private const int SideMenuSubItemHeight = 38;
+        private const int SideMenuSectionHeight = 34;
         private bool isAddMasterDataExpanded = false;
         private bool isViewMasterDataExpanded = false;
         private bool isViewTransactionsExpanded = false;
@@ -114,7 +120,11 @@ namespace Yakult.Inventory.App.Pages.User
 
         private int _pendingMobileUpdatesCount;
         private NotificationCenterHost _notificationCenterHost;
-        private DashboardView _dashboardView;
+        private DashboardWpfHost _dashboardView;
+
+        // The dashboard embedded in the Home landing page (below the search bar). Held so the
+        // mobile-updates badge can be pushed to it the same way it is pushed to _dashboardView.
+        private Yakult.Inventory.App.WPF.Dashboard.Views.AnalyticsDashboardView _homeLandingDashboard;
         private HomeNotificationPoller _homeNotifPoller;
         private DesktopNotificationPoller _inventoryActivityPoller;
         private System.Windows.Forms.Timer _adminAlertPoller;
@@ -756,7 +766,7 @@ private void UpdateAdminMenuVisibility()
                 Width = MENU_WIDTH,
                 Height = this.ClientSize.Height - topBar.Height,
                 Location = new Point(0, topBar.Height),
-                BackColor = Color.White,
+                BackColor = InventoryTheme.Colors.RailBack,
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left,
                 AutoScroll = true,
                 Visible = false
@@ -775,7 +785,7 @@ private void UpdateAdminMenuVisibility()
             sideMenuPanel.Paint += (s, e) =>
             {
                 // Draw a subtle right border shadow
-                using (var pen = new Pen(Color.FromArgb(200, 200, 200), 1))
+                using (var pen = new Pen(InventoryTheme.Colors.RailEdge, 1))
                 {
                     e.Graphics.DrawLine(pen, sideMenuPanel.Width - 1, 0, sideMenuPanel.Width - 1, sideMenuPanel.Height);
                 }
@@ -790,7 +800,7 @@ private void UpdateAdminMenuVisibility()
             {
                 Width = MENU_WIDTH - SystemInformation.VerticalScrollBarWidth,
                 Location = new Point(0, 0),
-                BackColor = Color.White
+                BackColor = InventoryTheme.Colors.RailBack
             };
             sideMenuPanel.Controls.Add(sideMenuContent);
 
@@ -852,48 +862,49 @@ private void UpdateAdminMenuVisibility()
             // This mirrors the approach used in the Modern-Media-Player-UI-C-Sharp reference project.
             // Sub-buttons inside each sub-panel are also added in reverse (last item first).
 
-            int buttonHeight = 50;
+            int buttonHeight = SideMenuItemHeight;
 
-            // ── LOGOUT (very bottom) ─────────────────────────────────────────────────
+            // ── LOGOUT (very bottom) — quiet rail row with the workspace's soft-red tint ──
             logoutButton = new System.Windows.Forms.Button
             {
                 Text = "🚪 Logout",
-                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
                 Height = buttonHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(220, 53, 69),
-                ForeColor = Color.White,
+                BackColor = InventoryTheme.Colors.RailBack,
+                ForeColor = InventoryTheme.Colors.RailDanger,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(10, 0, 0, 0)
+                Padding = new Padding(12, 0, 0, 0)
             };
             logoutButton.FlatAppearance.BorderSize = 0;
+            logoutButton.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.RailHover;
             logoutButton.Click += (s, e) => { LogOutOnMenu_Click(s, e); ToggleMenu(); };
             sideMenuContent.Controls.Add(logoutButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 10, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 10, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── BACK TO PORTAL ───────────────────────────────────────────────────────
             backToPortalButton = new System.Windows.Forms.Button
             {
-                Text = "Back to Portal",
-                Font = new Font("Segoe UI", 10.5F, FontStyle.Bold),
+                Text = "←  Back to Portal",
+                Font = new Font("Segoe UI", 10F),
                 Height = buttonHeight,
                 Dock = DockStyle.Top,
-                BackColor = InventoryTheme.Colors.Primary,
-                ForeColor = Color.White,
+                BackColor = InventoryTheme.Colors.RailBack,
+                ForeColor = InventoryTheme.Colors.RailText,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(10, 0, 0, 0)
+                Padding = new Padding(12, 0, 0, 0)
             };
             backToPortalButton.FlatAppearance.BorderSize = 0;
-            backToPortalButton.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.PrimaryHover;
+            backToPortalButton.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.RailHover;
             backToPortalButton.Click += (s, e) => { ToggleMenu(); ShowPortalAndNavigate(); };
             sideMenuContent.Controls.Add(backToPortalButton);
 
-            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             //// ── RESET PASSWORD (Developer only, initially hidden) — moved to Admin Portal ──
             //resetPasswordButton = new System.Windows.Forms.Button
@@ -915,7 +926,7 @@ private void UpdateAdminMenuVisibility()
             //resetPasswordButton.Click += (s, e) => { ResetPassword_Click(s, e); ToggleMenu(); };
             //sideMenuContent.Controls.Add(resetPasswordButton);
 
-            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── MY ACCOUNT ───────────────────────────────────────────────────────────
             myAccountButton = new System.Windows.Forms.Button
@@ -924,19 +935,19 @@ private void UpdateAdminMenuVisibility()
                 Font = new Font("Segoe UI", 10F),
                 Height = buttonHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.White,
-                ForeColor = Color.FromArgb(60, 60, 60),
+                BackColor = InventoryTheme.Colors.RailBack,
+                ForeColor = InventoryTheme.Colors.RailText,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(10, 0, 0, 0)
+                Padding = new Padding(12, 0, 0, 0)
             };
             myAccountButton.FlatAppearance.BorderSize = 0;
-            myAccountButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 240, 240);
+            myAccountButton.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.RailHover;
             myAccountButton.Click += (s, e) => { ShowMyAccountPage(); ToggleMenu(); };
             sideMenuContent.Controls.Add(myAccountButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── NOTIFICATION SETTINGS ────────────────────────────────────────────────
             // Same toggle + Test Notification flow as the Request Portal's side menu
@@ -950,15 +961,15 @@ private void UpdateAdminMenuVisibility()
             }, false);
             sideMenuContent.Controls.Add(notifSettingsButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 15, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 15, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── ADMIN PANEL (Admin/Developer only) ───────────────────────────────────
             adminPanel = new System.Windows.Forms.Panel
             {
                 // "Users" (Account Management) is Super Admin only.
-                Height = (CanOpenUserAccountManagement ? 2 : 1) * buttonHeight,
+                Height = (CanOpenUserAccountManagement ? 2 : 1) * SideMenuSubItemHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = InventoryTheme.Colors.RailBack,
                 Visible = false
             };
             // Sub-buttons added in reverse visual order (last added = top)
@@ -972,7 +983,7 @@ private void UpdateAdminMenuVisibility()
             adminButton.Click += (s, e) => ToggleSection(adminPanel, adminButton, "Admin");
             sideMenuContent.Controls.Add(adminButton);
 
-            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             //// ── EMAIL SETTINGS PANEL (Admin/Developer only) — moved to Admin Portal ──
             //emailSmtpPanel = new System.Windows.Forms.Panel
@@ -995,7 +1006,7 @@ private void UpdateAdminMenuVisibility()
             //emailSmtpButton.Click += (s, e) => ToggleSection(emailSmtpPanel, emailSmtpButton, "EmailSmtp");
             //sideMenuContent.Controls.Add(emailSmtpButton);
 
-            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             //// ── ACCOUNT MANAGEMENT PANEL (Admin/Developer only) — moved to Admin Portal ──
             //accountManagementPanel = new System.Windows.Forms.Panel
@@ -1018,14 +1029,14 @@ private void UpdateAdminMenuVisibility()
             //accountManagementButton.Click += (s, e) => ToggleSection(accountManagementPanel, accountManagementButton, "AccountManagement");
             //sideMenuContent.Controls.Add(accountManagementButton);
 
-            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            //sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── VIEW HISTORY PANEL ───────────────────────────────────────────────────
             viewHistoryPanel = new System.Windows.Forms.Panel
             {
-                Height = 4 * buttonHeight,
+                Height = 4 * SideMenuSubItemHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = InventoryTheme.Colors.RailBack,
                 Visible = false
             };
             // Sub-buttons added in reverse visual order
@@ -1039,14 +1050,14 @@ private void UpdateAdminMenuVisibility()
             viewHistoryButton.Click += (s, e) => ToggleSection(viewHistoryPanel, viewHistoryButton, "ViewHistory");
             sideMenuContent.Controls.Add(viewHistoryButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── VIEW TRANSACTIONS PANEL ──────────────────────────────────────────────
             viewTransactionsPanel = new System.Windows.Forms.Panel
             {
-                Height = 10 * buttonHeight,
+                Height = 10 * SideMenuSubItemHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = InventoryTheme.Colors.RailBack,
                 Visible = false
             };
             // Sub-buttons added in reverse visual order
@@ -1066,13 +1077,13 @@ private void UpdateAdminMenuVisibility()
             viewTransactionsButton.Click += (s, e) => ToggleSection(viewTransactionsPanel, viewTransactionsButton, "ViewTransactions");
             sideMenuContent.Controls.Add(viewTransactionsButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── VIEW MASTER DATA PANEL ───────────────────────────────────────────────
             viewMasterDataPanel = new System.Windows.Forms.Panel
             {
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = InventoryTheme.Colors.RailBack,
                 Visible = false
             };
             int viewMasterDataButtonCount = 0;
@@ -1098,21 +1109,21 @@ private void UpdateAdminMenuVisibility()
             AddSubMenuButton(viewMasterDataPanel, "View Items", (s, e) => { viewItemsToolStripMenuItem_Click_1(s, e); ToggleMenu(); });
             AddSubMenuButton(viewMasterDataPanel, "View Inventory", (s, e) => { viewInventoryToolStripMenuItem_Click_1(s, e); ToggleMenu(); });
             viewMasterDataButtonCount += 13;
-            viewMasterDataPanel.Height = viewMasterDataButtonCount * buttonHeight;
+            viewMasterDataPanel.Height = viewMasterDataButtonCount * SideMenuSubItemHeight;
             sideMenuContent.Controls.Add(viewMasterDataPanel);
 
             viewMasterDataButton = AddCollapsibleSection("View Master Data", "ViewMasterData");
             viewMasterDataButton.Click += (s, e) => ToggleSection(viewMasterDataPanel, viewMasterDataButton, "ViewMasterData");
             sideMenuContent.Controls.Add(viewMasterDataButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── ADD MASTER DATA PANEL ────────────────────────────────────────────────
             addMasterDataPanel = new System.Windows.Forms.Panel
             {
-                Height = 9 * buttonHeight,
+                Height = 9 * SideMenuSubItemHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
+                BackColor = InventoryTheme.Colors.RailBack,
                 Visible = false
             };
             // Sub-buttons added in reverse visual order
@@ -1131,53 +1142,53 @@ private void UpdateAdminMenuVisibility()
             addMasterDataButton.Click += (s, e) => ToggleSection(addMasterDataPanel, addMasterDataButton, "AddMasterData");
             sideMenuContent.Controls.Add(addMasterDataButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── HOW TO USE ───────────────────────────────────────────────────────────
             howToUseButton = AddMenuButton("📖 User Manual", (s, e) => { OpenHowToUseLink(); ToggleMenu(); }, false);
             sideMenuContent.Controls.Add(howToUseButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── DASHBOARD ────────────────────────────────────────────────────────────
             dashboardButton = AddMenuButton("📊 Dashboard", (s, e) => { ShowDashboard(); ToggleMenu(); }, false);
             sideMenuContent.Controls.Add(dashboardButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── HOME ─────────────────────────────────────────────────────────────────
             homeButton = AddMenuButton("🏠 Home", (s, e) => { homeToolStripMenuItem_Click(s, e); ToggleMenu(); }, false);
             sideMenuContent.Controls.Add(homeButton);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 5, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
             // ── SEPARATOR ────────────────────────────────────────────────────────────
             menuSeparator = new System.Windows.Forms.Panel
             {
-                Height = 2,
+                Height = 1,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(230, 230, 230)
+                BackColor = InventoryTheme.Colors.RailLine
             };
             sideMenuContent.Controls.Add(menuSeparator);
 
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 10, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 10, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
 
-            // ── HEADER LABEL (top of menu) ───────────────────────────────────────────
+            // ── HEADER LABEL (top of menu) — muted micro-caps, like the workspace rail ──
             menuHeaderLabel = new Label
             {
                 Text = "YAKULT INVENTORY",
-                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-                ForeColor = InventoryTheme.Colors.Primary,
-                Height = 40,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                ForeColor = InventoryTheme.Colors.RailLabel,
+                Height = 34,
                 AutoSize = false,
                 Dock = DockStyle.Top,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(20, 0, 0, 0)
+                Padding = new Padding(12, 0, 0, 0)
             };
             sideMenuContent.Controls.Add(menuHeaderLabel);
 
             // Top padding spacer — added LAST so it appears at the very top
-            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 20, Dock = DockStyle.Top, BackColor = Color.White });
+            sideMenuContent.Controls.Add(new System.Windows.Forms.Panel { Height = 20, Dock = DockStyle.Top, BackColor = InventoryTheme.Colors.RailBack });
         }
 
         private System.Windows.Forms.Button AddCollapsibleSection(string title, string sectionName)
@@ -1185,19 +1196,19 @@ private void UpdateAdminMenuVisibility()
             var button = new System.Windows.Forms.Button
             {
                 Text = $"{title}     ▼",
-                Font = new Font("Segoe UI", 11F, FontStyle.Bold),
-                Height = 50,
+                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                Height = SideMenuSectionHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.White,
-                ForeColor = Color.FromArgb(60, 60, 60),
+                BackColor = InventoryTheme.Colors.RailBack,
+                ForeColor = InventoryTheme.Colors.RailLabel,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(10, 0, 0, 0),
+                Padding = new Padding(12, 0, 0, 0),
                 Tag = sectionName
             };
             button.FlatAppearance.BorderSize = 0;
-            button.FlatAppearance.MouseOverBackColor = button.BackColor;
+            button.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.RailHover;
 
             // Custom paint to draw arrow on the right
             button.Paint += (s, e) =>
@@ -1230,16 +1241,18 @@ private void UpdateAdminMenuVisibility()
                         break;
                 }
 
-                // Draw text
-                TextRenderer.DrawText(e.Graphics, title, btn.Font,
-                    new Rectangle(10, 0, btn.Width - 40, btn.Height),
-                    btn.ForeColor, TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
+                // Uppercase micro-caps group label, matching the workspace rail's section labels;
+                // brightens while the section is expanded.
+                var textColor = expanded ? InventoryTheme.Colors.RailText : btn.ForeColor;
+                TextRenderer.DrawText(e.Graphics, title.ToUpperInvariant(), btn.Font,
+                    new Rectangle(12, 0, btn.Width - 44, btn.Height),
+                    textColor, TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
 
                 // Draw arrow on the right
                 string arrow = expanded ? "▲" : "▼";
-                TextRenderer.DrawText(e.Graphics, arrow, new Font("Segoe UI", 10F),
-                    new Rectangle(btn.Width - 30, 0, 30, btn.Height),
-                    btn.ForeColor, TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
+                TextRenderer.DrawText(e.Graphics, arrow, new Font("Segoe UI", 8F, FontStyle.Regular),
+                    new Rectangle(btn.Width - 30, 0, 26, btn.Height),
+                    textColor, TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
             };
 
             button.Text = ""; // Clear text since we're custom drawing
@@ -1252,17 +1265,17 @@ private void UpdateAdminMenuVisibility()
             {
                 Text = text,
                 Font = new Font("Segoe UI", 10F),
-                Height = 50,
+                Height = SideMenuItemHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.White,
-                ForeColor = Color.FromArgb(60, 60, 60),
+                BackColor = InventoryTheme.Colors.RailBack,
+                ForeColor = InventoryTheme.Colors.RailText,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(isSubMenu ? 30 : 10, 0, 0, 0)
+                Padding = new Padding(isSubMenu ? 30 : 12, 0, 0, 0)
             };
             button.FlatAppearance.BorderSize = 0;
-            button.FlatAppearance.MouseOverBackColor = button.BackColor;
+            button.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.RailHover;
             button.Click += onClick;
             return button;
         }
@@ -1272,18 +1285,18 @@ private void UpdateAdminMenuVisibility()
             var button = new System.Windows.Forms.Button
             {
                 Text = text,
-                Font = new Font("Segoe UI", 9.5F),
-                Height = 50,
+                Font = new Font("Segoe UI", 9F),
+                Height = SideMenuSubItemHeight,
                 Dock = DockStyle.Top,
-                BackColor = Color.FromArgb(250, 250, 250),
-                ForeColor = Color.FromArgb(80, 80, 80),
+                BackColor = InventoryTheme.Colors.RailBack,
+                ForeColor = InventoryTheme.Colors.RailText,
                 FlatStyle = FlatStyle.Flat,
                 Cursor = Cursors.Hand,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Padding = new Padding(40, 0, 0, 0)
+                Padding = new Padding(34, 0, 0, 0)
             };
             button.FlatAppearance.BorderSize = 0;
-            button.FlatAppearance.MouseOverBackColor = button.BackColor;
+            button.FlatAppearance.MouseOverBackColor = InventoryTheme.Colors.RailHover;
             button.Click += onClick;
             parentPanel.Controls.Add(button);
         }
@@ -1505,6 +1518,31 @@ private void UpdateAdminMenuVisibility()
             var searchView = new Yakult.Inventory.App.Wpf.Search.Views.SearchView();
             searchView.NavigateRequested += (item, destination, title) =>
                 NavigateToItemPage(item, destination, title);
+
+            // ── Landing dashboard: SearchView shows it below its always-visible search bar
+            //    while no search is active. Wiring/loading mirrors the standalone Dashboard
+            //    page (ShowDashboard) so both entry points behave identically.
+            var landing = searchView.LandingDashboard;
+            _homeLandingDashboard = landing;
+            if (landing != null)
+            {
+                landing.OnViewInventoryClicked = () => ShowPage(new ViewInventoryPage());
+                landing.OnViewUpdatesClicked   = () => ShowPage(new ViewUpdatesPage());
+                landing.OnRefreshClicked = () =>
+                {
+                    var svc = new Yakult.Inventory.App.Forms.Dashboard.DashboardService();
+                    System.Threading.Tasks.Task.Run(() => svc.RefreshCategoryCache())
+                        .ContinueWith(_ => BeginInvoke((Action)ShowHomePage));
+                };
+
+                var dashSvc = new Yakult.Inventory.App.Forms.Dashboard.DashboardService();
+                System.Threading.Tasks.Task.Run(() => dashSvc.RefreshCategoryCache())
+                    .ContinueWith(_ => BeginInvoke((Action)(() =>
+                    {
+                        landing.LoadDashboard(DashboardScope.Categories, null);
+                        landing.SetMobileUpdatesPendingCount(_pendingMobileUpdatesCount);
+                    })));
+            }
 
             var host = new System.Windows.Forms.Integration.ElementHost
             {
@@ -3046,7 +3084,7 @@ private void UpdateAdminMenuVisibility()
             ContentPanel.BackgroundImage = null;
             ContentPanel.BackColor = InventoryTheme.Colors.HeaderBack;
 
-            _dashboardView = new DashboardView
+            _dashboardView = new DashboardWpfHost
             {
                 Dock = DockStyle.Fill
             };
@@ -4145,6 +4183,7 @@ private void UpdateAdminMenuVisibility()
         {
             _pendingMobileUpdatesCount = pendingCount;
             _dashboardView?.SetMobileUpdatesPendingCount(pendingCount);
+            _homeLandingDashboard?.SetMobileUpdatesPendingCount(pendingCount);
             _notificationCenterHost?.SetMobilePendingCount(pendingCount);
 
             UpdateNotificationBadge();

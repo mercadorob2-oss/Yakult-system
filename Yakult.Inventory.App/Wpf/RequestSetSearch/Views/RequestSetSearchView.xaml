@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:searchConv="clr-namespace:Yakult.Inventory.App.Wpf.Search.Converters"
     xmlns:conv="clr-namespace:Yakult.Inventory.App.Wpf.RequestSetSearch.Converters"
+    xmlns:local="clr-namespace:Yakult.Inventory.App.Wpf.RequestSetSearch.Views"
     Background="{DynamicResource YakultPageBackgroundBrush}"
     FontFamily="Segoe UI"
     UseLayoutRounding="True"
@@ -51,11 +52,18 @@
     </UserControl.Resources>
 
     <Grid>
-        <!-- ── STATE 1 : Initial — centered logo + pill search box ────────── -->
+        <!-- ── STATE 1 : Initial — search hero on top, Request & Set analytics dashboard
+             filling the page below it. This is what the portal opens on (same shape as the
+             Inventory System homepage: search always visible, dashboard underneath). ── -->
         <Grid Visibility="{Binding IsInitial, Converter={StaticResource BoolToVis}}">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,-30,0,0">
-                <Image x:Name="LogoImage" Width="300" Height="110" Stretch="Uniform"
-                       HorizontalAlignment="Center" Margin="0,0,0,14"/>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,20,0,0">
+                <Image x:Name="LogoImage" Width="220" Height="80" Stretch="Uniform"
+                       HorizontalAlignment="Center" Margin="0,0,0,10"/>
 
                 <Grid Width="640" HorizontalAlignment="Center">
                     <Border Background="White" BorderBrush="#C8D4E4" BorderThickness="1.5" CornerRadius="32">
@@ -104,8 +112,14 @@
                 <TextBlock Text="Press Enter to search across requests and sets"
                            FontSize="12" Foreground="#A8B8CC"
                            HorizontalAlignment="Center" TextAlignment="Center"
-                           Margin="0,16,0,0"/>
+                           Margin="0,12,0,0"/>
             </StackPanel>
+
+            <!-- Portal Home dashboard — analytics + charts for this portal's requests and sets.
+                 Loaded/wired by RequestSetManagementPortalForm.ShowHomeView(). -->
+            <Grid Grid.Row="1">
+                <local:RequestSetDashboardView x:Name="HomeDashboardView"/>
+            </Grid>
         </Grid>
 
         <!-- ── STATE 2 : Loading ───────────────────────────────────────────── -->

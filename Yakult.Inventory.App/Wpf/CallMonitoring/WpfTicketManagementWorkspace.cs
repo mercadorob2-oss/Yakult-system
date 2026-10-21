@@ -28,6 +28,17 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 {
     public sealed class WpfTicketManagementWorkspace : UserControl
     {
+        // Shared Yakult workspace palette, aligned with the redesigned ITCM dashboard.
+        private static readonly Brush InkBrush = BrushFromRgb(32, 38, 53);
+        private static readonly Brush BodyBrush = BrushFromRgb(74, 82, 97);
+        private static readonly Brush MutedBrush = BrushFromRgb(103, 112, 129);
+        private static readonly Brush HairlineBrush = BrushFromRgb(229, 230, 232);
+        private static readonly Brush InputBorderBrush = BrushFromRgb(205, 208, 214);
+        private static readonly Brush SoftFillBrush = BrushFromRgb(245, 246, 248);
+        private static readonly Brush AlertRedBrush = BrushFromRgb(185, 35, 53);
+        private static readonly Brush AccentTintBrush = BrushFromRgb(252, 240, 241);
+        private static readonly ResourceDictionary CommandStyles = WpfThemeResources.GetWorkspaceCommandStyles();
+
         private readonly TextBox _searchBox;
         private readonly ComboBox _statusFilter;
         private readonly ComboBox _assigneeFilter;
@@ -51,8 +62,6 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private readonly TextBlock _profileCreated;
         private readonly TextBlock _profileEscalation;
         private readonly TextBlock _profileLastEmail;
-        private readonly TextBlock _selectionHeadline;
-        private readonly TextBlock _selectionSubhead;
         private TextBlock _inspectorTicketCode;
         private TextBlock _inspectorIssue;
         private TextBlock _inspectorStatus;
@@ -204,8 +213,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var createTicketContainer = new Border
             {
-                Padding = new Thickness(20),
-                Background = WpfThemeResources.PageBackgroundBrush,
+                Padding = new Thickness(24),
+                Margin = new Thickness(20),
+                Background = Brushes.White,
+                BorderBrush = HairlineBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
                 Child = createTicketPanel
             };
 
@@ -269,7 +282,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             // Grouping Top Buttons (Refresh + Create Ticket)
             var topActionWrap = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(18, 22, 0, 0) };
-            _refreshTicketsButton = CreatePrimaryButton("Refresh", WpfThemeResources.PrimaryBrush);
+            _refreshTicketsButton = CreateQuietButton("Refresh");
             
             var openCreateTicketButton = CreatePrimaryButton("+ New Ticket", WpfThemeResources.PrimaryBrush); // Standout color
             openCreateTicketButton.Margin = new Thickness(10, 0, 0, 8);
@@ -337,7 +350,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             profileCard.Margin = new Thickness(0, 0, 0, 16);
             profileCard.VerticalAlignment = VerticalAlignment.Stretch;
             profileCard.Child = BuildSelectionDetails(
-                out _selectionHeadline, out _selectionSubhead, out _profileStatus,
+                out _profileStatus,
                 out _profilePriority, out _profileAssignee, out _profileCaller,
                 out _profileLocation, out _profileActivity, out _profileCreated, out _profileEscalation,
                 out _profileLastEmail, out _profileEscalationHost, out _profileLastEmailHost, out _detailsButton, out _summaryButton, out _deleteButton);
@@ -834,11 +847,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (ticket == null)
             {
                 _selectedTicket = null;
-                _selectionHeadline.Text = "No ticket selected";
-                _selectionSubhead.Text = "Select a lifecycle ticket to load its summary, activity, and workflow.";
                 _inspectorTicketCode.Text = "No ticket selected";
                 _inspectorIssue.Text = "Select a case from the list to inspect it.";
                 _inspectorStatus.Text = "-";
+                ApplyProfileStatusStyle(_inspectorStatus, "-");
                 _profileStatus.Text = "-";
                 _profilePriority.Text = "-";
                 ApplyProfileStatusStyle(_profileStatus, "-");
@@ -848,7 +860,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _profileLocation.Text = "-";
                 _profileActivity.Text = "-";
                 _profileCreated.Text = "-";
-                _profileActivity.Foreground = WpfThemeResources.TextDarkBrush;
+                _profileActivity.Foreground = BodyBrush;
                 _profileEscalation.Text = "-";
                 _profileLastEmail.Text = "-";
                 _profileEscalationHost.Visibility = Visibility.Collapsed;
@@ -872,11 +884,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var idle = DateTime.UtcNow - activityUtc;
             if (idle < TimeSpan.Zero) idle = TimeSpan.Zero;
 
-            _selectionHeadline.Text = ticket.TicketCode ?? ticket.TicketId.ToString();
-            _selectionSubhead.Text = ticket.Issue ?? "No issue provided";
             _inspectorTicketCode.Text = ticket.TicketCode ?? ticket.TicketId.ToString();
             _inspectorIssue.Text = ticket.Issue ?? "No issue provided";
             _inspectorStatus.Text = status;
+            ApplyProfileStatusStyle(_inspectorStatus, status);
             _profileStatus.Text = status;
             _profilePriority.Text = priority;
             ApplyProfileStatusStyle(_profileStatus, status);
@@ -2672,42 +2683,37 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var root = new StackPanel { Margin = new Thickness(30, 22, 30, 30) };
             scroll.Content = root;
 
-            var masthead = new Border { Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(22, 17, 22, 18), Margin = new Thickness(0, 0, 0, 12) };
-            var mastheadGrid = new Grid();
-            mastheadGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(6) });
-            mastheadGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            mastheadGrid.Children.Add(new Border { Background = WpfThemeResources.PrimaryBrush, CornerRadius = new CornerRadius(3) });
-            var copy = new StackPanel { Margin = new Thickness(15, 0, 0, 0) };
-            copy.Children.Add(new TextBlock { Text = "CASE MANAGEMENT", FontSize = 10.5, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.PrimaryHoverBrush });
-            copy.Children.Add(new TextBlock { Text = "Ticket lifecycle", FontSize = 25, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextDarkBrush, Margin = new Thickness(0, 3, 0, 0) });
-            copy.Children.Add(new TextBlock { Text = "Browse team cases from active work through closure. Portal Intake stays a separate triage workspace.", FontSize = 12, Foreground = BrushFromRgb(71, 85, 105), Margin = new Thickness(0, 5, 0, 0), TextWrapping = TextWrapping.Wrap });
-            Grid.SetColumn(copy, 1); mastheadGrid.Children.Add(copy); masthead.Child = mastheadGrid; root.Children.Add(masthead);
+            var masthead = new StackPanel { Margin = new Thickness(0, 0, 0, 20) };
+            masthead.Children.Add(new TextBlock { Text = "IT CALL MONITORING", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = MutedBrush });
+            masthead.Children.Add(new TextBlock { Text = "Ticket lifecycle", FontSize = 26, FontWeight = FontWeights.SemiBold, Foreground = InkBrush, Margin = new Thickness(0, 8, 0, 0) });
+            masthead.Children.Add(new TextBlock { Text = "Browse team cases from active work through closure. Portal Intake stays a separate triage workspace.", FontSize = 12.5, Foreground = MutedBrush, Margin = new Thickness(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap });
+            root.Children.Add(masthead);
 
-            var commandBar = new Border { Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(15, 12, 15, 12), Margin = new Thickness(0, 0, 0, 11) };
+            var commandBar = new Border { Background = Brushes.White, BorderBrush = HairlineBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(18, 14, 18, 14), Margin = new Thickness(0, 0, 0, 12) };
             var command = new Grid();
             command.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) }); command.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); command.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); command.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); command.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); command.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             AddFilterField(command, 0, "Find a case", _searchBox); AddFilterField(command, 1, "Status", _statusFilter); AddFilterField(command, 2, "Assignee", _assigneeFilter); AddFilterField(command, 3, "Branch", _branchFilter);
-            _refreshTicketsButton.Content = "Refresh"; _refreshTicketsButton.Background = BrushFromRgb(71, 85, 105); _refreshTicketsButton.Margin = new Thickness(13, 22, 0, 0); Grid.SetColumn(_refreshTicketsButton, 4); command.Children.Add(_refreshTicketsButton);
-            var newTicket = CreatePrimaryButton("+ New Ticket", WpfThemeResources.PrimaryBrush); newTicket.Margin = new Thickness(8, 22, 0, 0); newTicket.Click += (_, __) => ShowCreateTicketModal(createTicketContainer); Grid.SetColumn(newTicket, 5); command.Children.Add(newTicket); commandBar.Child = command; root.Children.Add(commandBar);
+            _refreshTicketsButton.Content = "Refresh"; _refreshTicketsButton.Margin = new Thickness(13, 22, 0, 0); Grid.SetColumn(_refreshTicketsButton, 4); command.Children.Add(_refreshTicketsButton);
+            var newTicket = CreateAccentButton("+ New Ticket"); newTicket.Margin = new Thickness(8, 22, 0, 0); newTicket.Click += (_, __) => ShowCreateTicketModal(createTicketContainer); Grid.SetColumn(newTicket, 5); command.Children.Add(newTicket); commandBar.Child = command; root.Children.Add(commandBar);
 
-            var lifeBar = new Border { Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 0, 14) };
+            var lifeBar = new Border { Background = Brushes.White, BorderBrush = HairlineBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(14, 10, 14, 10), Margin = new Thickness(0, 0, 0, 14) };
             var life = new Grid(); life.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); life.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            life.Children.Add(new TextBlock { Text = "LIFECYCLE", FontSize = 10.5, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextMutedBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 13, 0) });
+            life.Children.Add(new TextBlock { Text = "LIFECYCLE", FontSize = 10.5, FontWeight = FontWeights.Bold, Foreground = MutedBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 13, 0) });
             var chips = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
             foreach (var scope in new[] { "All Tickets", "Active", "Waiting", "Temporary", "Resolved", "Closed" }) { var chip = CreateLifecycleChip(scope); chip.Click += async (_, __) => await SetLifecycleScopeAsync(scope); _lifecycleChipButtons.Add(chip); chips.Children.Add(chip); }
             Grid.SetColumn(chips, 1); life.Children.Add(chips); lifeBar.Child = life; root.Children.Add(lifeBar); UpdateLifecycleChipButtons();
 
-            var browser = new Border { Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(20, 18, 20, 20), MinHeight = 460 };
+            var browser = new Border { Background = Brushes.White, BorderBrush = HairlineBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(20, 18, 20, 20), MinHeight = 460 };
             var content = new StackPanel();
             var browserHeader = new Grid { Margin = new Thickness(0, 0, 0, 15) };
             browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); browserHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var title = new StackPanel(); title.Children.Add(new TextBlock { Text = "Cases", FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextDarkBrush }); _queueSummaryText = new TextBlock { Text = "Loading cases…", FontSize = 11.5, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0, 3, 0, 0) }; title.Children.Add(_queueSummaryText); browserHeader.Children.Add(title);
-            _myWorkToggleButton = CreatePrimaryButton("My work", Brushes.White);
-            _myWorkToggleButton.FontSize = 11.5; _myWorkToggleButton.FontWeight = FontWeights.SemiBold; _myWorkToggleButton.Padding = new Thickness(13, 6, 13, 6); _myWorkToggleButton.Margin = new Thickness(0, 0, 8, 0); _myWorkToggleButton.VerticalAlignment = VerticalAlignment.Center;
+            var title = new StackPanel(); title.Children.Add(new TextBlock { Text = "Cases", FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = InkBrush }); _queueSummaryText = new TextBlock { Text = "Loading cases…", FontSize = 11.5, Foreground = MutedBrush, Margin = new Thickness(0, 3, 0, 0) }; title.Children.Add(_queueSummaryText); browserHeader.Children.Add(title);
+            _myWorkToggleButton = CreateQuietButton("My work");
+            _myWorkToggleButton.FontSize = 11.5; _myWorkToggleButton.Padding = new Thickness(13, 6, 13, 6); _myWorkToggleButton.Margin = new Thickness(0, 0, 8, 0); _myWorkToggleButton.VerticalAlignment = VerticalAlignment.Center;
             _myWorkToggleButton.Click += async (_, __) => await ToggleMyWorkAsync();
             Grid.SetColumn(_myWorkToggleButton, 1); browserHeader.Children.Add(_myWorkToggleButton); UpdateMyWorkToggle();
             var switcher = BuildCaseViewSwitcher(); Grid.SetColumn(switcher, 2); browserHeader.Children.Add(switcher);
-            var hint = new TextBlock { Text = "Table is a temporary alternate view", FontSize = 11, Foreground = WpfThemeResources.TextMutedBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 0, 0) }; Grid.SetColumn(hint, 3); browserHeader.Children.Add(hint); content.Children.Add(browserHeader);
+            var hint = new TextBlock { Text = "Table is a temporary alternate view", FontSize = 11, Foreground = MutedBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 0, 0) }; Grid.SetColumn(hint, 3); browserHeader.Children.Add(hint); content.Children.Add(browserHeader);
 
             var views = new Grid();
             _caseCardsPanel = new StackPanel();
@@ -2745,11 +2751,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private FrameworkElement BuildCaseViewSwitcher()
         {
-            var wrap = new Border { Background = WpfThemeResources.AccentTintBrush, BorderBrush = WpfThemeResources.AccentBorderBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(3) };
+            var wrap = new Border { Background = Brushes.White, BorderBrush = HairlineBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(3) };
             var panel = new StackPanel { Orientation = Orientation.Horizontal };
-            _casesViewButton = CreatePrimaryButton("Cases", WpfThemeResources.PrimaryBrush);
-            _tableViewButton = CreatePrimaryButton("Table", Brushes.White);
-            foreach (var button in new[] { _casesViewButton, _tableViewButton }) { button.FontSize = 11.5; button.FontWeight = FontWeights.SemiBold; button.Padding = new Thickness(13, 6, 13, 6); button.Margin = new Thickness(0); }
+            _casesViewButton = new Button { Content = "Cases", Style = (Style)CommandStyles["ItcmRangeButtonActive"] };
+            _tableViewButton = new Button { Content = "Table", Style = (Style)CommandStyles["ItcmRangeButton"], Margin = new Thickness(4, 0, 0, 0) };
             _casesViewButton.Click += (_, __) => SetCaseBrowserView("Cases");
             _tableViewButton.Click += (_, __) => SetCaseBrowserView("Table");
             panel.Children.Add(_casesViewButton); panel.Children.Add(_tableViewButton); wrap.Child = panel;
@@ -2769,10 +2774,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             if (_casesViewButton == null || _tableViewButton == null) return;
             var cases = _caseBrowserView == "Cases";
-            _casesViewButton.Background = cases ? WpfThemeResources.PrimaryBrush : Brushes.White;
-            _casesViewButton.Foreground = cases ? Brushes.White : WpfThemeResources.PrimaryHoverBrush;
-            _tableViewButton.Background = cases ? Brushes.White : WpfThemeResources.PrimaryBrush;
-            _tableViewButton.Foreground = cases ? WpfThemeResources.PrimaryHoverBrush : Brushes.White;
+            _casesViewButton.Style = (Style)CommandStyles[cases ? "ItcmRangeButtonActive" : "ItcmRangeButton"];
+            _tableViewButton.Style = (Style)CommandStyles[cases ? "ItcmRangeButton" : "ItcmRangeButtonActive"];
         }
         private async Task ToggleMyWorkAsync()
         {
@@ -2784,41 +2787,41 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private void UpdateMyWorkToggle()
         {
             if (_myWorkToggleButton == null) return;
-            _myWorkToggleButton.Background = _myWorkOnly ? WpfThemeResources.PrimaryBrush : Brushes.White;
-            _myWorkToggleButton.Foreground = _myWorkOnly ? Brushes.White : WpfThemeResources.PrimaryHoverBrush;
+            _myWorkToggleButton.Style = (Style)CommandStyles[_myWorkOnly ? "ItcmRangeButtonActive" : "ItcmRangeButton"];
         }
         private Button CreateLifecycleChip(string scope)
         {
-            var chip = new Button { Content = scope == "All Tickets" ? "All" : scope, Tag = scope, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand, BorderThickness = new Thickness(1), Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 7, 0) };
-            ApplyModernButtonTemplate(chip, new Thickness(12, 6, 12, 6)); return chip;
+            return new Button { Content = scope == "All Tickets" ? "All" : scope, Tag = scope, Style = (Style)CommandStyles["ItcmRangeButton"], Margin = new Thickness(0, 0, 7, 0) };
         }
         private async Task SetLifecycleScopeAsync(string scope) { _lifecycleScope = scope ?? "All Tickets"; _casePageIndex = 1; UpdateLifecycleChipButtons(); await ReloadTicketsAsync(false, false); }
         private void UpdateLifecycleChipButtons()
         {
-            foreach (var chip in _lifecycleChipButtons) { var active = string.Equals(chip.Tag as string, _lifecycleScope, StringComparison.OrdinalIgnoreCase); chip.Background = active ? WpfThemeResources.PrimaryBrush : Brushes.White; chip.Foreground = active ? Brushes.White : WpfThemeResources.PrimaryHoverBrush; chip.BorderBrush = active ? WpfThemeResources.PrimaryBrush : WpfThemeResources.AccentBorderBrush; }
+            foreach (var chip in _lifecycleChipButtons) { var active = string.Equals(chip.Tag as string, _lifecycleScope, StringComparison.OrdinalIgnoreCase); chip.Style = (Style)CommandStyles[active ? "ItcmRangeButtonActive" : "ItcmRangeButton"]; }
         }
 
         private Border BuildPersistentInspector(Border summaryCard, Border activityCard, Border workflowCard)
         {
-            var inspector = new Border { Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), ClipToBounds = true };
+            var inspector = new Border { Background = Brushes.White, BorderBrush = HairlineBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), ClipToBounds = true };
             var layout = new Grid();
             layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-            var header = new Border { Padding = new Thickness(16, 14, 16, 12), Background = new LinearGradientBrush(WpfThemeResources.PrimaryHoverBrush.Color, WpfThemeResources.PrimaryBrush.Color, new Point(0, 0), new Point(1, 1)) };
+            var header = new Border { Padding = new Thickness(16, 15, 16, 13), Background = Brushes.White, BorderBrush = HairlineBrush, BorderThickness = new Thickness(0, 0, 0, 1) };
             var headerStack = new StackPanel();
-            headerStack.Children.Add(new TextBlock { Text = "SELECTED TICKET", FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromArgb(205, 255, 255, 255)) });
-            _inspectorTicketCode = new TextBlock { Text = "No ticket selected", FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White, Margin = new Thickness(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
-            _inspectorIssue = new TextBlock { Text = "Select a case from the list to inspect it.", FontSize = 11, Foreground = new SolidColorBrush(Color.FromArgb(225, 255, 255, 255)), Margin = new Thickness(0, 3, 0, 0), TextWrapping = TextWrapping.Wrap, MaxHeight = 32 };
+            headerStack.Children.Add(new TextBlock { Text = "SELECTED TICKET", FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = MutedBrush });
+            _inspectorTicketCode = new TextBlock { Text = "No ticket selected", FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = InkBrush, Margin = new Thickness(0, 5, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
+            _inspectorIssue = new TextBlock { Text = "Select a case from the list to inspect it.", FontSize = 11.5, Foreground = BodyBrush, Margin = new Thickness(0, 3, 0, 0), TextWrapping = TextWrapping.Wrap, MaxHeight = 32 };
             headerStack.Children.Add(_inspectorTicketCode); headerStack.Children.Add(_inspectorIssue);
-            headerStack.Children.Add(new Border { Background = new SolidColorBrush(Color.FromArgb(45, 255, 255, 255)), Height = 1, Margin = new Thickness(0, 9, 0, 8) });
+            headerStack.Children.Add(new Border { Background = HairlineBrush, Height = 1, Margin = new Thickness(0, 10, 0, 9) });
             var statusRow = new Grid(); statusRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); statusRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            statusRow.Children.Add(new TextBlock { Text = "Status", FontSize = 10, Foreground = new SolidColorBrush(Color.FromArgb(190, 255, 255, 255)) });
-            _inspectorStatus = new TextBlock { Text = "-", FontSize = 10.5, FontWeight = FontWeights.Bold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Right }; Grid.SetColumn(_inspectorStatus, 1); statusRow.Children.Add(_inspectorStatus); headerStack.Children.Add(statusRow);
+            statusRow.Children.Add(new TextBlock { Text = "Status", FontSize = 10.5, Foreground = MutedBrush, VerticalAlignment = VerticalAlignment.Center });
+            var statusChip = new Border { Background = SoftFillBrush, CornerRadius = new CornerRadius(999), Padding = new Thickness(9, 3, 9, 3), VerticalAlignment = VerticalAlignment.Center };
+            _inspectorStatus = new TextBlock { Text = "-", FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = BodyBrush }; statusChip.Child = _inspectorStatus;
+            Grid.SetColumn(statusChip, 1); statusRow.Children.Add(statusChip); headerStack.Children.Add(statusRow);
             header.Child = headerStack; layout.Children.Add(header);
 
-            var tabBar = new Border { Background = WpfThemeResources.AccentTintBrush, BorderBrush = WpfThemeResources.AccentBorderBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(3), Margin = new Thickness(12, 10, 12, 8) };
+            var tabBar = new Border { Background = Brushes.White, BorderBrush = HairlineBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(3), Margin = new Thickness(12, 10, 12, 8) };
             var tabPanel = new UniformGrid { Columns = 3 };
             _inspectorTabButtons.Clear();
             _inspectorTabContents.Clear();
@@ -2840,8 +2843,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private Button CreateInspectorTabButton(string label, int index)
         {
-            var button = new Button { Content = label, Tag = index, FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(51, 65, 85), Background = Brushes.White, BorderBrush = BrushFromRgb(203, 213, 225), BorderThickness = new Thickness(1), Padding = new Thickness(7, 6, 7, 6), Margin = new Thickness(index == 0 ? 0 : 3, 0, 0, 0), Focusable = true, IsTabStop = true, HorizontalContentAlignment = HorizontalAlignment.Center, Cursor = Cursors.Hand, ToolTip = "Show " + label };
-            ApplyInspectorTabTemplate(button);
+            var button = new Button { Content = label, Tag = index, Style = (Style)CommandStyles[index == 0 ? "ItcmRangeButtonActive" : "ItcmRangeButton"], Margin = new Thickness(index == 0 ? 0 : 3, 0, 0, 0), Focusable = true, IsTabStop = true, HorizontalContentAlignment = HorizontalAlignment.Center, Cursor = Cursors.Hand, ToolTip = "Show " + label };
             button.Click += (_, __) => SetInspectorTab(index);
             button.PreviewKeyDown += (_, e) =>
             {
@@ -2863,22 +2865,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             for (var i = 0; i < _inspectorTabButtons.Count; i++)
             {
                 var active = i == _inspectorTabIndex;
-                _inspectorTabButtons[i].Background = active ? WpfThemeResources.PrimaryBrush : Brushes.White;
-                _inspectorTabButtons[i].Foreground = active ? Brushes.White : BrushFromRgb(51, 65, 85);
-                _inspectorTabButtons[i].BorderBrush = active ? WpfThemeResources.PrimaryBrush : BrushFromRgb(203, 213, 225);
+                _inspectorTabButtons[i].Style = (Style)CommandStyles[active ? "ItcmRangeButtonActive" : "ItcmRangeButton"];
             }
-        }
-
-        private static void ApplyInspectorTabTemplate(Button button)
-        {
-            var templateXaml = @"
-                <ControlTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" TargetType=""Button"">
-                    <Border Background=""{TemplateBinding Background}"" BorderBrush=""{TemplateBinding BorderBrush}"" BorderThickness=""{TemplateBinding BorderThickness}"" CornerRadius=""7"" Padding=""{TemplateBinding Padding}"">
-                        <ContentPresenter HorizontalAlignment=""{TemplateBinding HorizontalContentAlignment}"" VerticalAlignment=""Center"" />
-                    </Border>
-                </ControlTemplate>";
-            var ctx = new ParserContext(); ctx.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
-            button.Template = (ControlTemplate)XamlReader.Parse(templateXaml, ctx);
         }
 
         private async Task SelectCaseAsync(CallTicketListItem ticket) { if (ticket == null || ticket.TicketId <= 0) return; await SelectTicketInternalAsync(ticket); }
@@ -2897,8 +2885,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     var section = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
                     var sectionHeader = new Grid { Margin = new Thickness(0, 0, 0, 8) };
                     sectionHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); sectionHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                    sectionHeader.Children.Add(new TextBlock { Text = group, FontSize = 12, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.PrimaryHoverBrush });
-                    var count = new TextBlock { Text = rows.Count + " case" + (rows.Count == 1 ? string.Empty : "s"), FontSize = 10.5, Foreground = WpfThemeResources.TextMutedBrush }; Grid.SetColumn(count, 1); sectionHeader.Children.Add(count); section.Children.Add(sectionHeader);
+                    sectionHeader.Children.Add(new TextBlock { Text = group, FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = InkBrush });
+                    var count = new TextBlock { Text = rows.Count + " case" + (rows.Count == 1 ? string.Empty : "s"), FontSize = 10.5, Foreground = MutedBrush }; Grid.SetColumn(count, 1); sectionHeader.Children.Add(count); section.Children.Add(sectionHeader);
                     var cards = new WrapPanel { Margin = new Thickness(-3, 0, -3, 0) }; foreach (var row in rows) cards.Children.Add(CreateCaseCard(row)); section.Children.Add(cards); _caseCardsPanel.Children.Add(section);
                 }
             }
@@ -2936,18 +2924,18 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private FrameworkElement CreateCaseTableHeader()
         {
-            var border = new Border { Background = WpfThemeResources.SurfaceMutedBrush, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8, 8, 0, 0), Padding = new Thickness(0, 4, 0, 4) };
+            var border = new Border { Background = SoftFillBrush, BorderBrush = HairlineBrush, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8, 8, 0, 0), Padding = new Thickness(0, 4, 0, 4) };
             var grid = CreateCaseTableGrid();
             var headers = new[] { "Status / SLA risk", "Ticket", "Case / Requester", "Location", "Owner", "Priority", "Age / Idle" };
             for (var i = 0; i < headers.Length; i++) { var header = CreateCaseTableHeaderButton(headers[i]); Grid.SetColumn(header, i); grid.Children.Add(header); }
-            var action = new TextBlock { Text = "ACTION", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextMutedBrush, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+            var action = new TextBlock { Text = "ACTION", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = MutedBrush, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
             Grid.SetColumn(action, 7); grid.Children.Add(action); border.Child = grid; return border;
         }
 
         private Button CreateCaseTableHeaderButton(string column)
         {
             var active = string.Equals(_tableSortColumn, column, StringComparison.OrdinalIgnoreCase) || (string.Equals(column, "Status / SLA risk", StringComparison.OrdinalIgnoreCase) && string.Equals(_tableSortColumn, "Needs Attention", StringComparison.OrdinalIgnoreCase));
-            var button = new Button { Content = active ? column + (_tableSortDescending ? "  ↓" : "  ↑") : column, Tag = column, HorizontalContentAlignment = HorizontalAlignment.Left, FontSize = 10, FontWeight = FontWeights.Bold, Foreground = active ? WpfThemeResources.PrimaryHoverBrush : WpfThemeResources.TextMutedBrush, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(12, 7, 8, 7), Cursor = Cursors.Hand };
+            var button = new Button { Content = active ? column + (_tableSortDescending ? "  ↓" : "  ↑") : column, Tag = column, HorizontalContentAlignment = HorizontalAlignment.Left, FontSize = 10, FontWeight = FontWeights.Bold, Foreground = active ? AlertRedBrush : MutedBrush, Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(12, 7, 8, 7), Cursor = Cursors.Hand };
             ApplyModernButtonTemplate(button, new Thickness(12, 7, 8, 7));
             button.Click += (_, __) => SetTableSort(column);
             return button;
@@ -2957,11 +2945,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var section = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
             var expanded = !_tableGroupExpanded.TryGetValue(group, out var value) || value;
-            var toggle = new Button { Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), Padding = new Thickness(12, 8, 12, 8), HorizontalContentAlignment = HorizontalAlignment.Left, Cursor = Cursors.Hand };
+            var toggle = new Button { Background = Brushes.White, BorderBrush = HairlineBrush, BorderThickness = new Thickness(1), Padding = new Thickness(12, 8, 12, 8), HorizontalContentAlignment = HorizontalAlignment.Left, Cursor = Cursors.Hand };
             ApplyModernButtonTemplate(toggle, new Thickness(12, 8, 12, 8));
             var header = new Grid(); header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            header.Children.Add(new TextBlock { Text = (expanded ? "⌄  " : "›  ") + group, FontSize = 12, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.PrimaryHoverBrush, VerticalAlignment = VerticalAlignment.Center });
-            var count = new TextBlock { Text = rows.Count + " case" + (rows.Count == 1 ? string.Empty : "s") + (expanded ? "" : " • collapsed"), FontSize = 10.5, Foreground = WpfThemeResources.TextMutedBrush, VerticalAlignment = VerticalAlignment.Center }; Grid.SetColumn(count, 1); header.Children.Add(count); toggle.Content = header;
+            header.Children.Add(new TextBlock { Text = (expanded ? "⌄  " : "›  ") + group, FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = InkBrush, VerticalAlignment = VerticalAlignment.Center });
+            var count = new TextBlock { Text = rows.Count + " case" + (rows.Count == 1 ? string.Empty : "s") + (expanded ? "" : " • collapsed"), FontSize = 10.5, Foreground = MutedBrush, VerticalAlignment = VerticalAlignment.Center }; Grid.SetColumn(count, 1); header.Children.Add(count); toggle.Content = header;
             toggle.Click += (_, __) => { _tableGroupExpanded[group] = !expanded; RefreshCaseTable(); };
             section.Children.Add(toggle);
             if (expanded) foreach (var row in rows) section.Children.Add(CreateCaseTableRow(row));
@@ -2972,18 +2960,18 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var ticket = row.Source;
             var selected = _selectedTicket != null && _selectedTicket.TicketId == ticket.TicketId;
-            var border = new Border { Height = 64, Background = selected ? WpfThemeResources.AccentTintBrush : Brushes.White, BorderBrush = selected ? WpfThemeResources.PrimaryBrush : BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(selected ? 2 : 1), Padding = new Thickness(0), Cursor = Cursors.Hand, ToolTip = "Open this case in the persistent ticket inspector." };
+            var border = new Border { Height = 64, Background = selected ? AccentTintBrush : Brushes.White, BorderBrush = selected ? AlertRedBrush : HairlineBrush, BorderThickness = new Thickness(selected ? 2 : 1), Padding = new Thickness(0), Cursor = Cursors.Hand, ToolTip = "Open this case in the persistent ticket inspector." };
             border.MouseLeftButtonUp += async (_, e) => { if (!IsClickFromButton(e.OriginalSource as DependencyObject)) await SelectCaseAsync(ticket); };
             var grid = CreateCaseTableGrid();
             var status = CreateCaseStatusSlaCell(row); Grid.SetColumn(status, 0); grid.Children.Add(status);
-            var code = CreateCaseTableText(ticket.TicketCode ?? ticket.TicketId.ToString(), 11, FontWeights.Bold, WpfThemeResources.PrimaryHoverBrush); Grid.SetColumn(code, 1); grid.Children.Add(code);
+            var code = CreateCaseTableText(ticket.TicketCode ?? ticket.TicketId.ToString(), 11, FontWeights.SemiBold, InkBrush); Grid.SetColumn(code, 1); grid.Children.Add(code);
             var caseRequester = CreateCaseTableDetail(ticket.Issue ?? "No issue provided", string.IsNullOrWhiteSpace(ticket.CallerName) ? "No requester" : ticket.CallerName.Trim()); Grid.SetColumn(caseRequester, 2); grid.Children.Add(caseRequester);
             var location = CreateCaseTableDetail(ticket.Branch ?? "No branch", ticket.Department ?? "No department"); Grid.SetColumn(location, 3); grid.Children.Add(location);
             var owner = CreateCaseTableDetail(row.Owner, ticket.AssignedToEmpId.HasValue ? "Assigned" : "Unassigned"); Grid.SetColumn(owner, 4); grid.Children.Add(owner);
             var priority = new Border { Background = GetPriorityBackground(row.Priority), CornerRadius = new CornerRadius(999), Padding = new Thickness(8, 4, 8, 4), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Child = new TextBlock { Text = row.Priority, FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = GetPriorityForeground(row.Priority) } }; Grid.SetColumn(priority, 5); grid.Children.Add(priority);
             var idle = DateTime.UtcNow - row.LastActivityUtc; if (idle < TimeSpan.Zero) idle = TimeSpan.Zero;
             var ageIdle = CreateCaseTableDetail(row.Age + " old", FormatShortDuration(idle) + " idle"); Grid.SetColumn(ageIdle, 6); grid.Children.Add(ageIdle);
-            var open = CreatePrimaryButton("Open case", WpfThemeResources.PrimaryBrush); open.FontSize = 10; open.Padding = new Thickness(9, 4, 9, 4); open.HorizontalAlignment = HorizontalAlignment.Center; open.VerticalAlignment = VerticalAlignment.Center; open.Click += async (_, __) => await SelectCaseAsync(ticket); Grid.SetColumn(open, 7); grid.Children.Add(open);
+            var open = CreateQuietButton("Open case"); open.FontSize = 10; open.Padding = new Thickness(10, 4, 10, 4); open.HorizontalAlignment = HorizontalAlignment.Center; open.VerticalAlignment = VerticalAlignment.Center; open.Click += async (_, __) => await SelectCaseAsync(ticket); Grid.SetColumn(open, 7); grid.Children.Add(open);
             border.Child = grid; return border;
         }
 
@@ -2993,7 +2981,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var stack = new StackPanel { Margin = new Thickness(12, 5, 8, 5), VerticalAlignment = VerticalAlignment.Center };
             stack.Children.Add(new TextBlock { Text = row.ResolutionBadge, FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = GetStatusForeground(row.ResolutionBadge), TextTrimming = TextTrimming.CharacterEllipsis });
             if (row.IsForwardedToRepair)
-                stack.Children.Add(new TextBlock { Text = "Forwarded to Repair", FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(30, 64, 175), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 1, 0, 0), ToolTip = "Linked Repair Ticket: " + (row.Source.LinkedRepairTicketCode ?? "-") });
+                stack.Children.Add(new TextBlock { Text = "Forwarded to Repair", FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(59, 126, 161), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 1, 0, 0), ToolTip = "Linked Repair Ticket: " + (row.Source.LinkedRepairTicketCode ?? "-") });
             stack.Children.Add(new TextBlock { Text = "SLA · " + sla.Label, FontSize = 9.5, Foreground = GetMetricForeground(sla.State), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = sla.Tooltip, Margin = new Thickness(0, 2, 0, 0) });
             return stack;
         }
@@ -3006,8 +2994,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private static FrameworkElement CreateCaseTableDetail(string primary, string secondary)
         {
             var stack = new StackPanel { Margin = new Thickness(12, 5, 8, 5), VerticalAlignment = VerticalAlignment.Center };
-            stack.Children.Add(new TextBlock { Text = primary ?? "-", FontSize = 10.8, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextDarkBrush, TextTrimming = TextTrimming.CharacterEllipsis });
-            stack.Children.Add(new TextBlock { Text = secondary ?? "-", FontSize = 9.6, Foreground = WpfThemeResources.TextMutedBrush, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0) });
+            stack.Children.Add(new TextBlock { Text = primary ?? "-", FontSize = 10.8, FontWeight = FontWeights.SemiBold, Foreground = InkBrush, TextTrimming = TextTrimming.CharacterEllipsis });
+            stack.Children.Add(new TextBlock { Text = secondary ?? "-", FontSize = 9.6, Foreground = MutedBrush, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0) });
             return stack;
         }
 
@@ -3059,10 +3047,25 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             for (var current = source; current != null; current = VisualTreeHelper.GetParent(current)) if (current is Button) return true;
             return false;
-        }        private Border CreateCaseCard(LifecycleTicketRow row)
+        }
+        private Border CreateCaseCard(LifecycleTicketRow row)
         {
-            var ticket = row.Source; var compact = row.LifecycleGroup == "Resolved" || row.LifecycleGroup == "Closed"; var selected = _selectedTicket != null && _selectedTicket.TicketId == ticket.TicketId;
-            var card = new Border { Width = 330, Height = compact ? 82 : 124, Margin = new Thickness(3, 0, 9, 9), Padding = new Thickness(13, compact ? 10 : 11, 13, compact ? 10 : 11), Background = selected ? WpfThemeResources.AccentTintBrush : Brushes.White, BorderBrush = selected ? WpfThemeResources.PrimaryBrush : BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(selected ? 2 : 1), CornerRadius = new CornerRadius(9), Cursor = Cursors.Hand, ToolTip = "Select this case in the persistent ticket inspector." };
+            var ticket = row.Source;
+            var compact = row.LifecycleGroup == "Resolved" || row.LifecycleGroup == "Closed";
+            var selected = _selectedTicket != null && _selectedTicket.TicketId == ticket.TicketId;
+            var card = new Border
+            {
+                Width = 330,
+                Height = compact ? 92 : 124,
+                Margin = new Thickness(3, 0, 9, 9),
+                Padding = new Thickness(13, compact ? 10 : 11, 13, compact ? 10 : 11),
+                Background = selected ? AccentTintBrush : Brushes.White,
+                BorderBrush = selected ? AlertRedBrush : HairlineBrush,
+                BorderThickness = new Thickness(selected ? 2 : 1),
+                CornerRadius = new CornerRadius(10),
+                Cursor = Cursors.Hand,
+                ToolTip = "Select this case in the persistent ticket inspector."
+            };
             card.MouseLeftButtonUp += async (_, __) => await SelectTicketInternalAsync(ticket);
             var layout = new Grid(); layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var top = new Grid();
@@ -3070,26 +3073,26 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            top.Children.Add(new TextBlock { Text = ticket.TicketCode ?? ticket.TicketId.ToString(), FontSize = 11, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.PrimaryHoverBrush, VerticalAlignment = VerticalAlignment.Center });
+            top.Children.Add(new TextBlock { Text = ticket.TicketCode ?? ticket.TicketId.ToString(), FontSize = 12.5, FontWeight = FontWeights.SemiBold, Foreground = InkBrush, VerticalAlignment = VerticalAlignment.Center });
             int nextCol = 1;
             if (row.IsFieldVisitCompleted)
             {
-                var fieldBadge = new Border { Background = BrushFromRgb(220, 252, 231), CornerRadius = new CornerRadius(8), Padding = new Thickness(7, 3, 7, 3), Margin = new Thickness(0, 0, 5, 0), ToolTip = "Field visit completed for this ticket", Child = new TextBlock { Text = "Field Visit ✓", FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(22, 101, 52) } };
+                var fieldBadge = new Border { Background = BrushFromRgb(241, 247, 243), CornerRadius = new CornerRadius(999), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 5, 0), ToolTip = "Field visit completed for this ticket", Child = new TextBlock { Text = "Field Visit ✓", FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(47, 133, 90) } };
                 Grid.SetColumn(fieldBadge, nextCol++);
                 top.Children.Add(fieldBadge);
             }
             if (row.IsForwardedToRepair)
             {
-                var forwarded = new Border { Background = BrushFromRgb(219, 234, 254), CornerRadius = new CornerRadius(8), Padding = new Thickness(7, 3, 7, 3), Margin = new Thickness(0, 0, 5, 0), ToolTip = "Linked Repair Ticket: " + (ticket.LinkedRepairTicketCode ?? "-"), Child = new TextBlock { Text = "Forwarded to Repair", FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(30, 64, 175) } };
+                var forwarded = new Border { Background = BrushFromRgb(238, 244, 248), CornerRadius = new CornerRadius(999), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 5, 0), ToolTip = "Linked Repair Ticket: " + (ticket.LinkedRepairTicketCode ?? "-"), Child = new TextBlock { Text = "Forwarded to Repair", FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(59, 126, 161) } };
                 Grid.SetColumn(forwarded, nextCol++);
                 top.Children.Add(forwarded);
             }
-            var status = new Border { Background = GetStatusBackground(row.ResolutionBadge), CornerRadius = new CornerRadius(8), Padding = new Thickness(7, 3, 7, 3), Child = new TextBlock { Text = row.ResolutionBadge, FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = GetStatusForeground(row.ResolutionBadge) } };
+            var status = new Border { Background = GetStatusBackground(row.ResolutionBadge), CornerRadius = new CornerRadius(999), Padding = new Thickness(8, 3, 8, 3), Child = new TextBlock { Text = row.ResolutionBadge, FontSize = 9.5, FontWeight = FontWeights.SemiBold, Foreground = GetStatusForeground(row.ResolutionBadge) } };
             Grid.SetColumn(status, nextCol);
             top.Children.Add(status);
             layout.Children.Add(top);
-            var issue = new TextBlock { Text = ticket.Issue ?? "No issue provided", FontSize = compact ? 12 : 13, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextDarkBrush, TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = compact ? 32 : 38, Margin = new Thickness(0, compact ? 5 : 7, 0, 3) }; Grid.SetRow(issue, 1); layout.Children.Add(issue);
-            var footer = new Grid { VerticalAlignment = VerticalAlignment.Bottom }; footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); var meta = compact ? (ticket.Branch ?? "No branch") + " • " + FormatRelativeTime(ticket.UpdatedAt) : (string.IsNullOrWhiteSpace(ticket.CallerName) ? "No caller" : ticket.CallerName.Trim()) + " • " + (string.IsNullOrWhiteSpace(ticket.ResponsiblePerson) ? "Unassigned" : ticket.ResponsiblePerson.Trim()) + " • " + row.Age; footer.Children.Add(new TextBlock { Text = meta, FontSize = 10, Foreground = WpfThemeResources.TextMutedBrush, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center }); var open = CreatePrimaryButton("Open case", WpfThemeResources.PrimaryBrush); open.FontSize = 10.5; open.Padding = new Thickness(9, 4, 9, 4); open.Margin = new Thickness(6, 0, 0, 0); open.Click += async (_, __) => await SelectCaseAsync(ticket); Grid.SetColumn(open, 1); footer.Children.Add(open); Grid.SetRow(footer, 2); layout.Children.Add(footer); card.Child = layout; return card;
+            var issue = new TextBlock { Text = ticket.Issue ?? "No issue provided", FontSize = compact ? 12 : 13, FontWeight = FontWeights.SemiBold, Foreground = InkBrush, TextWrapping = compact ? TextWrapping.NoWrap : TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = compact ? 16 : 38, Margin = new Thickness(0, compact ? 5 : 7, 0, compact ? 2 : 3) }; Grid.SetRow(issue, 1); layout.Children.Add(issue);
+            var footer = new Grid { VerticalAlignment = VerticalAlignment.Bottom }; footer.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto }); var meta = compact ? (ticket.Branch ?? "No branch") + " • " + FormatRelativeTime(ticket.UpdatedAt) : (string.IsNullOrWhiteSpace(ticket.CallerName) ? "No caller" : ticket.CallerName.Trim()) + " • " + (string.IsNullOrWhiteSpace(ticket.ResponsiblePerson) ? "Unassigned" : ticket.ResponsiblePerson.Trim()) + " • " + row.Age; footer.Children.Add(new TextBlock { Text = meta, FontSize = 10, Foreground = MutedBrush, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center }); var open = CreateQuietButton("Open case"); open.FontSize = 10.5; open.Padding = new Thickness(10, 4, 10, 4); open.Margin = new Thickness(6, 0, 0, 0); open.Click += async (_, __) => await SelectCaseAsync(ticket); Grid.SetColumn(open, 1); footer.Children.Add(open); Grid.SetRow(footer, 2); layout.Children.Add(footer); card.Child = layout; return card;
         }
 
         private void ShowCreateTicketModal(Border createTicketContainer)
@@ -3376,42 +3379,83 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         }
 
         private static FrameworkElement BuildSelectionDetails(
-            out TextBlock headline, out TextBlock subhead, out TextBlock status, out TextBlock priority,
+            out TextBlock status, out TextBlock priority,
             out TextBlock assignee, out TextBlock caller, out TextBlock location, out TextBlock activity,
             out TextBlock created, out TextBlock escalation, out TextBlock lastEmail, out FrameworkElement escalationHost,
             out FrameworkElement lastEmailHost, out Button detailsButton, out Button summaryButton,
             out Button deleteButton)
         {
-            var stack = new StackPanel { Margin = new Thickness(12, 10, 12, 12) };
-            var title = new StackPanel { Margin = new Thickness(0, 0, 0, 9) };
-            title.Children.Add(new TextBlock { Text = "OVERVIEW", FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.PrimaryHoverBrush });
-            headline = new TextBlock { FontSize = 16, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextDarkBrush, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 3, 0, 0) };
-            subhead = new TextBlock { FontSize = 10.8, Foreground = WpfThemeResources.TextMutedBrush, TextWrapping = TextWrapping.Wrap, MaxHeight = 34, Margin = new Thickness(0, 2, 0, 0) };
-            title.Children.Add(headline); title.Children.Add(subhead); stack.Children.Add(title);
+            var stack = new StackPanel { Margin = new Thickness(14, 12, 14, 14) };
+            var title = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
+            title.Children.Add(new TextBlock { Text = "CASE SUMMARY", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = MutedBrush });
+            title.Children.Add(new TextBlock { Text = "Contacts, ownership, and activity", FontSize = 11, Foreground = MutedBrush, Margin = new Thickness(0, 3, 0, 0) });
+            stack.Children.Add(title);
 
-            stack.Children.Add(CreateCompactInspectorSection("Requester / location", out caller, "Requester", out location, "Location"));
-            stack.Children.Add(CreateCompactInspectorSection("Ownership / timing", out assignee, "Owner", out created, "Created"));
-            stack.Children.Add(CreateCompactInspectorFact("Last activity", out activity));
-            escalationHost = CreateCompactInspectorFact("Escalation", out escalation);
-            escalationHost.Visibility = Visibility.Collapsed;
-            stack.Children.Add(escalationHost);
-            lastEmailHost = CreateCompactInspectorFact("Last email", out lastEmail);
-            lastEmailHost.Visibility = Visibility.Collapsed;
-            stack.Children.Add(lastEmailHost);
+            var statusRow = new WrapPanel { Margin = new Thickness(0, 0, 0, 16) };
+            statusRow.Children.Add(CreateInspectorChip("STATUS", out status));
+            var priorityChip = CreateInspectorChip("PRIORITY", out priority);
+            priorityChip.Margin = new Thickness(22, 0, 0, 0);
+            statusRow.Children.Add(priorityChip);
+            stack.Children.Add(statusRow);
 
-            var priorityRow = new Grid { Margin = new Thickness(0, 0, 0, 9) };
-            priorityRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            priorityRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            priorityRow.Children.Add(CreateCompactInspectorChip("STATUS", out status));
-            var priorityChip = CreateCompactInspectorChip("PRIORITY", out priority);
-            Grid.SetColumn(priorityChip, 1); priorityRow.Children.Add(priorityChip); stack.Children.Add(priorityRow);
+            var details = new StackPanel();
+            details.Children.Add(CreateInspectorDetailPair("REQUESTER", out caller, "LOCATION", out location));
+            details.Children.Add(CreateInspectorDetailPair("OWNER", out assignee, "CREATED", out created));
+            var lastActivity = CreateInspectorDetail("LAST ACTIVITY", out activity);
+            lastActivity.Margin = new Thickness(0, 0, 0, 14);
+            details.Children.Add(lastActivity);
 
-            var actions = new WrapPanel { Margin = new Thickness(0, 1, 0, 0) };
-            detailsButton = CreateCompactActionButton("Full details", WpfThemeResources.PrimaryBrush);
-            summaryButton = CreateCompactActionButton("Summary", BrushFromRgb(71, 85, 105));
-            deleteButton = CreateCompactActionButton("Delete", BrushFromRgb(220, 38, 38));
+            var escalationBlock = CreateInspectorDetail("ESCALATION", out escalation);
+            escalationBlock.Margin = new Thickness(0, 0, 0, 14);
+            var escalationPanel = new StackPanel { Visibility = Visibility.Collapsed };
+            escalationPanel.Children.Add(escalationBlock);
+            escalationHost = escalationPanel;
+            details.Children.Add(escalationPanel);
+
+            var lastEmailBlock = CreateInspectorDetail("LAST EMAIL", out lastEmail);
+            lastEmailBlock.Margin = new Thickness(0, 0, 0, 14);
+            var lastEmailPanel = new StackPanel { Visibility = Visibility.Collapsed };
+            lastEmailPanel.Children.Add(lastEmailBlock);
+            lastEmailHost = lastEmailPanel;
+            details.Children.Add(lastEmailPanel);
+            stack.Children.Add(details);
+
+            stack.Children.Add(new Border { Background = HairlineBrush, Height = 1, Margin = new Thickness(0, 0, 0, 12) });
+
+            var actions = new WrapPanel();
+            detailsButton = CreateCompactActionButton("Full details", true);
+            summaryButton = CreateCompactActionButton("Summary");
+            deleteButton = CreateCompactActionButton("Delete", false, true);
             actions.Children.Add(detailsButton); actions.Children.Add(summaryButton); actions.Children.Add(deleteButton); stack.Children.Add(actions);
             return stack;
+        }
+        private static StackPanel CreateInspectorChip(string label, out TextBlock value)
+        {
+            var block = new StackPanel { HorizontalAlignment = HorizontalAlignment.Left };
+            block.Children.Add(new TextBlock { Text = label, FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = MutedBrush });
+            var chip = new Border { Background = SoftFillBrush, CornerRadius = new CornerRadius(999), Padding = new Thickness(9, 3, 9, 3), Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+            value = new TextBlock { Text = "-", FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = BodyBrush };
+            chip.Child = value; block.Children.Add(chip);
+            return block;
+        }
+        private static Grid CreateInspectorDetailPair(string leftLabel, out TextBlock leftValue, string rightLabel, out TextBlock rightValue)
+        {
+            var row = new Grid { Margin = new Thickness(0, 0, 0, 14) };
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            row.ColumnDefinitions.Add(new ColumnDefinition());
+            row.Children.Add(CreateInspectorDetail(leftLabel, out leftValue));
+            var right = CreateInspectorDetail(rightLabel, out rightValue);
+            right.Margin = new Thickness(16, 0, 0, 0); Grid.SetColumn(right, 1);
+            row.Children.Add(right);
+            return row;
+        }
+        private static StackPanel CreateInspectorDetail(string label, out TextBlock value)
+        {
+            var block = new StackPanel();
+            block.Children.Add(new TextBlock { Text = label, FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = MutedBrush });
+            value = new TextBlock { Text = "-", FontSize = 11.5, Foreground = InkBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) };
+            block.Children.Add(value);
+            return block;
         }
         private static FrameworkElement BuildCreateTicketSection(
             out ComboBox companyCombo,
@@ -3467,11 +3511,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             caller.DisplayMemberPath = "Name";
             callerCombo = caller;
 
-            addCallerButton = CreateInlineActionButton("+ Add Employee", WpfThemeResources.PrimaryBrush);
-            updateCallerButton = CreateInlineActionButton("Update Employee Location", WpfThemeResources.PrimaryBrush);
+            addCallerButton = CreateInlineActionButton("+ Add Employee");
+            updateCallerButton = CreateInlineActionButton("Update Employee Location");
             updateCallerButton.IsEnabled = false;
             updateCallerButton.ToolTip = "Select an existing employee to update their company, department, or branch.";
-            retryCallerRefreshButton = CreateInlineActionButton("Retry Refresh", BrushFromRgb(180, 83, 9));
+            retryCallerRefreshButton = CreateInlineActionButton("Retry Refresh");
             retryCallerRefreshButton.Visibility = Visibility.Collapsed;
             var callerField = new StackPanel();
             callerField.Children.Add(caller);
@@ -3484,7 +3528,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 button.FontSize = 10;
                 button.HorizontalAlignment = HorizontalAlignment.Left;
                 button.Margin = new Thickness(0, 0, 6, 4);
-                ApplyModernButtonTemplate(button, new Thickness(8, 5, 8, 5));
+                button.Padding = new Thickness(8, 5, 8, 5);
             }
             callerActions.Children.Add(addCallerButton);
             callerActions.Children.Add(updateCallerButton);
@@ -3554,15 +3598,15 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 8, 0)
             };
-            escalationButton = CreateInlineActionButton("Set escalation", BrushFromRgb(230, 126, 34));
-            escalationClearButton = CreateInlineActionButton("Clear", BrushFromRgb(149, 165, 166));
+            escalationButton = CreateInlineActionButton("Set escalation");
+            escalationClearButton = CreateInlineActionButton("Clear");
             escalationClearButton.Visibility = Visibility.Collapsed;
             foreach (var button in new[] { escalationButton, escalationClearButton })
             {
                 button.MinWidth = 0;
                 button.Height = 28;
                 button.FontSize = 10;
-                ApplyModernButtonTemplate(button, new Thickness(8, 5, 8, 5));
+                button.Padding = new Thickness(8, 5, 8, 5);
             }
             escalationClearButton.Margin = new Thickness(6, 0, 0, 0);
 
@@ -3586,10 +3630,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var backdatePanel = new Border
             {
-                Background = BrushFromRgb(241, 245, 249),
-                BorderBrush = BrushFromRgb(226, 232, 240),
+                Background = SoftFillBrush,
+                BorderBrush = HairlineBrush,
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
+                CornerRadius = new CornerRadius(9),
                 Padding = new Thickness(12, 10, 12, 10),
                 Margin = new Thickness(0, 10, 0, 6)
             };
@@ -3640,8 +3684,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Margin = new Thickness(0, 18, 0, 8),
                 HorizontalAlignment = HorizontalAlignment.Right
             };
-            createButton = CreatePrimaryButton("Create Ticket", WpfThemeResources.PrimaryBrush);
-            clearButton = CreatePrimaryButton("Clear Form", BrushFromRgb(71, 85, 105));
+            createButton = CreateAccentButton("Create Ticket");
+            clearButton = CreateQuietButton("Clear Form");
+            createButton.Margin = new Thickness(0, 0, 10, 10);
+            clearButton.Margin = new Thickness(0, 0, 10, 10);
             actions.Children.Add(createButton);
             actions.Children.Add(clearButton);
             Grid.SetRow(actions, 6);
@@ -3656,8 +3702,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             out Button syncSetButton, out Button escalationOverrideButton)
         {
             var stack = new StackPanel { Margin = new Thickness(14, 12, 14, 14) };
-            stack.Children.Add(new TextBlock { Text = "WORKFLOW", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.PrimaryHoverBrush });
-            headline = new TextBlock { FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(51, 65, 85), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 10) };
+            stack.Children.Add(new TextBlock { Text = "WORKFLOW", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = MutedBrush });
+            headline = new TextBlock { FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = InkBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 10) };
             stack.Children.Add(headline);
 
             var fields = CreateFormGrid(2, 2);
@@ -3670,8 +3716,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             AddCompactFormField(fields, 0, 1, "Priority", priorityCombo);
             AddCompactFormField(fields, 1, 0, "Assignment", assigneeCombo);
             var assignmentActions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(10, 16, 0, 0) };
-            assignToMeButton = CreateCompactActionButton("Assign to me", WpfThemeResources.PrimaryBrush);
-            reassignButton = CreateCompactActionButton("Reassign", BrushFromRgb(124, 58, 237));
+            assignToMeButton = CreateCompactActionButton("Assign to me", true);
+            reassignButton = CreateCompactActionButton("Reassign");
             assignmentActions.Children.Add(assignToMeButton); assignmentActions.Children.Add(reassignButton);
             Grid.SetRow(assignmentActions, 1); Grid.SetColumn(assignmentActions, 1); fields.Children.Add(assignmentActions);
             stack.Children.Add(fields);
@@ -3684,19 +3730,19 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             stack.Children.Add(notes);
 
             var core = new WrapPanel { Margin = new Thickness(0, 12, 0, 8) };
-            updateButton = CreateCompactActionButton("Update", WpfThemeResources.PrimaryBrush);
-            markAsButton = CreateCompactActionButton("Mark as…", BrushFromRgb(71, 85, 105));
-            // Field Work — borrows Repair Portal identity (blue accent + card shadow) for visual consistency across portals
-            fieldWorkButton = CreateCompactActionButton("Field Work", BrushFromRgb(14, 116, 144));
+            updateButton = CreateCompactActionButton("Update", true);
+            markAsButton = CreateCompactActionButton("Mark as…");
+            // Field Work — quiet by default so one accent action owns the workflow panel
+            fieldWorkButton = CreateCompactActionButton("Field Work");
             fieldWorkButton.ToolTip = "Schedule or manage the on-site visit for the selected ticket (one visit per ticket)";
             core.Children.Add(updateButton); core.Children.Add(markAsButton); core.Children.Add(fieldWorkButton); stack.Children.Add(core);
 
-            var advanced = new Expander { Header = "Advanced actions", IsExpanded = false, Foreground = WpfThemeResources.PrimaryHoverBrush, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 2, 0, 0) };
+            var advanced = new Expander { Header = "Advanced actions", IsExpanded = false, Foreground = InkBrush, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 2, 0, 0) };
             var advancedPanel = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
-            reopenButton = CreateCompactActionButton("Reopen", BrushFromRgb(220, 38, 38));
-            returnTempButton = CreateCompactActionButton("Return temp", BrushFromRgb(124, 58, 237));
-            syncSetButton = CreateCompactActionButton("Sync set", BrushFromRgb(22, 163, 74));
-            escalationOverrideButton = CreateCompactActionButton("Escalation override", BrushFromRgb(234, 88, 12));
+            reopenButton = CreateCompactActionButton("Reopen", false, true);
+            returnTempButton = CreateCompactActionButton("Return temp");
+            syncSetButton = CreateCompactActionButton("Sync set");
+            escalationOverrideButton = CreateCompactActionButton("Escalation override");
             advancedPanel.Children.Add(reopenButton); advancedPanel.Children.Add(returnTempButton); advancedPanel.Children.Add(syncSetButton); advancedPanel.Children.Add(escalationOverrideButton);
             advanced.Content = advancedPanel; stack.Children.Add(advanced);
             return stack;
@@ -3704,50 +3750,76 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private static FrameworkElement BuildActivityTimeline(out ListBox list)
         {
             var stack = new StackPanel { Margin = new Thickness(14, 12, 14, 14) };
-            stack.Children.Add(new TextBlock { Text = "ACTIVITY", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.PrimaryHoverBrush });
-            stack.Children.Add(new TextBlock { Text = "Chronological notes and workflow history", FontSize = 11, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0, 3, 0, 10) });
+            stack.Children.Add(new TextBlock { Text = "ACTIVITY", FontSize = 10, FontWeight = FontWeights.Bold, Foreground = MutedBrush });
+            stack.Children.Add(new TextBlock { Text = "Newest first · notes and field changes", FontSize = 11, Foreground = MutedBrush, Margin = new Thickness(0, 3, 0, 6) });
             list = new ListBox { BorderThickness = new Thickness(0), Background = Brushes.Transparent, ItemContainerStyle = BuildListBoxItemStyle(), ItemTemplate = CreateCompactActivityTemplate() };
             // The inspector tab owns the only scroll viewer; this list is deliberately non-scrolling.
             ScrollViewer.SetVerticalScrollBarVisibility(list, ScrollBarVisibility.Disabled);
             stack.Children.Add(list);
             return stack;
         }
-        private static Border CreateCompactInspectorSection(string title, out TextBlock firstValue, string firstLabel, out TextBlock secondValue, string secondLabel)
-        {
-            var grid = new Grid { Margin = new Thickness(0, 0, 0, 8) }; grid.ColumnDefinitions.Add(new ColumnDefinition()); grid.ColumnDefinitions.Add(new ColumnDefinition());
-            var card = new Border { Background = WpfThemeResources.SurfaceMutedBrush, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(10), Child = grid };
-            firstValue = AddCompactValue(grid, 0, firstLabel); secondValue = AddCompactValue(grid, 1, secondLabel); return card;
-        }
-        private static Border CreateCompactInspectorFact(string title, out TextBlock value)
-        {
-            var stack = new StackPanel(); stack.Children.Add(new TextBlock { Text = title.ToUpperInvariant(), FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextMutedBrush });
-            value = new TextBlock { Text = "-", FontSize = 11, Foreground = BrushFromRgb(51, 65, 85), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) }; stack.Children.Add(value);
-            return new Border { Background = WpfThemeResources.SurfaceMutedBrush, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(10), Margin = new Thickness(0, 0, 0, 8), Child = stack };
-        }
-        private static Border CreateCompactInspectorChip(string label, out TextBlock value)
-        {
-            var stack = new StackPanel(); stack.Children.Add(new TextBlock { Text = label, FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextMutedBrush });
-            var chip = new Border { Background = BrushFromRgb(241, 245, 249), CornerRadius = new CornerRadius(999), Padding = new Thickness(8, 4, 8, 4), Margin = new Thickness(0, 4, 8, 0) };
-            value = new TextBlock { Text = "-", FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(71, 85, 105) }; chip.Child = value; stack.Children.Add(chip);
-            return new Border { Child = stack, Margin = new Thickness(0, 0, 8, 0) };
-        }
-        private static TextBlock AddCompactValue(Grid grid, int column, string label)
-        {
-            var stack = new StackPanel { Margin = new Thickness(column == 0 ? 0 : 10, 0, 0, 0) }; stack.Children.Add(new TextBlock { Text = label.ToUpperInvariant(), FontSize = 9.5, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextMutedBrush });
-            var value = new TextBlock { Text = "-", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextDarkBrush, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) }; stack.Children.Add(value); Grid.SetColumn(stack, column); grid.Children.Add(stack); return value;
-        }
         private static void AddCompactFormField(Grid grid, int row, int column, string label, FrameworkElement control)
         {
-            var stack = new StackPanel { Margin = new Thickness(column > 0 ? 8 : 0, row > 0 ? 8 : 0, 0, 0) }; stack.Children.Add(new TextBlock { Text = label, FontSize = 10, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(71, 85, 105), Margin = new Thickness(0, 0, 0, 4) }); stack.Children.Add(control); Grid.SetRow(stack, row); Grid.SetColumn(stack, column); grid.Children.Add(stack);
+            var stack = new StackPanel { Margin = new Thickness(column > 0 ? 8 : 0, row > 0 ? 8 : 0, 0, 0) }; stack.Children.Add(new TextBlock { Text = label, FontSize = 10, FontWeight = FontWeights.SemiBold, Foreground = MutedBrush, Margin = new Thickness(0, 0, 0, 4) }); stack.Children.Add(control); Grid.SetRow(stack, row); Grid.SetColumn(stack, column); grid.Children.Add(stack);
         }
-        private static Button CreateCompactActionButton(string text, Brush background)
+        private static Button CreateCompactActionButton(string text, bool accent = false, bool danger = false)
         {
-            var button = CreatePrimaryButton(text, background); button.FontSize = 10.5; button.Padding = new Thickness(10, 6, 10, 6); button.Margin = new Thickness(0, 0, 6, 6); return button;
+            var button = danger ? CreateDangerButton(text) : accent ? CreateAccentButton(text) : CreateQuietButton(text);
+            button.FontSize = 10.5; button.Padding = new Thickness(10, 6, 10, 6); button.Margin = new Thickness(0, 0, 6, 6); return button;
         }
         private static DataTemplate CreateCompactActivityTemplate()
         {
-            var border = new FrameworkElementFactory(typeof(Border)); border.SetValue(Border.PaddingProperty, new Thickness(9)); border.SetValue(Border.MarginProperty, new Thickness(0, 0, 0, 7)); border.SetValue(Border.CornerRadiusProperty, new CornerRadius(8)); border.SetValue(Border.BackgroundProperty, Brushes.White); border.SetValue(Border.BorderBrushProperty, BrushFromRgb(226, 232, 240)); border.SetValue(Border.BorderThicknessProperty, new Thickness(1));
-            var stack = new FrameworkElementFactory(typeof(StackPanel)); var top = new FrameworkElementFactory(typeof(DockPanel)); top.SetValue(DockPanel.LastChildFillProperty, true); var time = CreateBoundText("TimestampText", 9.5, FontWeights.Normal, null, WpfThemeResources.TextMutedBrush); time.SetValue(DockPanel.DockProperty, Dock.Right); top.AppendChild(time); var badge = CreateBoundText("TypeLabel", 10, FontWeights.SemiBold, "BadgeForeground"); top.AppendChild(badge); stack.AppendChild(top); stack.AppendChild(CreateBoundText("Title", 11, FontWeights.SemiBold, null, WpfThemeResources.TextDarkBrush)); stack.AppendChild(CreateBoundText("Body", 10.5, FontWeights.Normal, null, BrushFromRgb(71, 85, 105))); border.AppendChild(stack); return new DataTemplate { VisualTree = border };
+            const string xaml = @"
+                <DataTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"">
+                    <Border Padding=""0,11,0,11"" BorderBrush=""#E5E6E8"" BorderThickness=""0,0,0,1"">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width=""Auto"" />
+                                <ColumnDefinition Width=""*"" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width=""2"" CornerRadius=""1"" Background=""{Binding AccentBrush}"" Margin=""0,3,12,3"" />
+                            <StackPanel Grid.Column=""1"">
+                                <Border Background=""{Binding BadgeBackground}"" CornerRadius=""999"" Padding=""8,2,8,2"" HorizontalAlignment=""Left"">
+                                    <TextBlock Text=""{Binding TypeLabel}"" FontSize=""9.5"" FontWeight=""SemiBold"" Foreground=""{Binding BadgeForeground}"" TextTrimming=""CharacterEllipsis"" TextWrapping=""NoWrap"" />
+                                </Border>
+                                <TextBlock Text=""{Binding Title}"" FontSize=""12"" FontWeight=""SemiBold"" Foreground=""#202635"" Margin=""0,7,0,0"" TextWrapping=""Wrap"" />
+                                <TextBlock Text=""{Binding Body}"" FontSize=""10.5"" Foreground=""#4A5261"" Margin=""0,3,0,0"" TextWrapping=""Wrap"">
+                                    <TextBlock.Style>
+                                        <Style TargetType=""TextBlock"">
+                                            <Style.Triggers>
+                                                <Trigger Property=""Text"" Value="""">
+                                                    <Setter Property=""Visibility"" Value=""Collapsed"" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <Grid Margin=""0,7,0,0"">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width=""*"" />
+                                        <ColumnDefinition Width=""Auto"" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text=""{Binding Actor}"" FontSize=""10"" Foreground=""#677081"" TextTrimming=""CharacterEllipsis"" VerticalAlignment=""Center"" />
+                                    <TextBlock Grid.Column=""1"" Text=""{Binding TimestampText}"" FontSize=""9.5"" Foreground=""#9AA1AD"" Margin=""10,0,0,0"" VerticalAlignment=""Center"">
+                                        <TextBlock.Style>
+                                            <Style TargetType=""TextBlock"">
+                                                <Style.Triggers>
+                                                    <Trigger Property=""Text"" Value="""">
+                                                        <Setter Property=""Visibility"" Value=""Collapsed"" />
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>";
+
+            var ctx = new ParserContext();
+            ctx.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
+            return (DataTemplate)XamlReader.Parse(xaml, ctx);
         }
 
         private static DataTemplate CreateActivityTimelineTemplate()
@@ -3797,7 +3869,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Text = title,
                 FontSize = 22,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(32, 42, 55)
+                Foreground = InkBrush
             });
             stack.Children.Add(new TextBlock
             {
@@ -3805,7 +3877,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 Margin = new Thickness(0, 6, 0, 0),
                 FontSize = 12.5,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = BrushFromRgb(98, 113, 128)
+                Foreground = MutedBrush
             });
             return stack;
         }
@@ -3928,7 +4000,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 VerticalAlignment = VerticalAlignment.Center,
                 FontSize = 11.5,
-                Foreground = BrushFromRgb(71, 85, 105)
+                Foreground = MutedBrush
             };
             DockPanel.SetDock(pager, Dock.Left);
             panel.Children.Add(pager);
@@ -4311,9 +4383,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Margin = new Thickness(0, 0, 0, 0),
                 Padding = new Thickness(12, 10, 12, 10),
-                CornerRadius = new CornerRadius(14),
-                Background = new SolidColorBrush(WpfThemeResources.SurfaceMuted),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
+                CornerRadius = new CornerRadius(9),
+                Background = SoftFillBrush,
+                BorderBrush = HairlineBrush,
                 BorderThickness = new Thickness(1),
                 Child = content
             };
@@ -4342,10 +4414,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var templateXaml = @"
                 <ControlTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" TargetType=""Button"">
-                    <Border CornerRadius=""6"" Background=""{TemplateBinding Background}"" Padding=""" + padding.Left + "," + padding.Top + "," + padding.Right + "," + padding.Bottom + @""">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius=""4"" ShadowDepth=""1"" Color=""#1e293b"" Opacity=""0.15"" />
-                        </Border.Effect>
+                    <Border CornerRadius=""7"" Background=""{TemplateBinding Background}"" BorderBrush=""{TemplateBinding BorderBrush}"" BorderThickness=""{TemplateBinding BorderThickness}"" Padding=""" + padding.Left + "," + padding.Top + "," + padding.Right + "," + padding.Bottom + @""">
                         <ContentPresenter HorizontalAlignment=""Center"" VerticalAlignment=""Center"" />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -4367,6 +4436,21 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             btn.Cursor = Cursors.Hand;
         }
 
+        private static Button CreateQuietButton(string text)
+        {
+            return new Button { Content = text, Style = (Style)CommandStyles["ItcmQuietButton"] };
+        }
+
+        private static Button CreateAccentButton(string text)
+        {
+            return new Button { Content = text, Style = (Style)CommandStyles["ItcmAccentButton"] };
+        }
+
+        private static Button CreateDangerButton(string text)
+        {
+            return new Button { Content = text, Style = (Style)CommandStyles["ItcmDangerButton"] };
+        }
+
         private static Button CreatePrimaryButton(string text, Brush background)
         {
             var btn = new Button
@@ -4376,64 +4460,29 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = Brushes.White,
-                Background = background
+                Background = background,
+                BorderThickness = new Thickness(0)
             };
             ApplyModernButtonTemplate(btn, new Thickness(16, 10, 16, 10));
             return btn;
         }
 
-        private static Button CreateInlineActionButton(string text, Brush background)
+        private static Button CreateInlineActionButton(string text)
         {
-            var btn = new Button
-            {
-                Content = text,
-                MinWidth = 118,
-                FontSize = 11.5,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White,
-                Background = background,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            ApplyModernButtonTemplate(btn, new Thickness(14, 8, 14, 8));
+            var btn = CreateQuietButton(text);
+            btn.MinWidth = 118;
+            btn.FontSize = 11.5;
+            btn.HorizontalAlignment = HorizontalAlignment.Right;
+            btn.VerticalAlignment = VerticalAlignment.Center;
             return btn;
         }
 
         private static Button CreatePagerButton(string text)
         {
-            var btn = new Button
-            {
-                Content = text,
-                Margin = new Thickness(8, 0, 0, 0),
-                Foreground = BrushFromRgb(51, 65, 85),
-                FontSize = 11.5,
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand
-            };
-            
-            var templateXaml = @"
-                <ControlTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" TargetType=""Button"">
-                    <Border CornerRadius=""16"" Padding=""16,6,16,6"" BorderThickness=""1"">
-                        <Border.Style>
-                            <Style TargetType=""Border"">
-                                <Setter Property=""Background"" Value=""White"" />
-                                <Setter Property=""BorderBrush"" Value=""#cbd5e1"" />
-                                <Style.Triggers>
-                                    <Trigger Property=""IsMouseOver"" Value=""True"">
-                                        <Setter Property=""Background"" Value=""#f8fafc"" />
-                                        <Setter Property=""BorderBrush"" Value=""#94a3b8"" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <ContentPresenter HorizontalAlignment=""Center"" VerticalAlignment=""Center"" />
-                    </Border>
-                </ControlTemplate>";
-
-            var ctx = new ParserContext();
-            ctx.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
-            btn.Template = (ControlTemplate)XamlReader.Parse(templateXaml, ctx);
-
+            var btn = CreateQuietButton(text);
+            btn.Margin = new Thickness(8, 0, 0, 0);
+            btn.FontSize = 11.5;
+            btn.Padding = new Thickness(14, 6, 14, 6);
             return btn;
         }
 
@@ -4441,27 +4490,26 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var templateXaml = @"
                 <ControlTemplate xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"" TargetType=""TextBox"">
-                    <Border x:Name=""border"" CornerRadius=""6"" Background=""White"" BorderBrush=""#cbd5e1"" BorderThickness=""1"" Padding=""{TemplateBinding Padding}"">
+                    <Border x:Name=""border"" CornerRadius=""7"" Background=""White"" BorderBrush=""#CDD0D6"" BorderThickness=""1"" Padding=""{TemplateBinding Padding}"">
                         <ScrollViewer x:Name=""PART_ContentHost"" Focusable=""false"" HorizontalScrollBarVisibility=""Hidden"" VerticalScrollBarVisibility=""Hidden""/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property=""IsKeyboardFocused"" Value=""true"">
-                            <Setter TargetName=""border"" Property=""BorderBrush"" Value=""#3b82f6""/>
-                            <Setter TargetName=""border"" Property=""BorderThickness"" Value=""2""/>
+                            <Setter TargetName=""border"" Property=""BorderBrush"" Value=""#B92335""/>
                         </Trigger>
                         <Trigger Property=""IsMouseOver"" Value=""true"">
-                            <Setter TargetName=""border"" Property=""BorderBrush"" Value=""#94a3b8""/>
+                            <Setter TargetName=""border"" Property=""BorderBrush"" Value=""#9AA1AD""/>
                         </Trigger>
                         <Trigger Property=""IsReadOnly"" Value=""true"">
-                            <Setter TargetName=""border"" Property=""Background"" Value=""#f8fafc""/>
-                            <Setter TargetName=""border"" Property=""BorderBrush"" Value=""#e2e8f0""/>
+                            <Setter TargetName=""border"" Property=""Background"" Value=""#F5F6F8""/>
+                            <Setter TargetName=""border"" Property=""BorderBrush"" Value=""#E5E6E8""/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>";
             var ctx = new ParserContext();
             ctx.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
             box.Template = (ControlTemplate)XamlReader.Parse(templateXaml, ctx);
-            box.Foreground = BrushFromRgb(30, 41, 59);
+            box.Foreground = InkBrush;
         }
 
         private static TextBox CreateTextBox(string placeholder)
@@ -4496,17 +4544,17 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private static void ApplyModernComboBoxStyle(ComboBox box)
         {
             box.Background = Brushes.White;
-            box.BorderBrush = BrushFromRgb(203, 213, 225);
+            box.BorderBrush = InputBorderBrush;
             box.BorderThickness = new Thickness(1);
-            box.Foreground = BrushFromRgb(30, 41, 59);
+            box.Foreground = InkBrush;
         }
 
         private static ComboBox CreateLookupComboBox()
         {
             var box = new ComboBox
             {
-                Padding = new Thickness(8, 6, 8, 6),
-                FontSize = 12,
+                Padding = new Thickness(10, 7, 10, 7),
+                FontSize = 12.5,
                 DisplayMemberPath = "Name"
             };
             ApplyModernComboBoxStyle(box);
@@ -4517,8 +4565,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var box = new ComboBox
             {
-                Padding = new Thickness(8, 6, 8, 6),
-                FontSize = 12
+                Padding = new Thickness(10, 7, 10, 7),
+                FontSize = 12.5
             };
             ApplyModernComboBoxStyle(box);
             return box;
@@ -4533,10 +4581,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             stack.Children.Add(new TextBlock
             {
                 Text = label,
-                Margin = new Thickness(0, 0, 0, 8),
+                Margin = new Thickness(0, 0, 0, 7),
                 FontSize = 11.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(71, 85, 105)
+                Foreground = MutedBrush
             });
             stack.Children.Add(control);
             Grid.SetColumn(stack, column);
@@ -4552,10 +4600,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             stack.Children.Add(new TextBlock
             {
                 Text = label,
-                Margin = new Thickness(0, 0, 0, 8),
+                Margin = new Thickness(0, 0, 0, 7),
                 FontSize = 11.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(71, 85, 105)
+                Foreground = MutedBrush
             });
             stack.Children.Add(control);
             Grid.SetRow(stack, row);
@@ -4572,10 +4620,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             stack.Children.Add(new TextBlock
             {
                 Text = label,
-                Margin = new Thickness(0, 0, 0, 8),
+                Margin = new Thickness(0, 0, 0, 7),
                 FontSize = 11.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(71, 85, 105)
+                Foreground = MutedBrush
             });
             stack.Children.Add(control);
             host.Children.Add(stack);
@@ -4585,9 +4633,17 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var style = new Style(typeof(ListBoxItem));
             style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(0)));
-            style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(0, 0, 0, 8)));
+            style.Setters.Add(new Setter(Control.MarginProperty, new Thickness(0)));
             style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
             style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+            style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
+            style.Setters.Add(new Setter(Control.FocusableProperty, false));
+
+            var template = new ControlTemplate(typeof(ListBoxItem));
+            var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            presenter.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Stretch);
+            template.VisualTree = presenter;
+            style.Setters.Add(new Setter(Control.TemplateProperty, template));
             return style;
         }
 
@@ -4822,8 +4878,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 {
                     TypeLabel = type,
                     Actor = FormatActor(item?.ChangedByName),
-                    Title = type + ": " + oldValue + " -> " + newValue,
-                    Body = string.IsNullOrWhiteSpace(item?.Note) ? "No action note recorded." : item.Note.Trim(),
+                    Title = type + ": " + oldValue + " → " + newValue,
+                    Body = string.IsNullOrWhiteSpace(item?.Note) ? string.Empty : item.Note.Trim(),
                     TimestampUtc = NormalizeTimestampUtc(changedAt),
                     TimestampText = FormatActivityTimestamp(changedAt),
                     RelativeTimeText = FormatRelativeTime(changedAt),
@@ -4849,12 +4905,34 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (string.IsNullOrWhiteSpace(text)) return "Activity";
             if (text.Equals("AssignedToEmpId", StringComparison.OrdinalIgnoreCase)) return "Assignment";
             if (text.Equals("ResponsiblePerson", StringComparison.OrdinalIgnoreCase)) return "Assignment";
+            if (text.Equals("ResolutionResponsiblePerson", StringComparison.OrdinalIgnoreCase)) return "Responsible Person";
+            if (text.Equals("ResolutionDepartment", StringComparison.OrdinalIgnoreCase)) return "Department";
+            if (text.Equals("ResolutionType", StringComparison.OrdinalIgnoreCase)) return "Resolution Type";
+            if (text.Equals("NoteAdded", StringComparison.OrdinalIgnoreCase)) return "Note";
+            if (text.Equals("ResolutionAdded", StringComparison.OrdinalIgnoreCase)) return "Resolution";
             if (text.Equals("Note", StringComparison.OrdinalIgnoreCase)) return "Note";
             if (text.Equals("Solution", StringComparison.OrdinalIgnoreCase)) return "Solution";
             if (text.Equals("Status", StringComparison.OrdinalIgnoreCase)) return "Status";
             if (text.Equals("Priority", StringComparison.OrdinalIgnoreCase)) return "Priority";
             if (text.Equals("TemporaryReturn", StringComparison.OrdinalIgnoreCase)) return "Return";
-            return text;
+            return HumanizeActivityType(text);
+        }
+
+        private static string HumanizeActivityType(string text)
+        {
+            var result = string.Empty;
+            for (var i = 0; i < text.Length; i++)
+            {
+                var c = text[i];
+                if (i > 0 && char.IsUpper(c) && !char.IsUpper(text[i - 1]) && text[i - 1] != ' ')
+                {
+                    result += " ";
+                }
+
+                result += c;
+            }
+
+            return result;
         }
 
         private static string FormatActor(string value)
@@ -4928,6 +5006,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             if (type.Equals("Status", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(37, 99, 235);
             if (type.Equals("Solution", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(22, 163, 74);
+            if (type.Equals("Resolution", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(22, 163, 74);
+            if (type.Equals("Note", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(37, 99, 235);
             if (type.Equals("Priority", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(234, 88, 12);
             if (type.Equals("Assignment", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(13, 148, 136);
             if (type.Equals("Return", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(124, 58, 237);
@@ -4938,6 +5018,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             if (type.Equals("Status", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(219, 234, 254);
             if (type.Equals("Solution", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(220, 252, 231);
+            if (type.Equals("Resolution", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(220, 252, 231);
+            if (type.Equals("Note", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(219, 234, 254);
             if (type.Equals("Priority", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(255, 237, 213);
             if (type.Equals("Assignment", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(204, 251, 241);
             if (type.Equals("Return", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(237, 233, 254);
@@ -4948,6 +5030,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             if (type.Equals("Status", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(30, 64, 175);
             if (type.Equals("Solution", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(22, 101, 52);
+            if (type.Equals("Resolution", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(22, 101, 52);
+            if (type.Equals("Note", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(30, 64, 175);
             if (type.Equals("Priority", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(154, 52, 18);
             if (type.Equals("Assignment", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(17, 94, 89);
             if (type.Equals("Return", StringComparison.OrdinalIgnoreCase)) return BrushFromRgb(91, 33, 182);
@@ -5275,8 +5359,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     Title = title,
                     Body = body,
                     TimestampUtc = null,
-                    TimestampText = "No timestamp",
-                    RelativeTimeText = "-",
+                    TimestampText = string.Empty,
+                    RelativeTimeText = string.Empty,
                     AccentBrush = WpfThemeResources.TextMutedBrush,
                     BadgeBackground = BrushFromRgb(241, 245, 249),
                     BadgeForeground = BrushFromRgb(71, 85, 105)

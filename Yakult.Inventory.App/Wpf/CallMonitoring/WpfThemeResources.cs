@@ -44,6 +44,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         // --------------------------------------------------------------------------
 
         private static ResourceDictionary _scrollBarStyle;
+        private static ResourceDictionary _workspaceCommandStyles;
 
         /// <summary>
         /// Returns a <see cref="ResourceDictionary"/> containing a slim, modern scrollbar style.
@@ -87,6 +88,192 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             ctx.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
             _scrollBarStyle = (ResourceDictionary)XamlReader.Parse(xaml, ctx);
             return _scrollBarStyle;
+        }
+
+        // --------------------------------------------------------------------------
+        // Workspace command styles
+        // --------------------------------------------------------------------------
+
+        /// <summary>
+        /// Returns the flat Yakult workspace button styles (quiet, accent, danger, and chart range
+        /// buttons) shared by the ITCM dashboard redesign. Applies one directly with
+        /// <c>button.Style = (Style)WpfThemeResources.GetWorkspaceCommandStyles()["ItcmQuietButton"]</c>.
+        /// </summary>
+        public static ResourceDictionary GetWorkspaceCommandStyles()
+        {
+            if (_workspaceCommandStyles != null)
+                return _workspaceCommandStyles;
+
+            const string xaml = @"
+                <ResourceDictionary xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
+                    <Style x:Key=""ItcmQuietButton"" TargetType=""Button"">
+                        <Setter Property=""FontSize"" Value=""13""/>
+                        <Setter Property=""Foreground"" Value=""#202635""/>
+                        <Setter Property=""Background"" Value=""White""/>
+                        <Setter Property=""BorderBrush"" Value=""#E5E6E8""/>
+                        <Setter Property=""Padding"" Value=""14,8""/>
+                        <Setter Property=""Cursor"" Value=""Hand""/>
+                        <Setter Property=""FocusVisualStyle"" Value=""{x:Null}""/>
+                        <Setter Property=""Template"">
+                            <Setter.Value>
+                                <ControlTemplate TargetType=""Button"">
+                                    <Border x:Name=""Bd"" Background=""{TemplateBinding Background}"" BorderBrush=""{TemplateBinding BorderBrush}"" BorderThickness=""1"" CornerRadius=""7"">
+                                        <ContentPresenter Margin=""{TemplateBinding Padding}"" VerticalAlignment=""Center"" HorizontalAlignment=""Center""/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property=""IsMouseOver"" Value=""True"">
+                                            <Setter TargetName=""Bd"" Property=""Background"" Value=""#F5F6F8""/>
+                                            <Setter TargetName=""Bd"" Property=""BorderBrush"" Value=""#CDD0D6""/>
+                                        </Trigger>
+                                        <Trigger Property=""IsPressed"" Value=""True"">
+                                            <Setter TargetName=""Bd"" Property=""Background"" Value=""#FCF0F1""/>
+                                        </Trigger>
+                                        <Trigger Property=""IsEnabled"" Value=""False"">
+                                            <Setter TargetName=""Bd"" Property=""Opacity"" Value=""0.55""/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key=""ItcmAccentButton"" TargetType=""Button"">
+                        <Setter Property=""FontSize"" Value=""13""/>
+                        <Setter Property=""FontWeight"" Value=""SemiBold""/>
+                        <Setter Property=""Foreground"" Value=""#B92335""/>
+                        <Setter Property=""Padding"" Value=""14,8""/>
+                        <Setter Property=""Cursor"" Value=""Hand""/>
+                        <Setter Property=""FocusVisualStyle"" Value=""{x:Null}""/>
+                        <Setter Property=""Template"">
+                            <Setter.Value>
+                                <ControlTemplate TargetType=""Button"">
+                                    <Border x:Name=""Bd"" Background=""#FCF0F1"" BorderBrush=""#E7B8C1"" BorderThickness=""1"" CornerRadius=""7"">
+                                        <ContentPresenter Margin=""{TemplateBinding Padding}"" VerticalAlignment=""Center"" HorizontalAlignment=""Center""/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property=""IsMouseOver"" Value=""True"">
+                                            <Setter TargetName=""Bd"" Property=""Background"" Value=""#F8DDE2""/>
+                                        </Trigger>
+                                        <Trigger Property=""IsPressed"" Value=""True"">
+                                            <Setter TargetName=""Bd"" Property=""Background"" Value=""#F2CCD4""/>
+                                        </Trigger>
+                                        <Trigger Property=""IsEnabled"" Value=""False"">
+                                            <Setter TargetName=""Bd"" Property=""Opacity"" Value=""0.55""/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key=""ItcmDangerButton"" TargetType=""Button"">
+                        <Setter Property=""FontSize"" Value=""13""/>
+                        <Setter Property=""FontWeight"" Value=""SemiBold""/>
+                        <Setter Property=""Foreground"" Value=""#B92335""/>
+                        <Setter Property=""Background"" Value=""White""/>
+                        <Setter Property=""Padding"" Value=""14,8""/>
+                        <Setter Property=""Cursor"" Value=""Hand""/>
+                        <Setter Property=""FocusVisualStyle"" Value=""{x:Null}""/>
+                        <Setter Property=""Template"">
+                            <Setter.Value>
+                                <ControlTemplate TargetType=""Button"">
+                                    <Border x:Name=""Bd"" Background=""{TemplateBinding Background}"" BorderBrush=""#E7B8C1"" BorderThickness=""1"" CornerRadius=""7"">
+                                        <ContentPresenter Margin=""{TemplateBinding Padding}"" VerticalAlignment=""Center"" HorizontalAlignment=""Center""/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property=""IsMouseOver"" Value=""True"">
+                                            <Setter TargetName=""Bd"" Property=""Background"" Value=""#FCF0F1""/>
+                                        </Trigger>
+                                        <Trigger Property=""IsPressed"" Value=""True"">
+                                            <Setter TargetName=""Bd"" Property=""Background"" Value=""#F8DDE2""/>
+                                        </Trigger>
+                                        <Trigger Property=""IsEnabled"" Value=""False"">
+                                            <Setter TargetName=""Bd"" Property=""Opacity"" Value=""0.55""/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key=""ItcmRangeButton"" TargetType=""Button"">
+                        <Setter Property=""FontSize"" Value=""11.5""/>
+                        <Setter Property=""FontWeight"" Value=""SemiBold""/>
+                        <Setter Property=""Foreground"" Value=""#677081""/>
+                        <Setter Property=""Background"" Value=""White""/>
+                        <Setter Property=""Padding"" Value=""10,6""/>
+                        <Setter Property=""Cursor"" Value=""Hand""/>
+                        <Setter Property=""FocusVisualStyle"" Value=""{x:Null}""/>
+                        <Setter Property=""Template"">
+                            <Setter.Value>
+                                <ControlTemplate TargetType=""Button"">
+                                    <Border x:Name=""Bd"" Background=""{TemplateBinding Background}"" BorderBrush=""#E5E6E8"" BorderThickness=""1"" CornerRadius=""6"">
+                                        <ContentPresenter Margin=""{TemplateBinding Padding}"" VerticalAlignment=""Center"" HorizontalAlignment=""Center""/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property=""IsMouseOver"" Value=""True"">
+                                            <Setter TargetName=""Bd"" Property=""Background"" Value=""#F5F6F8""/>
+                                            <Setter TargetName=""Bd"" Property=""BorderBrush"" Value=""#CDD0D6""/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key=""ItcmRangeButtonActive"" TargetType=""Button"">
+                        <Setter Property=""FontSize"" Value=""11.5""/>
+                        <Setter Property=""FontWeight"" Value=""SemiBold""/>
+                        <Setter Property=""Foreground"" Value=""#B92335""/>
+                        <Setter Property=""Background"" Value=""#FCF0F1""/>
+                        <Setter Property=""Padding"" Value=""10,6""/>
+                        <Setter Property=""Cursor"" Value=""Hand""/>
+                        <Setter Property=""FocusVisualStyle"" Value=""{x:Null}""/>
+                        <Setter Property=""Template"">
+                            <Setter.Value>
+                                <ControlTemplate TargetType=""Button"">
+                                    <Border x:Name=""Bd"" Background=""{TemplateBinding Background}"" BorderBrush=""#E7B8C1"" BorderThickness=""1"" CornerRadius=""6"">
+                                        <ContentPresenter Margin=""{TemplateBinding Padding}"" VerticalAlignment=""Center"" HorizontalAlignment=""Center""/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property=""IsMouseOver"" Value=""True"">
+                                            <Setter TargetName=""Bd"" Property=""Background"" Value=""#F8DDE2""/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key=""ItcmTabItem"" TargetType=""TabItem"">
+                        <Setter Property=""Background"" Value=""White""/>
+                        <Setter Property=""Foreground"" Value=""#677081""/>
+                        <Setter Property=""Padding"" Value=""14,9""/>
+                        <Setter Property=""FontSize"" Value=""12.5""/>
+                        <Setter Property=""FocusVisualStyle"" Value=""{x:Null}""/>
+                        <Setter Property=""Template"">
+                            <Setter.Value>
+                                <ControlTemplate TargetType=""TabItem"">
+                                    <Grid>
+                                        <Border x:Name=""TabBackground"" Background=""Transparent"">
+                                            <ContentPresenter ContentSource=""Header"" Margin=""{TemplateBinding Padding}"" HorizontalAlignment=""Center"" VerticalAlignment=""Center""/>
+                                        </Border>
+                                        <Border x:Name=""ActiveLine"" Height=""2"" Background=""#B92335"" VerticalAlignment=""Bottom"" Visibility=""Collapsed""/>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property=""IsSelected"" Value=""True"">
+                                            <Setter Property=""Foreground"" Value=""#B92335""/>
+                                            <Setter TargetName=""ActiveLine"" Property=""Visibility"" Value=""Visible""/>
+                                        </Trigger>
+                                        <Trigger Property=""IsMouseOver"" Value=""True"">
+                                            <Setter TargetName=""TabBackground"" Property=""Background"" Value=""#F5F6F8""/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ResourceDictionary>";
+
+            var ctx = new ParserContext();
+            ctx.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
+            _workspaceCommandStyles = (ResourceDictionary)XamlReader.Parse(xaml, ctx);
+            return _workspaceCommandStyles;
         }
 
         // --------------------------------------------------------------------------

@@ -175,7 +175,10 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
 
             UnfulfilledDisplay = unfulfilled < 0 ? $"{unfulfilled} ⚠ INVALID" : unfulfilled.ToString();
             UnfulfilledColor   = unfulfilled < 0 ? "#E74C3C" : (unfulfilled > 0 ? "#E67E22" : "#27AE60");
-            AutoRemarks        = CartridgeExchangeRemarks.GenerateRemarks(issued, _requestedQty, _cartridgeModelForRemarks);
+            AutoRemarks        = CartridgeExchangeRemarks.GenerateRemarks(
+                issued, _requestedQty, _cartridgeModelForRemarks,
+                Math.Max(0, _availableBrandNewStock - _issuedBrandNewQty),
+                Math.Max(0, _availableRefilledStock - _issuedRefilledQty));
 
             OnPropertyChanged(nameof(MaxBrandNew));
             OnPropertyChanged(nameof(MaxRefilled));
@@ -227,6 +230,7 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
             OnPropertyChanged(nameof(MaxBrandNew));
             OnPropertyChanged(nameof(MaxRefilled));
             OnPropertyChanged(nameof(StockInfoText));
+            OnPropertyChanged(nameof(RequestedQty));   // keep the "Returned Empty Qty" label in sync on every load
             RefreshDerived();
         }
 
@@ -304,6 +308,7 @@ namespace Yakult.Inventory.App.WPF.CartridgeManagement.ViewModels
             OnPropertyChanged(nameof(MaxBrandNew));
             OnPropertyChanged(nameof(MaxRefilled));
             OnPropertyChanged(nameof(StockInfoText));
+            OnPropertyChanged(nameof(RequestedQty));
             RefreshDerived();
         }
     }

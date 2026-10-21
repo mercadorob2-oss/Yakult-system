@@ -85,6 +85,13 @@ namespace Yakult.Inventory.App.Models
 
     /// <summary>
     /// Helper class for generating auto-remarks for cartridge exchanges.
+    ///
+    /// The optional remainingBrandNew / remainingRefilled parameters carry the stock that is
+    /// STILL ISSUABLE after the already-issued quantities. When they are supplied (>= 0):
+    /// - if stock can cover the shortfall, the remark does NOT claim insufficient stock,
+    ///   it states that more stock is available and the remaining quantity can be issued;
+    /// - if stock genuinely cannot cover the shortfall, the remark says so (with the numbers).
+    /// Pass -1 (default) when stock is unknown; the text then avoids any stock claim.
     /// </summary>
     public static class CartridgeExchangeRemarks
     {
@@ -92,19 +99,55 @@ namespace Yakult.Inventory.App.Models
         /// Generates auto-remarks for partial fulfillment.
         /// </summary>
         public static string GeneratePartialFulfillmentRemarks(
-            int issuedQty, int returnedQty, int unfulfilledQty, string cartridgeModel)
+            int issuedQty, int returnedQty, int unfulfilledQty, string cartridgeModel,
+            int remainingBrandNew = -1, int remainingRefilled = -1)
         {
-            return $"Only {issuedQty} out of {returnedQty} returned cartridges were refilled " +
-                   $"due to insufficient stock for model {cartridgeModel}. " +
+            bool stockKnown = remainingBrandNew >= 0 && remainingRefilled >= 0;
+
+            if (stockKnown && remainingBrandNew + remainingRefilled >= unfulfilledQty)
+            {
+                return $"Only {issuedQty} of {returnedQty} cartridges have been issued so far. " +
+                       $"Stock is available for the remaining {unfulfilledQty} " +
+                       $"(Brand New left: {remainingBrandNew}, Refilled left: {remainingRefilled}). " +
+                       $"Issue the remaining {unfulfilledQty} to fulfill in full.";
+            }
+
+            if (stockKnown)
+            {
+                return $"Only {issuedQty} out of {returnedQty} returned cartridges were refilled " +
+                       $"due to insufficient stock for model {cartridgeModel} " +
+                       $"(Brand New left: {remainingBrandNew}, Refilled left: {remainingRefilled}). " +
+                       $"The remaining {unfulfilledQty} cartridges are pending fulfillment.";
+            }
+
+            return $"Only {issuedQty} out of {returnedQty} returned cartridges have been issued. " +
                    $"The remaining {unfulfilledQty} cartridges are pending fulfillment.";
         }
 
         /// <summary>
         /// Generates auto-remarks for zero fulfillment (completely unfulfilled).
         /// </summary>
-        public static string GenerateZeroFulfillmentRemarks(int returnedQty, string cartridgeModel)
+        public static string GenerateZeroFulfillmentRemarks(
+            int returnedQty, string cartridgeModel,
+            int remainingBrandNew = -1, int remainingRefilled = -1)
         {
-            return $"No cartridges were refilled due to insufficient stock for model {cartridgeModel}. " +
+            bool stockKnown = remainingBrandNew >= 0 && remainingRefilled >= 0;
+
+            if (stockKnown && remainingBrandNew + remainingRefilled >= returnedQty)
+            {
+                return $"No cartridges have been issued yet. " +
+                       $"Stock is available for all {returnedQty} " +
+                       $"(Brand New: {remainingBrandNew}, Refilled: {remainingRefilled}).";
+            }
+
+            if (stockKnown)
+            {
+                return $"No cartridges were refilled due to insufficient stock for model {cartridgeModel} " +
+                       $"(Brand New left: {remainingBrandNew}, Refilled left: {remainingRefilled}). " +
+                       $"All {returnedQty} returned cartridges are pending fulfillment.";
+            }
+
+            return $"No cartridges have been issued yet. " +
                    $"All {returnedQty} returned cartridges are pending fulfillment.";
         }
 
@@ -120,15 +163,16 @@ namespace Yakult.Inventory.App.Models
         /// Generates appropriate remarks based on fulfillment quantities.
         /// </summary>
         public static string GenerateRemarks(
-            int issuedQty, int returnedQty, string cartridgeModel)
+            int issuedQty, int returnedQty, string cartridgeModel,
+            int remainingBrandNew = -1, int remainingRefilled = -1)
         {
             int unfulfilledQty = returnedQty - issuedQty;
 
-            if (issuedQty == 0)
-                return GenerateZeroFulfillmentRemarks(returnedQty, cartridgeModel);
+            if (issuedQty <= 0)
+                return GenerateZeroFulfillmentRemarks(returnedQty, cartridgeModel, remainingBrandNew, remainingRefilled);
 
             if (issuedQty < returnedQty)
-                return GeneratePartialFulfillmentRemarks(issuedQty, returnedQty, unfulfilledQty, cartridgeModel);
+                return GeneratePartialFulfillmentRemarks(issuedQty, returnedQty, unfulfilledQty, cartridgeModel, remainingBrandNew, remainingRefilled);
 
             return GenerateFullFulfillmentRemarks(issuedQty, cartridgeModel);
         }

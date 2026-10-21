@@ -5,7 +5,7 @@
     xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.RequestPortal.AssistedRequest.ViewModels"
     xmlns:ctrl="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
     xmlns:helpers="clr-namespace:Yakult.Inventory.App.WPF.Shared.Helpers"
-    Background="#F0F2F6"
+    Background="#F6F5F2"
     FontFamily="Segoe UI"
     UseLayoutRounding="True"
     SnapsToDevicePixels="True"
@@ -31,26 +31,27 @@
         <!-- PAGE HEADER -->
         <Border Grid.Row="0"
                 Background="White"
-                BorderBrush="#E2E8F0"
+                BorderBrush="{StaticResource CardBorder}"
                 BorderThickness="0,0,0,1"
                 Padding="28,14">
-            <Grid>
+            <Grid MaxWidth="900" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Height="34" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock Text="IT Assisted Request"
-                               FontSize="18" FontWeight="Bold" Foreground="#2272D9"
-                               VerticalAlignment="Center"/>
-                </Border>
+                               FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                    <TextBlock Text="Submit a consumable request on behalf of another employee."
+                               FontSize="11.5" Foreground="{StaticResource TextMuted}" Margin="0,3,0,0"/>
+                </StackPanel>
                 <!-- Dept Level toggle -->
                 <Border Grid.Column="1"
-                        Background="#F0F7FF"
-                        BorderBrush="#AED6F1"
+                        Background="{StaticResource SurfaceGray}"
+                        BorderBrush="{StaticResource CardBorder}"
                         BorderThickness="1"
-                        CornerRadius="8"
+                        CornerRadius="7"
                         Padding="12,6"
                         Margin="0,0,10,0"
                         VerticalAlignment="Center">
@@ -60,21 +61,24 @@
                                   Cursor="Hand"/>
                         <TextBlock Text="Dept. Level (no employee)"
                                    FontSize="11" FontWeight="SemiBold"
-                                   Foreground="#2272D9"
+                                   Foreground="{StaticResource TextMuted}"
                                    VerticalAlignment="Center"
                                    Margin="6,0,0,0"/>
                     </StackPanel>
                 </Border>
                 <Border Grid.Column="2"
-                        Background="#D6E8FF"
+                        Background="{StaticResource SurfaceGray}"
+                        BorderBrush="{StaticResource CardBorder}"
+                        BorderThickness="1"
                         CornerRadius="14"
                         Padding="14,7"
+                        VerticalAlignment="Center"
                         Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#x27F3;" FontSize="15" Foreground="#2272D9"
+                        <TextBlock Text="&#x27F3;" FontSize="15" Foreground="{StaticResource TextMuted}"
                                    VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock Text="{Binding StatusMessage}"
-                                   FontSize="11" FontStyle="Italic" Foreground="#2272D9"
+                                   FontSize="11" FontStyle="Italic" Foreground="{StaticResource TextMuted}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>
@@ -87,7 +91,7 @@
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       PanningMode="VerticalFirst">
-            <StackPanel MaxWidth="900" HorizontalAlignment="Center" Margin="28,18,28,8">
+            <StackPanel MaxWidth="900" HorizontalAlignment="Stretch" Margin="28,18,28,8">
 
                 <!-- Validation error banner -->
                 <Border Background="#FFF3F3"
@@ -241,14 +245,14 @@
                     <StackPanel>
                         <TextBlock Text="DEPT LEVEL TARGET (Optional)" Style="{StaticResource SectionLabel}"/>
 
-                        <Border Background="#EBF5FB"
-                                BorderBrush="#AED6F1"
+                        <Border Background="{StaticResource SurfaceGray}"
+                                BorderBrush="{StaticResource CardBorder}"
                                 BorderThickness="1"
                                 CornerRadius="5"
                                 Padding="12,8"
                                 Margin="0,0,0,12">
                             <TextBlock FontSize="11" FontStyle="Italic"
-                                       Foreground="{StaticResource YakultDarkBlue}"
+                                       Foreground="{StaticResource TextMuted}"
                                        TextWrapping="Wrap">
                                 &#x2139;  Fill in only what you have — Company, Branch, and Department are all optional.
                             </TextBlock>
@@ -378,15 +382,15 @@
                                       StaysOpenOnEdit="True"/>
                         </Grid>
 
-                        <Border Background="#EBF5FB"
-                                BorderBrush="#AED6F1"
+                        <Border Background="{StaticResource SurfaceGray}"
+                                BorderBrush="{StaticResource CardBorder}"
                                 BorderThickness="1"
                                 CornerRadius="5"
                                 Padding="12,8"
                                 Margin="0,0,0,12"
                                 Visibility="{Binding ShowNoStockWarning, Converter={StaticResource BoolToVis}}">
                             <TextBlock FontSize="11" FontStyle="Italic"
-                                       Foreground="{StaticResource YakultDarkBlue}"
+                                       Foreground="{StaticResource TextMuted}"
                                        TextWrapping="Wrap">
                                 &#x2139;  No current stock for this model. You may still submit — the team will fulfil it when stock is available.
                             </TextBlock>
@@ -552,7 +556,7 @@
                                   SelectionUnit="FullRow"
                                   HeadersVisibility="Column"
                                   GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#F0F3F7"
+                                  HorizontalGridLinesBrush="{StaticResource CardBorder}"
                                   BorderThickness="1"
                                   BorderBrush="{StaticResource CardBorder}"
                                   Background="White"
@@ -573,7 +577,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Model" Binding="{Binding CartridgeModel}" Width="*">
+                                <DataGridTextColumn Header="Model" Binding="{Binding CartridgeModel}" Width="*" MinWidth="240">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold"/>
@@ -945,10 +949,7 @@
                 BorderBrush="{StaticResource CardBorder}"
                 BorderThickness="0,1,0,0"
                 Padding="28,12">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="8" ShadowDepth="-2" Opacity="0.05" Color="Black"/>
-            </Border.Effect>
-            <Grid>
+            <Grid MaxWidth="900" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -956,7 +957,7 @@
                 <TextBlock Grid.Column="0"
                            Text="{Binding StatusMessage}"
                            FontSize="12" FontStyle="Italic"
-                           Foreground="{StaticResource WarningAmber}"
+                           Foreground="{StaticResource TextMuted}"
                            VerticalAlignment="Center"
                            Visibility="{Binding StatusMessage, Converter={StaticResource NullToVis}}"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -966,8 +967,7 @@
                             Margin="0,0,10,0"/>
                     <Button Content="Submit Request"
                             Command="{Binding SubmitCommand}"
-                            Style="{StaticResource PrimaryButton}"
-                            IsEnabled="{Binding IsLoading, Converter={StaticResource InvBoolToVis}}"/>
+                            Style="{StaticResource PrimaryButton}"/>
                 </StackPanel>
             </Grid>
         </Border>

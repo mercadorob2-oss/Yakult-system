@@ -5,8 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Markup;
 using System.Windows.Media;
 using WinForms = System.Windows.Forms;
 using Yakult.Inventory.App.Core;
@@ -19,6 +21,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 {
     public sealed class WpfTicketDetailsDialog : Window
     {
+        private static readonly Brush InkBrush = BrushFromRgb(32, 38, 53);
+        private static readonly Brush BodyBrush = BrushFromRgb(74, 82, 97);
+        private static readonly Brush MutedBrush = BrushFromRgb(103, 112, 129);
+        private static readonly Brush HairlineBrush = BrushFromRgb(229, 230, 232);
+        private static readonly Brush SoftFillBrush = BrushFromRgb(245, 246, 248);
+
         private readonly ICallMonitoringRepository _repo;
         private readonly int _ticketId;
         private CallTicketListItem _loadedTicket;
@@ -36,6 +44,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private readonly TextBox _issueBox;
         private readonly DataGrid _notesGrid;
         private readonly DataGrid _historyGrid;
+        private readonly ContentControl _activityContent;
+        private readonly Button _notesTabButton;
+        private readonly Button _historyTabButton;
         private readonly TextBlock _statusLine;
         private readonly Button _deleteButton;
         private readonly Button _copyIdButton;
@@ -54,47 +65,115 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _ticketId = ticketId > 0 ? ticketId : throw new ArgumentOutOfRangeException(nameof(ticketId));
 
             Title = "Ticket Details";
-            Width = 1040;
-            Height = 760;
-            MinWidth = 860;
-            MinHeight = 560;
+            Width = 1120;
+            Height = 740;
+            MinWidth = 980;
+            MinHeight = 620;
+            MaxWidth = SystemParameters.WorkArea.Width - 24;
+            MaxHeight = SystemParameters.WorkArea.Height - 24;
             ResizeMode = ResizeMode.CanResize;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
             Background = WpfThemeResources.SurfaceMutedBrush;
+            UseLayoutRounding = true;
 
-            var root = new DockPanel();
+            var root = new Grid();
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             Content = root;
 
-            var header = new DockPanel
+            // ── Header: identity, status, and document actions ─────────────────
+            var header = new Border
             {
                 Background = Brushes.White,
-                LastChildFill = true,
-                Margin = new Thickness(0),
-                Height = 86
+                BorderBrush = HairlineBrush,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = new Thickness(22, 18, 22, 16)
             };
-            DockPanel.SetDock(header, Dock.Top);
+            var headerGrid = new Grid();
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            header.Child = headerGrid;
+            Grid.SetRow(header, 0);
             root.Children.Add(header);
 
-            var headerButtons = new StackPanel
+            var titleHost = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            titleHost.Children.Add(new TextBlock
+            {
+                Text = "TICKET DETAILS",
+                FontSize = 10.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = MutedBrush
+            });
+
+            var titleRow = new Grid
+            {
+                Margin = new Thickness(0, 6, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            titleRow.ColumnDefinitions.Add(new ColumnDefinition());
+            titleRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            _titleText = new TextBlock
+            {
+                Text = "Ticket Details",
+                FontSize = 22,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = InkBrush,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                TextWrapping = TextWrapping.NoWrap,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            titleRow.Children.Add(_titleText);
+
+            _statusText = new TextBlock
+            {
+                Text = "LOADING",
+                Foreground = BodyBrush,
+                FontWeight = FontWeights.SemiBold,
+                FontSize = 9.5,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            _statusBadge = new Border
+            {
+                Background = SoftFillBrush,
+                CornerRadius = new CornerRadius(999),
+                Padding = new Thickness(10, 3, 10, 3),
+                Margin = new Thickness(12, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = _statusText
+            };
+            Grid.SetColumn(_statusBadge, 1);
+            titleRow.Children.Add(_statusBadge);
+            titleHost.Children.Add(titleRow);
+
+            _subtitleText = new TextBlock
+            {
+                Text = "Ticket ID: " + _ticketId,
+                Margin = new Thickness(0, 5, 0, 0),
+                FontSize = 11.5,
+                Foreground = MutedBrush,
+                TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            titleHost.Children.Add(_subtitleText);
+            headerGrid.Children.Add(titleHost);
+
+            var headerButtons = new WrapPanel
             {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(10, 0, 18, 0)
+                Margin = new Thickness(16, 0, 0, 0)
             };
-            DockPanel.SetDock(headerButtons, Dock.Right);
-            header.Children.Add(headerButtons);
-
-            _copyIdButton = CreateButton("Copy ID", BrushFromRgb(71, 85, 105));
+            _copyIdButton = CreateActionButton("Copy ID", "ItcmQuietButton");
             _copyIdButton.Click += (_, __) => CopyTicketId();
-            _copySummaryButton = CreateButton("Copy Summary", BrushFromRgb(71, 85, 105));
+            _copySummaryButton = CreateActionButton("Copy Summary", "ItcmQuietButton");
             _copySummaryButton.Click += (_, __) => CopyTicketSummary();
-            _emailLogButton = CreateButton("Email Log", BrushFromRgb(14, 116, 144));
+            _emailLogButton = CreateActionButton("Email Log", "ItcmQuietButton");
             _emailLogButton.Click += (_, __) => OpenEmailLogShortcut();
-            _deleteButton = CreateButton("Delete", BrushFromRgb(220, 38, 38));
+            _deleteButton = CreateActionButton("Delete", "ItcmDangerButton");
             _deleteButton.Click += async (_, __) => await DeleteTicketAsync();
-            var closeButton = CreateButton("Close", BrushFromRgb(52, 73, 94));
+            var closeButton = CreateActionButton("Close", "ItcmQuietButton");
             closeButton.Click += (_, __) => Close();
 
             headerButtons.Children.Add(_copyIdButton);
@@ -102,162 +181,216 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             headerButtons.Children.Add(_emailLogButton);
             headerButtons.Children.Add(_deleteButton);
             headerButtons.Children.Add(closeButton);
+            Grid.SetColumn(headerButtons, 1);
+            headerGrid.Children.Add(headerButtons);
 
-            var titleHost = new StackPanel
-            {
-                Margin = new Thickness(24, 14, 10, 12),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            header.Children.Add(titleHost);
+            _copyIdButton.IsEnabled = false;
+            _copySummaryButton.IsEnabled = false;
+            _emailLogButton.IsEnabled = false;
+            _deleteButton.IsEnabled = false;
 
-            var titleRow = new StackPanel { Orientation = Orientation.Horizontal };
-            _titleText = new TextBlock
-            {
-                Text = "Ticket Details",
-                FontSize = 21,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = WpfThemeResources.TextDarkBrush,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            _statusText = new TextBlock
-            {
-                Text = "LOADING",
-                Foreground = Brushes.White,
-                FontWeight = FontWeights.SemiBold,
-                FontSize = 11,
-                Margin = new Thickness(12, 0, 12, 0)
-            };
-            _statusBadge = new Border
-            {
-                Background = WpfThemeResources.TextMutedBrush,
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(0, 5, 0, 5),
-                Margin = new Thickness(14, 1, 0, 0),
-                Child = _statusText
-            };
-            titleRow.Children.Add(_titleText);
-            titleRow.Children.Add(_statusBadge);
-            titleHost.Children.Add(titleRow);
+            // ── Body: summary band on top, full-width activity below ───────────
+            var body = new Grid { Margin = new Thickness(18) };
+            body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            body.RowDefinitions.Add(new RowDefinition { Height = new GridLength(14) });
+            body.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            Grid.SetRow(body, 1);
+            root.Children.Add(body);
 
-            _subtitleText = new TextBlock
+            var summary = new Grid();
+            summary.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
+            summary.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(16) });
+            summary.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Grid.SetRow(summary, 0);
+            body.Children.Add(summary);
+
+            var issueCard = CreateCard();
+            var issueStack = new StackPanel();
+            issueStack.Children.Add(new TextBlock
             {
-                Text = "Ticket ID: " + _ticketId,
-                Margin = new Thickness(1, 5, 0, 0),
+                Text = "ISSUE",
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                Foreground = MutedBrush,
+                Margin = new Thickness(0, 0, 0, 8)
+            });
+            _issueBox = new TextBox
+            {
+                IsReadOnly = true,
+                IsReadOnlyCaretVisible = false,
+                TextWrapping = TextWrapping.Wrap,
+                AcceptsReturn = true,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                BorderThickness = new Thickness(0),
+                Background = Brushes.Transparent,
+                Foreground = BodyBrush,
                 FontSize = 12.5,
-                Foreground = WpfThemeResources.TextMutedBrush
+                Padding = new Thickness(0),
+                MinHeight = 54,
+                MaxHeight = 160
             };
-            titleHost.Children.Add(_subtitleText);
+            issueStack.Children.Add(_issueBox);
+            issueCard.Child = issueStack;
+            Grid.SetColumn(issueCard, 0);
+            summary.Children.Add(issueCard);
 
-            var footer = new DockPanel
+            var detailsCard = CreateCard();
+            var detailsStack = new StackPanel();
+            detailsStack.Children.Add(new TextBlock
             {
-                Height = 58,
-                Background = Brushes.White,
-                LastChildFill = false,
-                Margin = new Thickness(0)
-            };
-            DockPanel.SetDock(footer, Dock.Bottom);
-            root.Children.Add(footer);
+                Text = "CASE DETAILS",
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                Foreground = MutedBrush,
+                Margin = new Thickness(0, 0, 0, 12)
+            });
 
-            var actions = new StackPanel
+            var detailsGrid = new Grid();
+            detailsGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            detailsGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            detailsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            detailsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            detailsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            _callerText = AddDetailCell(detailsGrid, 0, 0, "CALLER", "-");
+            _departmentText = AddDetailCell(detailsGrid, 0, 1, "DEPARTMENT", "-");
+            _assigneeText = AddDetailCell(detailsGrid, 1, 0, "ASSIGNED TO", "-");
+            _priorityText = AddDetailChipCell(detailsGrid, 1, 1, "PRIORITY");
+            _createdText = AddDetailCell(detailsGrid, 2, 0, "CREATED", "-");
+            _lastContactText = AddDetailCell(detailsGrid, 2, 1, "LAST UPDATE", "-");
+            detailsStack.Children.Add(detailsGrid);
+            detailsCard.Child = detailsStack;
+            Grid.SetColumn(detailsCard, 2);
+            summary.Children.Add(detailsCard);
+
+            var activityCard = CreateCard(0);
+            activityCard.ClipToBounds = true;
+            var activityLayout = new Grid();
+            activityLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            activityLayout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            activityCard.Child = activityLayout;
+            Grid.SetRow(activityCard, 2);
+            body.Children.Add(activityCard);
+
+            var activityHeader = new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = HairlineBrush,
+                BorderThickness = new Thickness(0, 0, 0, 1),
+                Padding = new Thickness(16, 12, 16, 10)
+            };
+            var activityHeaderGrid = new Grid();
+            activityHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            activityHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var activityTitle = new StackPanel();
+            activityTitle.Children.Add(new TextBlock
+            {
+                Text = "ACTIVITY",
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                Foreground = MutedBrush
+            });
+            activityTitle.Children.Add(new TextBlock
+            {
+                Text = "Notes and field changes",
+                FontSize = 11,
+                Foreground = MutedBrush,
+                Margin = new Thickness(0, 3, 0, 0)
+            });
+            activityHeaderGrid.Children.Add(activityTitle);
+
+            var tabs = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(16, 10, 16, 10)
+                Margin = new Thickness(12, 0, 0, 0)
             };
-            DockPanel.SetDock(actions, Dock.Right);
-            footer.Children.Add(actions);
+            _notesTabButton = CreateTabButton("Notes", true);
+            _historyTabButton = CreateTabButton("History", false);
+            _notesTabButton.Click += (_, __) => ShowActivityTab(true);
+            _historyTabButton.Click += (_, __) => ShowActivityTab(false);
+            tabs.Children.Add(_notesTabButton);
+            tabs.Children.Add(_historyTabButton);
+            Grid.SetColumn(tabs, 1);
+            activityHeaderGrid.Children.Add(tabs);
+            activityHeader.Child = activityHeaderGrid;
+            activityLayout.Children.Add(activityHeader);
 
-            _reopenButton = CreateButton("Reopen", BrushFromRgb(22, 163, 74));
-            _reopenButton.Click += (_, __) => RequestAction(TicketDetailsDialog.TicketDetailAction.Reopen);
-            _reassignButton = CreateButton("Reassign", BrushFromRgb(124, 58, 237));
-            _reassignButton.Click += (_, __) => RequestAction(TicketDetailsDialog.TicketDetailAction.Reassign);
-            _markAsButton = CreateButton("Mark As", BrushFromRgb(52, 73, 94));
-            _markAsButton.Click += (_, __) => RequestAction(TicketDetailsDialog.TicketDetailAction.MarkAs);
-            var fieldWorkButton = CreateButton("Field Work", BrushFromRgb(14, 116, 144));
-            fieldWorkButton.Click += async (_, __) => await OpenFieldWorkAsync();
+            _notesGrid = CreateGrid();
+            AddTextColumn(_notesGrid, "Created", "CreatedAt", 150);
+            AddTextColumn(_notesGrid, "Type", "NoteType", 90);
+            AddTextColumn(_notesGrid, "By", "CreatedByName", 120);
+            AddTextColumn(_notesGrid, "Note", "NoteText", 0, wrap: true, minWidth: 320);
 
-            actions.Children.Add(_reopenButton);
-            actions.Children.Add(_reassignButton);
-            actions.Children.Add(_markAsButton);
-            actions.Children.Add(fieldWorkButton);
+            _historyGrid = CreateGrid();
+            AddTextColumn(_historyGrid, "When", "ChangedAt", 150);
+            AddTextColumn(_historyGrid, "Field", "FieldName", 100);
+            AddTextColumn(_historyGrid, "Old", "OldValue", 115);
+            AddTextColumn(_historyGrid, "New", "NewValue", 125);
+            AddTextColumn(_historyGrid, "By", "ChangedByName", 100);
+            AddTextColumn(_historyGrid, "Note", "Note", 0, wrap: true, minWidth: 280);
+
+            _activityContent = new ContentControl
+            {
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                VerticalContentAlignment = VerticalAlignment.Stretch,
+                Background = Brushes.White
+            };
+            Grid.SetRow(_activityContent, 1);
+            activityLayout.Children.Add(_activityContent);
+
+            // ── Footer: status line plus the ticket workflow actions ──────────
+            var footer = new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = HairlineBrush,
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Padding = new Thickness(18, 8, 18, 8)
+            };
+            var footerGrid = new Grid();
+            footerGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            footerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            footer.Child = footerGrid;
 
             _statusLine = new TextBlock
             {
                 Text = "Loading details...",
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(18, 0, 0, 0),
-                Foreground = WpfThemeResources.TextMutedBrush
+                Foreground = MutedBrush,
+                FontSize = 11,
+                TextTrimming = TextTrimming.CharacterEllipsis
             };
-            footer.Children.Add(_statusLine);
+            footerGrid.Children.Add(_statusLine);
 
-            var body = new Grid { Margin = new Thickness(20) };
-            body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            body.RowDefinitions.Add(new RowDefinition { Height = new GridLength(180) });
-            body.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            root.Children.Add(body);
-
-            var infoGrid = new Grid { Margin = new Thickness(0, 0, 0, 16) };
-            infoGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            infoGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            infoGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            Grid.SetRow(infoGrid, 0);
-            body.Children.Add(infoGrid);
-
-            var callerCard = CreateInfoCard();
-            _callerText = AddInfoLine(callerCard, "Caller", "-");
-            _departmentText = AddInfoLine(callerCard, "Department", "-");
-            infoGrid.Children.Add(callerCard);
-
-            var assignmentCard = CreateInfoCard();
-            _assigneeText = AddInfoLine(assignmentCard, "Assigned To", "-");
-            _priorityText = AddInfoLine(assignmentCard, "Priority", "-");
-            Grid.SetColumn(assignmentCard, 1);
-            infoGrid.Children.Add(assignmentCard);
-
-            var timingCard = CreateInfoCard();
-            _lastContactText = AddInfoLine(timingCard, "Last Update", "-");
-            _createdText = AddInfoLine(timingCard, "Created", "-");
-            Grid.SetColumn(timingCard, 2);
-            infoGrid.Children.Add(timingCard);
-
-            var issuePanel = CreateSection("Issue Description");
-            _issueBox = new TextBox
+            var footerActions = new StackPanel
             {
-                IsReadOnly = true,
-                TextWrapping = TextWrapping.Wrap,
-                AcceptsReturn = true,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                BorderThickness = new Thickness(0),
-                Background = BrushFromRgb(250, 252, 254),
-                Foreground = BrushFromRgb(30, 41, 59),
-                FontSize = 13,
-                Padding = new Thickness(10)
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(16, 0, 0, 0)
             };
-            issuePanel.Children.Add(_issueBox);
-            Grid.SetRow(issuePanel, 1);
-            body.Children.Add(issuePanel);
+            _reopenButton = CreateActionButton("Reopen", "ItcmQuietButton");
+            _reopenButton.Click += (_, __) => RequestAction(TicketDetailsDialog.TicketDetailAction.Reopen);
+            _reassignButton = CreateActionButton("Reassign", "ItcmQuietButton");
+            _reassignButton.Click += (_, __) => RequestAction(TicketDetailsDialog.TicketDetailAction.Reassign);
+            _markAsButton = CreateActionButton("Mark As", "ItcmQuietButton");
+            _markAsButton.Click += (_, __) => RequestAction(TicketDetailsDialog.TicketDetailAction.MarkAs);
+            var fieldWorkButton = CreateActionButton("Field Work", "ItcmAccentButton");
+            fieldWorkButton.Click += async (_, __) => await OpenFieldWorkAsync();
+            footerActions.Children.Add(_reopenButton);
+            footerActions.Children.Add(_reassignButton);
+            footerActions.Children.Add(_markAsButton);
+            footerActions.Children.Add(fieldWorkButton);
+            Grid.SetColumn(footerActions, 1);
+            footerGrid.Children.Add(footerActions);
 
-            var tabs = new TabControl { Margin = new Thickness(0, 16, 0, 0) };
-            _notesGrid = CreateGrid();
-            AddTextColumn(_notesGrid, "Created", "CreatedAt", 150);
-            AddTextColumn(_notesGrid, "Type", "NoteType", 110);
-            AddTextColumn(_notesGrid, "By", "CreatedByName", 150);
-            AddTextColumn(_notesGrid, "Note", "NoteText", 460);
+            _reopenButton.Visibility = Visibility.Collapsed;
+            _reassignButton.IsEnabled = false;
+            _markAsButton.IsEnabled = false;
 
-            _historyGrid = CreateGrid();
-            AddTextColumn(_historyGrid, "When", "ChangedAt", 150);
-            AddTextColumn(_historyGrid, "Field", "FieldName", 130);
-            AddTextColumn(_historyGrid, "Old", "OldValue", 150);
-            AddTextColumn(_historyGrid, "New", "NewValue", 150);
-            AddTextColumn(_historyGrid, "By", "ChangedByName", 130);
-            AddTextColumn(_historyGrid, "Note", "Note", 260);
+            Grid.SetRow(footer, 2);
+            root.Children.Add(footer);
 
-            tabs.Items.Add(new TabItem { Header = "Notes", Content = _notesGrid });
-            tabs.Items.Add(new TabItem { Header = "History", Content = _historyGrid });
-            Grid.SetRow(tabs, 2);
-            body.Children.Add(tabs);
-
+            ShowActivityTab(true);
             Loaded += async (_, __) => await LoadAsync();
         }
 
@@ -280,13 +413,16 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _titleText.Text = ticket.TicketCode ?? "Ticket #" + ticket.TicketId;
                 _subtitleText.Text = "ID: " + ticket.TicketId + " | Branch: " + (ticket.Branch ?? "Head Office");
                 _statusText.Text = (ticket.Status ?? "Unknown").ToUpperInvariant();
-                _statusBadge.Background = GetStatusBrush(ticket.Status);
+                _statusBadge.Background = GetStatusBackground(ticket.Status);
+                _statusText.Foreground = GetStatusForeground(ticket.Status);
 
                 _callerText.Text = ticket.CallerName ?? "-";
                 _departmentText.Text = ticket.Department ?? "-";
                 _assigneeText.Text = string.IsNullOrWhiteSpace(ticket.ResponsiblePerson) ? "(Unassigned)" : ticket.ResponsiblePerson.Trim();
                 _priorityText.Text = (ticket.Priority ?? "-").ToUpperInvariant();
                 _priorityText.Foreground = GetPriorityBrush(ticket.Priority);
+                if (_priorityText.Parent is Border priorityChip)
+                    priorityChip.Background = GetPriorityBackground(ticket.Priority);
                 _lastContactText.Text = ticket.LastContactAt.HasValue ? GetTimeAgo(ticket.LastContactAt.Value) : "Never";
                 _createdText.Text = ToLocalString(ticket.CreatedAt);
                 _issueBox.Text = ticket.Issue ?? string.Empty;
@@ -479,103 +615,260 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             }
         }
 
-        private static StackPanel CreateInfoCard()
+        private static Border CreateCard(double padding = 16)
         {
-            return new StackPanel
+            return new Border
             {
                 Background = Brushes.White,
-                Margin = new Thickness(0, 0, 12, 0),
-                MinHeight = 96
+                BorderBrush = HairlineBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(padding),
+                SnapsToDevicePixels = true
             };
         }
 
-        private static TextBlock AddInfoLine(Panel panel, string label, string value)
+        private static TextBlock AddDetailCell(Grid grid, int row, int column, string label, string value)
         {
-            panel.Children.Add(new TextBlock
+            var host = new StackPanel
             {
-                Text = label.ToUpperInvariant(),
-                Margin = new Thickness(12, 10, 12, 2),
-                FontSize = 10.5,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = WpfThemeResources.TextMutedBrush
+                Margin = new Thickness(column == 1 ? 14 : 0, 0, 0, 10)
+            };
+            host.Children.Add(new TextBlock
+            {
+                Text = label,
+                FontSize = 9.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = MutedBrush
             });
             var valueBlock = new TextBlock
             {
                 Text = value,
-                Margin = new Thickness(12, 0, 12, 8),
-                FontSize = 13.5,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(30, 41, 59),
-                TextTrimming = TextTrimming.CharacterEllipsis
+                FontSize = 12,
+                Foreground = InkBrush,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 3, 0, 0)
             };
-            panel.Children.Add(valueBlock);
+            host.Children.Add(valueBlock);
+            Grid.SetRow(host, row);
+            Grid.SetColumn(host, column);
+            grid.Children.Add(host);
             return valueBlock;
         }
 
-        private static DockPanel CreateSection(string title)
+        private static TextBlock AddDetailChipCell(Grid grid, int row, int column, string label)
         {
-            var panel = new DockPanel
+            var host = new StackPanel
             {
-                Background = Brushes.White,
-                LastChildFill = true
+                Margin = new Thickness(column == 1 ? 14 : 0, 0, 0, 10)
             };
-            var header = new TextBlock
+            host.Children.Add(new TextBlock
             {
-                Text = title,
-                Margin = new Thickness(12, 10, 12, 8),
-                FontSize = 13,
+                Text = label,
+                FontSize = 9.5,
+                FontWeight = FontWeights.Bold,
+                Foreground = MutedBrush
+            });
+            var valueBlock = new TextBlock
+            {
+                Text = "-",
+                FontSize = 10.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(30, 41, 59)
+                Foreground = BodyBrush
             };
-            DockPanel.SetDock(header, Dock.Top);
-            panel.Children.Add(header);
-            return panel;
+            var chip = new Border
+            {
+                Background = SoftFillBrush,
+                CornerRadius = new CornerRadius(999),
+                Padding = new Thickness(9, 3, 9, 3),
+                Margin = new Thickness(0, 4, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Child = valueBlock
+            };
+            host.Children.Add(chip);
+            Grid.SetRow(host, row);
+            Grid.SetColumn(host, column);
+            grid.Children.Add(host);
+            return valueBlock;
+        }
+
+        private static Button CreateActionButton(string text, string styleKey)
+        {
+            var styles = WpfThemeResources.GetWorkspaceCommandStyles();
+            return new Button
+            {
+                Content = text,
+                Style = (Style)styles[styleKey],
+                FontSize = 11.5,
+                Padding = new Thickness(10, 6, 10, 6),
+                MinWidth = 0,
+                Margin = new Thickness(8, 0, 0, 0),
+                Cursor = Cursors.Hand
+            };
+        }
+
+        private static Button CreateTabButton(string text, bool active)
+        {
+            var styles = WpfThemeResources.GetWorkspaceCommandStyles();
+            return new Button
+            {
+                Content = text,
+                Style = (Style)styles[active ? "ItcmRangeButtonActive" : "ItcmRangeButton"],
+                FontSize = 10.5,
+                Padding = new Thickness(10, 5, 10, 5),
+                MinWidth = 0,
+                Margin = new Thickness(6, 0, 0, 0),
+                Cursor = Cursors.Hand
+            };
+        }
+
+        private void ShowActivityTab(bool showNotes)
+        {
+            if (_activityContent == null)
+                return;
+
+            _activityContent.Content = showNotes ? (object)_notesGrid : _historyGrid;
+            var styles = WpfThemeResources.GetWorkspaceCommandStyles();
+            _notesTabButton.Style = (Style)styles[showNotes ? "ItcmRangeButtonActive" : "ItcmRangeButton"];
+            _historyTabButton.Style = (Style)styles[showNotes ? "ItcmRangeButton" : "ItcmRangeButtonActive"];
         }
 
         private static DataGrid CreateGrid()
         {
-            return new DataGrid
+            var headerStyle = new Style(typeof(DataGridColumnHeader));
+            headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, SoftFillBrush));
+            headerStyle.Setters.Add(new Setter(Control.ForegroundProperty, MutedBrush));
+            headerStyle.Setters.Add(new Setter(Control.FontSizeProperty, 10.0));
+            headerStyle.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
+            headerStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(10, 0, 10, 0)));
+            headerStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0, 0, 0, 1)));
+            headerStyle.Setters.Add(new Setter(Control.BorderBrushProperty, HairlineBrush));
+            headerStyle.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Left));
+            headerStyle.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+
+            var rowStyle = new Style(typeof(DataGridRow));
+            rowStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.White));
+            rowStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+            var alternateRow = new Trigger { Property = ItemsControl.AlternationIndexProperty, Value = 1 };
+            alternateRow.Setters.Add(new Setter(Control.BackgroundProperty, BrushFromRgb(250, 251, 252)));
+            rowStyle.Triggers.Add(alternateRow);
+
+            var grid = new DataGrid
             {
                 AutoGenerateColumns = false,
                 IsReadOnly = true,
                 CanUserAddRows = false,
                 CanUserDeleteRows = false,
+                CanUserResizeRows = false,
                 HeadersVisibility = DataGridHeadersVisibility.Column,
                 GridLinesVisibility = DataGridGridLinesVisibility.Horizontal,
+                HorizontalGridLinesBrush = HairlineBrush,
                 BorderThickness = new Thickness(0),
                 RowHeaderWidth = 0,
                 Background = Brushes.White,
-                AlternatingRowBackground = WpfThemeResources.SurfaceMutedBrush,
+                AlternationCount = 2,
+                RowStyle = rowStyle,
+                ColumnHeaderHeight = 36,
+                MinRowHeight = 38,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                SelectionMode = DataGridSelectionMode.Single,
+                SelectionUnit = DataGridSelectionUnit.FullRow,
+                ColumnHeaderStyle = headerStyle,
+                CellStyle = CreateCellStyle()
             };
+
+            // DataGrid star columns are not reliable outside a live window, so size the
+            // final column explicitly to absorb whatever width the fixed columns leave.
+            grid.SizeChanged += (_, __) => FillLastColumn(grid);
+            return grid;
         }
 
-        private static void AddTextColumn(DataGrid grid, string header, string binding, double width)
+        private static void FillLastColumn(DataGrid grid)
         {
+            if (grid == null || grid.Columns.Count == 0)
+                return;
+
+            var last = grid.Columns[grid.Columns.Count - 1];
+            var available = grid.ActualWidth - SystemParameters.VerticalScrollBarWidth;
+            if (available <= last.MinWidth)
+                return;
+
+            double fixedWidth = 0;
+            for (var i = 0; i < grid.Columns.Count - 1; i++)
+            {
+                var width = grid.Columns[i].Width;
+                fixedWidth += width.UnitType == DataGridLengthUnitType.Pixel
+                    ? width.DisplayValue
+                    : grid.Columns[i].ActualWidth;
+            }
+
+            var target = Math.Max(last.MinWidth, available - fixedWidth);
+            if (Math.Abs(last.ActualWidth - target) > 1)
+                last.Width = new DataGridLength(target);
+        }
+
+        private static Style CreateCellStyle()
+        {
+            const string xaml = @"
+                <Style xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
+                       TargetType=""DataGridCell"">
+                    <Setter Property=""BorderThickness"" Value=""0""/>
+                    <Setter Property=""Padding"" Value=""10,0""/>
+                    <Setter Property=""VerticalContentAlignment"" Value=""Center""/>
+                    <Setter Property=""Foreground"" Value=""#4A5261""/>
+                    <Setter Property=""FontSize"" Value=""11""/>
+                    <Setter Property=""Template"">
+                        <Setter.Value>
+                            <ControlTemplate TargetType=""DataGridCell"">
+                                <Border Background=""{TemplateBinding Background}""
+                                        BorderBrush=""{TemplateBinding BorderBrush}""
+                                        BorderThickness=""{TemplateBinding BorderThickness}"">
+                                    <ContentPresenter Margin=""{TemplateBinding Padding}""
+                                                      VerticalAlignment=""Center""
+                                                      HorizontalAlignment=""Stretch""/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <Trigger Property=""IsSelected"" Value=""True"">
+                            <Setter Property=""Background"" Value=""#FCF0F1""/>
+                            <Setter Property=""Foreground"" Value=""#202635""/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>";
+
+            return (Style)XamlReader.Parse(xaml);
+        }
+
+        private static void AddTextColumn(DataGrid grid, string header, string binding, double width, bool wrap = false, double minWidth = 0)
+        {
+            var textStyle = new Style(typeof(TextBlock));
+            textStyle.Setters.Add(new Setter(TextBlock.FontSizeProperty, 11.0));
+            textStyle.Setters.Add(new Setter(TextBlock.MarginProperty, new Thickness(0, 6, 0, 6)));
+            textStyle.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
+
+            if (wrap)
+            {
+                textStyle.Setters.Add(new Setter(TextBlock.TextWrappingProperty, TextWrapping.Wrap));
+            }
+            else
+            {
+                textStyle.Setters.Add(new Setter(TextBlock.TextWrappingProperty, TextWrapping.NoWrap));
+                textStyle.Setters.Add(new Setter(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis));
+            }
+
             grid.Columns.Add(new DataGridTextColumn
             {
                 Header = header,
                 Binding = new Binding(binding),
-                Width = new DataGridLength(width)
+                Width = width <= 0
+                    ? new DataGridLength(1, DataGridLengthUnitType.Star)
+                    : new DataGridLength(width),
+                MinWidth = minWidth,
+                ElementStyle = textStyle
             });
-        }
-
-        private static Button CreateButton(string text, Brush background)
-        {
-            var button = new Button
-            {
-                Content = text,
-                MinWidth = 94,
-                Margin = new Thickness(6, 0, 0, 0),
-                Padding = new Thickness(12, 8, 12, 8),
-                Background = background,
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand
-            };
-            return button;
         }
 
         private static bool IsFinalStatus(string status)
@@ -586,19 +879,35 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 || value.Equals("Resolved (Temporary)", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static Brush GetStatusBrush(string status)
+        private static Brush GetStatusBackground(string status)
         {
             switch ((status ?? string.Empty).Trim().ToLowerInvariant())
             {
-                case "pending": return BrushFromRgb(52, 152, 219);
-                case "in progress": return BrushFromRgb(124, 58, 237);
-                case "solved": return BrushFromRgb(22, 163, 74);
+                case "pending": return BrushFromRgb(254, 249, 195);
+                case "in progress": return BrushFromRgb(219, 234, 254);
+                case "solved": return BrushFromRgb(220, 252, 231);
+                case "closed": return BrushFromRgb(220, 252, 231);
+                case "overdue": return BrushFromRgb(255, 228, 230);
+                case "escalated": return BrushFromRgb(255, 237, 213);
+                case "waiting on department": return BrushFromRgb(207, 250, 254);
+                case "waiting on vendor": return BrushFromRgb(241, 245, 249);
+                default: return BrushFromRgb(241, 245, 249);
+            }
+        }
+
+        private static Brush GetStatusForeground(string status)
+        {
+            switch ((status ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "pending": return BrushFromRgb(133, 77, 14);
+                case "in progress": return BrushFromRgb(30, 64, 175);
+                case "solved": return BrushFromRgb(22, 101, 52);
                 case "closed": return BrushFromRgb(21, 128, 61);
-                case "overdue": return BrushFromRgb(220, 38, 38);
-                case "escalated": return BrushFromRgb(230, 126, 34);
-                case "waiting on department": return BrushFromRgb(14, 116, 144);
-                case "waiting on vendor": return WpfThemeResources.TextMutedBrush;
-                default: return WpfThemeResources.TextMutedBrush;
+                case "overdue": return BrushFromRgb(159, 18, 57);
+                case "escalated": return BrushFromRgb(154, 52, 18);
+                case "waiting on department": return BrushFromRgb(21, 94, 117);
+                case "waiting on vendor": return BrushFromRgb(71, 85, 105);
+                default: return BrushFromRgb(71, 85, 105);
             }
         }
 
@@ -607,10 +916,22 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             switch ((priority ?? string.Empty).Trim().ToLowerInvariant())
             {
                 case "critical": return BrushFromRgb(153, 27, 27);
-                case "high": return BrushFromRgb(220, 38, 38);
-                case "medium": return BrushFromRgb(230, 126, 34);
-                case "low": return BrushFromRgb(22, 163, 74);
-                default: return WpfThemeResources.TextMutedBrush;
+                case "high": return BrushFromRgb(194, 65, 12);
+                case "medium": return BrushFromRgb(30, 64, 175);
+                case "low": return BrushFromRgb(22, 101, 52);
+                default: return BrushFromRgb(71, 85, 105);
+            }
+        }
+
+        private static Brush GetPriorityBackground(string priority)
+        {
+            switch ((priority ?? string.Empty).Trim().ToLowerInvariant())
+            {
+                case "critical": return BrushFromRgb(254, 226, 226);
+                case "high": return BrushFromRgb(255, 237, 213);
+                case "medium": return BrushFromRgb(219, 234, 254);
+                case "low": return BrushFromRgb(220, 252, 231);
+                default: return BrushFromRgb(241, 245, 249);
             }
         }
 

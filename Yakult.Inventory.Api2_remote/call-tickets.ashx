@@ -130,8 +130,6 @@ public class CallTicketsHandler : IHttpHandler {
         int? deptId=null; if(body.ContainsKey("deptId")&&body["deptId"]!=null){int v; if(int.TryParse(body["deptId"].ToString(),out v))deptId=v;}
         int? branchId=null; if(body.ContainsKey("branchId")&&body["branchId"]!=null){int v; if(int.TryParse(body["branchId"].ToString(),out v))branchId=v;}
         int? assignedToEmpId=null; if(body.ContainsKey("assignedToEmpId")&&body["assignedToEmpId"]!=null){int v; if(int.TryParse(body["assignedToEmpId"].ToString(),out v))assignedToEmpId=v;}
-        int? callerEmpId=null; if(body.ContainsKey("callerEmpId")&&body["callerEmpId"]!=null){int v; if(int.TryParse(body["callerEmpId"].ToString(),out v))callerEmpId=v;}
-        bool linkContactEmailToCaller=false; if(body.ContainsKey("linkContactEmailToCaller")&&body["linkContactEmailToCaller"]!=null){var _lk=body["linkContactEmailToCaller"].ToString().Trim(); linkContactEmailToCaller=string.Equals(_lk,"true",StringComparison.OrdinalIgnoreCase)||_lk=="1";}
         // The authenticated account, not the request body, owns the audit identity.
         int? createdByUserId=actor==null?(int?)null:actor.UserId;
         string providedSolution=body.ContainsKey("providedSolution")?body["providedSolution"].ToString():"";
@@ -142,19 +140,6 @@ public class CallTicketsHandler : IHttpHandler {
         // Validated only when supplied so older app versions keep working.
         string contactEmail=body.ContainsKey("contactEmail")&&body["contactEmail"]!=null?body["contactEmail"].ToString().Trim():"";
         if(!string.IsNullOrWhiteSpace(contactEmail) && !IsValidContactEmail(contactEmail)){Err(c,400,"contactEmail must be a valid email address");return;}
-        // Optional logbook backdating (mobile parity with desktop). Ignored when
-        // absent/blank so older app versions keep working.
-        DateTime? createdAtUtc=null;
-        if(body.ContainsKey("createdAtUtc")&&body["createdAtUtc"]!=null){
-            var _cs=body["createdAtUtc"].ToString().Trim();
-            if(!string.IsNullOrWhiteSpace(_cs)){
-                DateTime _dt;
-                if(!DateTime.TryParse(_cs,out _dt)){Err(c,400,"createdAtUtc must be a valid ISO-8601 UTC datetime.");return;}
-                if(_dt.Kind==DateTimeKind.Unspecified)_dt=DateTime.SpecifyKind(_dt,DateTimeKind.Utc);
-                if(_dt.ToUniversalTime()>DateTime.UtcNow.AddMinutes(1)){Err(c,400,"Ticket date/time cannot be in the future.");return;}
-                createdAtUtc=_dt;
-            }
-        }
 
         try {
             using(var con=new SqlConnection(Cs())){
@@ -169,23 +154,10 @@ public class CallTicketsHandler : IHttpHandler {
                 }
                 using(var cmd=new SqlCommand("dbo.sp_Call_CreateTicket",con)){
                     cmd.CommandType=CommandType.StoredProcedure;
-                    // Mirror of desktop: blank contactEmail auto-resolves from the
-                    // caller/org before create, then persists via the post-create UPDATE.
-                    if(string.IsNullOrWhiteSpace(contactEmail)&&callerEmpId.HasValue&&callerEmpId.Value>0){
-                        try{
-                            string _re,_rs;
-                            if(CallTicketContactEmail.TryResolve(con,callerEmpId,comId,deptId,branchId,out _re,out _rs)&&!string.IsNullOrWhiteSpace(_re))
-                                contactEmail=_re;
-                        }catch{}
-                    }
                     cmd.Parameters.Add("@ComId",SqlDbType.Int).Value=comId==null?(object)DBNull.Value:(object)comId.Value;
                     cmd.Parameters.Add("@DeptId",SqlDbType.Int).Value=deptId==null?(object)DBNull.Value:(object)deptId.Value;
                     if(HasParam(con,"dbo.sp_Call_CreateTicket","@BranchId"))
                         cmd.Parameters.Add("@BranchId",SqlDbType.Int).Value=branchId==null?(object)DBNull.Value:(object)branchId.Value;
-                    if(HasParam(con,"dbo.sp_Call_CreateTicket","@CreatedAtUtc"))
-                        cmd.Parameters.Add("@CreatedAtUtc",SqlDbType.DateTime2).Value=createdAtUtc==null?(object)DBNull.Value:(object)createdAtUtc.Value;
-                    if(HasParam(con,"dbo.sp_Call_CreateTicket","@LastContactAtUtc"))
-                        cmd.Parameters.Add("@LastContactAtUtc",SqlDbType.DateTime2).Value=createdAtUtc==null?(object)DBNull.Value:(object)createdAtUtc.Value;
                     cmd.Parameters.Add("@CallerName",SqlDbType.NVarChar).Value=callerName;
                     cmd.Parameters.Add("@Issue",SqlDbType.NVarChar).Value=issue;
                     cmd.Parameters.Add("@ProvidedSolution",SqlDbType.NVarChar).Value=providedSolution;
@@ -244,14 +216,6 @@ public class CallTicketsHandler : IHttpHandler {
                                             }
                                         }
                                     }catch{}
-                                }
-                                // Mirror of desktop SaveEmployeeEmailBindingAsync: link the
-                                // final contactEmail back to the caller employee when asked.
-                                // Best-effort on its own connection (proc reader is open);
-                                // never fails ticket creation.
-                                if(linkContactEmailToCaller&&callerEmpId.HasValue&&callerEmpId.Value>0
-                                    &&!string.IsNullOrWhiteSpace(contactEmail)&&IsValidContactEmail(contactEmail)){
-                                    try{CallTicketContactEmail.TryLinkEmployeeEmail(Cs(),callerEmpId.Value,contactEmail.Trim(),createdByUserId);}catch{}
                                 }
                                 ItcmEmailHelper.TrySendNewTicketEmailAsync(Cs(),newTicketId,createdByUserId);
                                 if (assignedToEmpId.HasValue && assignedToEmpId.Value > 0)

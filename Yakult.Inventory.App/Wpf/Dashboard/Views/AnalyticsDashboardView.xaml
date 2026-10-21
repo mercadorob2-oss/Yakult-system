@@ -1,0 +1,299 @@
+<UserControl x:Class="Yakult.Inventory.App.WPF.Dashboard.Views.AnalyticsDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontFamily="Segoe UI"
+             Background="{DynamicResource YakultPageBackgroundBrush}"
+             TextOptions.TextFormattingMode="Display"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Yakult.Inventory.App;component/Wpf/Shared/Styles/YakultPalette.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="DashCard" TargetType="Border">
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource YakultBorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Padding" Value="18"/>
+            </Style>
+
+            <Style x:Key="MicroLabel" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
+            </Style>
+
+            <Style x:Key="QuietButton" TargetType="Button">
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Padding" Value="14,8"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                    BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1" CornerRadius="7">
+                                <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultSurfaceMutedBrush}"/>
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource YakultInputBorderBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="AccentButton" TargetType="Button">
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{StaticResource YakultPrimaryBrush}"/>
+                <Setter Property="Padding" Value="14,8"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{StaticResource YakultAccentTintBrush}"
+                                    BorderBrush="{StaticResource YakultAccentBorderBrush}" BorderThickness="1" CornerRadius="7">
+                                <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultSelectionBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultSelectionHoverBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="ScopeComboItem" TargetType="ComboBoxItem">
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBoxItem">
+                            <Border x:Name="Bd" Background="Transparent" CornerRadius="5" Margin="4,2">
+                                <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultSurfaceMutedBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="ScopeCombo" TargetType="ComboBox">
+                <Setter Property="Height" Value="34"/>
+                <Setter Property="MinWidth" Value="220"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
+                <Setter Property="ItemContainerStyle" Value="{StaticResource ScopeComboItem}"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid>
+                                <ToggleButton x:Name="Toggle" Focusable="False" ClickMode="Press"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="Bd" Background="White"
+                                                    BorderBrush="{StaticResource YakultInputBorderBrush}" BorderThickness="1" CornerRadius="6"/>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource YakultPrimaryBrush}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                                <ContentPresenter Margin="12,0,30,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"/>
+                                <Path HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0" IsHitTestVisible="False"
+                                      Data="M 0 0 L 4 4 L 8 0" Stroke="{StaticResource YakultTextMutedBrush}" StrokeThickness="1.6"/>
+                                <Popup x:Name="PART_Popup" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}">
+                                    <Border Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="1"
+                                            CornerRadius="6" Margin="0,4,0,0" MinWidth="{TemplateBinding ActualWidth}" MaxHeight="320">
+                                        <ScrollViewer>
+                                            <ItemsPresenter/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="TableCellBase" TargetType="DataGridCell">
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Padding" Value="10,0"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="{StaticResource YakultTextDarkBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="TableCellRight" TargetType="DataGridCell" BasedOn="{StaticResource TableCellBase}">
+                <Setter Property="HorizontalContentAlignment" Value="Right"/>
+            </Style>
+
+            <Style x:Key="TableHeaderBase" TargetType="DataGridColumnHeader">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{StaticResource YakultTextMutedBrush}"/>
+                <Setter Property="FontSize" Value="10.5"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Padding" Value="10,0,10,9"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="DataGridColumnHeader">
+                            <Border Background="Transparent" BorderBrush="{StaticResource YakultBorderBrush}"
+                                    BorderThickness="0,0,0,1" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter VerticalAlignment="Bottom"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+            <Style x:Key="TableHeaderRight" TargetType="DataGridColumnHeader" BasedOn="{StaticResource TableHeaderBase}">
+                <Setter Property="HorizontalContentAlignment" Value="Right"/>
+            </Style>
+
+            <DataTemplate x:Key="StatusCellTemplate">
+                <TextBlock Text="{Binding Status}" Foreground="{Binding StatusBrush}"
+                           FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            </DataTemplate>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid MaxWidth="1440" Margin="28,24,28,36" HorizontalAlignment="Center">
+            <StackPanel>
+
+                <TextBlock Style="{StaticResource MicroLabel}" Text="INVENTORY ANALYTICS"/>
+
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Top" Margin="0,0,24,0">
+                        <TextBlock x:Name="TitleText" FontSize="26" FontWeight="SemiBold"
+                                   Foreground="{StaticResource YakultTextDarkBrush}" Text="Dashboard" TextWrapping="Wrap"/>
+                        <TextBlock Margin="0,6,0,0" FontSize="12.5" Foreground="{StaticResource YakultTextMutedBrush}"
+                                   Text="Click any card or chart to see the underlying records."/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="0,4,0,0">
+                        <Button x:Name="BtnViewInventory" Style="{StaticResource AccentButton}" Margin="0,0,10,0" Content="View Inventory"/>
+                        <Button x:Name="BtnViewUpdates" Style="{StaticResource QuietButton}" Margin="0,0,10,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="View Updates" VerticalAlignment="Center"/>
+                                <Border x:Name="UpdatesBadge" Background="{StaticResource YakultPrimaryBrush}" CornerRadius="9"
+                                        Height="18" MinWidth="18" Margin="8,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                                    <TextBlock x:Name="UpdatesBadgeText" Foreground="White" FontSize="11" FontWeight="SemiBold"
+                                               Margin="5,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="BtnRefresh" Style="{StaticResource QuietButton}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#8635;" FontSize="14" VerticalAlignment="Center" Margin="0,-1,7,0"/>
+                                <TextBlock Text="Refresh" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Margin="0,22,0,0" VerticalAlignment="Center">
+                    <TextBlock Style="{StaticResource MicroLabel}" Text="ANALYTICS SCOPE" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <ComboBox x:Name="ScopeCombo" Style="{StaticResource ScopeCombo}" SelectionChanged="ScopeCombo_SelectionChanged"/>
+                </StackPanel>
+
+                <TextBlock x:Name="StatusText" Margin="0,48,0,0" HorizontalAlignment="Center" FontSize="13"
+                           Foreground="{StaticResource YakultTextMutedBrush}" Visibility="Collapsed" Text="Loading dashboard…"/>
+
+                <UniformGrid x:Name="KpiGrid" Margin="-7,22,-7,0" Visibility="Collapsed"/>
+
+                <Border x:Name="StatsCard" Style="{StaticResource DashCard}" Margin="0,18,0,0" Padding="10,16,10,12" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource MicroLabel}" Text="AT A GLANCE" Margin="10,0,0,8"/>
+                        <Grid x:Name="StatsGrid"/>
+                    </StackPanel>
+                </Border>
+
+                <UniformGrid x:Name="ChartsGrid" Columns="3" Margin="-7,18,-7,0" Visibility="Collapsed"/>
+
+                <Border x:Name="TableCard" Style="{StaticResource DashCard}" Margin="0,18,0,0" Padding="0" Visibility="Collapsed">
+                    <StackPanel>
+                        <Grid Margin="18,16,18,6">
+                            <TextBlock x:Name="TableTitle" Style="{StaticResource MicroLabel}" FontSize="12" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TableCount" HorizontalAlignment="Right" FontSize="11.5"
+                                       Foreground="{StaticResource YakultTextMutedBrush}" VerticalAlignment="Center"/>
+                        </Grid>
+                        <DataGrid x:Name="TableGrid" Margin="12,0,12,14" MaxHeight="470"
+                                  AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column"
+                                  Background="Transparent" BorderThickness="0" RowHeight="40"
+                                  CanUserAddRows="False" CanUserDeleteRows="False" CanUserResizeRows="False"
+                                  CanUserReorderColumns="False" CanUserSortColumns="False" CanUserResizeColumns="False"
+                                  SelectionMode="Single" SelectionUnit="FullRow" GridLinesVisibility="None"
+                                  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
+                                  CellStyle="{StaticResource TableCellBase}"
+                                  ColumnHeaderStyle="{StaticResource TableHeaderBase}">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                    <Setter Property="BorderBrush" Value="#F2F2F4"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#FAFAFA"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                        </DataGrid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

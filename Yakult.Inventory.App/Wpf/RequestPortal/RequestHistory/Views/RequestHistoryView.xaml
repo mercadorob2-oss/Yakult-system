@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.RequestPortal.RequestHistory.ViewModels"
     xmlns:ctrl="clr-namespace:Yakult.Inventory.App.WPF.CartridgeManagement.Converters"
-    Background="#F0F2F6"
+    Background="#F6F5F2"
     FontFamily="Segoe UI"
     UseLayoutRounding="True"
     SnapsToDevicePixels="True"
@@ -26,7 +26,7 @@
                     <Trigger Property="IsSelected" Value="True">
                         <Setter Property="Background"  Value="Transparent"/>
                         <Setter Property="BorderBrush" Value="Transparent"/>
-                        <Setter Property="Foreground"  Value="#1A2333"/>
+                        <Setter Property="Foreground"  Value="{StaticResource TextPrimary}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -43,7 +43,7 @@
         <Border x:Name="HistoryHeaderBar"
                 Grid.Row="0"
                 Background="White"
-                BorderBrush="#E2E8F0"
+                BorderBrush="{StaticResource CardBorder}"
                 BorderThickness="0,0,0,1"
                 Padding="28,14">
             <Grid>
@@ -51,25 +51,30 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Title}"
-                               FontSize="18" FontWeight="Bold" Foreground="#2272D9"
-                               VerticalAlignment="Center"/>
-                    <Border Background="#D6E8FF"
-                            CornerRadius="10"
-                            Padding="10,4"
-                            Margin="12,0,0,0"
-                            VerticalAlignment="Center">
-                        <TextBlock Text="{Binding TotalCount}"
-                                   FontSize="12" FontWeight="Bold" Foreground="#2272D9"/>
-                    </Border>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Title}"
+                                   FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
+                                   VerticalAlignment="Center"/>
+                        <Border Background="{StaticResource YakultAccentTintBrush}"
+                                BorderBrush="{StaticResource YakultAccentBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="10,3"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TotalCount}"
+                                       FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource YakultBlue}"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Every consumable request in this view, newest first."
+                               FontSize="11.5" Foreground="{StaticResource TextMuted}" Margin="0,3,0,0"/>
                 </StackPanel>
                 <Button Grid.Column="1"
-                        Content="&#x21BB; Refresh"
+                        Content="&#x21BB;  Refresh"
                         Command="{Binding RefreshCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        Background="#4E9AFC"
-                        Height="34" Padding="16,0"/>
+                        Style="{StaticResource SecondaryButton}"
+                        Height="34" Padding="14,0" VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
@@ -131,7 +136,7 @@
                                   SelectionUnit="FullRow"
                                   HeadersVisibility="Column"
                                   GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#F0F3F7"
+                                  HorizontalGridLinesBrush="{StaticResource CardBorder}"
                                   BorderThickness="0"
                                   Background="White"
                                   RowHeaderWidth="0"
@@ -149,7 +154,7 @@
                                              Listed first so the notification, hover and selected
                                              states below still win. -->
                                         <DataTrigger Binding="{Binding HighlightDeptLevel}" Value="True">
-                                            <Setter Property="Background" Value="#F4EFFD"/>
+                                            <Setter Property="Background" Value="{StaticResource SurfaceGray}"/>
                                         </DataTrigger>
                                         <!-- Notification highlight -->
                                         <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
@@ -163,13 +168,13 @@
                                                 <Condition Property="IsMouseOver" Value="True"/>
                                                 <Condition Property="IsSelected" Value="False"/>
                                             </MultiTrigger.Conditions>
-                                            <Setter Property="Background" Value="#D6E8FF"/>
-                                            <Setter Property="Foreground" Value="#1A2333"/>
+                                            <Setter Property="Background" Value="#FAFBFC"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                                         </MultiTrigger>
                                         <!-- Selected -->
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="#B8D9FF"/>
-                                            <Setter Property="Foreground" Value="#1A2333"/>
+                                            <Setter Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
+                                            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -203,7 +208,7 @@
                                             <Setter Property="Padding" Value="6,4"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsDeptLevel}" Value="True">
-                                                    <Setter Property="Foreground" Value="#6D3FC9"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                                                     <Setter Property="FontWeight" Value="SemiBold"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -328,8 +333,8 @@
                         <!-- Pagination bar -->
                         <Border x:Name="PaginationBar"
                                 Grid.Row="2"
-                                Background="#F8FAFC"
-                                BorderBrush="#E8EDF3"
+                                Background="{StaticResource SurfaceGray}"
+                                BorderBrush="{StaticResource CardBorder}"
                                 BorderThickness="0,1,0,0"
                                 Padding="16,8"
                                 Visibility="{Binding HasRows, Converter={StaticResource BoolToVis}}">
@@ -344,7 +349,7 @@
                                 <TextBlock Grid.Column="0"
                                            Text="{Binding TotalCount, StringFormat='{}{0} records total'}"
                                            FontSize="12"
-                                           Foreground="#64748B"
+                                           Foreground="{StaticResource TextMuted}"
                                            VerticalAlignment="Center"/>
 
                                 <!-- Prev / Page info / Next (center) -->
@@ -355,7 +360,7 @@
                                             FontSize="13"
                                             Margin="0,0,6,0"
                                             Background="White"
-                                            BorderBrush="#D1D9E0"
+                                            BorderBrush="{StaticResource CardBorder}"
                                             BorderThickness="1"
                                             Cursor="Hand">
                                         <Button.Style>
@@ -374,7 +379,7 @@
                                                                     <Setter Property="Opacity" Value="0.35"/>
                                                                 </Trigger>
                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                                    <Setter Property="Background" Value="{StaticResource SurfaceGray}"/>
                                                                 </Trigger>
                                                             </ControlTemplate.Triggers>
                                                         </ControlTemplate>
@@ -387,7 +392,7 @@
                                     <TextBlock Text="{Binding PageInfo}"
                                                FontSize="13"
                                                FontWeight="SemiBold"
-                                               Foreground="#334155"
+                                               Foreground="{StaticResource TextPrimary}"
                                                VerticalAlignment="Center"
                                                Margin="4,0"/>
 
@@ -397,7 +402,7 @@
                                             FontSize="13"
                                             Margin="6,0,0,0"
                                             Background="White"
-                                            BorderBrush="#D1D9E0"
+                                            BorderBrush="{StaticResource CardBorder}"
                                             BorderThickness="1"
                                             Cursor="Hand">
                                         <Button.Style>
@@ -416,7 +421,7 @@
                                                                     <Setter Property="Opacity" Value="0.35"/>
                                                                 </Trigger>
                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#F1F5F9"/>
+                                                                    <Setter Property="Background" Value="{StaticResource SurfaceGray}"/>
                                                                 </Trigger>
                                                             </ControlTemplate.Triggers>
                                                         </ControlTemplate>

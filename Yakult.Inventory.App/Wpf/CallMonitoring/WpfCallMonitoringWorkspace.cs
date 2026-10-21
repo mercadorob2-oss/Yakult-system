@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using WinForms = System.Windows.Forms;
 using Yakult.Inventory.App.Forms.CallMonitoring;
@@ -19,24 +19,41 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 {
     public sealed class WpfCallMonitoringWorkspace : System.Windows.Controls.UserControl
     {
+        private static readonly Brush InkBrush = BrushFromRgb(32, 38, 53);
+        private static readonly Brush MutedBrush = BrushFromRgb(103, 112, 129);
+        private static readonly Brush BodyBrush = BrushFromRgb(74, 82, 97);
+        private static readonly Brush HairlineBrush = BrushFromRgb(229, 230, 232);
+        private static readonly Brush InputBorderBrush = BrushFromRgb(205, 208, 214);
+        private static readonly Brush SoftFillBrush = BrushFromRgb(245, 246, 248);
+        private static readonly Brush HoverFillBrush = BrushFromRgb(250, 250, 250);
+        private static readonly Brush GridLineBrush = BrushFromRgb(240, 240, 242);
+        private static readonly Brush AlertRedBrush = BrushFromRgb(185, 35, 53);
+        private static readonly Color AccentBlue = Color.FromRgb(59, 126, 161);
+        private static readonly Color AccentRed = Color.FromRgb(185, 35, 53);
+        private static readonly Color AccentViolet = Color.FromRgb(107, 92, 165);
+        private static readonly Color AccentGreen = Color.FromRgb(47, 133, 90);
+        private static readonly Color AccentAmber = Color.FromRgb(183, 121, 31);
+
+        private static readonly ResourceDictionary CommandStyles = WpfThemeResources.GetWorkspaceCommandStyles();
+
         private readonly TextBlock _openTicketsValue;
         private readonly TextBlock _criticalTicketsValue;
         private readonly TextBlock _todayVolumeValue;
         private readonly TextBlock _avgResolutionValue;
         private readonly TextBlock _mobileUpdatesValue;
-        private readonly TextBlock _heroStatusText;
+        private readonly TextBlock _headerStatusText;
         private readonly TextBlock _lastRefreshedText;
         private readonly TextBlock _attentionSummaryText;
         private readonly TextBlock _lineChartTitle;
         private readonly TextBlock _donutChartTitle;
         private readonly Canvas _lineChartCanvas;
-        private readonly StackPanel _lineChartLabels;
         private readonly Canvas _donutCanvas;
         private readonly StackPanel _donutLegendPanel;
         private readonly Button _donutToggleButton;
         private readonly StackPanel _attentionPanel;
         private readonly Button _attentionPrevButton;
         private readonly Button _attentionNextButton;
+        private readonly List<(Button Button, int Days)> _rangeButtons = new List<(Button, int)>();
 
         private ICallMonitoringRepository _repository;
         private ICallMonitoringNavigator _navigator;
@@ -47,6 +64,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private int _attentionPageIndex = 1;
         private const int AttentionPageSize = 8;
         private List<CallTicketListItem> _attentionCache = new List<CallTicketListItem>();
+        private List<CallTicketVolumePoint> _lineChartPoints;
+        private double _lineChartDrawnWidth;
 
         public WpfCallMonitoringWorkspace()
         {
@@ -60,23 +79,20 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var root = new StackPanel
             {
-                Margin = new Thickness(28, 24, 28, 28)
+                Margin = new Thickness(28, 24, 28, 32)
             };
             scroll.Content = root;
 
-            var hero = BuildHeroSection();
-            root.Children.Add(hero.Container);
-            _heroStatusText = hero.StatusText;
-            _lastRefreshedText = hero.LastRefreshedText;
+            var header = BuildHeaderSection();
+            root.Children.Add(header.Container);
+            _headerStatusText = header.StatusText;
+            _lastRefreshedText = header.LastRefreshedText;
 
-            var metricGrid = new Grid
+            var metricGrid = new UniformGrid
             {
-                Margin = new Thickness(0, 22, 0, 0)
+                Columns = 5,
+                Margin = new Thickness(-7, 22, -7, 0)
             };
-            for (var i = 0; i < 5; i++)
-            {
-                metricGrid.ColumnDefinitions.Add(new ColumnDefinition());
-            }
 
             _openTicketsValue = CreateMetricValue();
             _criticalTicketsValue = CreateMetricValue();
@@ -84,26 +100,26 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _avgResolutionValue = CreateMetricValue();
             _mobileUpdatesValue = CreateMetricValue();
 
-            AddMetricCard(metricGrid, 0, "Open Tickets", "Active now", _openTicketsValue, Color.FromRgb(14, 116, 144),
+            AddMetricCard(metricGrid, "Open Tickets", "Active now", _openTicketsValue, AccentBlue,
                 async () => await ShowDrillDownAsync("Open Tickets", () => _repository.GetOpenTicketsListAsync()));
-            AddMetricCard(metricGrid, 1, "Critical", "Requires attention", _criticalTicketsValue, Color.FromRgb(190, 24, 93),
+            AddMetricCard(metricGrid, "Critical", "Requires attention", _criticalTicketsValue, AccentRed,
                 async () => await ShowDrillDownAsync("Critical Tickets", () => _repository.GetCriticalTicketsListAsync()));
-            AddMetricCard(metricGrid, 2, "Today's Volume", "Tickets today", _todayVolumeValue, Color.FromRgb(37, 99, 235),
+            AddMetricCard(metricGrid, "Today's Volume", "Tickets today", _todayVolumeValue, AccentViolet,
                 async () => await ShowDrillDownAsync("Ticket Volume Today", () => _repository.GetTodaysTicketsListAsync()));
-            AddMetricCard(metricGrid, 3, "Avg Resolution", "Recent solved tickets", _avgResolutionValue, Color.FromRgb(22, 163, 74),
+            AddMetricCard(metricGrid, "Avg Resolution", "Recent solved tickets", _avgResolutionValue, AccentGreen,
                 async () => await ShowDrillDownAsync("Example Resolved", () => _repository.GetRecentlySolvedAsync()));
-            AddMetricCard(metricGrid, 4, "Mobile Updates", "Needs processing", _mobileUpdatesValue, Color.FromRgb(245, 158, 11),
+            AddMetricCard(metricGrid, "Mobile Updates", "Needs processing", _mobileUpdatesValue, AccentAmber,
                 OpenMobileUpdatesAndRefresh);
             root.Children.Add(metricGrid);
 
             var analyticsGrid = new Grid
             {
-                Margin = new Thickness(0, 22, 0, 0)
+                Margin = new Thickness(0, 18, 0, 0)
             };
-            analyticsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.35, GridUnitType.Star) });
+            analyticsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.4, GridUnitType.Star) });
             analyticsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            var lineChartCard = CreateGlassCard();
+            var lineChartCard = CreateCard();
             Grid.SetColumn(lineChartCard, 0);
             analyticsGrid.Children.Add(lineChartCard);
 
@@ -115,16 +131,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             lineHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             lineChartStack.Children.Add(lineHeader);
 
-            _lineChartTitle = new TextBlock
-            {
-                FontSize = 20,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(32, 42, 55)
-            };
+            _lineChartTitle = CreateMicroLabelText();
             lineHeader.Children.Add(_lineChartTitle);
 
-            var rangeButtons = new WrapPanel
+            var rangeButtons = new StackPanel
             {
+                Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Right
             };
             rangeButtons.Children.Add(CreateRangeButton("7 Days", 7));
@@ -133,28 +145,18 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             Grid.SetColumn(rangeButtons, 1);
             lineHeader.Children.Add(rangeButtons);
 
-            lineChartStack.Children.Add(new TextBlock
-            {
-                Text = "Daily ticket volume, using the same repository data as the original dashboard.",
-                Margin = new Thickness(0, 6, 0, 14),
-                FontSize = 12.5,
-                Foreground = BrushFromRgb(98, 113, 128)
-            });
             _lineChartCanvas = new Canvas
             {
-                Height = 240,
-                Background = new SolidColorBrush(Color.FromRgb(250, 252, 255))
+                Height = 236,
+                Margin = new Thickness(0, 16, 0, 0),
+                Background = Brushes.Transparent,
+                ClipToBounds = true
             };
+            _lineChartCanvas.SizeChanged += (_, __) => RedrawLineChartIfNeeded();
             lineChartStack.Children.Add(_lineChartCanvas);
-            _lineChartLabels = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Margin = new Thickness(0, 12, 0, 0)
-            };
-            lineChartStack.Children.Add(_lineChartLabels);
 
-            var donutCard = CreateGlassCard();
-            donutCard.Margin = new Thickness(18, 0, 0, 0);
+            var donutCard = CreateCard();
+            donutCard.Margin = new Thickness(14, 0, 0, 0);
             Grid.SetColumn(donutCard, 1);
             analyticsGrid.Children.Add(donutCard);
 
@@ -166,25 +168,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             donutHeader.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             donutStack.Children.Add(donutHeader);
 
-            _donutChartTitle = new TextBlock
-            {
-                FontSize = 20,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(32, 42, 55)
-            };
+            _donutChartTitle = CreateMicroLabelText();
+            _donutChartTitle.VerticalAlignment = VerticalAlignment.Center;
             donutHeader.Children.Add(_donutChartTitle);
 
-            _donutToggleButton = new Button
-            {
-                Padding = new Thickness(12, 7, 12, 7),
-                Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(WpfThemeResources.Border),
-                BorderThickness = new Thickness(1),
-                Foreground = WpfThemeResources.PrimaryBrush,
-                FontSize = 11.5,
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand
-            };
+            _donutToggleButton = CreateQuietButton("Active Tickets");
+            _donutToggleButton.Padding = new Thickness(10, 5, 10, 5);
+            _donutToggleButton.FontSize = 11.5;
             _donutToggleButton.Click += async (_, __) =>
             {
                 _showResolutionDonut = !_showResolutionDonut;
@@ -193,23 +183,17 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             Grid.SetColumn(_donutToggleButton, 1);
             donutHeader.Children.Add(_donutToggleButton);
 
-            donutStack.Children.Add(new TextBlock
-            {
-                Text = "Click a legend row or chart slice to open the same kind of drill-down the original dashboard provided.",
-                Margin = new Thickness(0, 6, 0, 14),
-                FontSize = 12.5,
-                Foreground = BrushFromRgb(98, 113, 128)
-            });
             _donutCanvas = new Canvas
             {
                 Width = 240,
                 Height = 240,
+                Margin = new Thickness(0, 16, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
             donutStack.Children.Add(_donutCanvas);
             _donutLegendPanel = new StackPanel
             {
-                Margin = new Thickness(0, 14, 0, 0)
+                Margin = new Thickness(0, 10, 0, 0)
             };
             donutStack.Children.Add(_donutLegendPanel);
 
@@ -217,12 +201,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var lowerGrid = new Grid
             {
-                Margin = new Thickness(0, 22, 0, 0)
+                Margin = new Thickness(0, 18, 0, 0)
             };
             lowerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.45, GridUnitType.Star) });
             lowerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            var attentionCard = CreateGlassCard();
+            var attentionCard = CreateCard();
             Grid.SetColumn(attentionCard, 0);
             lowerGrid.Children.Add(attentionCard);
 
@@ -231,7 +215,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var attentionHeaderGrid = new Grid
             {
-                Margin = new Thickness(0, 0, 0, 14)
+                Margin = new Thickness(0, 0, 0, 12)
             };
             attentionHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             attentionHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -239,26 +223,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             attentionLayout.Children.Add(attentionHeaderGrid);
 
             var attentionHeader = new StackPanel();
-            attentionHeader.Children.Add(new TextBlock
-            {
-                Text = "Attention Queue",
-                FontSize = 22,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(32, 42, 55)
-            });
-            attentionHeader.Children.Add(new TextBlock
-            {
-                Text = "These are real tickets that need action. Click any card to open the ticket details dialog.",
-                Margin = new Thickness(0, 6, 0, 0),
-                FontSize = 12.5,
-                TextWrapping = TextWrapping.Wrap,
-                Foreground = BrushFromRgb(98, 113, 128)
-            });
+            attentionHeader.Children.Add(CreateMicroLabelText("ATTENTION QUEUE"));
             _attentionSummaryText = new TextBlock
             {
-                Margin = new Thickness(0, 10, 0, 0),
+                Margin = new Thickness(0, 6, 0, 0),
                 FontSize = 11.5,
-                Foreground = BrushFromRgb(17, 94, 89)
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = MutedBrush
             };
             attentionHeader.Children.Add(_attentionSummaryText);
             attentionHeaderGrid.Children.Add(attentionHeader);
@@ -304,65 +275,43 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             attentionScroll.Content = _attentionPanel;
             attentionLayout.Children.Add(attentionScroll);
 
-            var sideRail = CreateGlassCard();
-            sideRail.Margin = new Thickness(18, 0, 0, 0);
+            var sideRail = CreateCard();
+            sideRail.Margin = new Thickness(14, 0, 0, 0);
             Grid.SetColumn(sideRail, 1);
             lowerGrid.Children.Add(sideRail);
 
             var sideLayout = new StackPanel();
             sideRail.Child = sideLayout;
 
-            var pillRow = new WrapPanel
-            {
-                Margin = new Thickness(0, 0, 0, 14)
-            };
-            pillRow.Children.Add(CreatePill("WPF Dashboard", WpfThemeResources.PrimaryHover, WpfThemeResources.AccentTint));
-            pillRow.Children.Add(CreatePill("WinForms Shell", Color.FromRgb(55, 65, 81), Color.FromRgb(243, 244, 246)));
-            pillRow.Children.Add(CreatePill("Original Data Restored", Color.FromRgb(29, 78, 216), Color.FromRgb(239, 246, 255)));
-            sideLayout.Children.Add(pillRow);
-
+            sideLayout.Children.Add(CreateMicroLabelText("QUICK ACTIONS"));
             sideLayout.Children.Add(new TextBlock
             {
-                Text = "Quick Navigation",
-                FontSize = 20,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(32, 42, 55)
-            });
-            sideLayout.Children.Add(new TextBlock
-            {
-                Text = "The dashboard keeps the modern shell, but routes back into the working WinForms workflows whenever you need to process or review records.",
-                Margin = new Thickness(0, 8, 0, 18),
-                FontSize = 12.5,
+                Text = "Jump straight into the other ITCM screens.",
+                Margin = new Thickness(0, 6, 0, 12),
+                FontSize = 11.5,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = BrushFromRgb(98, 113, 128)
+                Foreground = MutedBrush
             });
 
-            sideLayout.Children.Add(CreateActionTile(
-                "Open Ticket Workspace",
-                "Continue into the main ticket processing screen.",
-                Color.FromRgb(14, 116, 144),
+            sideLayout.Children.Add(CreateQuickActionRow(
+                "Ticket Workspace",
                 () => _navigator?.OpenTicketWorkspace()));
-            sideLayout.Children.Add(CreateActionTile(
-                "Open Display Mode",
-                "Switch to the live operations-focused ticket wall.",
-                Color.FromRgb(126, 34, 206),
+            sideLayout.Children.Add(CreateQuickActionRow(
+                "Display Mode",
                 () => _navigator?.OpenDisplayMode()));
-            sideLayout.Children.Add(CreateActionTile(
-                "Open Reports",
-                "Jump into analytics and longer-range reporting.",
-                Color.FromRgb(22, 101, 52),
+            sideLayout.Children.Add(CreateQuickActionRow(
+                "Reports",
                 () => _navigator?.OpenReports()));
-            sideLayout.Children.Add(CreateActionTile(
-                "Open Mobile Updates",
-                "Review and process mobile-originated set updates.",
-                Color.FromRgb(245, 158, 11),
+            sideLayout.Children.Add(CreateQuickActionRow(
+                "Mobile Updates",
                 OpenMobileUpdatesAndRefresh));
 
             root.Children.Add(lowerGrid);
             Content = scroll;
 
             UpdateAnalyticsTitles();
-            SetLoadingState("Preparing the WPF dashboard...");
+            UpdateRangeButtonStates();
+            SetLoadingState("Loading dashboard…");
         }
 
         public void Initialize(
@@ -378,7 +327,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             }
 
             _initialized = true;
-            LoadAsync().FireAndForget(ex => Dispatcher.BeginInvoke(new Action(() => _heroStatusText.Text = "Dashboard load failed: " + ex.Message)));
+            LoadAsync().FireAndForget(ex => Dispatcher.BeginInvoke(new Action(() => _headerStatusText.Text = "Dashboard load failed: " + ex.Message)));
         }
 
         public void RefreshData()
@@ -388,7 +337,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 return;
             }
 
-            LoadAsync().FireAndForget(ex => Dispatcher.BeginInvoke(new Action(() => _heroStatusText.Text = "Dashboard refresh failed: " + ex.Message)));
+            LoadAsync().FireAndForget(ex => Dispatcher.BeginInvoke(new Action(() => _headerStatusText.Text = "Dashboard refresh failed: " + ex.Message)));
         }
 
         private async Task LoadAsync()
@@ -419,16 +368,17 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
                 _openTicketsValue.Text = metrics.OpenTickets.ToString("N0");
                 _criticalTicketsValue.Text = metrics.CriticalTickets.ToString("N0");
+                _criticalTicketsValue.Foreground = metrics.CriticalTickets > 0 ? AlertRedBrush : InkBrush;
                 _todayVolumeValue.Text = metrics.TodaysVolume.ToString("N0");
                 _avgResolutionValue.Text = FormatResolution(metrics.AvgResolutionMinutes);
                 _mobileUpdatesValue.Text = mobileUpdates.ToString("N0");
-                _mobileUpdatesValue.Foreground = mobileUpdates > 0 ? BrushFromRgb(220, 38, 38) : WpfThemeResources.TextDarkBrush;
+                _mobileUpdatesValue.Foreground = mobileUpdates > 0 ? AlertRedBrush : InkBrush;
 
                 RenderAttentionPage();
                 await RefreshLineChartAsync();
                 await RefreshDonutChartAsync();
 
-                _heroStatusText.Text = BuildHeroStatus(metrics, _attentionCache, mobileUpdates);
+                _headerStatusText.Text = BuildHeaderStatus(metrics, _attentionCache, mobileUpdates);
                 _lastRefreshedText.Text = "Last refreshed: " + DateTime.Now.ToString("MMM dd, h:mm tt");
                 _attentionSummaryText.Text = BuildAttentionSummary();
             }
@@ -439,6 +389,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _todayVolumeValue.Text = "--";
                 _avgResolutionValue.Text = "--";
                 _mobileUpdatesValue.Text = "--";
+                _criticalTicketsValue.Foreground = InkBrush;
+                _mobileUpdatesValue.Foreground = InkBrush;
                 _attentionCache = new List<CallTicketListItem>();
                 _attentionPanel.Children.Clear();
                 _attentionPanel.Children.Add(new TextBlock
@@ -447,7 +399,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     Foreground = BrushFromRgb(185, 28, 28),
                     Margin = new Thickness(0, 2, 0, 0)
                 });
-                _heroStatusText.Text = "Load failed: " + ex.Message;
+                _headerStatusText.Text = "Load failed: " + ex.Message;
                 _attentionSummaryText.Text = "Dashboard data could not be refreshed.";
                 _lastRefreshedText.Text = "Last refreshed: failed";
                 UpdatePagerState();
@@ -465,19 +417,20 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _todayVolumeValue.Text = "--";
             _avgResolutionValue.Text = "--";
             _mobileUpdatesValue.Text = "--";
-            _mobileUpdatesValue.Foreground = WpfThemeResources.TextDarkBrush;
-            _heroStatusText.Text = message;
+            _criticalTicketsValue.Foreground = InkBrush;
+            _mobileUpdatesValue.Foreground = InkBrush;
+            _headerStatusText.Text = message;
             _lastRefreshedText.Text = "Last refreshed: pending";
             _attentionSummaryText.Text = message;
+            _lineChartPoints = null;
             _attentionPanel.Children.Clear();
             _lineChartCanvas.Children.Clear();
-            _lineChartLabels.Children.Clear();
             _donutCanvas.Children.Clear();
             _donutLegendPanel.Children.Clear();
             _attentionPanel.Children.Add(new TextBlock
             {
                 Text = message,
-                Foreground = BrushFromRgb(98, 113, 128),
+                Foreground = MutedBrush,
                 Margin = new Thickness(0, 4, 0, 0)
             });
             UpdatePagerState();
@@ -491,16 +444,16 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 _attentionPanel.Children.Add(new Border
                 {
-                    Background = new SolidColorBrush(Color.FromRgb(240, 253, 244)),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(187, 247, 208)),
+                    Background = new SolidColorBrush(Color.FromRgb(241, 247, 243)),
+                    BorderBrush = new SolidColorBrush(Color.FromRgb(214, 231, 219)),
                     BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(16),
-                    Padding = new Thickness(16, 14, 16, 14),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(14, 12, 14, 12),
                     Child = new TextBlock
                     {
-                        Text = "No active alerts. The queue is clear right now.",
+                        Text = "Queue is clear — no tickets need attention right now.",
                         FontSize = 12.5,
-                        Foreground = BrushFromRgb(22, 101, 52)
+                        Foreground = BrushFromRgb(47, 133, 90)
                     }
                 });
                 UpdatePagerState();
@@ -525,79 +478,79 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var priority = string.IsNullOrWhiteSpace(item.Priority) ? "Unspecified" : item.Priority.Trim();
             var priorityTone = GetPriorityTone(priority);
 
-            var button = new Button
+            var card = new Border
             {
-                Margin = new Thickness(0, 0, 0, 14),
-                Padding = new Thickness(0),
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Cursor = Cursors.Hand,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch
-            };
-
-            var outer = new Border
-            {
-                CornerRadius = new CornerRadius(18),
+                Margin = new Thickness(0, 0, 0, 8),
                 Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(225, 231, 238)),
+                BorderBrush = HairlineBrush,
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(16)
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(14, 12, 14, 12),
+                Cursor = Cursors.Hand,
+                ToolTip = "Open ticket details"
             };
-            button.Content = outer;
 
-            var root = new Grid();
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            outer.Child = root;
-
-            root.Children.Add(new Border
-            {
-                Background = priorityTone.Accent,
-                CornerRadius = new CornerRadius(999)
-            });
-
-            var content = new StackPanel
-            {
-                Margin = new Thickness(14, 0, 0, 0)
-            };
-            Grid.SetColumn(content, 1);
-            root.Children.Add(content);
+            var content = new StackPanel();
+            card.Child = content;
 
             var topRow = new Grid();
             topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             content.Children.Add(topRow);
 
-            var titleStack = new StackPanel();
-            titleStack.Children.Add(new TextBlock
+            var titleRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            titleRow.Children.Add(new TextBlock
             {
                 Text = string.IsNullOrWhiteSpace(item.TicketCode) ? "Ticket" : item.TicketCode,
-                FontSize = 16,
+                FontSize = 13.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(30, 41, 59)
+                Foreground = InkBrush,
+                VerticalAlignment = VerticalAlignment.Center
             });
-            titleStack.Children.Add(new TextBlock
+            titleRow.Children.Add(new TextBlock
             {
                 Text = string.IsNullOrWhiteSpace(item.Branch) ? "No branch specified" : item.Branch,
-                Margin = new Thickness(0, 3, 0, 0),
+                Margin = new Thickness(8, 0, 8, 0),
                 FontSize = 11.5,
-                Foreground = WpfThemeResources.TextMutedBrush
+                Foreground = MutedBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis
             });
-            topRow.Children.Add(titleStack);
+            topRow.Children.Add(titleRow);
+
+            var chipRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            chipRow.Children.Add(new Ellipse
+            {
+                Width = 6,
+                Height = 6,
+                Fill = priorityTone.Accent,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 6, 0)
+            });
+            chipRow.Children.Add(new TextBlock
+            {
+                Text = priority.ToUpperInvariant(),
+                FontSize = 10,
+                FontWeight = FontWeights.Bold,
+                Foreground = priorityTone.Foreground,
+                VerticalAlignment = VerticalAlignment.Center
+            });
 
             var priorityBadge = new Border
             {
                 Background = priorityTone.Background,
                 CornerRadius = new CornerRadius(999),
-                Padding = new Thickness(10, 5, 10, 5),
-                VerticalAlignment = VerticalAlignment.Top,
-                Child = new TextBlock
-                {
-                    Text = priority.ToUpperInvariant(),
-                    FontSize = 10.5,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = priorityTone.Foreground
-                }
+                Padding = new Thickness(9, 3, 9, 3),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = chipRow
             };
             Grid.SetColumn(priorityBadge, 1);
             topRow.Children.Add(priorityBadge);
@@ -605,194 +558,173 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             content.Children.Add(new TextBlock
             {
                 Text = string.IsNullOrWhiteSpace(item.Issue) ? "No issue summary provided." : item.Issue,
-                Margin = new Thickness(0, 12, 0, 0),
+                Margin = new Thickness(0, 8, 0, 0),
                 TextWrapping = TextWrapping.Wrap,
-                FontSize = 13,
-                Foreground = BrushFromRgb(71, 85, 105)
+                FontSize = 12.5,
+                Foreground = BodyBrush
             });
 
-            var metaWrap = new WrapPanel
+            content.Children.Add(new TextBlock
             {
-                Margin = new Thickness(0, 14, 0, 0)
+                Text = BuildAttentionMetaLine(item),
+                Margin = new Thickness(0, 8, 0, 0),
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 11,
+                Foreground = MutedBrush
+            });
+
+            card.MouseEnter += (_, __) =>
+            {
+                card.Background = HoverFillBrush;
+                card.BorderBrush = InputBorderBrush;
             };
-            metaWrap.Children.Add(CreateMetaChip("Status", string.IsNullOrWhiteSpace(item.Status) ? "Unknown" : item.Status));
-            metaWrap.Children.Add(CreateMetaChip("Caller", string.IsNullOrWhiteSpace(item.CallerName) ? "N/A" : item.CallerName));
-            metaWrap.Children.Add(CreateMetaChip("Issue Type", string.IsNullOrWhiteSpace(item.IssueType) ? "N/A" : item.IssueType));
-            metaWrap.Children.Add(CreateMetaChip("Age", item.TicketAgeDays + " day" + (item.TicketAgeDays == 1 ? string.Empty : "s")));
+            card.MouseLeave += (_, __) =>
+            {
+                card.Background = Brushes.White;
+                card.BorderBrush = HairlineBrush;
+            };
+            card.MouseLeftButtonUp += async (_, __) => await OpenTicketDetailsAsync(item.TicketId);
+            return card;
+        }
+
+        private static string BuildAttentionMetaLine(CallTicketListItem item)
+        {
+            var status = string.IsNullOrWhiteSpace(item.Status) ? "Unknown" : item.Status.Trim();
+            var issueType = string.IsNullOrWhiteSpace(item.IssueType) ? "N/A" : item.IssueType.Trim();
+            var caller = string.IsNullOrWhiteSpace(item.CallerName) ? "N/A" : item.CallerName.Trim();
+            var age = item.TicketAgeDays + (item.TicketAgeDays == 1 ? " day old" : " days old");
+
+            var parts = new List<string> { status, issueType, caller, age };
             if (item.IdleDays > 0)
             {
-                metaWrap.Children.Add(CreateMetaChip("Idle", item.IdleDays + " day" + (item.IdleDays == 1 ? string.Empty : "s")));
+                parts.Add("idle " + item.IdleDays + (item.IdleDays == 1 ? " day" : " days"));
             }
-            content.Children.Add(metaWrap);
 
-            button.Click += async (_, __) => await OpenTicketDetailsAsync(item.TicketId);
-            return button;
+            return string.Join("  ·  ", parts);
         }
 
-        private FrameworkElement CreateMetaChip(string label, string value)
+        private HeaderBundle BuildHeaderSection()
         {
-            return new Border
+            var container = new Grid();
+            container.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            container.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var left = new StackPanel
             {
-                Margin = new Thickness(0, 0, 8, 8),
-                Background = new SolidColorBrush(WpfThemeResources.SurfaceMuted),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(999),
-                Padding = new Thickness(10, 6, 10, 6),
-                Child = new TextBlock
-                {
-                    Text = label + ": " + value,
-                    FontSize = 11,
-                    Foreground = BrushFromRgb(71, 85, 105)
-                }
+                Margin = new Thickness(0, 0, 24, 0)
             };
-        }
+            container.Children.Add(left);
 
-        private HeroBundle BuildHeroSection()
-        {
-            var heroBorder = new Border
-            {
-                CornerRadius = new CornerRadius(28),
-                Padding = new Thickness(28),
-                Background = new LinearGradientBrush(
-                    WpfThemeResources.PrimaryHover,
-                    WpfThemeResources.Navigation,
-                    new Point(0, 0),
-                    new Point(1, 1)),
-                Effect = new DropShadowEffect
-                {
-                    BlurRadius = 24,
-                    Color = Color.FromArgb(70, 15, 23, 42),
-                    ShadowDepth = 0,
-                    Opacity = 0.35
-                }
-            };
-
-            var layout = new Grid();
-            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.2, GridUnitType.Star) });
-            layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.8, GridUnitType.Star) });
-            heroBorder.Child = layout;
-
-            var left = new StackPanel();
-            layout.Children.Add(left);
-
+            left.Children.Add(CreateMicroLabelText("IT CALL MONITORING"));
             left.Children.Add(new TextBlock
             {
-                Text = "Call Monitoring Dashboard",
-                FontSize = 30,
+                Text = "Dashboard",
+                Margin = new Thickness(0, 8, 0, 0),
+                FontSize = 26,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White
-            });
-            left.Children.Add(new TextBlock
-            {
-                Text = "A modern WPF shell that still behaves like the original dashboard instead of losing the working interactions behind the redesign.",
-                Margin = new Thickness(0, 10, 0, 0),
-                FontSize = 13,
-                TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.FromArgb(228, 236, 253, 250))
+                Foreground = InkBrush
             });
 
             var statusText = new TextBlock
             {
-                Margin = new Thickness(0, 18, 0, 0),
+                Margin = new Thickness(0, 8, 0, 0),
                 FontSize = 12.5,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.FromArgb(235, 255, 255, 255))
+                Foreground = MutedBrush
             };
             left.Children.Add(statusText);
 
             var lastRefreshedText = new TextBlock
             {
-                Margin = new Thickness(0, 10, 0, 0),
+                Margin = new Thickness(0, 4, 0, 0),
                 FontSize = 11.5,
-                Foreground = new SolidColorBrush(Color.FromArgb(220, 240, 255, 255))
+                Foreground = MutedBrush
             };
             left.Children.Add(lastRefreshedText);
 
-            var actionRow = new WrapPanel
+            var actionRow = new StackPanel
             {
-                Margin = new Thickness(0, 18, 0, 0)
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0, 2, 0, 0)
             };
-            actionRow.Children.Add(CreateHeroButton("Tickets", () => _navigator?.OpenTicketWorkspace()));
-            actionRow.Children.Add(CreateHeroButton("Display Mode", () => _navigator?.OpenDisplayMode()));
-            actionRow.Children.Add(CreateHeroButton("Reports", () => _navigator?.OpenReports()));
-            actionRow.Children.Add(CreateHeroButton("Refresh", () => RefreshData()));
-            left.Children.Add(actionRow);
+            Grid.SetColumn(actionRow, 1);
+            container.Children.Add(actionRow);
 
-            var right = new Border
+            var ticketsButton = CreateAccentButton("Tickets");
+            ticketsButton.Click += (_, __) => _navigator?.OpenTicketWorkspace();
+            actionRow.Children.Add(ticketsButton);
+
+            var displayModeButton = CreateQuietButton("Display Mode");
+            displayModeButton.Margin = new Thickness(8, 0, 0, 0);
+            displayModeButton.Click += (_, __) => _navigator?.OpenDisplayMode();
+            actionRow.Children.Add(displayModeButton);
+
+            var reportsButton = CreateQuietButton("Reports");
+            reportsButton.Margin = new Thickness(8, 0, 0, 0);
+            reportsButton.Click += (_, __) => _navigator?.OpenReports();
+            actionRow.Children.Add(reportsButton);
+
+            var refreshButton = CreateQuietButton(string.Empty);
+            refreshButton.Margin = new Thickness(8, 0, 0, 0);
+            refreshButton.Content = new StackPanel
             {
-                Margin = new Thickness(22, 0, 0, 0),
-                Padding = new Thickness(18),
-                CornerRadius = new CornerRadius(24),
-                Background = new SolidColorBrush(Color.FromArgb(36, 255, 255, 255)),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(65, 255, 255, 255)),
-                BorderThickness = new Thickness(1)
+                Orientation = Orientation.Horizontal,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "\u21BB",
+                        FontSize = 14,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(0, -1, 7, 0)
+                    },
+                    new TextBlock
+                    {
+                        Text = "Refresh",
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
             };
-            Grid.SetColumn(right, 1);
-            layout.Children.Add(right);
+            refreshButton.Click += (_, __) => RefreshData();
+            actionRow.Children.Add(refreshButton);
 
-            var rightStack = new StackPanel();
-            right.Child = rightStack;
-            rightStack.Children.Add(new TextBlock
+            return new HeaderBundle
             {
-                Text = "Working Features",
-                FontSize = 16,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White
-            });
-            rightStack.Children.Add(CreateHeroFact("Chart parity", "Range-aware line chart plus resolution and active-ticket donut views."));
-            rightStack.Children.Add(CreateHeroFact("Real drill-downs", "Cards and legend rows open the same data-backed ticket lists."));
-            rightStack.Children.Add(CreateHeroFact("Ticket actions", "Attention cards open the existing WinForms ticket details dialog."));
-
-            return new HeroBundle
-            {
-                Container = heroBorder,
+                Container = container,
                 StatusText = statusText,
                 LastRefreshedText = lastRefreshedText
             };
         }
 
-        private FrameworkElement CreateHeroFact(string title, string text)
+        private static TextBlock CreateMicroLabelText(string text = null)
         {
-            var panel = new StackPanel
+            return new TextBlock
             {
-                Margin = new Thickness(0, 14, 0, 0)
-            };
-            panel.Children.Add(new TextBlock
-            {
-                Text = title,
-                FontSize = 12,
+                Text = text ?? string.Empty,
+                FontSize = 11,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White
-            });
-            panel.Children.Add(new TextBlock
-            {
-                Text = text,
-                Margin = new Thickness(0, 4, 0, 0),
-                FontSize = 11.5,
-                TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.FromArgb(220, 240, 255, 255))
-            });
-            return panel;
+                Foreground = MutedBrush,
+                TextWrapping = TextWrapping.Wrap
+            };
         }
 
-        private Button CreateHeroButton(string text, Action onClick)
+        private static Button CreateQuietButton(string text)
         {
-            var button = new Button
+            return new Button
             {
                 Content = text,
-                Margin = new Thickness(0, 0, 10, 10),
-                Padding = new Thickness(16, 10, 16, 10),
-                FontSize = 12,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White,
-                Background = new SolidColorBrush(Color.FromArgb(44, 255, 255, 255)),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(82, 255, 255, 255)),
-                BorderThickness = new Thickness(1),
-                Cursor = Cursors.Hand
+                Style = (Style)CommandStyles["ItcmQuietButton"]
             };
-            button.Click += (_, __) => onClick?.Invoke();
-            return button;
+        }
+
+        private static Button CreateAccentButton(string text)
+        {
+            return new Button
+            {
+                Content = text,
+                Style = (Style)CommandStyles["ItcmAccentButton"]
+            };
         }
 
         private Button CreateRangeButton(string text, int days)
@@ -801,16 +733,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Content = text,
                 Margin = new Thickness(8, 0, 0, 0),
-                Padding = new Thickness(10, 6, 10, 6),
-                FontSize = 11,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = WpfThemeResources.PrimaryBrush,
-                Background = new SolidColorBrush(Color.FromRgb(255, 255, 255)),
-                BorderBrush = new SolidColorBrush(WpfThemeResources.Border),
-                BorderThickness = new Thickness(1),
-                Cursor = Cursors.Hand,
-                Tag = days
+                Tag = days,
+                Style = (Style)CommandStyles["ItcmRangeButton"]
             };
+            _rangeButtons.Add((button, days));
             button.Click += async (_, __) =>
             {
                 if (_analyticsRangeDays == days)
@@ -819,6 +745,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 }
 
                 _analyticsRangeDays = days;
+                UpdateRangeButtonStates();
                 UpdateAnalyticsTitles();
                 if (_repository != null)
                 {
@@ -829,180 +756,166 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             return button;
         }
 
+        private void UpdateRangeButtonStates()
+        {
+            foreach (var entry in _rangeButtons)
+            {
+                entry.Button.Style = (Style)CommandStyles[entry.Days == _analyticsRangeDays ? "ItcmRangeButtonActive" : "ItcmRangeButton"];
+            }
+        }
+
         private Button CreatePagerButton(string text, Func<Task> action)
         {
             var button = new Button
             {
                 Content = text,
                 Margin = new Thickness(8, 0, 0, 0),
-                Padding = new Thickness(12, 7, 12, 7),
-                Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(WpfThemeResources.Border),
-                BorderThickness = new Thickness(1),
-                Foreground = BrushFromRgb(51, 65, 85),
-                FontSize = 11.5,
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand
+                Style = (Style)CommandStyles["ItcmQuietButton"],
+                Padding = new Thickness(10, 5, 10, 5),
+                FontSize = 11.5
             };
             button.Click += async (_, __) => await action();
             return button;
         }
 
-        private static void AddMetricCard(Grid grid, int column, string title, string subtitle, TextBlock valueBlock, Color accent, Action onClick)
+        private static void AddMetricCard(UniformGrid grid, string title, string subtitle, TextBlock valueBlock, Color accent, Action onClick)
         {
-            var button = new Button
-            {
-                Margin = column == 4 ? new Thickness(18, 0, 0, 0) : new Thickness(0, 0, 18, 0),
-                Padding = new Thickness(0),
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Cursor = Cursors.Hand,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch
-            };
-            Grid.SetColumn(button, column);
-            grid.Children.Add(button);
+            var accentBrush = new SolidColorBrush(accent);
 
-            var card = CreateGlassCard();
-            button.Content = card;
+            var card = CreateCard(16);
+            card.Margin = new Thickness(7);
+            card.MinHeight = 112;
+            card.Cursor = Cursors.Hand;
+            card.ToolTip = "Click to view " + title + " details";
 
             var stack = new StackPanel();
             card.Child = stack;
 
-            stack.Children.Add(new Border
+            var labelRow = new StackPanel
             {
-                Width = 54,
-                Height = 5,
-                Background = new SolidColorBrush(accent),
-                CornerRadius = new CornerRadius(999)
+                Orientation = Orientation.Horizontal
+            };
+            labelRow.Children.Add(new Ellipse
+            {
+                Width = 8,
+                Height = 8,
+                Fill = accentBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 8, 0)
             });
-            stack.Children.Add(new TextBlock
+            labelRow.Children.Add(new TextBlock
             {
-                Text = title,
-                Margin = new Thickness(0, 16, 0, 4),
-                FontSize = 13,
+                Text = (title ?? string.Empty).ToUpperInvariant(),
+                FontSize = 11,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(32, 42, 55)
+                Foreground = MutedBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis
             });
+            stack.Children.Add(labelRow);
+
+            stack.Children.Add(valueBlock);
+
             stack.Children.Add(new TextBlock
             {
                 Text = subtitle,
+                Margin = new Thickness(0, 6, 0, 0),
                 FontSize = 11.5,
-                Foreground = WpfThemeResources.TextMutedBrush
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = MutedBrush
             });
-            stack.Children.Add(valueBlock);
 
-            button.Click += (_, __) => onClick?.Invoke();
+            card.MouseEnter += (_, __) =>
+            {
+                card.Background = HoverFillBrush;
+                card.BorderBrush = accentBrush;
+            };
+            card.MouseLeave += (_, __) =>
+            {
+                card.Background = Brushes.White;
+                card.BorderBrush = HairlineBrush;
+            };
+            card.MouseLeftButtonUp += (_, __) => onClick?.Invoke();
+
+            grid.Children.Add(card);
         }
 
         private static TextBlock CreateMetricValue()
         {
             return new TextBlock
             {
-                Margin = new Thickness(0, 16, 0, 0),
-                FontSize = 30,
+                Margin = new Thickness(0, 8, 0, 0),
+                FontSize = 26,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = WpfThemeResources.TextDarkBrush
+                Foreground = InkBrush
             };
         }
 
-        private static Border CreateGlassCard()
+        private static Border CreateCard(double padding = 18)
         {
             return new Border
-            {
-                Background = new SolidColorBrush(Color.FromArgb(248, 255, 255, 255)),
-                BorderBrush = new SolidColorBrush(WpfThemeResources.Border),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(24),
-                Padding = new Thickness(22),
-                Effect = new DropShadowEffect
-                {
-                    BlurRadius = 18,
-                    Color = Color.FromArgb(30, 15, 23, 42),
-                    ShadowDepth = 0,
-                    Opacity = 0.2
-                }
-            };
-        }
-
-        private FrameworkElement CreatePill(string text, Color foreground, Color background)
-        {
-            return new Border
-            {
-                Margin = new Thickness(0, 0, 8, 8),
-                Background = new SolidColorBrush(background),
-                CornerRadius = new CornerRadius(999),
-                Padding = new Thickness(10, 6, 10, 6),
-                Child = new TextBlock
-                {
-                    Text = text,
-                    FontSize = 11,
-                    FontWeight = FontWeights.SemiBold,
-                    Foreground = new SolidColorBrush(foreground)
-                }
-            };
-        }
-
-        private FrameworkElement CreateActionTile(string title, string subtitle, Color accent, Action onClick)
-        {
-            var button = new Button
-            {
-                Margin = new Thickness(0, 0, 0, 12),
-                Padding = new Thickness(0),
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Cursor = Cursors.Hand,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch
-            };
-
-            var border = new Border
             {
                 Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.FromRgb(222, 228, 235)),
+                BorderBrush = HairlineBrush,
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(18),
-                Padding = new Thickness(16)
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(padding)
             };
-            button.Content = border;
-
-            var grid = new Grid();
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            border.Child = grid;
-
-            grid.Children.Add(new Border
-            {
-                Background = new SolidColorBrush(accent),
-                CornerRadius = new CornerRadius(999)
-            });
-
-            var stack = new StackPanel
-            {
-                Margin = new Thickness(14, 0, 0, 0)
-            };
-            Grid.SetColumn(stack, 1);
-            grid.Children.Add(stack);
-
-            stack.Children.Add(new TextBlock
-            {
-                Text = title,
-                FontSize = 14,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(30, 41, 59)
-            });
-            stack.Children.Add(new TextBlock
-            {
-                Text = subtitle,
-                Margin = new Thickness(0, 4, 0, 0),
-                FontSize = 11.5,
-                TextWrapping = TextWrapping.Wrap,
-                Foreground = WpfThemeResources.TextMutedBrush
-            });
-
-            button.Click += (_, __) => onClick?.Invoke();
-            return button;
         }
 
-        private static string BuildHeroStatus(CallDashboardMetrics metrics, IReadOnlyCollection<CallTicketListItem> attention, int mobileUpdates)
+        private FrameworkElement CreateQuickActionRow(string title, Action onClick)
+        {
+            var row = new Border
+            {
+                Background = Brushes.White,
+                BorderBrush = HairlineBrush,
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(12, 10, 10, 10),
+                Margin = new Thickness(0, 0, 0, 8),
+                Cursor = Cursors.Hand
+            };
+
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.Child = grid;
+
+            grid.Children.Add(new TextBlock
+            {
+                Text = title,
+                FontSize = 12.5,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = InkBrush,
+                VerticalAlignment = VerticalAlignment.Center
+            });
+
+            var chevron = new TextBlock
+            {
+                Text = "\u203A",
+                FontSize = 16,
+                Foreground = MutedBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, -1, 0, 0)
+            };
+            Grid.SetColumn(chevron, 1);
+            grid.Children.Add(chevron);
+
+            row.MouseEnter += (_, __) =>
+            {
+                row.Background = SoftFillBrush;
+                row.BorderBrush = InputBorderBrush;
+            };
+            row.MouseLeave += (_, __) =>
+            {
+                row.Background = Brushes.White;
+                row.BorderBrush = HairlineBrush;
+            };
+            row.MouseLeftButtonUp += (_, __) => onClick?.Invoke();
+            return row;
+        }
+
+        private static string BuildHeaderStatus(CallDashboardMetrics metrics, IReadOnlyCollection<CallTicketListItem> attention, int mobileUpdates)
         {
             var busiest = attention != null && attention.Count > 0
                 ? attention.FirstOrDefault(t => !string.IsNullOrWhiteSpace(t.Branch))?.Branch
@@ -1030,8 +943,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 return;
             }
 
+            _lineChartPoints = null;
             _lineChartCanvas.Children.Clear();
-            _lineChartLabels.Children.Clear();
             UpdateAnalyticsTitles();
 
             var range = GetAnalyticsRangeUtc();
@@ -1041,21 +954,54 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 _lineChartCanvas.Children.Add(new TextBlock
                 {
-                    Text = "No volume data.",
-                    Foreground = WpfThemeResources.TextMutedBrush
+                    Text = "No volume data for this range.",
+                    FontSize = 12.5,
+                    Foreground = MutedBrush,
+                    Margin = new Thickness(4)
                 });
                 return;
             }
 
-            var width = 620d;
-            var height = 220d;
-            _lineChartCanvas.Width = width;
-            _lineChartCanvas.Height = height;
+            _lineChartPoints = points;
+            DrawLineChart();
+        }
 
-            var marginLeft = 34d;
-            var marginTop = 18d;
-            var marginBottom = 30d;
-            var marginRight = 18d;
+        private void RedrawLineChartIfNeeded()
+        {
+            if (_lineChartPoints == null || _lineChartPoints.Count == 0)
+            {
+                return;
+            }
+
+            if (Math.Abs(_lineChartCanvas.ActualWidth - _lineChartDrawnWidth) > 40)
+            {
+                DrawLineChart();
+            }
+        }
+
+        private void DrawLineChart()
+        {
+            var points = _lineChartPoints;
+            _lineChartCanvas.Children.Clear();
+            if (points == null || points.Count == 0)
+            {
+                return;
+            }
+
+            var width = _lineChartCanvas.ActualWidth;
+            if (width < 240)
+            {
+                width = 620;
+            }
+
+            var height = 236d;
+            _lineChartCanvas.Height = height;
+            _lineChartDrawnWidth = width;
+
+            var marginLeft = 30d;
+            var marginTop = 16d;
+            var marginBottom = 36d;
+            var marginRight = 14d;
             var plotWidth = width - marginLeft - marginRight;
             var plotHeight = height - marginTop - marginBottom;
 
@@ -1069,72 +1015,51 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     X2 = width - marginRight,
                     Y1 = y,
                     Y2 = y,
-                    Stroke = new SolidColorBrush(Color.FromRgb(231, 236, 242)),
+                    Stroke = GridLineBrush,
                     StrokeThickness = 1
                 });
             }
 
-            _lineChartCanvas.Children.Add(new Line
-            {
-                X1 = marginLeft,
-                X2 = marginLeft,
-                Y1 = marginTop,
-                Y2 = height - marginBottom,
-                Stroke = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
-                StrokeThickness = 1
-            });
-            _lineChartCanvas.Children.Add(new Line
-            {
-                X1 = marginLeft,
-                X2 = width - marginRight,
-                Y1 = height - marginBottom,
-                Y2 = height - marginBottom,
-                Stroke = new SolidColorBrush(Color.FromRgb(203, 213, 225)),
-                StrokeThickness = 1
-            });
-
             var polyline = new Polyline
             {
-                Stroke = BrushFromRgb(14, 116, 144),
-                StrokeThickness = 3,
+                Stroke = AlertRedBrush,
+                StrokeThickness = 2.4,
                 StrokeLineJoin = PenLineJoin.Round
             };
 
+            var labelStep = Math.Max(1, (int)Math.Ceiling(points.Count / 7d));
             for (var i = 0; i < points.Count; i++)
             {
                 var x = marginLeft + (plotWidth * i / Math.Max(1, points.Count - 1));
                 var y = marginTop + plotHeight - ((points[i].TicketCount / (double)max) * plotHeight);
                 polyline.Points.Add(new Point(x, y));
 
-                var ellipse = new Ellipse
+                var dot = new Ellipse
                 {
-                    Width = 10,
-                    Height = 10,
-                    Fill = BrushFromRgb(14, 116, 144),
-                    Stroke = Brushes.White,
+                    Width = 8,
+                    Height = 8,
+                    Fill = Brushes.White,
+                    Stroke = AlertRedBrush,
                     StrokeThickness = 2,
-                    ToolTip = points[i].Day.ToString("ddd") + ": " + points[i].TicketCount
+                    ToolTip = points[i].Day.ToString("ddd, MMM d") + ": " + points[i].TicketCount + " ticket" + (points[i].TicketCount == 1 ? string.Empty : "s")
                 };
-                Canvas.SetLeft(ellipse, x - 5);
-                Canvas.SetTop(ellipse, y - 5);
-                _lineChartCanvas.Children.Add(ellipse);
+                Canvas.SetLeft(dot, x - 4);
+                Canvas.SetTop(dot, y - 4);
+                _lineChartCanvas.Children.Add(dot);
 
-                var dayLabel = new Border
+                if (i % labelStep == 0 || i == points.Count - 1)
                 {
-                    Margin = new Thickness(i == 0 ? 0 : 10, 0, 0, 0),
-                    Background = new SolidColorBrush(WpfThemeResources.SurfaceMuted),
-                    BorderBrush = new SolidColorBrush(Color.FromRgb(226, 232, 240)),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(999),
-                    Padding = new Thickness(10, 6, 10, 6),
-                    Child = new TextBlock
+                    var label = new TextBlock
                     {
-                        Text = points[i].Day.ToString("MMM dd") + "  " + points[i].TicketCount,
-                        FontSize = 11,
-                        Foreground = BrushFromRgb(71, 85, 105)
-                    }
-                };
-                _lineChartLabels.Children.Add(dayLabel);
+                        Text = points[i].Day.ToString("MMM d"),
+                        FontSize = 10,
+                        Foreground = MutedBrush
+                    };
+                    label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                    Canvas.SetLeft(label, x - (label.DesiredSize.Width / 2));
+                    Canvas.SetTop(label, height - marginBottom + 11);
+                    _lineChartCanvas.Children.Add(label);
+                }
             }
 
             _lineChartCanvas.Children.Add(polyline);
@@ -1172,7 +1097,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _donutLegendPanel.Children.Add(new TextBlock
                 {
                     Text = "No data available.",
-                    Foreground = WpfThemeResources.TextMutedBrush
+                    FontSize = 12.5,
+                    Foreground = MutedBrush
                 });
                 return;
             }
@@ -1215,15 +1141,27 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var centerLabel = new TextBlock
             {
-                Text = total.ToString(),
-                FontSize = 22,
+                Text = total.ToString("N0"),
+                FontSize = 24,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(30, 41, 59)
+                Foreground = InkBrush
             };
             centerLabel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Canvas.SetLeft(centerLabel, centerX - (centerLabel.DesiredSize.Width / 2));
-            Canvas.SetTop(centerLabel, centerY - 18);
+            Canvas.SetTop(centerLabel, centerY - 24);
             _donutCanvas.Children.Add(centerLabel);
+
+            var centerCaption = new TextBlock
+            {
+                Text = "TOTAL",
+                FontSize = 9.5,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = MutedBrush
+            };
+            centerCaption.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(centerCaption, centerX - (centerCaption.DesiredSize.Width / 2));
+            Canvas.SetTop(centerCaption, centerY + 8);
+            _donutCanvas.Children.Add(centerCaption);
         }
 
         private static Polygon CreateDonutSegment(double centerX, double centerY, double radius, double innerRadius, double startAngle, double endAngle, Brush fill)
@@ -1262,92 +1200,99 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private FrameworkElement CreateLegendRow(string bucket, int count, int pct, Brush color)
         {
-            var button = new Button
+            var row = new Border
             {
-                Margin = new Thickness(0, 0, 0, 8),
-                Padding = new Thickness(0),
+                Margin = new Thickness(0, 0, 0, 2),
+                Padding = new Thickness(8, 7, 8, 7),
                 Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(7),
                 Cursor = Cursors.Hand,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch
+                ToolTip = "Click to view " + bucket + " tickets"
             };
 
             var grid = new Grid();
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            button.Content = grid;
+            row.Child = grid;
 
             grid.Children.Add(new Border
             {
-                Width = 12,
-                Height = 12,
+                Width = 10,
+                Height = 10,
                 Background = color,
                 CornerRadius = new CornerRadius(999),
-                Margin = new Thickness(0, 5, 10, 0)
+                Margin = new Thickness(0, 0, 10, 0),
+                VerticalAlignment = VerticalAlignment.Center
             });
 
             var name = new TextBlock
             {
                 Text = bucket,
-                FontSize = 11.5,
-                Foreground = BrushFromRgb(71, 85, 105)
+                FontSize = 12,
+                Foreground = BodyBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis
             };
             Grid.SetColumn(name, 1);
             grid.Children.Add(name);
 
             var value = new TextBlock
             {
-                Text = count + " (" + pct + "%)",
-                FontSize = 11.5,
+                Text = count + "  ·  " + pct + "%",
+                FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(30, 41, 59)
+                Foreground = InkBrush,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(12, 0, 0, 0)
             };
             Grid.SetColumn(value, 2);
             grid.Children.Add(value);
 
-            button.Click += async (_, __) => await OpenDonutDrillDownAsync(bucket);
-            return button;
+            row.MouseEnter += (_, __) => row.Background = SoftFillBrush;
+            row.MouseLeave += (_, __) => row.Background = Brushes.Transparent;
+            row.MouseLeftButtonUp += async (_, __) => await OpenDonutDrillDownAsync(bucket);
+            return row;
         }
 
         private static SolidColorBrush GetResolutionBrush(string bucket)
         {
             if (string.Equals(bucket, "Repair", StringComparison.OrdinalIgnoreCase))
             {
-                return BrushFromRgb(59, 130, 246);
+                return BrushFromRgb(59, 126, 161);
             }
 
             if (string.Equals(bucket, "Replacement", StringComparison.OrdinalIgnoreCase))
             {
-                return BrushFromRgb(139, 92, 246);
+                return BrushFromRgb(107, 92, 165);
             }
 
             if (string.Equals(bucket, "Temporary Replacement", StringComparison.OrdinalIgnoreCase))
             {
-                return BrushFromRgb(245, 158, 11);
+                return BrushFromRgb(199, 154, 46);
             }
 
-            return BrushFromRgb(156, 163, 175);
+            return BrushFromRgb(154, 161, 172);
         }
 
         private static SolidColorBrush GetActiveStatusBrush(string bucket)
         {
             if (string.Equals(bucket, "Pending", StringComparison.OrdinalIgnoreCase))
             {
-                return BrushFromRgb(245, 158, 11);
+                return BrushFromRgb(199, 154, 46);
             }
 
             if (string.Equals(bucket, "In Progress", StringComparison.OrdinalIgnoreCase))
             {
-                return BrushFromRgb(59, 130, 246);
+                return BrushFromRgb(59, 126, 161);
             }
 
             if (string.Equals(bucket, "Solved", StringComparison.OrdinalIgnoreCase))
             {
-                return BrushFromRgb(16, 185, 129);
+                return BrushFromRgb(47, 133, 90);
             }
 
-            return BrushFromRgb(156, 163, 175);
+            return BrushFromRgb(154, 161, 172);
         }
 
         private static PriorityTone GetPriorityTone(string priority)
@@ -1356,24 +1301,24 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 case "critical":
                     return new PriorityTone(
-                        BrushFromRgb(190, 24, 93),
-                        new SolidColorBrush(Color.FromRgb(253, 242, 248)),
-                        BrushFromRgb(157, 23, 77));
+                        BrushFromRgb(185, 35, 53),
+                        BrushFromRgb(252, 235, 238),
+                        BrushFromRgb(185, 35, 53));
                 case "high":
                     return new PriorityTone(
-                        BrushFromRgb(234, 88, 12),
-                        new SolidColorBrush(Color.FromRgb(255, 247, 237)),
-                        BrushFromRgb(154, 52, 18));
+                        BrushFromRgb(183, 121, 31),
+                        BrushFromRgb(251, 243, 228),
+                        BrushFromRgb(183, 121, 31));
                 case "medium":
                     return new PriorityTone(
-                        BrushFromRgb(37, 99, 235),
-                        new SolidColorBrush(Color.FromRgb(239, 246, 255)),
-                        BrushFromRgb(29, 78, 216));
+                        BrushFromRgb(59, 126, 161),
+                        BrushFromRgb(236, 243, 248),
+                        BrushFromRgb(59, 126, 161));
                 default:
                     return new PriorityTone(
-                        BrushFromRgb(22, 163, 74),
-                        new SolidColorBrush(Color.FromRgb(240, 253, 244)),
-                        BrushFromRgb(21, 128, 61));
+                        BrushFromRgb(47, 133, 90),
+                        BrushFromRgb(234, 244, 238),
+                        BrushFromRgb(47, 133, 90));
             }
         }
 
@@ -1516,14 +1461,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             if (_lineChartTitle != null)
             {
-                _lineChartTitle.Text = "Ticket Volume (" + (_analyticsRangeDays == 1 ? "Last 1 Day" : "Last " + _analyticsRangeDays + " Days") + ")";
+                _lineChartTitle.Text = "TICKET VOLUME (" + (_analyticsRangeDays == 1 ? "LAST 1 DAY" : "LAST " + _analyticsRangeDays + " DAYS") + ")";
             }
 
             if (_donutChartTitle != null)
             {
                 _donutChartTitle.Text = _showResolutionDonut
-                    ? "Resolutions (" + (_analyticsRangeDays == 1 ? "Last 1 Day" : "Last " + _analyticsRangeDays + " Days") + ")"
-                    : "Active Tickets (Current)";
+                    ? "RESOLUTIONS (" + (_analyticsRangeDays == 1 ? "LAST 1 DAY" : "LAST " + _analyticsRangeDays + " DAYS") + ")"
+                    : "ACTIVE TICKETS (CURRENT)";
             }
         }
 
@@ -1574,9 +1519,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             return mins + "m";
         }
 
-        private sealed class HeroBundle
+        private sealed class HeaderBundle
         {
-            public Border Container { get; set; }
+            public Grid Container { get; set; }
             public TextBlock StatusText { get; set; }
             public TextBlock LastRefreshedText { get; set; }
         }

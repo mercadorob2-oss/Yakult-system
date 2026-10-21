@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:ink="clr-namespace:System.Windows.Ink;assembly=PresentationCore"
     xmlns:vm="clr-namespace:Yakult.Inventory.App.WPF.RequestPortal.AuthorizeRequest.ViewModels"
-    Background="#F0F2F6"
+    Background="#F6F5F2"
     FontFamily="Segoe UI"
     UseLayoutRounding="True"
     SnapsToDevicePixels="True"
@@ -27,35 +27,40 @@
         </Grid.RowDefinitions>
 
         <!-- ══ HEADER BAR ══════════════════════════════════════════════════════ -->
-        <Border x:Name="tourHeaderBar" Grid.Row="0" Background="{StaticResource YakultBlue}" Padding="24,14">
+        <Border x:Name="tourHeaderBar" Grid.Row="0" Background="White"
+                BorderBrush="{StaticResource CardBorder}" BorderThickness="0,0,0,1" Padding="24,14">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Authorize Cartridge Requests"
-                               FontSize="18" FontWeight="Bold" Foreground="White"
-                               VerticalAlignment="Center"/>
-                    <Border Background="#22000000" CornerRadius="10"
-                            Padding="10,3" Margin="12,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding QueueCount}"
-                                   FontSize="12" FontWeight="Bold" Foreground="White"/>
-                    </Border>
-                    <Border Background="#22000000" CornerRadius="10"
-                            Padding="10,3" Margin="6,0,0,0" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Authorize Cartridge Requests"
+                                   FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"
+                                   VerticalAlignment="Center"/>
+                        <Border Background="{StaticResource YakultAccentTintBrush}"
+                                BorderBrush="{StaticResource YakultAccentBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="10,3" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding QueueCount}"
+                                       FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource YakultBlue}"/>
+                        </Border>
                         <TextBlock Text="pending"
-                                   FontSize="11" Foreground="#CCFFFFFF"/>
-                    </Border>
+                                   FontSize="11" Foreground="{StaticResource TextMuted}"
+                                   VerticalAlignment="Center" Margin="7,0,0,0"/>
+                    </StackPanel>
+                    <TextBlock Text="Review and sign off requests from your department."
+                               FontSize="11.5" Foreground="{StaticResource TextMuted}" Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <Button Grid.Column="1"
                         Content="&#x21BB;  Refresh"
                         Command="{Binding RefreshCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        Background="{StaticResource YakultDarkBlue}"
-                        Height="34" Padding="16,0"/>
+                        Style="{StaticResource SecondaryButton}"
+                        Height="34" Padding="14,0" VerticalAlignment="Center"/>
             </Grid>
         </Border>
 
@@ -235,7 +240,7 @@
                                                     </DataTrigger>
                                                     <!-- Selection / hover -->
                                                     <Trigger Property="IsSelected" Value="True">
-                                                        <Setter TargetName="itemBorder"  Property="Background" Value="#EBF5FB"/>
+                                                        <Setter TargetName="itemBorder"  Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
                                                         <Setter TargetName="accentBar"   Property="Background" Value="{StaticResource YakultBlue}"/>
                                                         <Setter TargetName="nameText"    Property="Foreground" Value="{StaticResource YakultDarkBlue}"/>
                                                     </Trigger>
@@ -244,7 +249,7 @@
                                                             <Condition Property="IsMouseOver" Value="True"/>
                                                             <Condition Property="IsSelected"  Value="False"/>
                                                         </MultiTrigger.Conditions>
-                                                        <Setter TargetName="itemBorder" Property="Background" Value="#F5F9FF"/>
+                                                        <Setter TargetName="itemBorder" Property="Background" Value="#FAFBFC"/>
                                                     </MultiTrigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -262,7 +267,7 @@
 
                 <!-- No-selection empty state -->
                 <Border Visibility="{Binding NoSelection, Converter={StaticResource BoolToVis}}"
-                        Background="#F0F2F6">
+                        Background="#F6F5F2">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <TextBlock Text="&#x1F4CB;" FontSize="52"
                                    HorizontalAlignment="Center"/>
@@ -386,7 +391,7 @@
                                           SelectionUnit="FullRow"
                                           HeadersVisibility="Column"
                                           GridLinesVisibility="Horizontal"
-                                          HorizontalGridLinesBrush="#F0F3F7"
+                                          HorizontalGridLinesBrush="{StaticResource CardBorder}"
                                           BorderThickness="0"
                                           Background="White"
                                           RowHeaderWidth="0"
@@ -474,7 +479,7 @@
                                         <TextBlock TextWrapping="Wrap"
                                                    LineHeight="22"
                                                    FontSize="12.5"
-                                                   Foreground="#323232">
+                                                   Foreground="{StaticResource TextPrimary}">
                                             <Run Text="I, "/>
                                             <Run Text="{Binding SignerName, Mode=OneWay}"   FontWeight="Bold"/>
                                             <Run Text=", the "/>
@@ -504,7 +509,7 @@
                                                       IsReadOnly="True"
                                                       HeadersVisibility="Column"
                                                       GridLinesVisibility="Horizontal"
-                                                      HorizontalGridLinesBrush="#F0F3F7"
+                                                      HorizontalGridLinesBrush="{StaticResource CardBorder}"
                                                       BorderThickness="0"
                                                       Background="White"
                                                       RowHeaderWidth="0"
@@ -560,13 +565,13 @@
                                                     Visibility="{Binding HasFulfillmentMethod, Converter={StaticResource BoolToVis}}">
                                             <TextBlock TextWrapping="Wrap"
                                                        FontSize="12.5"
-                                                       Foreground="#323232">
+                                                       Foreground="{StaticResource TextPrimary}">
                                                 <Run Text="Mode of Distribution: "/>
                                                 <Run Text="{Binding FulfillmentMethod, Mode=OneWay}" FontWeight="Bold"/>
                                             </TextBlock>
                                             <TextBlock TextWrapping="Wrap"
                                                        FontSize="12.5"
-                                                       Foreground="#323232"
+                                                       Foreground="{StaticResource TextPrimary}"
                                                        Margin="0,4,0,0"
                                                        Visibility="{Binding ShowReceivedBy, Converter={StaticResource BoolToVis}}">
                                                 <Run Text="To Be Received By: "/>
@@ -595,7 +600,7 @@
                                                 <!-- Placeholder when no signature yet -->
                                                 <TextBlock Text="(signature will appear here)"
                                                            FontSize="10.5"
-                                                           Foreground="#AAAAAA"
+                                                           Foreground="{StaticResource TextMuted}"
                                                            FontStyle="Italic"
                                                            Margin="0,0,0,4"
                                                            Visibility="{Binding HasPreviewSignature, Converter={StaticResource InvBoolToVis}}"/>
@@ -733,7 +738,7 @@
                                         ClipToBounds="True">
                                     <Grid>
                                         <!-- Signature guide line at ~72% height -->
-                                        <Border BorderBrush="#DDE3EC"
+                                        <Border BorderBrush="{StaticResource CardBorder}"
                                                 BorderThickness="0,0,0,1"
                                                 VerticalAlignment="Bottom"
                                                 Margin="28,0,28,62"
@@ -751,7 +756,7 @@
                                                     Margin="0,0,6,0"/>
                                             <TextBlock Text="sign here"
                                                        FontSize="9" FontStyle="Italic"
-                                                       Foreground="#B0BAC8"/>
+                                                       Foreground="{StaticResource TextMuted}"/>
                                         </StackPanel>
 
                                         <!-- InkCanvas — transparent so strokes float over guide -->
@@ -769,7 +774,7 @@
                                         <!-- Hint text — hidden once strokes exist -->
                                         <TextBlock x:Name="drawHint"
                                                    FontSize="11" FontStyle="Italic"
-                                                   Foreground="#B8C0CC"
+                                                   Foreground="{StaticResource TextMuted}"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Bottom"
                                                    Margin="0,0,0,14"
@@ -845,7 +850,7 @@
                                         </Grid.RowDefinitions>
 
                                         <Border Grid.Row="0"
-                                                Background="#EEF2F7"
+                                                Background="{StaticResource SurfaceGray}"
                                                 CornerRadius="8,8,0,0"
                                                 Padding="16,9">
                                             <StackPanel Orientation="Horizontal">
@@ -1052,7 +1057,7 @@
                                                             </Border>
                                                             <ControlTemplate.Triggers>
                                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter TargetName="root" Property="Background" Value="#FFF0F0"/>
+                                                                    <Setter TargetName="root" Property="Background" Value="{StaticResource YakultAccentTintBrush}"/>
                                                                 </Trigger>
                                                                 <Trigger Property="IsPressed" Value="True">
                                                                     <Setter TargetName="root" Property="Opacity" Value="0.8"/>

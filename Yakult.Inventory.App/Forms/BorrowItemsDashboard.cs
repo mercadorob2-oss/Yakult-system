@@ -120,6 +120,11 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
             };
 
             _headerPanel = new Panel { Dock = DockStyle.Top, Height = 76, BackColor = Color.FromArgb(40, 60, 86), Padding = new Padding(16, 8, 16, 8) };
+            _headerPanel.Paint += (_, e) =>
+            {
+                using (var pen = new Pen(BorrowUiTheme.Current.Border))
+                    e.Graphics.DrawLine(pen, 0, _headerPanel.Height - 1, _headerPanel.Width, _headerPanel.Height - 1);
+            };
             var headerGrid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2 };
             headerGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             headerGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 650F));
@@ -363,6 +368,11 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
 
             _tabsHost = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0) };
             _tabButtonBar = new Panel { Dock = DockStyle.Top, Height = 42, Padding = new Padding(0, 0, 0, 8) };
+            _tabButtonBar.Paint += (_, e) =>
+            {
+                using (var pen = new Pen(BorrowUiTheme.Current.Border))
+                    e.Graphics.DrawLine(pen, 0, _tabButtonBar.Height - 1, _tabButtonBar.Width, _tabButtonBar.Height - 1);
+            };
             _tabContentHost = new Panel { Dock = DockStyle.Fill, Padding = new Padding(0) };
 
             btnDisplayBoard = NewTabButton("Board");
@@ -861,13 +871,13 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
             ApplySectionCardTheme(_borrowGroupBox);
             ApplySectionCardTheme(_returnGroupBox);
             if (_tabsHost != null)
-                _tabsHost.BackColor = palette.SurfaceBack;
+                _tabsHost.BackColor = palette.PageBack;
             if (_tabButtonBar != null)
                 _tabButtonBar.BackColor = palette.SurfaceBack;
             if (_tabContentHost != null)
             {
-                _tabContentHost.BackColor = BorrowUiTheme.IsDarkMode ? palette.SurfaceBack : palette.Border;
-                _tabContentHost.Padding = BorrowUiTheme.IsDarkMode ? new Padding(0) : new Padding(1);
+                _tabContentHost.BackColor = palette.PageBack;
+                _tabContentHost.Padding = new Padding(0);
             }
             BorrowUiTheme.ApplySurface(_openHost);
             BorrowUiTheme.ApplySurface(_historyHost);
@@ -937,8 +947,7 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
             if (button == null)
                 return;
 
-            BorrowUiTheme.ApplyButton(button, selected ? BorrowButtonKind.Primary : BorrowButtonKind.Secondary);
-            button.Font = new Font("Segoe UI", 10F, selected ? FontStyle.Bold : FontStyle.Regular);
+            ApplyTabButtonTheme(button, selected);
         }
 
         private void ApplyBorrowBackdateTheme()
@@ -2569,6 +2578,15 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
             button.FlatAppearance.BorderSize = 0;
             button.FlatAppearance.MouseDownBackColor = Color.Empty;
             button.FlatAppearance.MouseOverBackColor = Color.Empty;
+            button.Paint += (s, e) =>
+            {
+                var tab = (Button)s;
+                if (tab.Tag is bool && (bool)tab.Tag)
+                {
+                    using (var brush = new SolidBrush(Color.FromArgb(185, 35, 53)))
+                        e.Graphics.FillRectangle(brush, 0, tab.ClientSize.Height - 2, tab.ClientSize.Width, 2);
+                }
+            };
             return button;
         }
         private static ComboBox NewCombo() => new ComboBox { Dock = DockStyle.Top, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10.5F), Margin = new Padding(0) };
@@ -2638,9 +2656,11 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
                 return;
 
             var palette = BorrowUiTheme.Current;
-            button.BackColor = selected ? palette.TabActiveBack : palette.TabInactiveBack;
+            button.Tag = selected;
+            button.BackColor = palette.SurfaceBack;
             button.ForeColor = selected ? palette.TabActiveFore : palette.TabInactiveFore;
             button.Font = new Font("Segoe UI", 10F, selected ? FontStyle.Bold : FontStyle.Regular);
+            button.Invalidate();
         }
         private static Panel NewKpi(string t, out Label v, Color c) { var p = new Panel { Width = 198, Height = 86, BackColor = c }; p.Controls.Add(new Label { Text = t, Left = 12, Top = 10, ForeColor = Color.White, Font = new Font("Segoe UI", 10.5F, FontStyle.Bold), AutoSize = true }); v = new Label { Text = "0", Left = 12, Top = 34, ForeColor = Color.White, Font = new Font("Segoe UI", 22, FontStyle.Bold), AutoSize = true }; p.Controls.Add(v); return p; }
         private static Label NewEmpty(string text) => new Label { Dock = DockStyle.Fill, Text = text, TextAlign = ContentAlignment.MiddleCenter, ForeColor = Color.FromArgb(110, 120, 130), BackColor = Color.White, Font = new Font("Segoe UI", 11F, FontStyle.Regular) };

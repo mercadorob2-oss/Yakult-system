@@ -73,13 +73,14 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
             {
                 Width = 44,
                 Height = 44,
+                Tag = "BorrowDialogIcon",
                 BackColor = ModernUiHelper.ColorPrimary,
                 Margin = new Padding(0, 0, 12, 0)
             };
             icon.Paint += (_, e) =>
             {
                 using (var f = new Font("Segoe UI", 18F, FontStyle.Bold))
-                using (var b = new SolidBrush(Color.White))
+                using (var b = new SolidBrush(Color.FromArgb(185, 35, 53)))
                 {
                     var s = "?";
                     var size = e.Graphics.MeasureString(s, f);
@@ -212,6 +213,13 @@ namespace Yakult.Inventory.App.Forms.BorrowItems
 
             foreach (Control child in root.Controls)
             {
+                if (string.Equals(child.Tag as string, "BorrowDialogIcon", StringComparison.Ordinal))
+                {
+                    child.BackColor = palette.GridSelectionBack;
+                    child.ForeColor = palette.TabActiveFore;
+                    continue;
+                }
+
                 if (child is Button)
                     continue;
 
