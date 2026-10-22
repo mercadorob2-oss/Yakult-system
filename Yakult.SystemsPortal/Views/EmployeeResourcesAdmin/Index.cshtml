@@ -2,7 +2,8 @@
 @using System.Text.Json
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Employee Resources Management";
+    ViewData["Title"] = "Employee Resources";
+    ViewData["UseCustomPageHeading"] = true;
     var item = Model.SelectedItem;
     var hasResource = item is { ResourceId: > 0 };
     var isDemoData = Model.IsDemoData;
@@ -23,28 +24,32 @@
     string DateValue(DateTime? value) => value.HasValue ? value.Value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm") : string.Empty;
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-employee-resources.css" asp-append-version="true" />
+}
+
 @Html.AntiForgeryToken()
 
-<div id="employeeResourcesAdminApp"
+<div id="employeeResourcesAdminApp" class="resource-admin-page"
      data-frontend-mock="@frontendMockMode.ToString().ToLowerInvariant()"
      data-can-publish="@Model.CanPublish.ToString().ToLowerInvariant()"
      data-has-resource="@hasResource.ToString().ToLowerInvariant()"
      data-storage-key="yakult.employeeResources.adminMock.v1">
-    <section class="resource-admin-intro">
+    <header class="resource-admin-intro">
         <div>
-            <span class="eyebrow">Content / Employee Resources</span>
-            <h2>Employee Resources Management</h2>
-            <p>This is an independent resource catalog, separate from Learning Content and Services &amp; Portals. Create drafts, attach approved files, publish through the resource workflow, and review the change history here.</p>
+            <span class="resource-page-eyebrow">Content</span>
+            <h1>Employee Resources</h1>
+            <p>Manage employee guides, forms, and references from draft to publication.</p>
         </div>
         <div class="resource-admin-intro__actions">
-            <a class="admin-button admin-button--primary" href="/EmployeeResources" target="_blank" rel="noopener noreferrer">Preview public page <span aria-hidden="true">↗</span></a>
-            <a class="admin-button" id="newEmployeeResourceLink" href="/Admin/EmployeeResources?id=0">New resource</a>
+            <a class="admin-button" href="/EmployeeResources" target="_blank" rel="noopener noreferrer">Preview public page <span aria-hidden="true">↗</span></a>
+            <a class="admin-button admin-button--primary" id="newEmployeeResourceLink" href="/Admin/EmployeeResources?id=0"><span aria-hidden="true">+</span> New resource</a>
             @if (frontendMockMode)
             {
                 <button class="admin-button" id="resetEmployeeResourceMock" type="button">Reset local drafts</button>
             }
         </div>
-    </section>
+    </header>
 
     @if (!string.IsNullOrWhiteSpace(notice))
     {
@@ -124,7 +129,7 @@
             </div>
         </aside>
 
-        <main class="resource-admin-editor" id="resourceAdminEditor">
+        <section class="resource-admin-editor" id="resourceAdminEditor" aria-label="Resource editor">
             @if (!Model.IsDatabaseAvailable && !frontendMockMode)
             {
                 <div class="resource-admin-empty-editor">
@@ -318,7 +323,7 @@
                     </section>
                 }
             }
-        </main>
+        </section>
     </div>
 
     @if (frontendMockMode)

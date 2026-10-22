@@ -3,6 +3,7 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Learning Content Studio";
+    ViewData["UseCustomPageHeading"] = true;
     var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     var contentTypes = new[] { "Article", "Advisory", "Video", "Course", "FAQ", "Announcement", "Guide" };
     var draftCount = Model.Items.Count(x => string.Equals(x.Status, "Draft", StringComparison.OrdinalIgnoreCase));
@@ -10,7 +11,20 @@
     var archivedCount = Model.Items.Count(x => string.Equals(x.Status, "Archived", StringComparison.OrdinalIgnoreCase));
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-learning-content.css" asp-append-version="true" />
+}
+
 @Html.AntiForgeryToken()
+
+<div class="content-admin-page">
+<header class="content-page-heading">
+    <div>
+        <span class="content-page-eyebrow">Content</span>
+        <h1>Learning Content</h1>
+        <p>Create, organize, review, and publish learning resources for employees.</p>
+    </div>
+</header>
 
 <section class="admin-card-summary studio-summary" aria-label="Learning content summary">
     <div class="admin-stat">
@@ -92,6 +106,7 @@
             <div class="studio-actions"><button type="submit" class="studio-btn studio-btn--primary" id="saveDraftBtn">Save draft</button><button type="button" class="studio-btn" id="discardChanges">Discard changes</button><span class="studio-help" id="actionHint">Ready.</span></div>
         </form>
     </section>
+</div>
 </div>
 <div class="completion-dialog-backdrop" id="completionDialog" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="completionDialogTitle">
     <div class="completion-dialog">

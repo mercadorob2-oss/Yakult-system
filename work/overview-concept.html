@@ -1,0 +1,140 @@
+<div id="yakult-overview-concept" class="viz-dotted-background">
+  <div class="yo-page" aria-label="Proposed Overview page body">
+    <header class="yo-header">
+      <div><span class="yo-eyebrow">WORKSPACE <span class="yo-sample">Sample data</span></span><h1>Overview</h1><p>Service status and the work that needs your attention.</p></div>
+      <button type="button" class="yo-run cursor-interaction"><i data-lucide="refresh-cw" aria-hidden="true"></i>Run health checks</button>
+    </header>
+    <p class="yo-freshness" aria-live="polite">Latest recorded checks · 2:40 PM PHT</p>
+    <section class="yo-metrics" aria-label="Service summary">
+      <div class="yo-metric"><span class="yo-metric-icon"><i data-lucide="layers" aria-hidden="true"></i></span><strong>10</strong><span>Registered services</span></div>
+      <div class="yo-metric"><span class="yo-metric-icon yo-success"><i data-lucide="circle-check" aria-hidden="true"></i></span><strong>7</strong><span>Healthy at last check</span></div>
+      <div class="yo-metric yo-metric-alert"><span class="yo-metric-icon yo-danger"><i data-lucide="circle-alert" aria-hidden="true"></i></span><strong>1</strong><span>Failed health check</span></div>
+      <div class="yo-metric"><span class="yo-metric-icon yo-warning"><i data-lucide="wrench" aria-hidden="true"></i></span><strong>1</strong><span>In maintenance</span></div>
+    </section>
+    <div class="yo-columns">
+      <div class="yo-main">
+        <section class="yo-panel" aria-label="Priority items">
+          <header class="yo-panel-head"><h2>Priorities <span class="yo-count">2</span></h2><span class="yo-subtle">Most urgent first</span></header>
+          <div class="yo-row">
+            <span class="yo-row-icon yo-danger"><i data-lucide="circle-alert" aria-hidden="true"></i></span>
+            <div class="yo-row-main"><strong>Request Portal</strong><span>Last health check could not reach the service.</span><small>Last checked at 2:40 PM PHT</small></div>
+            <span class="yo-tag yo-danger">Failed check</span>
+          </div>
+          <div class="yo-row">
+            <span class="yo-row-icon yo-warning"><i data-lucide="wrench" aria-hidden="true"></i></span>
+            <div class="yo-row-main"><strong>Help IT</strong><span>Maintenance window is active.</span><small>Scheduled to end at 4:00 PM PHT</small></div>
+            <span class="yo-tag yo-warning">Maintenance</span>
+          </div>
+          <details class="yo-reminders">
+            <summary class="cursor-interaction"><i data-lucide="settings-2" aria-hidden="true"></i>Setup reminders <span>2</span><i data-lucide="chevron-down" aria-hidden="true"></i></summary>
+            <div><p><strong>Learning Portal</strong><span>Add a monitoring URL.</span></p><p><strong>Employee Directory</strong><span>Intentionally hidden from the public portal.</span></p></div>
+          </details>
+        </section>
+        <section class="yo-panel" aria-label="Recent activity">
+          <header class="yo-panel-head"><h2>Recent activity</h2><span class="yo-subtle">Latest changes</span></header>
+          <ol class="yo-timeline">
+            <li><span class="yo-timeline-dot"></span><div><strong>Portal notice updated</strong><span>Administrator · Homepage announcement</span></div><time>2:15 PM</time></li>
+            <li><span class="yo-timeline-dot"></span><div><strong>Help IT maintenance scheduled</strong><span>Administrator · Service settings</span></div><time>1:50 PM</time></li>
+            <li><span class="yo-timeline-dot"></span><div><strong>Inventory service updated</strong><span>Administrator · Portal visibility</span></div><time>1:20 PM</time></li>
+          </ol>
+        </section>
+      </div>
+      <aside class="yo-secondary" aria-label="Portal context">
+        <section class="yo-panel yo-notice">
+          <header class="yo-panel-head"><h2>Homepage notice</h2><span class="yo-tag yo-success">Active</span></header>
+          <div class="yo-panel-body"><span class="yo-notice-icon"><i data-lucide="megaphone" aria-hidden="true"></i></span><strong>Scheduled portal update</strong><p>Help IT is undergoing maintenance this afternoon.</p><details><summary class="cursor-interaction">Preview message</summary><p>Help IT is under scheduled maintenance until 4:00 PM PHT. Other portal services remain available.</p></details></div>
+        </section>
+        <section class="yo-panel">
+          <header class="yo-panel-head"><h2>Monitoring setup</h2></header>
+          <div class="yo-panel-body"><div class="yo-coverage"><strong>9 of 10</strong><span>services configured</span></div><div class="yo-meter" role="progressbar" aria-label="Monitoring configured" aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"><span></span></div><p>One service still needs a monitoring URL.</p><span class="yo-subtle">Configuration coverage</span></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+<style>
+  #yakult-overview-concept{padding:14px;border-radius:16px;color-scheme:light dark;--yo-bg:light-dark(#f5f7fb,#111b2a);--yo-panel:light-dark(#fff,#1a283a);--yo-ink:light-dark(#172b44,#edf2fa);--yo-muted:light-dark(#627389,#a7b7cb);--yo-line:light-dark(#e0e7ef,#33445b);--yo-soft:light-dark(#edf1f7,#25364c);--yo-red:light-dark(#b7202e,#ff9da7);--yo-red-soft:light-dark(#fff3f4,#412736);--yo-green:light-dark(#23734e,#99deba);--yo-green-soft:light-dark(#edf8f2,#203d37);--yo-amber:light-dark(#89591a,#f1cc8e);--yo-amber-soft:light-dark(#fff7eb,#40382b);font:13px/1.5 'Segoe UI',system-ui,sans-serif;color:var(--yo-ink)}
+  #yakult-overview-concept *{box-sizing:border-box}
+  #yakult-overview-concept .yo-page{padding:24px;background:var(--yo-bg);border:1px solid var(--yo-line);border-radius:12px}
+  #yakult-overview-concept h1,#yakult-overview-concept h2,#yakult-overview-concept p{margin:0}
+  #yakult-overview-concept .yo-header{display:flex;justify-content:space-between;align-items:center;gap:18px;padding-right:6px}
+  #yakult-overview-concept .yo-header h1{font-size:27px;letter-spacing:-.04em;font-weight:700;line-height:1.2;margin:8px 0}
+  #yakult-overview-concept .yo-header p{color:var(--yo-muted);font-size:12px}
+  #yakult-overview-concept .yo-eyebrow{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:650;letter-spacing:.11em;color:var(--yo-red)}
+  #yakult-overview-concept .yo-sample{padding:2px 6px;border-radius:4px;background:var(--yo-soft);color:var(--yo-muted);font-size:11px;letter-spacing:0;font-weight:400}
+  #yakult-overview-concept .yo-run{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;min-height:38px;padding:9px 12px;background:var(--yo-red);color:light-dark(#fff,#28121a);border:0;border-radius:7px;font:600 11px/1.4 'Segoe UI',system-ui,sans-serif}
+  #yakult-overview-concept .yo-run svg{width:14px;height:14px}
+  #yakult-overview-concept .yo-freshness{font-size:11px;color:var(--yo-muted);margin:18px 0 10px}
+  #yakult-overview-concept .yo-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px}
+  #yakult-overview-concept .yo-metric{position:relative;display:flex;flex-direction:column;gap:5px;min-width:0;padding:16px 12px;background:var(--yo-panel);border:1px solid var(--yo-line);border-radius:9px}
+  #yakult-overview-concept .yo-metric>strong{font-size:27px;letter-spacing:-.04em;line-height:1.2;font-weight:650}
+  #yakult-overview-concept .yo-metric>span:last-child{font-size:11px;color:var(--yo-muted)}
+  #yakult-overview-concept .yo-metric-icon{position:absolute;right:10px;top:16px;color:var(--yo-muted)}
+  #yakult-overview-concept .yo-metric-icon svg{width:16px;height:16px}
+  #yakult-overview-concept .yo-metric-alert{background:var(--yo-red-soft)}
+  #yakult-overview-concept .yo-columns{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);gap:14px;align-items:start}
+  #yakult-overview-concept .yo-main,#yakult-overview-concept .yo-secondary{display:grid;gap:14px;min-width:0}
+  #yakult-overview-concept .yo-panel{overflow:hidden;border:1px solid var(--yo-line);border-radius:10px;background:var(--yo-panel)}
+  #yakult-overview-concept .yo-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:14px 15px;border-bottom:1px solid var(--yo-line)}
+  #yakult-overview-concept .yo-panel-head h2{font-size:12px;font-weight:650;line-height:1.3}
+  #yakult-overview-concept .yo-count{display:inline-block;margin-left:5px;padding:1px 5px;border-radius:4px;background:var(--yo-red-soft);color:var(--yo-red);font-size:11px}
+  #yakult-overview-concept .yo-subtle{font-size:11px;color:var(--yo-muted)}
+  #yakult-overview-concept .yo-row{display:flex;align-items:flex-start;gap:10px;margin:0 15px;padding:var(--yo-row-gap,16px) 0;border-bottom:1px solid var(--yo-line)}
+  #yakult-overview-concept .yo-row-icon{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:8px;background:var(--yo-soft)}
+  #yakult-overview-concept .yo-row-icon svg{width:15px;height:15px}
+  #yakult-overview-concept .yo-row-main{display:grid;gap:4px;min-width:0;flex:1}
+  #yakult-overview-concept .yo-row-main strong{font-size:11px;font-weight:650}
+  #yakult-overview-concept .yo-row-main span,#yakult-overview-concept .yo-row-main small{color:var(--yo-muted);font-size:11px}
+  #yakult-overview-concept .yo-row-main small{font-size:11px}
+  #yakult-overview-concept .yo-tag{display:inline-flex;align-items:center;flex-shrink:0;padding:3px 6px;font-size:11px;border-radius:5px;background:var(--yo-soft);white-space:nowrap}
+  #yakult-overview-concept .yo-danger{color:var(--yo-red);background:var(--yo-red-soft)}
+  #yakult-overview-concept .yo-success{color:var(--yo-green);background:var(--yo-green-soft)}
+  #yakult-overview-concept .yo-warning{color:var(--yo-amber);background:var(--yo-amber-soft)}
+  #yakult-overview-concept .yo-metric-icon{background:transparent}
+  #yakult-overview-concept .yo-reminders{padding:12px 15px}
+  #yakult-overview-concept .yo-reminders>summary{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--yo-muted);list-style:none}
+  #yakult-overview-concept .yo-reminders>summary::-webkit-details-marker{display:none}
+  #yakult-overview-concept .yo-reminders>summary svg{width:13px;height:13px}
+  #yakult-overview-concept .yo-reminders>summary svg:last-child{margin-left:auto}
+  #yakult-overview-concept .yo-reminders>div{padding-top:7px}
+  #yakult-overview-concept .yo-reminders p{display:grid;gap:2px;padding:8px 0;font-size:11px}
+  #yakult-overview-concept .yo-reminders p>span{color:var(--yo-muted)}
+  #yakult-overview-concept .yo-timeline{margin:0;padding:8px 15px 12px;list-style:none}
+  #yakult-overview-concept .yo-timeline li{display:flex;gap:10px;align-items:flex-start;padding:12px 0}
+  #yakult-overview-concept .yo-timeline-dot{width:6px;height:6px;flex:0 0 6px;margin-top:5px;border-radius:50%;background:var(--yo-muted)}
+  #yakult-overview-concept .yo-timeline li>div{display:grid;gap:4px;min-width:0;flex:1}
+  #yakult-overview-concept .yo-timeline strong{font-size:11px;font-weight:600}
+  #yakult-overview-concept .yo-timeline li>div>span,#yakult-overview-concept .yo-timeline time{font-size:11px;color:var(--yo-muted)}
+  #yakult-overview-concept .yo-timeline time{white-space:nowrap}
+  #yakult-overview-concept .yo-panel-body{padding:15px}
+  #yakult-overview-concept .yo-panel-body>strong{display:block;font-size:11px;font-weight:650}
+  #yakult-overview-concept .yo-panel-body p{font-size:11px;color:var(--yo-muted);margin-top:8px}
+  #yakult-overview-concept .yo-notice-icon{display:grid;place-items:center;width:30px;height:30px;margin-bottom:12px;border-radius:8px;background:var(--yo-soft);color:var(--yo-muted)}
+  #yakult-overview-concept .yo-notice-icon svg{width:16px;height:16px}
+  #yakult-overview-concept .yo-panel-body details{margin-top:12px;font-size:11px}
+  #yakult-overview-concept .yo-coverage{display:grid;gap:2px}
+  #yakult-overview-concept .yo-coverage strong{font-size:19px;font-weight:600;letter-spacing:-.02em}
+  #yakult-overview-concept .yo-coverage span{font-size:11px;color:var(--yo-muted)}
+  #yakult-overview-concept .yo-meter{height:6px;margin:12px 0;background:var(--yo-soft);border-radius:10px;overflow:hidden}
+  #yakult-overview-concept .yo-meter>span{display:block;width:90%;height:100%;background:var(--yo-ink);border-radius:inherit}
+  #yakult-overview-concept .yo-panel-body>.yo-subtle{display:block;margin-top:9px}
+  @media(max-width:580px){#yakult-overview-concept{padding:8px}#yakult-overview-concept .yo-page{padding:16px}#yakult-overview-concept .yo-header{align-items:flex-start;flex-direction:column}#yakult-overview-concept .yo-columns{grid-template-columns:1fr}#yakult-overview-concept .yo-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}#yakult-overview-concept .yo-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:360px){#yakult-overview-concept .yo-secondary{grid-template-columns:1fr}#yakult-overview-concept .yo-row{flex-wrap:wrap}#yakult-overview-concept .yo-tag{margin-left:38px}}
+</style>
+<script>
+  (() => {
+    const root = document.getElementById('yakult-overview-concept');
+    const run = root.querySelector('.yo-run');
+    const freshness = root.querySelector('.yo-freshness');
+    run.addEventListener('click', () => {
+      freshness.textContent = 'Layout preview only — no service checks were run.';
+    });
+    const settings = { spacing: 16 };
+    function render() { root.style.setProperty('--yo-row-gap', settings.spacing + 'px'); }
+    render();
+    if (globalThis.Tweak) {
+      const tweak = new Tweak({ container: root.querySelector('.yo-page'), onChange: render });
+      tweak.addSlider(settings, 'spacing', { label: 'Priority row spacing', min: 10, max: 22, unit: 'px' });
+    }
+  })();
+</script>

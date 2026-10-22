@@ -137,34 +137,39 @@ public sealed class AdminController : Controller
         var cards = await _portalCardRepository.GetAdminCardsAsync();
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(4) };
         var results = new List<object>();
+        var resultsSaved = true;
 
         foreach (var card in cards.Where(c => !string.IsNullOrWhiteSpace(c.HealthCheckUrl)))
         {
             var started = DateTime.UtcNow;
+            string status;
+            string detail;
             try
             {
                 using var response = await http.GetAsync(card.HealthCheckUrl);
-                results.Add(new
-                {
-                    cardKey = card.CardKey,
-                    status = response.IsSuccessStatusCode ? "Healthy" : "Unhealthy",
-                    detail = $"{(int)response.StatusCode} {response.ReasonPhrase}",
-                    checkedAtUtc = started
-                });
+                status = response.IsSuccessStatusCode ? "Healthy" : "Unhealthy";
+                detail = $"{(int)response.StatusCode} {response.ReasonPhrase}";
             }
             catch (Exception ex)
             {
-                results.Add(new
-                {
-                    cardKey = card.CardKey,
-                    status = "Unreachable",
-                    detail = ex.Message,
-                    checkedAtUtc = started
-                });
+                status = "Unreachable";
+                detail = ex.Message;
             }
+
+            try
+            {
+                await _portalCardRepository.UpdateHealthStatusAsync(card.CardKey, status, started);
+            }
+            catch (Exception ex)
+            {
+                resultsSaved = false;
+                _logger.LogWarning(ex, "Could not save health result for {CardKey}", card.CardKey);
+            }
+
+            results.Add(new { cardKey = card.CardKey, cardName = card.Name, status, detail, checkedAtUtc = started });
         }
 
-        return Json(new { success = true, results });
+        return Json(new { success = true, results, resultsSaved });
     }
 
     public async Task<IActionResult> Settings()

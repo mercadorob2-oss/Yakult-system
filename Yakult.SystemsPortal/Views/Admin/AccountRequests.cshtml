@@ -2,12 +2,26 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Account Requests";
+    ViewData["UseCustomPageHeading"] = true;
     var pending = Model.Requests.Count(x => x.Status == "Pending");
     var approved = Model.Requests.Count(x => x.Status == "Approved");
     var rejected = Model.Requests.Count(x => x.Status == "Rejected");
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-account-requests.css" asp-append-version="true" />
+}
+
 @Html.AntiForgeryToken()
+
+<div class="account-admin-page">
+<header class="account-page-heading">
+    <div>
+        <span class="account-page-eyebrow">Administration</span>
+        <h1>Account Requests</h1>
+        <p>Review employee registrations and manage portal access from one workspace.</p>
+    </div>
+</header>
 
 <section class="account-metrics" aria-label="Account request summary">
     <div class="account-metric"><strong>@pending</strong><span>Pending review</span></div>
@@ -222,6 +236,7 @@
             <button type="button" class="admin-button admin-button--primary" id="accountModalConfirm">Confirm</button>
         </footer>
     </section>
+</div>
 </div>
 
 <script>
