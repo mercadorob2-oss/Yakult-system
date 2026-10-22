@@ -2,6 +2,7 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Activity Log";
+    ViewData["UseCustomPageHeading"] = true;
     var totalCount = Model.Items.Count;
     var createCount = Model.Items.Count(x => string.Equals(x.Action, "Create", StringComparison.OrdinalIgnoreCase));
     var updateCount = Model.Items.Count(x => string.Equals(x.Action, "Update", StringComparison.OrdinalIgnoreCase));
@@ -12,6 +13,20 @@
         .GroupBy(x => x.Timestamp.Date)
         .ToList();
 }
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-activity-log.css" asp-append-version="true" />
+}
+
+<div class="activity-admin-page">
+    <header class="activity-page-heading">
+        <div>
+            <span class="activity-page-eyebrow">Administration</span>
+            <h1>Activity Log</h1>
+            <p>Review service changes, account actions, and portal events in one searchable timeline.</p>
+        </div>
+        <a class="activity-refresh-button" asp-controller="Admin" asp-action="Audit"><span aria-hidden="true">↻</span> Refresh log</a>
+    </header>
 
 <section class="admin-card-summary admin-card-summary--audit" aria-label="Activity summary">
     <div class="admin-stat">
@@ -39,7 +54,6 @@
                 <h2>Recent Service Events</h2>
                 <p>Service changes, archives, downloads, and portal administration activity recorded in dbo.AuditTrail.</p>
             </div>
-            <a class="admin-button admin-button--ghost" asp-controller="Admin" asp-action="Audit">Refresh</a>
         </div>
 
         <div class="admin-card-toolbar admin-card-toolbar--audit">
@@ -127,6 +141,7 @@
         </div>
     </div>
 </section>
+</div>
 
 @section Scripts {
     <script>

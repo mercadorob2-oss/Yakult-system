@@ -2,25 +2,20 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Service Health";
-    var nowUtc = DateTime.UtcNow;
+    ViewData["UseCustomPageHeading"] = true;
     var totalCount = Model.Cards.Count;
     var configuredCount = Model.Cards.Count(c => !string.IsNullOrWhiteSpace(c.HealthCheckUrl));
     var missingUrlCount = totalCount - configuredCount;
-    var uncheckedCount = Model.Cards.Count(c => string.IsNullOrWhiteSpace(c.LastHealthStatus));
-    var maintenanceCount = Model.Cards.Count(c => c.MaintenanceStartUtc.HasValue && c.MaintenanceEndUtc.HasValue && nowUtc >= c.MaintenanceStartUtc.Value && nowUtc <= c.MaintenanceEndUtc.Value);
-    var healthyCount = Model.Cards.Count(c => string.Equals(c.LastHealthStatus, "Healthy", StringComparison.OrdinalIgnoreCase));
-    var actionCount = Model.Cards.Count(c => string.IsNullOrWhiteSpace(c.HealthCheckUrl) || !string.Equals(c.LastHealthStatus, "Healthy", StringComparison.OrdinalIgnoreCase));
+    var maintenanceCount = Model.Cards.Count(c => c.IsInMaintenance);
+    var healthyCount = Model.Cards.Count(c => c.HealthState == "healthy");
+    var actionCount = Model.Cards.Count(c => c.NeedsAttention);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-service-health.css" asp-append-version="true" />
 }
 
 @functions {
-    bool IsInMaintenance(AdminPortalCardViewModel card, DateTime nowUtc)
-    {
-        return card.MaintenanceStartUtc.HasValue &&
-            card.MaintenanceEndUtc.HasValue &&
-            nowUtc >= card.MaintenanceStartUtc.Value &&
-            nowUtc <= card.MaintenanceEndUtc.Value;
-    }
-
     string ServiceStatusClass(string status)
     {
         return status switch
@@ -30,13 +25,6 @@
             "Disabled" => "is-disabled",
             _ => "is-offline"
         };
-    }
-
-    string HealthState(AdminPortalCardViewModel card)
-    {
-        if (string.IsNullOrWhiteSpace(card.HealthCheckUrl)) return "missing";
-        if (string.IsNullOrWhiteSpace(card.LastHealthStatus)) return "unchecked";
-        return string.Equals(card.LastHealthStatus, "Healthy", StringComparison.OrdinalIgnoreCase) ? "healthy" : "unhealthy";
     }
 
     string HealthLabel(string state, string status)
@@ -52,18 +40,27 @@
     }
 }
 
+<div class="service-health-page">
+<header class="health-page-heading">
+    <div>
+        <span class="health-page-eyebrow">Operations</span>
+        <h1>Service Health</h1>
+        <p>Monitor availability, check results, and scheduled maintenance across services.</p>
+    </div>
+</header>
+
 <section class="admin-card-summary admin-card-summary--health" aria-label="Health summary">
     <div class="admin-stat">
         <span class="admin-stat__value">@configuredCount</span>
         <span class="admin-stat__label">Configured</span>
     </div>
     <div class="admin-stat">
-        <span class="admin-stat__value">@healthyCount</span>
-        <span class="admin-stat__label">Healthy</span>
+        <span class="admin-stat__value" id="healthHealthyCount">@healthyCount</span>
+        <span class="admin-stat__label">Last check healthy</span>
     </div>
     <div class="admin-stat @(actionCount > 0 ? "is-attention" : "")">
-        <span class="admin-stat__value">@actionCount</span>
-        <span class="admin-stat__label">Need action</span>
+        <span class="admin-stat__value" id="healthActionCount">@actionCount</span>
+        <span class="admin-stat__label">Need attention</span>
     </div>
     <div class="admin-stat">
         <span class="admin-stat__value">@maintenanceCount</span>
@@ -76,21 +73,21 @@
         <div class="admin-panel-header">
             <div>
                 <h2>Service Health and Maintenance</h2>
-                <p>@configuredCount of @totalCount services have health URLs. @missingUrlCount still need a configured endpoint.</p>
+                <p>@configuredCount of @totalCount services have monitoring URLs; @missingUrlCount missing. Configured status is separate from measured health. Times shown in PHT (UTC+8).</p>
             </div>
             <div class="admin-form-actions">
-                <button type="button" class="admin-button admin-button--primary" id="runHealthBtn">Run Checks</button>
+                <button type="button" class="admin-button admin-button--primary" id="runHealthBtn">Run checks</button>
                 <a class="admin-button admin-button--ghost" asp-controller="Admin" asp-action="Cards">Edit services</a>
             </div>
         </div>
-        <div class="admin-health-run-status" id="healthRunStatus" role="status">Run health checks to refresh the live result for this session.</div>
+        <div class="admin-health-run-status" id="healthRunStatus" role="status">Latest recorded results. Run checks to refresh.</div>
         @Html.AntiForgeryToken()
 
         <div class="admin-card-toolbar admin-card-toolbar--wide admin-health-toolbar">
-            <input type="text" id="healthSearch" placeholder="Search service, key, URL, or status..." autocomplete="off" />
-            <select id="healthFilter">
+            <input type="text" id="healthSearch" placeholder="Search service, key, URL, or status..." autocomplete="off" aria-label="Search service health" />
+            <select id="healthFilter" aria-label="Filter service health">
                 <option value="all">All services</option>
-                <option value="needs-action">Needs action</option>
+                <option value="needs-action">Needs attention</option>
                 <option value="healthy">Healthy</option>
                 <option value="unhealthy">Unhealthy</option>
                 <option value="missing">Missing URL</option>
@@ -98,7 +95,7 @@
                 <option value="maintenance">In maintenance</option>
             </select>
             <select id="healthSort" aria-label="Sort service health">
-                <option value="attention">Needs action first</option>
+                <option value="attention">Failures first</option>
                 <option value="recent">Most recently checked</option>
                 <option value="name">Service name</option>
             </select>
@@ -117,17 +114,17 @@
             {
                 foreach (var card in Model.Cards)
                 {
-                    var state = HealthState(card);
-                    var inMaintenance = IsInMaintenance(card, nowUtc);
+                    var state = card.HealthState;
+                    var inMaintenance = card.IsInMaintenance;
                     var searchText = $"{card.Name} {card.CardKey} {card.Status} {card.LastHealthStatus} {card.HealthCheckUrl}".ToLowerInvariant();
-                    <article class="admin-health-card is-health-@state" data-health-card data-card-key="@card.CardKey" data-health-state="@state" data-health-checked-at="@(card.LastHealthCheckedAt?.ToUniversalTime().ToString("o"))" data-maintenance="@(inMaintenance.ToString().ToLowerInvariant())" data-health-text="@searchText">
+                    <article class="admin-health-card is-health-@state" data-health-card data-card-key="@card.CardKey" data-service-attention="@card.HasServiceAttention.ToString().ToLowerInvariant()" data-service-rank="@card.ServiceAttentionPriority" data-service-reason="@card.ServiceAttentionReason" data-service-name="@card.Name" data-health-state="@state" data-health-checked-at="@PortalDisplayTime.Iso(card.LastHealthCheckedAt)" data-maintenance="@(inMaintenance.ToString().ToLowerInvariant())" data-health-text="@searchText">
                         <div class="admin-health-card__main">
                             <div>
                                 <span class="admin-health-card__eyebrow">@card.CardKey</span>
                                 <h3>@card.Name</h3>
                             </div>
                             <div class="admin-health-card__pills">
-                                <span class="admin-status-pill @ServiceStatusClass(card.Status)">@card.Status</span>
+                                <span class="admin-status-pill @ServiceStatusClass(card.Status)">Configured: @card.Status</span>
                                 @if (inMaintenance)
                                 {
                                     <span class="admin-status-pill is-maintenance">Maintenance window</span>
@@ -140,18 +137,22 @@
                                 <strong>@(string.IsNullOrWhiteSpace(card.HealthCheckUrl) ? "No health URL configured" : card.HealthCheckUrl)</strong>
                             </div>
                             <div>
-                                <span class="admin-health-card__label">Live result</span>
+                                <span class="admin-health-card__label">Last measured result</span>
                                 <strong class="admin-health-state admin-health-state--@state health-live-result">@HealthLabel(state, card.LastHealthStatus)</strong>
-                                <span class="admin-health-card__detail" data-health-detail>@(card.LastHealthCheckedAt.HasValue ? card.LastHealthCheckedAt.Value.ToString("yyyy-MM-dd HH:mm") + " UTC" : "No check timestamp")</span>
+                                <span class="admin-health-card__detail" data-health-detail>@PortalDisplayTime.Format(card.LastHealthCheckedAt)</span>
                             </div>
                             <div>
                                 <span class="admin-health-card__label">Maintenance</span>
                                 <strong>@(card.MaintenanceStartUtc.HasValue || card.MaintenanceEndUtc.HasValue ? "Scheduled" : "None scheduled")</strong>
                                 @if (card.MaintenanceStartUtc.HasValue || card.MaintenanceEndUtc.HasValue)
                                 {
-                                    <span class="admin-health-card__detail">@card.MaintenanceStartUtc?.ToString("yyyy-MM-dd HH:mm") - @card.MaintenanceEndUtc?.ToString("yyyy-MM-dd HH:mm") UTC</span>
+                                    <span class="admin-health-card__detail">@PortalDisplayTime.Format(card.MaintenanceStartUtc) – @PortalDisplayTime.Format(card.MaintenanceEndUtc)</span>
                                 }
                             </div>
+                        </div>
+                        <p class="admin-health-card__detail" data-attention-reasons hidden="@(!card.NeedsAttention)">@string.Join(" · ", card.AttentionReasons)</p>
+                        <div class="admin-health-card__actions">
+                            <a class="admin-button admin-button--ghost" asp-controller="Admin" asp-action="Cards" asp-route-service="@card.CardKey" aria-label="Review @card.Name">@(state == "missing" ? "Configure monitoring" : "Review service")</a>
                         </div>
                     </article>
                 }
@@ -163,6 +164,7 @@
         </div>
     </div>
 </section>
+</div>
 
 @section Scripts {
     <script>
@@ -205,18 +207,33 @@
                 }
                 if (detailTarget) {
                     const checkedAt = checkedAtUtc ? new Date(checkedAtUtc) : new Date();
-                    const timestamp = Number.isNaN(checkedAt.getTime()) ? 'this session' : checkedAt.toLocaleString();
+                    const timestamp = Number.isNaN(checkedAt.getTime()) ? 'Unknown time' : formatPht(checkedAt);
                     detailTarget.textContent = detail ? `Checked ${timestamp} · ${detail}` : `Checked ${timestamp}`;
                 }
+                const reasons = row.querySelector('[data-attention-reasons]');
+                if (reasons) {
+                    reasons.textContent = [state === 'unhealthy' ? 'Last health check failed' : '', row.dataset.serviceReason].filter(Boolean).join(' · ');
+                    reasons.hidden = !reasons.textContent;
+                }
+            }
+
+            function formatPht(date) {
+                return new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(date) + ' PHT';
+            }
+
+            function needsAttention(row) {
+                return row.dataset.serviceAttention === 'true' || row.dataset.healthState !== 'healthy';
             }
 
             function sortHealthRows() {
                 const board = document.getElementById('healthBoard');
                 if (!board || !sort) return;
-                const rank = { missing: 0, unhealthy: 1, unchecked: 2, healthy: 3 };
+                const rank = row => row.dataset.healthState === 'unhealthy' ? 0
+                    : row.dataset.serviceAttention === 'true' ? Number(row.dataset.serviceRank)
+                    : row.dataset.healthState === 'missing' ? 4 : row.dataset.healthState === 'unchecked' ? 5 : 6;
                 const cards = rows().sort(function(left, right) {
                     if (sort.value === 'name') {
-                        return (left.dataset.healthText || '').localeCompare(right.dataset.healthText || '');
+                        return (left.dataset.serviceName || '').localeCompare(right.dataset.serviceName || '');
                     }
                     if (sort.value === 'recent') {
                         const leftTime = Date.parse(left.dataset.healthCheckedAt || '');
@@ -225,10 +242,10 @@
                         const rightValue = Number.isNaN(rightTime) ? -Infinity : rightTime;
                         return rightValue - leftValue;
                     }
-                    const leftRank = rank[left.dataset.healthState || 'unchecked'] ?? 2;
-                    const rightRank = rank[right.dataset.healthState || 'unchecked'] ?? 2;
+                    const leftRank = rank(left);
+                    const rightRank = rank(right);
                     if (leftRank !== rightRank) return leftRank - rightRank;
-                    return (left.dataset.healthText || '').localeCompare(right.dataset.healthText || '');
+                    return (left.dataset.serviceName || '').localeCompare(right.dataset.serviceName || '');
                 });
                 cards.forEach(card => board.appendChild(card));
             }
@@ -245,12 +262,15 @@
                     const matchesFilter = selected === 'all'
                         || selected === state
                         || (selected === 'maintenance' && maintenance)
-                        || (selected === 'needs-action' && state !== 'healthy');
+                        || (selected === 'needs-action' && needsAttention(row));
                     const show = matchesTerm && matchesFilter;
                     row.hidden = !show;
                     if (show) visible++;
                 });
                 if (noResults) noResults.hidden = visible !== 0;
+                document.getElementById('healthHealthyCount').textContent = rows().filter(row => row.dataset.healthState === 'healthy').length;
+                document.getElementById('healthActionCount').textContent = rows().filter(needsAttention).length;
+                document.getElementById('healthActionCount').closest('.admin-stat').classList.toggle('is-attention', rows().some(needsAttention));
             }
 
             search?.addEventListener('input', applyHealthFilters);
@@ -263,9 +283,10 @@
                 btn.disabled = true;
                 btn.classList.add('is-loading');
                 btn.textContent = 'Checking...';
+                document.getElementById('healthBoard').setAttribute('aria-busy', 'true');
                 if (runStatus) {
                     runStatus.className = 'admin-health-run-status is-running';
-                    runStatus.textContent = 'Running health checks. Results will update in this session.';
+                    runStatus.textContent = 'Running health checks. Please wait for all services to respond.';
                 }
                 try {
                     const response = await fetch('@Url.Action("CheckHealth", "Admin")', {
@@ -284,10 +305,12 @@
                     });
                     applyHealthFilters();
                     if (runStatus) {
-                        runStatus.className = 'admin-health-run-status is-fresh';
-                        runStatus.textContent = `Health checks completed at ${new Date().toLocaleTimeString()}. Results shown are from this session.`;
+                        runStatus.className = 'admin-health-run-status' + (result.resultsSaved ? ' is-fresh' : '');
+                        runStatus.textContent = !result.results.length ? 'No monitoring URLs configured. Configure a service to begin.'
+                            : result.resultsSaved ? `Checks completed ${formatPht(new Date())}. Results saved.`
+                            : 'Checks completed. Some results could not be saved; the values shown apply to this session.';
                     }
-                    window.yakultToast?.('Health checks completed.', 'success');
+                    window.yakultToast?.(result.resultsSaved ? 'Health checks completed.' : 'Some check results could not be saved.', result.resultsSaved ? 'success' : 'warning');
                 } catch (error) {
                     if (runStatus) {
                         runStatus.className = 'admin-health-run-status';
@@ -297,7 +320,8 @@
                 } finally {
                     btn.disabled = false;
                     btn.classList.remove('is-loading');
-                    btn.textContent = 'Run Checks';
+                    btn.textContent = 'Run checks';
+                    document.getElementById('healthBoard').setAttribute('aria-busy', 'false');
                 }
             });
         });

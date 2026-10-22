@@ -2,22 +2,35 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Portal Notice";
+    ViewData["UseCustomPageHeading"] = true;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-portal-notice.css" asp-append-version="true" />
 }
 
 @Html.AntiForgeryToken()
 
-<section class="admin-workspace admin-workspace--single">
-    <div class="admin-list-panel">
+<div class="notice-admin-page">
+    <header class="notice-page-heading">
+        <div>
+            <span class="notice-page-eyebrow">System</span>
+            <h1>Portal Notice</h1>
+            <p>Keep employees informed about service updates, releases, and planned maintenance.</p>
+        </div>
+        <a class="admin-button admin-button--ghost" asp-controller="Public" asp-action="Services" target="_blank" rel="noopener noreferrer">View employee portal <span aria-hidden="true">↗</span></a>
+    </header>
+
+<div class="notice-workspace">
+    <section class="admin-list-panel notice-editor" aria-labelledby="noticeEditorHeading">
         <div class="admin-panel-header">
             <div>
-                <h2>Important Notice</h2>
-                <p>Publish a temporary homepage message for releases or operational alerts. Select <strong>Maintenance — full page</strong> to replace the whole site with a standalone error-style notice; developer accounts retain Admin access.</p>
+                <h2 id="noticeEditorHeading">Compose notice</h2>
+                <p>Set the message, choose its priority, and schedule when it appears.</p>
             </div>
         </div>
 
-        <div class="admin-notice-state" id="noticeState" role="status">Checking notice state...</div>
-
-        <form class="admin-form">
+        <form class="admin-form notice-form">
             @if (!Model.DatabaseSettingsAvailable)
             {
                 <div class="preview-draft-banner">Portal notice saving is not available yet because the portal settings table is not connected.</div>
@@ -26,12 +39,15 @@
                 <input type="checkbox" id="noticeEnabled" @(Model.Notice.Enabled ? "checked" : "") />
                 <span>Show notice on the employee portal homepage</span>
             </label>
-            <div class="admin-preset-row">
+            <section class="notice-presets" aria-labelledby="noticePresetsHeading">
+                <h3 id="noticePresetsHeading">Start from a template</h3>
+                <div class="admin-preset-row">
                 <button type="button" class="admin-button admin-button--ghost" data-notice-preset="inventory">Inventory maintenance</button>
                 <button type="button" class="admin-button admin-button--ghost" data-notice-preset="installer">Installer update</button>
                 <button type="button" class="admin-button admin-button--ghost" data-notice-preset="mobile">Mobile APK release</button>
                 <button type="button" class="admin-button admin-button--ghost" data-notice-preset="cadena">Cadena maintenance</button>
-            </div>
+                </div>
+            </section>
             <div class="admin-form-grid">
                 <label>
                     <span>Level</span>
@@ -52,6 +68,11 @@
                 <span>Message</span>
                 <textarea id="noticeMessage" rows="4">@Model.Notice.Message</textarea>
             </label>
+            <section class="notice-schedule" aria-labelledby="noticeScheduleHeading">
+                <div class="notice-section-heading">
+                    <h3 id="noticeScheduleHeading">Schedule</h3>
+                    <span>Manila time · UTC+8</span>
+                </div>
             <div class="admin-form-grid admin-form-grid--schedule">
                 <label>
                     <span>Start (Manila time)</span>
@@ -65,17 +86,36 @@
             <div class="admin-timezone-note" id="noticeSchedulePreview" role="status">
                 No schedule window set. Enter Manila time; the portal saves it safely as UTC.
             </div>
-            <div class="admin-form-actions">
-                <span class="admin-save-status" id="noticeStatus">Ready.</span>
-                <button type="button" class="admin-button admin-button--primary" id="saveNoticeBtn">Save Notice</button>
+            </section>
+            <div class="admin-form-actions notice-savebar">
+                <span class="admin-save-status" id="noticeStatus" role="status" aria-live="polite">Ready to save.</span>
+                <button type="button" class="admin-button admin-button--primary" id="saveNoticeBtn">Save notice</button>
             </div>
-            <div class="admin-notice-preview" id="noticePreview">
+        </form>
+    </section>
+    <aside class="notice-context" aria-label="Notice preview and visibility">
+        <section class="notice-preview-panel" aria-labelledby="noticePreviewHeading">
+            <div class="notice-context-heading"><h2 id="noticePreviewHeading">Live preview</h2><span>Updates as you type</span></div>
+            <div class="notice-preview-body">
+            <div class="admin-notice-preview" id="noticePreview" aria-live="polite" aria-atomic="true">
                 <strong>Portal notice preview</strong>
                 <p>Update the title and message to preview the homepage banner.</p>
             </div>
-        </form>
-    </div>
-</section>
+            <p class="notice-preview-caption">Save your changes to apply this notice to the employee portal.</p>
+            </div>
+        </section>
+        <section class="notice-visibility-panel" aria-labelledby="noticeVisibilityHeading">
+            <div class="notice-context-heading"><h2 id="noticeVisibilityHeading">Visibility</h2></div>
+            <div class="admin-notice-state" id="noticeState" role="status">Checking notice state...</div>
+            <p class="notice-context-note">Visibility is based on the current settings and schedule. Changes take effect after saving.</p>
+        </section>
+        <div class="notice-maintenance-note">
+            <strong>Full-page maintenance</strong>
+            <p>Selecting Maintenance replaces the employee portal during the active schedule. Developer accounts retain access to administration.</p>
+        </div>
+    </aside>
+</div>
+</div>
 
 @functions {
     string ToManilaDateTimeLocal(DateTime? value)
@@ -216,6 +256,7 @@
                     document.getElementById('noticeTitle').value = preset.title;
                     document.getElementById('noticeMessage').value = preset.message;
                     updatePreview();
+                    updateNoticeState();
                     window.yakultToast?.('Notice preset applied.', 'info');
                 });
             });

@@ -1,0 +1,112 @@
+/* Employee Resources uses the same page and studio system as Learning Content. */
+body.admin-workspace-layout #employeeResourcesAdminApp.resource-admin-page {
+    --text-main: #2c435e;
+    --text-muted: #718298;
+    --border-card: #e3e9f1;
+    --border-soft: #edf1f6;
+    --bg-card: #fff;
+    --bg-body: #f8fafd;
+    --brand: #c61c28;
+    --brand-soft: #fff7f8;
+    padding-top: 30px;
+    color: #21364f;
+}
+
+body.admin-workspace-layout .resource-admin-page :is(h1, h2, h3, p) { margin: 0; }
+body.admin-workspace-layout .resource-admin-page button { font-family: inherit; cursor: pointer; }
+body.admin-workspace-layout .resource-admin-page :is(a, button, input, select, textarea):focus-visible { outline: 2px solid #b82a38; outline-offset: 3px; }
+body.admin-workspace-layout .resource-admin-page [hidden] { display: none !important; }
+
+body.admin-workspace-layout .resource-admin-page .resource-admin-intro { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-intro > div:first-child { flex: 1 1 auto; min-width: 0; }
+body.admin-workspace-layout .resource-admin-page .resource-page-eyebrow { display: inline-flex; align-items: center; gap: 8px; color: #9c2630; font-size: .65rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+body.admin-workspace-layout .resource-admin-page .resource-page-eyebrow::before { width: 16px; height: 2px; background: #d71920; content: ''; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-intro h1 { margin: 9px 0 8px; color: #21364f; font-size: clamp(1.8rem, 2.3vw, 2.2rem); font-weight: 750; letter-spacing: -.035em; line-height: 1.15; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-intro p { max-width: 680px; color: #718298; font-size: .875rem; line-height: 1.6; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-intro__actions { flex: 0 0 auto; flex-direction: row; justify-content: flex-end; align-items: center; gap: 8px; max-width: 370px; }
+body.admin-workspace-layout .resource-admin-page .admin-button { display: inline-flex; justify-content: center; align-items: center; gap: 7px; width: auto; min-height: 38px; padding: 9px 12px; border: 1px solid #dfe6ef; border-radius: 8px; background: #fff; color: #60748c; text-decoration: none; font-size: .72rem; font-weight: 650; line-height: 1.4; white-space: nowrap; }
+body.admin-workspace-layout .resource-admin-page .admin-button:hover:not(:disabled) { border-color: #cdd8e5; background: #f5f8fb; color: #435a75; }
+body.admin-workspace-layout .resource-admin-page .admin-button--primary { border-color: #bf1b27; background: #c61c28; color: #fff; box-shadow: 0 3px 8px rgba(183,32,46,.1); }
+body.admin-workspace-layout .resource-admin-page .admin-button--primary:hover:not(:disabled) { border-color: #ac1722; background: #ac1722; color: #fff; }
+body.admin-workspace-layout .resource-admin-page .admin-button--danger { border-color: #edced4; background: #fff8f9; color: #aa3548; }
+body.admin-workspace-layout .resource-admin-page button:disabled { cursor: not-allowed; opacity: .5; }
+
+body.admin-workspace-layout .resource-admin-page .resource-admin-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin: 24px 0 20px; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-summary > div { display: flex; flex-direction: column; justify-content: center; gap: 9px; min-width: 0; min-height: 86px; padding: 15px 17px; border: 1px solid #e3e9f1; border-radius: 10px; background: #fff; box-shadow: 0 3px 12px rgba(27,47,73,.035); }
+body.admin-workspace-layout .resource-admin-page .resource-admin-summary strong { color: #2c435e; font-size: 1.45rem; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-summary span { color: #718298; font-size: .7rem; font-weight: 600; line-height: 1.35; letter-spacing: 0; text-transform: none; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-alert { padding: 12px 15px; font-size: .75rem; line-height: 1.6; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-setup-warning { margin: 20px 0 0; border-radius: 9px; box-shadow: none; font-size: .75rem; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-mock-state { margin-top: 8px; color: #7b8ba1; font-size: .69rem; }
+
+body.admin-workspace-layout .resource-admin-page .resource-admin-workspace { display: grid; grid-template-columns: 315px minmax(0, 1fr); align-items: start; gap: 24px; padding-bottom: 24px; }
+body.admin-workspace-layout .resource-admin-page :is(.resource-admin-library, .resource-admin-editor) { min-width: 0; border: 1px solid #e3e9f1; border-radius: 12px; background: #fff; box-shadow: 0 3px 14px rgba(27,47,73,.035); }
+body.admin-workspace-layout .resource-admin-page .resource-admin-library { position: sticky; top: calc(var(--admin-shell-topbar, 76px) + 20px); display: flex; flex-direction: column; max-height: calc(100dvh - var(--admin-shell-topbar, 76px) - 40px); overflow: hidden; }
+body.admin-workspace-layout .resource-admin-page :is(.resource-admin-library > header, .resource-admin-editor__header) { flex: 0 0 auto; align-items: center; gap: 12px; min-height: 76px; padding: 17px 19px; border-bottom: 1px solid #edf1f6; background: #fff; border-radius: 12px 12px 0 0; }
+body.admin-workspace-layout .resource-admin-page :is(.resource-admin-library h2, .resource-admin-editor__header h2) { color: #2c435e; font-size: .92rem; font-weight: 700; line-height: 1.45; overflow-wrap: anywhere; }
+body.admin-workspace-layout .resource-admin-page .eyebrow { display: block; margin-bottom: 5px; color: #8796aa; font-size: .6rem; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-count { display: grid; place-items: center; min-width: 28px; min-height: 27px; padding: 4px 7px; border: 1px solid #e6ecf3; border-radius: 7px; background: #f8fafd; color: #718298; font-size: .68rem; font-weight: 650; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-library__list { display: block; min-height: 130px; max-height: none; overflow-y: auto; padding: 7px 8px 10px; scrollbar-width: thin; scrollbar-color: #d1dbe7 transparent; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-library__item { display: flex; gap: 6px; width: 100%; margin: 0 0 4px; padding: 12px 10px; border: 1px solid transparent; border-radius: 9px; background: #fff; text-align: left; transition: border-color .15s ease, background .15s ease; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-library__item:hover { border-color: #e5ebf3; background: #f8fafc; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-library__item.is-selected { padding-left: 10px; border-color: #edcbd1; background: #fff7f8; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-library__item strong { color: #2a405b; font-size: .77rem; font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-library__item > span:not(.dummy-data-badge) { color: #7a8ba1; font-size: .68rem; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-library__item small { font-size: .64rem; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-status { padding: 4px 7px; border-radius: 6px; font-size: .6rem; font-weight: 650; letter-spacing: .02em; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-template-button { border-color: #e8d6b7; border-radius: 7px; color: #8c6a30; font-size: .65rem; font-weight: 600; }
+
+body.admin-workspace-layout .resource-admin-page .resource-admin-editor { container-type: inline-size; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-editor__header > div { min-width: 0; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-editor__header p { margin-top: 5px; color: #7b8ba1; font-size: .7rem; line-height: 1.5; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-tabs { gap: 19px; padding: 0 20px; border-bottom: 1px solid #e7edf4; background: #fff; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-tab { flex: 0 0 auto; min-height: 48px; padding: 13px 1px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; box-shadow: none; color: #7b899e; font-size: .73rem; font-weight: 600; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-tab:hover:not(:disabled) { color: #3c526e; background: transparent; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-tab.is-active { border-bottom-color: #c32233; background: transparent; color: #b22433; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-form { padding: 21px 20px 0; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-form__grid { gap: 17px; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-form__grid label { gap: 7px; min-width: 0; color: #51657e; font-size: .73rem; font-weight: 600; }
+body.admin-workspace-layout .resource-admin-page :is(.resource-admin-form input, .resource-admin-form select, .resource-admin-form textarea, .resource-admin-upload-form input) { min-width: 0; min-height: 41px; padding: 10px 11px; border: 1px solid #dfe6ef; border-radius: 8px; background: #fcfdff; color: #334b67; font-size: .77rem; font-weight: 400; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-form textarea { line-height: 1.65; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-form :is(input, select, textarea):focus { border-color: #bd5260; outline: 0; box-shadow: 0 0 0 3px #fbebee; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-form :is(input, select, textarea).has-error { border-color: #b42318; box-shadow: 0 0 0 3px rgba(180,35,24,.1); }
+body.admin-workspace-layout .resource-admin-page .resource-admin-form__grid label small { color: #8796a9; font-size: .67rem; line-height: 1.55; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-field-error:empty { display: none; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-form__actions { position: sticky; bottom: 10px; z-index: 3; gap: 9px; margin: 22px -20px 0; padding: 14px 20px; border-top: 1px solid #e6ecf3; border-radius: 0 0 12px 12px; background: rgba(255,255,255,.97); backdrop-filter: blur(10px); }
+body.admin-workspace-layout .resource-admin-page .resource-admin-subsection > header { padding: 18px 20px; border-color: #edf1f6; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-subsection h3 { color: #2c435e; font-size: .85rem; }
+body.admin-workspace-layout .resource-admin-page :is(.resource-admin-workflow-actions, .resource-admin-upload-form, .resource-admin-attachments, .resource-admin-revisions) { padding: 17px 20px; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-upload-form { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-attachment { flex-wrap: wrap; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-attachment strong { max-width: 100%; white-space: normal; overflow-wrap: anywhere; font-size: .74rem; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-revisions article { padding: 12px 14px; border-left: 2px solid #d9e2ed; border-radius: 0 7px 7px 0; background: #f8fafd; }
+body.admin-workspace-layout .resource-admin-page .resource-admin-revisions article strong { color: #51657e; }
+
+@container (max-width: 520px) {
+    body.admin-workspace-layout .resource-admin-page .resource-admin-form__grid { grid-template-columns: minmax(0, 1fr); }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-revisions article { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1160px) {
+    body.admin-workspace-layout .resource-admin-page .resource-admin-intro { align-items: flex-start; flex-direction: column; gap: 17px; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-intro__actions { max-width: none; justify-content: flex-start; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-workspace { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-library { position: static; max-height: none; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-library__list { max-height: 300px; }
+}
+@media (max-width: 680px) {
+    body.admin-workspace-layout #employeeResourcesAdminApp.resource-admin-page { padding-top: 24px; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-intro p { font-size: .81rem; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-intro__actions { flex-direction: row; flex-wrap: wrap; width: 100%; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-intro__actions .admin-button { flex: 0 1 auto; width: auto; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 19px; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-summary > div { min-height: 78px; padding: 13px 14px; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-summary > div:last-child { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; align-items: center; min-height: 48px; }
+    body.admin-workspace-layout .resource-admin-page :is(.resource-admin-library > header, .resource-admin-editor__header) { padding-inline: 15px; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-tabs { gap: 16px; padding-inline: 15px; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-form { padding-inline: 15px; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-form__actions { bottom: 0; margin-inline: -15px; padding-inline: 15px; }
+    body.admin-workspace-layout .resource-admin-page .resource-admin-form :is(input, select, textarea) { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body.admin-workspace-layout .resource-admin-page .resource-admin-library__item { transition: none; }
+}

@@ -101,6 +101,49 @@ public sealed class SavePortalNoticeRequest
 
 public sealed class AdminPortalCardViewModel
 {
+    public bool IsInMaintenance => MaintenanceStartUtc.HasValue && MaintenanceEndUtc.HasValue
+        && DateTime.UtcNow >= MaintenanceStartUtc.Value && DateTime.UtcNow <= MaintenanceEndUtc.Value;
+
+    public string HealthState => string.IsNullOrWhiteSpace(HealthCheckUrl) ? "missing"
+        : string.IsNullOrWhiteSpace(LastHealthStatus) || !LastHealthCheckedAt.HasValue ? "unchecked"
+        : string.Equals(LastHealthStatus, "Healthy", StringComparison.OrdinalIgnoreCase) ? "healthy" : "unhealthy";
+
+    public bool HasServiceAttention => !IsVisible || IsInMaintenance
+        || !string.Equals(Status, "Connected", StringComparison.OrdinalIgnoreCase);
+
+    public bool NeedsAttention => HasServiceAttention || HealthState != "healthy";
+
+    public int ServiceAttentionPriority => string.Equals(Status, "NotConnected", StringComparison.OrdinalIgnoreCase) ? 1
+        : IsInMaintenance || string.Equals(Status, "Maintenance", StringComparison.OrdinalIgnoreCase) ? 2
+        : HasServiceAttention ? 3 : 5;
+
+    public int AttentionPriority => HealthState == "unhealthy" ? 0
+        : HasServiceAttention ? ServiceAttentionPriority : HealthState == "missing" ? 4 : 5;
+
+    public string ServiceAttentionReason => string.Join(" · ", GetServiceAttentionReasons());
+
+    public IReadOnlyList<string> AttentionReasons
+    {
+        get
+        {
+            var reasons = new List<string>();
+            if (HealthState == "unhealthy") reasons.Add("Last health check failed");
+            reasons.AddRange(GetServiceAttentionReasons());
+            if (HealthState == "missing") reasons.Add("No monitoring URL");
+            if (HealthState == "unchecked") reasons.Add("Health not checked");
+            return reasons;
+        }
+    }
+
+    private IEnumerable<string> GetServiceAttentionReasons()
+    {
+        if (!string.Equals(Status, "Connected", StringComparison.OrdinalIgnoreCase))
+            yield return string.Equals(Status, "Maintenance", StringComparison.OrdinalIgnoreCase) ? "Maintenance status"
+                : string.Equals(Status, "Disabled", StringComparison.OrdinalIgnoreCase) ? "Disabled" : "Not connected";
+        if (IsInMaintenance) yield return "Active maintenance window";
+        if (!IsVisible) yield return "Hidden from portal";
+    }
+
     public string Id { get; init; } = string.Empty;
     public string CardKey { get; init; } = string.Empty;
     public int Index { get; init; }
