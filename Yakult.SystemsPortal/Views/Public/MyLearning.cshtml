@@ -1,10 +1,13 @@
+@using System.Security.Claims
 @model MyLearningViewModel
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "My Learning";
     var inProgress = Model.InProgress;
     var completed = Model.Completed;
+    var userKey = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name;
 }
+<link rel="stylesheet" href="~/css/learning-academy.css" asp-append-version="true" />
 
 <header class="learning-hero my-learning-hero">
     <div class="portal-container learning-hero__inner">
@@ -14,14 +17,18 @@
             <p>Track your progress and completion across courses and video lessons.</p>
         </div>
         <aside class="learning-hero__summary" aria-label="Learning progress summary">
-            <span class="my-learning-hero__stat is-progress"><strong>@inProgress.Count</strong>In progress</span>
-            <span class="my-learning-hero__stat is-completed"><strong>@completed.Count</strong>Completed</span>
+            <span class="my-learning-hero__stat is-progress"><strong>@inProgress.Count</strong>Videos in progress</span>
+            <span class="my-learning-hero__stat is-completed"><strong>@completed.Count</strong>Videos completed</span>
         </aside>
     </div>
 </header>
 
 <main class="learning-library">
     <div class="portal-container">
+        @if (Model.IsDemoData) { <div class="demo-data-banner" role="status"><span class="dummy-data-badge">DUMMY DATA</span><div><strong>Your demo learning progress</strong><p>Only sample courses you have opened on this browser appear in this preview.</p></div></div> }
+        <section class="academy academy-my-learning" id="academyMyLearning" data-progress-prefix="@LearningCourseDocument.BrowserScope(userKey, Model.IsDemoData)" hidden aria-labelledby="academyBrowserHeading">
+            <span class="academy-eyebrow">Your course journey</span><h2 id="academyBrowserHeading">Courses on this browser</h2><p>Module and lesson progress is saved on this browser. Your tracked video progress appears separately below.</p><div id="academyBrowserCourses"></div>
+        </section>
 
         @if (inProgress.Count == 0 && completed.Count == 0)
         {
@@ -82,3 +89,4 @@
 
     </div>
 </main>
+@section Scripts { <script src="~/js/learning-library.js" asp-append-version="true" defer></script> }

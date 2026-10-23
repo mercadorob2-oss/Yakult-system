@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Sample support ticket checklist">
+<rect width="960" height="540" fill="#f5f3ee"/><rect x="55" y="40" width="850" height="460" rx="20" fill="#fff"/>
+<g font-family="Segoe UI,Arial"><text x="90" y="90" fill="#bd1825" font-size="19" font-weight="700">SUPPORT SKILLS · DEMO EXAMPLE</text><text x="90" y="153" fill="#14263c" font-size="36" font-weight="700">Give IT a useful starting point.</text>
+<g fill="#23734e" font-size="28"><text x="90" y="222">✓</text><text x="90" y="282">✓</text><text x="90" y="342">✓</text><text x="90" y="402">✓</text></g>
+<g fill="#263c53" font-size="25"><text x="135" y="222">System or device affected</text><text x="135" y="282">Exact error or unexpected behavior</text><text x="135" y="342">When it happened and how often</text><text x="135" y="402">Task blocked and business impact</text></g><text x="90" y="465" fill="#65758a" font-size="19">Keep passwords and unrelated personal information out of the report.</text></g></svg>

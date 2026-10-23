@@ -5,6 +5,7 @@ namespace Yakult.SystemsPortal.Repositories;
 public interface IPortalContentRepository
 {
     Task<IReadOnlyList<PortalContentItem>> GetPublishedAsync(string? contentType = null, string? categorySlug = null, string? query = null, int take = 50);
+    Task<LearningCatalogPage> GetLearningCatalogAsync(IReadOnlyList<string> categories, string? query, string? type, string sort, int page, int pageSize);
     Task<PortalContentItem?> GetPublishedBySlugAsync(string slug);
     Task<IReadOnlyList<PortalContentItem>> GetManagedAsync();
     Task<IReadOnlyList<PortalContentCategory>> GetCategoriesAsync();

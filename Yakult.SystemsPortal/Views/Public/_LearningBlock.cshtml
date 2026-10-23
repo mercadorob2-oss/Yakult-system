@@ -1,0 +1,54 @@
+@model LearningBlock
+<div class="academy-block academy-block--@Model.Type">
+@switch (Model.Type)
+{
+    case "image":
+        <figure><img src="@Model.Url" alt="@Model.Title" loading="lazy" /><figcaption>@Model.Text</figcaption></figure>
+        break;
+    case "video":
+        var embed = LearningCourseDocument.YouTubeEmbed(Model.Url);
+        @if (!string.IsNullOrWhiteSpace(Model.Title)) { <h3>@Model.Title</h3> }
+        @if (embed != null)
+        {
+            <iframe class="academy-video" src="@embed" title="@(string.IsNullOrWhiteSpace(Model.Title) ? "Lesson video" : Model.Title)" loading="lazy" allow="fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        }
+        else if (Uri.TryCreate(Model.Url, UriKind.RelativeOrAbsolute, out var videoUri) && (Model.Url.Split('?')[0].EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) || Model.Url.Split('?')[0].EndsWith(".webm", StringComparison.OrdinalIgnoreCase)))
+        {
+            <video controls playsinline preload="metadata" src="@Model.Url"></video>
+        }
+        else { <a href="@Model.Url" target="_blank" rel="noopener noreferrer">Open lesson video ↗</a> }
+        @if (!string.IsNullOrWhiteSpace(Model.Text)) { <details><summary>Transcript and notes</summary>@Html.SafeMarkdown(Model.Text)</details> }
+        break;
+    case "callout":
+        <strong>@(string.IsNullOrWhiteSpace(Model.Title) ? "Remember" : Model.Title)</strong>
+        @Html.SafeMarkdown(Model.Text)
+        break;
+    case "steps":
+        <h3>@Model.Title</h3>
+        <ol class="academy-steps">@foreach (var step in Model.Text.Split('\n').Where(x => !string.IsNullOrWhiteSpace(x))) { <li>@step</li> }</ol>
+        break;
+    case "accordion":
+        <details><summary>@Model.Title</summary>@Html.SafeMarkdown(Model.Text)</details>
+        break;
+    case "comparison":
+        <h3>@Model.Title</h3>
+        <div class="academy-comparison"><div>@Html.SafeMarkdown(Model.Text)</div><div>@Html.SafeMarkdown(Model.Extra)</div></div>
+        break;
+    case "quiz":
+        <form class="academy-quiz" data-answer="@Model.Answer" data-explanation="@Model.Text">
+            <fieldset><legend><small>Knowledge check</small>@Model.Title</legend>
+                @for (var i = 0; i < Model.Options.Count; i++) { <label><input type="radio" name="answer" value="@i" required /> <span>@Model.Options[i]</span></label> }
+            </fieldset>
+            <button class="academy-button academy-button--secondary" type="submit">Check answer</button>
+            <p class="academy-quiz-feedback" role="status" hidden></p>
+        </form>
+        break;
+    case "download":
+        <a class="academy-download" href="@Model.Url" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">↓</span><span><strong>@(string.IsNullOrWhiteSpace(Model.Title) ? "Open resource" : Model.Title)</strong><small>@Model.Text</small></span><span aria-hidden="true">↗</span></a>
+        break;
+    default:
+        @if (!string.IsNullOrWhiteSpace(Model.Title)) { <h3>@Model.Title</h3> }
+        @Html.SafeMarkdown(Model.Text)
+        break;
+}
+</div>

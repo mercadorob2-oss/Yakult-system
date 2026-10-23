@@ -1,0 +1,68 @@
+@using System.Security.Claims
+@model PortalContentDetailsViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = Model.Item.Title;
+    var course = LearningCourseDocument.Parse(Model.Item.Body)!;
+    var lessons = course.Lessons.ToList();
+    var userKey = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name;
+}
+<link rel="stylesheet" href="~/css/learning-academy.css" asp-append-version="true" />
+<article class="academy" id="academyCourse" data-storage-key="@LearningCourseDocument.BrowserKey(Model.Item, userKey)" data-title="@Model.Item.Title">
+    <header class="academy-course-hero">
+        <div class="portal-container">
+            <a class="academy-back" asp-action="Learning">← Learning library</a>
+            @if (Model.Item.IsDemo) { <p class="academy-demo-note"><span class="dummy-data-badge">DUMMY DATA</span> Sample course for preview. Practice results are saved on this browser only.</p> }
+            <div class="academy-course-hero__grid">
+                <div>
+                    <span class="academy-eyebrow">@Model.Item.CategoryName · @course.Level</span>
+                    <h1>@Model.Item.Title</h1><p>@Model.Item.Summary</p>
+                    <div class="academy-facts"><span>@course.Modules.Count modules</span><span>@lessons.Count lessons</span><span>@course.Minutes min</span><span>@course.Audience</span></div>
+                    <button type="button" class="academy-button" id="academyStart" hidden>Start course <span aria-hidden="true">→</span></button>
+                </div>
+                <div class="academy-course-cover">
+                    @if (LearningCourseDocument.IsSafeUrl(Model.Item.ThumbnailUrl)) { <img src="@Model.Item.ThumbnailUrl" alt="" /> }
+                    else { <div><span>YAKULT LEARNING</span><strong>Small lessons.<br />Lasting knowledge.</strong><span>@Model.Item.CategoryName</span></div> }
+                </div>
+            </div>
+        </div>
+    </header>
+    <div class="portal-container academy-course-intro" id="academyOverview">
+        <section><span class="academy-eyebrow">Your next step</span><h2>Build confidence, one lesson at a time.</h2>
+            @if (course.Objectives.Count > 0) { <h3>What you’ll learn</h3><ul class="academy-objectives">@foreach (var objective in course.Objectives) { <li><span aria-hidden="true">✓</span>@objective</li> }</ul> }
+        </section>
+        <aside><strong>Made for your working day</strong><p>Work through short lessons at your own pace, then put what you’ve learned into practice.</p><small>Updated @Model.Item.UpdatedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</small></aside>
+    </div>
+    <div class="portal-container academy-workspace" id="academyWorkspace">
+        <aside class="academy-outline">
+            <details open id="academyOutline">
+                <summary>Course contents <span>@lessons.Count lessons</span></summary>
+                <div class="academy-progress"><span id="academyProgressLabel" role="status">0 of @lessons.Count lessons complete</span><progress id="academyProgress" max="@lessons.Count" value="0">0</progress></div>
+                @for (var m = 0; m < course.Modules.Count; m++)
+                {
+                    var module = course.Modules[m];
+                    <section><h2><small>Module @((m + 1).ToString("00"))</small>@module.Title</h2>
+                        @foreach (var lesson in module.Lessons)
+                        {
+                            <a href="#lesson-@lesson.Id" class="academy-outline-link" data-lesson-link="@lesson.Id"><span class="academy-lesson-check" aria-hidden="true">○</span><span>@lesson.Title<small>@lesson.Minutes min</small></span><span class="academy-sr" data-completion-label></span></a>
+                        }
+                    </section>
+                }
+            </details>
+            <p class="academy-storage-note" id="academyStorageNote">Lesson progress is saved on this browser. Knowledge checks are for practice.</p>
+        </aside>
+        <div class="academy-lesson-stage">
+            @for (var index = 0; index < lessons.Count; index++)
+            {
+                var lesson = lessons[index];
+                <section class="academy-lesson" id="lesson-@lesson.Id" data-lesson="@lesson.Id" aria-labelledby="heading-@lesson.Id">
+                    <header><span class="academy-eyebrow">Lesson @(index + 1) of @lessons.Count · @lesson.Minutes min</span><h2 id="heading-@lesson.Id" tabindex="-1">@lesson.Title</h2></header>
+                    @foreach (var block in lesson.Blocks) { <partial name="_LearningBlock" model="block" /> }
+                    <div class="academy-lesson-actions" hidden><button type="button" class="academy-button academy-button--secondary" data-previous disabled="@(index == 0)">← Previous</button><button type="button" class="academy-button" data-complete>Mark complete &amp; continue →</button></div>
+                </section>
+            }
+            <section class="academy-finished" id="academyFinished" hidden role="status"><span aria-hidden="true">✓</span><h2>You’ve completed every lesson.</h2><p>Keep these skills fresh. You can revisit any lesson whenever you need a refresher.</p><a asp-action="Learning" class="academy-button">Explore more learning →</a><button type="button" class="academy-button academy-button--secondary" id="academyReview">Review course</button></section>
+        </div>
+    </div>
+</article>
+@section Scripts { <script src="~/js/learning-course.js" asp-append-version="true" defer></script> }

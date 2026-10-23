@@ -1,0 +1,75 @@
+@model ItInformationIndexViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "IT Information & Guidelines";
+}
+<link rel="stylesheet" href="~/css/it-information.css" asp-append-version="true" />
+<div class="it-information">
+    <header class="it-info-hero">
+        <div class="portal-container it-info-hero__inner">
+            <div>
+                <span class="it-info-eyebrow">Learning &amp; awareness</span>
+                <h1>Your guide to IT<br />at Yakult.</h1>
+                <p>Find workplace technology guidelines, get to know the IT team, and understand the systems that support your work.</p>
+            </div>
+            <aside class="it-info-hero__note" aria-label="About these resources">
+                <span class="it-info-note-mark" aria-hidden="true">i</span>
+                <strong>Useful information.<br />Easy to find.</strong>
+                <p>Two references, organized into topics you can read whenever you need them.</p>
+                <span>@PublicItInformationSamples.Resources.Count resources <span aria-hidden="true">/</span> @PublicItInformationSamples.Resources.Sum(resource => resource.Sections.Count) topics</span>
+            </aside>
+        </div>
+    </header>
+    <div class="portal-container it-info-library">
+        <p class="it-info-preview" role="status"><span>DEMO PREVIEW</span> Employee summaries prepared from the two supplied IT documents.</p>
+        <div class="it-info-library__tools">
+            <div><span class="it-info-eyebrow">Employee references</span><h2>What would you like to know?</h2></div>
+            <form asp-action="Learning" method="get" role="search" class="it-info-search">
+                <label for="itInfoSearch">Search these resources</label>
+                <div><input id="itInfoSearch" name="q" type="search" maxlength="200" value="@Model.Query" placeholder="Try accounts, internet, or ERP" /><button type="submit" aria-label="Search IT resources">Search <span aria-hidden="true">→</span></button></div>
+            </form>
+        </div>
+        @if (!string.IsNullOrEmpty(Model.Query))
+        {
+            <p class="it-info-results" role="status">@Model.Resources.Count resource@(Model.Resources.Count == 1 ? "" : "s") found for “@Model.Query”. <a asp-action="Learning">Clear search</a></p>
+        }
+        @if (Model.Resources.Count == 0)
+        {
+            <section class="it-info-empty"><h2>No matching resources</h2><p>Try a topic such as equipment, accounts, shared files, or IT support.</p><a asp-action="Learning" class="it-info-button">Browse both resources <span aria-hidden="true">→</span></a></section>
+        }
+        else
+        {
+            <div class="it-info-resource-grid">
+                @foreach (var resource in Model.Resources)
+                {
+                    <article class="it-info-resource it-info-resource--@resource.Accent">
+                        <div class="it-info-resource__top"><span>@resource.Kind</span><span class="it-info-resource__number" aria-hidden="true">@(resource.Accent == "policy" ? "01" : "02")</span></div>
+                        <div class="it-info-resource__symbol" aria-hidden="true">
+                            @if (resource.Accent == "policy")
+                            {
+                                <svg viewBox="0 0 64 64" fill="none"><path d="M16 10h24l10 10v34H16z" /><path d="M39 10v12h11M25 32h16M25 40h16M25 48h10" /></svg>
+                            }
+                            else
+                            {
+                                <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="18" r="8" /><path d="M18 48v-7c0-8 6-13 14-13s14 5 14 13v7zM13 22a6 6 0 0 0 0 12M51 22a6 6 0 0 1 0 12M12 39c-4 1-6 5-6 10h7M52 39c4 1 6 5 6 10h-7" /></svg>
+                            }
+                        </div>
+                        <h3><a asp-action="ContentDetails" asp-route-slug="@resource.Slug">@resource.Title</a></h3>
+                        <p>@resource.Summary</p>
+                        <ul class="it-info-topic-tags" aria-label="Topics included">@foreach (var topic in resource.Sections) { <li>@topic.Title</li> }</ul>
+                        <div class="it-info-resource__footer"><span>@resource.Sections.Count topics · Employee summary</span><a asp-action="ContentDetails" asp-route-slug="@resource.Slug">Read resource <span aria-hidden="true">↗</span><span class="sr-only">: @resource.Title</span></a></div>
+                    </article>
+                }
+            </div>
+        }
+        <section class="it-info-quick" aria-labelledby="itInfoQuickHeading">
+            <div><span class="it-info-eyebrow">Find it quickly</span><h2 id="itInfoQuickHeading">Looking for something specific?</h2></div>
+            <div class="it-info-quick__links">
+                <a asp-action="ContentDetails" asp-route-slug="@PublicItInformationSamples.Resources[0].Slug" asp-fragment="workplace"><span>01</span> Workplace guidelines <span aria-hidden="true">→</span></a>
+                <a asp-action="ContentDetails" asp-route-slug="@PublicItInformationSamples.Resources[0].Slug" asp-fragment="accounts"><span>02</span> Profile account <span aria-hidden="true">→</span></a>
+                <a asp-action="ContentDetails" asp-route-slug="@PublicItInformationSamples.Resources[0].Slug" asp-fragment="internet"><span>03</span> Internet access <span aria-hidden="true">→</span></a>
+                <a asp-action="ContentDetails" asp-route-slug="@PublicItInformationSamples.Resources[0].Slug" asp-fragment="flowcharts"><span>04</span> Process flowcharts <span aria-hidden="true">→</span></a>
+            </div>
+        </section>
+    </div>
+</div>

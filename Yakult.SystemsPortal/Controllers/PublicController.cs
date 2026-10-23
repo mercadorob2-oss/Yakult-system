@@ -42,24 +42,27 @@ public sealed class PublicController : Controller
         IReadOnlyList<PortalContentItem> all = Array.Empty<PortalContentItem>();
         IReadOnlyList<PortalSystemLink> services = _options.Systems;
         var notice = new PortalNoticeSettings();
-        try
+        if (!_demoMode.IsEnabled(HttpContext))
         {
-            all = ExcludeRetiredContent(await _content.GetPublishedAsync(take: 100)).ToList();
+            try
+            {
+                all = ExcludeRetiredContent(await _content.GetPublishedAsync(take: 100)).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Public homepage loaded without database content.");
+            }
+            try
+            {
+                services = await _cards.GetVisibleSystemCardsAsync();
+                notice = await _cards.GetNoticeSettingsAsync();
+            }
+            catch (Exception ex) { _logger.LogWarning(ex, "Public homepage loaded with configured system cards."); }
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Public homepage loaded without database content.");
-        }
-        try
-        {
-            services = await _cards.GetVisibleSystemCardsAsync();
-            notice = await _cards.GetNoticeSettingsAsync();
-        }
-        catch (Exception ex) { _logger.LogWarning(ex, "Public homepage loaded with configured system cards."); }
 
         var resourceContent = IncludeCodeOnlyEmployeeResources(all, _demoMode.IsEnabled(HttpContext));
         var (employeeResources, employeeResourcesAreDemo) = await LoadPublishedEmployeeResourcesAsync(null, null, null);
-        var learning = InCategories(all, LearningCategories).ToList();
+        var learning = _demoMode.IsEnabled(HttpContext) ? LearningDemoSamples.Items.ToList() : InCategories(all, LearningCategories).ToList();
 
         return View(new PublicHomeViewModel
         {
@@ -177,7 +180,45 @@ public sealed class PublicController : Controller
         return PhysicalFile(physicalPath, download.MimeType, download.FileName, enableRangeProcessing: true);
     }
 
-    public Task<IActionResult> Learning(string? type = null, string? track = null) => LearningSection(type, track);
+    public Task<IActionResult> Learning(string? type = null, string? track = null, string? q = null, string? sort = null, int page = 1) => LearningSection(type, track, q, sort, page);
+
+    [HttpGet("/media/learning/demo/{file}")]
+    public IActionResult LearningDemoAsset(string file)
+    {
+        if (!_demoMode.IsEnabled(HttpContext)) return NotFound();
+        var mime = file switch
+        {
+            "email-example.svg" or "access-journey.svg" or "support-checklist.svg" => "image/svg+xml",
+            "lesson-preview.webm" => "video/webm",
+            "learning-checklist.txt" => "text/plain",
+            _ => null
+        };
+        if (mime == null) return NotFound();
+        var root = _environment.WebRootPath ?? Path.Combine(AppContext.BaseDirectory, "wwwroot");
+        var path = Path.Combine(root, "demo-learning", file);
+        if (!System.IO.File.Exists(path)) return NotFound();
+        Response.Headers.CacheControl = "no-store";
+        return PhysicalFile(path, mime, file == "learning-checklist.txt" ? file : null, enableRangeProcessing: true);
+    }
+
+    [HttpGet("/media/learning/demo/policy/{file}")]
+    public IActionResult PolicyDemoAsset(string file)
+    {
+        if (!_demoMode.IsEnabled(HttpContext)) return NotFound();
+        var mime = file switch
+        {
+            "profile-account.svg" or "hardware-deployment.svg" or "internet-access.svg" => "image/svg+xml",
+            "file-sharing.png" => "image/png",
+            _ => null
+        };
+        if (mime == null) return NotFound();
+        var webRoot = string.IsNullOrEmpty(_environment.WebRootPath) ? Path.Combine(_environment.ContentRootPath, "wwwroot") : _environment.WebRootPath;
+        var path = Path.GetFullPath(Path.Combine(webRoot, "..", "App_Data", "PolicyPreview", file));
+        if (!System.IO.File.Exists(path)) return NotFound();
+        Response.Headers.CacheControl = "no-store";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        return PhysicalFile(path, mime);
+    }
     public Task<IActionResult> Help(string? type = null) => ContentSection("IT Help Center", "Get assistance", "Support guides, account help, troubleshooting information, and service contacts.", HelpCategories, type);
 
     public IActionResult Cybersecurity(string? type = null) => RedirectToAction(nameof(Learning), new { type, track = "cybersecurity" });
@@ -204,6 +245,7 @@ public sealed class PublicController : Controller
         {
             items.AddRange(FilterDemoFaqs(query, null));
             policies.AddRange(FilterDemoPolicies(query, null));
+            policies.AddRange(FilterDemoItInformationPolicies(query, null));
         }
         if (!string.IsNullOrWhiteSpace(selectedCategory))
         {
@@ -235,7 +277,10 @@ public sealed class PublicController : Controller
         }
         catch (Exception ex) { _logger.LogWarning(ex, "Public Company Policy list loaded without database content."); }
         if (demoModeEnabled)
+        {
             items.AddRange(FilterDemoPolicies(query, selectedCategory));
+            items.AddRange(FilterDemoItInformationPolicies(query, selectedCategory));
+        }
         if (!string.IsNullOrWhiteSpace(selectedCategory))
             items = items.Where(x => x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
         return View(new CompanyPolicyListViewModel
@@ -249,6 +294,12 @@ public sealed class PublicController : Controller
     [Route("company-policies/{slug}")]
     public async Task<IActionResult> CompanyPolicyDetails(string slug)
     {
+        if (PublicItInformationSamples.IsSampleSlug(slug))
+        {
+            var reference = _demoMode.IsEnabled(HttpContext) ? PublicItInformationSamples.Find(slug) : null;
+            return reference == null ? NotFound() : View("ItInformationDetails", reference);
+        }
+
         CompanyPolicyItem? item = _demoMode.IsEnabled(HttpContext)
             ? CompanyInfoSamples.Policies.FirstOrDefault(x => x.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
             : null;
@@ -258,6 +309,17 @@ public sealed class PublicController : Controller
             catch (Exception ex) { _logger.LogWarning(ex, "Published company policy lookup failed for {Slug}.", slug); }
         }
         if (item is null) return NotFound();
+        var structuredDocument = CompanyPolicyDocument.Parse(item.Body);
+        if (structuredDocument is not null)
+        {
+            try { structuredDocument.Validate(); }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Structured policy {Slug} could not be rendered because its content is invalid.", slug);
+                return NotFound();
+            }
+            return View("CompanyPolicyStructured", new CompanyPolicyStructuredViewModel { Policy = item, Document = structuredDocument });
+        }
         try
         {
             var siblings = _demoMode.IsEnabled(HttpContext)
@@ -294,12 +356,36 @@ public sealed class PublicController : Controller
         return items;
     }
 
+    private static IEnumerable<CompanyPolicyItem> FilterDemoItInformationPolicies(string? query, string? category)
+    {
+        var items = PublicItInformationSamples.Resources.Select((resource, index) => new CompanyPolicyItem
+        {
+            PolicyId = resource.ContentId,
+            Title = resource.Title,
+            Slug = resource.Slug,
+            Summary = resource.Summary,
+            Body = resource.SearchText,
+            Category = index == 0 ? "IT Policy" : "IT Organization",
+            SortOrder = index,
+            IsPublished = true,
+            UpdatedAtUtc = new DateTime(2026, 10, 23, 0, 0, 0, DateTimeKind.Utc)
+        });
+        if (!string.IsNullOrWhiteSpace(query))
+            items = items.Where(x => $"{x.Title} {x.Summary} {x.Body} {x.Category}".Contains(query, StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(category))
+            items = items.Where(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
+        return items;
+    }
+
     [Route("content/{slug}")]
     public async Task<IActionResult> ContentDetails(string slug)
     {
         var demoModeEnabled = _demoMode.IsEnabled(HttpContext);
+        if (PublicItInformationSamples.IsSampleSlug(slug))
+            return demoModeEnabled ? RedirectToAction(nameof(CompanyPolicyDetails), new { slug }) : NotFound();
+        if (LearningDemoSamples.IsSampleSlug(slug) && !demoModeEnabled) return NotFound();
         PortalContentItem? item = demoModeEnabled
-            ? PublicEmployeeResourceSamples.Items.FirstOrDefault(x => x.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
+            ? LearningDemoSamples.Find(slug) ?? PublicEmployeeResourceSamples.Items.FirstOrDefault(x => x.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
             : null;
 
         if (item is null)
@@ -317,12 +403,13 @@ public sealed class PublicController : Controller
 
         PortalCourseProgress? progress = null;
         var isCourse = item.ContentType.Equals("Course", StringComparison.OrdinalIgnoreCase);
+        var structuredCourse = isCourse && LearningCourseDocument.Parse(item.Body) != null;
         var isTrackable = isCourse || item.ContentType.Equals("Video", StringComparison.OrdinalIgnoreCase);
         if (isTrackable)
         {
             if (isCourse && User.Identity?.IsAuthenticated != true)
                 return RedirectToAction("Login", "Home", new { returnUrl = Url.Action(nameof(ContentDetails), "Public", new { slug }) });
-            if (User.Identity?.IsAuthenticated == true && TryGetUserId(out var userId))
+            if (!structuredCourse && User.Identity?.IsAuthenticated == true && TryGetUserId(out var userId))
             {
                 try { progress = await _content.GetCourseProgressAsync(userId, item.ContentId); }
                 catch (Exception ex) { _logger.LogWarning(ex, "Course progress lookup failed for {ContentId}.", item.ContentId); }
@@ -330,7 +417,7 @@ public sealed class PublicController : Controller
         }
 
         IReadOnlyList<PortalContentItem> related = Array.Empty<PortalContentItem>();
-        if (isTrackable)
+        if (isTrackable && !item.IsDemo)
         {
             try
             {
@@ -343,31 +430,40 @@ public sealed class PublicController : Controller
         }
         var relatedProgress = await LoadCourseProgressAsync(related);
 
-        return View("Content", new PortalContentDetailsViewModel { Item = item, Media = ResolveMedia(item.MediaUrl), Progress = progress, RelatedItems = related, RelatedProgress = relatedProgress });
+        var view = structuredCourse ? "Course" : "Content";
+        return View(view, new PortalContentDetailsViewModel { Item = item, Media = ResolveMedia(item.MediaUrl), Progress = progress, RelatedItems = related, RelatedProgress = relatedProgress });
     }
 
     public async Task<IActionResult> Search(string? q, string? type = null)
     {
-        var query = (q ?? "").Trim();
+        var query = PublicItInformationSamples.NormalizeQuery(q);
+        var demoModeEnabled = _demoMode.IsEnabled(HttpContext);
         IReadOnlyList<PortalContentItem> items = Array.Empty<PortalContentItem>();
         if (query.Length >= 2)
         {
             var results = new List<PortalContentItem>();
-            try { results.AddRange(ExcludeRetiredContent(await _content.GetPublishedAsync(query: query, take: 50))); }
-            catch (Exception ex) { _logger.LogWarning(ex, "Public search loaded without database content."); }
-            if (_demoMode.IsEnabled(HttpContext))
+            if (demoModeEnabled)
             {
-                results.AddRange(PublicEmployeeResourceSamples.Items.Where(item =>
+                results.AddRange(PublicEmployeeResourceSamples.Items.Concat(PublicItInformationSamples.Items).Where(item =>
                     $"{item.Title} {item.Summary} {item.Body} {item.CategoryName} {item.ContentType}"
                         .Contains(query, StringComparison.OrdinalIgnoreCase)));
+            }
+            else
+            {
+                try { results.AddRange(ExcludeRetiredContent(await _content.GetPublishedAsync(query: query, take: 50))); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Public search loaded without database content."); }
             }
             items = results.GroupBy(x => x.Slug, StringComparer.OrdinalIgnoreCase).Select(x => x.First()).ToList();
         }
         IReadOnlyList<PortalSystemLink> services = Array.Empty<PortalSystemLink>();
         if (query.Length >= 2)
         {
-            try { services = (await _cards.GetVisibleSystemCardsAsync()).Where(x => ($"{x.Name} {x.Description}").Contains(query, StringComparison.OrdinalIgnoreCase)).ToList(); }
-            catch { services = _options.Systems.Where(x => ($"{x.Name} {x.Description}").Contains(query, StringComparison.OrdinalIgnoreCase)).ToList(); }
+            if (demoModeEnabled) services = _options.Systems.Where(x => ($"{x.Name} {x.Description}").Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+            else
+            {
+                try { services = (await _cards.GetVisibleSystemCardsAsync()).Where(x => ($"{x.Name} {x.Description}").Contains(query, StringComparison.OrdinalIgnoreCase)).ToList(); }
+                catch { services = _options.Systems.Where(x => ($"{x.Name} {x.Description}").Contains(query, StringComparison.OrdinalIgnoreCase)).ToList(); }
+            }
         }
 
         var visibleServices = ApplyPublicCardRules(services).ToList();
@@ -412,6 +508,7 @@ public sealed class PublicController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Progress([FromBody] SaveCourseProgressRequest request)
     {
+        if (request.ContentId <= 0 || _demoMode.IsEnabled(HttpContext)) return BadRequest(new { success = false, message = "Demo lesson progress is saved on this browser only." });
         if (!TryGetUserId(out var userId))
             return Unauthorized();
         if (request == null || request.ContentId <= 0)
@@ -445,6 +542,7 @@ public sealed class PublicController : Controller
     [Authorize]
     public async Task<IActionResult> MyLearning()
     {
+        if (_demoMode.IsEnabled(HttpContext)) return View(new MyLearningViewModel { IsDemoData = true });
         var viewModel = new MyLearningViewModel();
         if (!TryGetUserId(out var userId))
             return View(viewModel);
@@ -464,30 +562,37 @@ public sealed class PublicController : Controller
         return View(viewModel);
     }
 
-    private async Task<IActionResult> LearningSection(string? type = null, string? track = null)
+    private async Task<IActionResult> LearningSection(string? type = null, string? track = null, string? q = null, string? sort = null, int page = 1)
     {
-        IReadOnlyList<PortalContentItem> all = Array.Empty<PortalContentItem>();
-        try { all = await _content.GetPublishedAsync(take: 100); }
-        catch (Exception ex) { _logger.LogWarning(ex, "Public learning section loaded without database content."); }
-
         var selectedTrack = ResolveLearningTrack(track);
         var categorySlugs = selectedTrack?.CategorySlugs ?? AllLearningCategories;
-        var items = InCategories(ExcludeRetiredContent(all), categorySlugs).ToList();
-
-        var availableTypes = items.Select(x => x.ContentType).Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x).ToList();
-        if (!string.IsNullOrWhiteSpace(type)) items = items.Where(x => x.ContentType.Equals(type, StringComparison.OrdinalIgnoreCase)).ToList();
+        var catalog = new LearningCatalogPage();
+        var unavailable = false;
+        var isDemoData = _demoMode.IsEnabled(HttpContext);
+        sort = sort is "newest" or "title" ? sort : "recommended";
+        q = (q ?? "").Trim();
+        if (q.Length > 200) q = q[..200];
+        try { catalog = isDemoData ? LearningDemoSamples.Catalog(categorySlugs.ToList(), q, type, sort, page) : await _content.GetLearningCatalogAsync(categorySlugs.ToList(), q, type, sort, page, 12); }
+        catch (Exception ex) { unavailable = true; _logger.LogWarning(ex, "Learning catalog could not be loaded."); }
 
         return View("Learning", new ContentListViewModel
         {
             Title = "Learning & Awareness",
             Eyebrow = "Build knowledge",
-            Description = "Choose an IT learning focus, then browse cybersecurity videos, technical references, and support guidance.",
+            Description = "Build practical skills for your working day. Explore courses, short lessons, and guides at your own pace.",
+            Query = q,
+            Sort = sort,
+            Page = catalog.Page,
+            PageSize = 12,
+            TotalCount = catalog.TotalCount,
+            CatalogUnavailable = unavailable,
+            IsDemoData = isDemoData,
             SelectedType = type,
             SelectedTrack = selectedTrack?.Value,
             Tracks = LearningTracks,
-            AvailableTypes = availableTypes,
-            Items = items.OrderByDescending(x => x.ContentType is "Video" or "Course").ThenBy(x => x.SortOrder).ThenByDescending(x => x.UpdatedAtUtc).ToList(),
-            ProgressByContentId = await LoadCourseProgressAsync(items)
+            AvailableTypes = catalog.Types,
+            Items = catalog.Items,
+            ProgressByContentId = await LoadCourseProgressAsync(catalog.Items.ToList())
         });
     }
 
@@ -549,7 +654,7 @@ public sealed class PublicController : Controller
     private async Task<IReadOnlyDictionary<int, PortalCourseProgress>> LoadCourseProgressAsync(IReadOnlyCollection<PortalContentItem> items)
     {
         if (User.Identity?.IsAuthenticated != true || !TryGetUserId(out var userId)) return new Dictionary<int, PortalCourseProgress>();
-        var courseIds = items.Where(x => x.ContentType.Equals("Course", StringComparison.OrdinalIgnoreCase) || x.ContentType.Equals("Video", StringComparison.OrdinalIgnoreCase)).Select(x => x.ContentId).Distinct().ToList();
+        var courseIds = items.Where(x => x.ContentId > 0 && (x.ContentType.Equals("Course", StringComparison.OrdinalIgnoreCase) || x.ContentType.Equals("Video", StringComparison.OrdinalIgnoreCase))).Select(x => x.ContentId).Distinct().ToList();
         if (courseIds.Count == 0) return new Dictionary<int, PortalCourseProgress>();
         try { return await _content.GetCourseProgressBatchAsync(userId, courseIds); }
         catch (Exception ex) { _logger.LogWarning(ex, "Course progress batch could not be loaded."); return new Dictionary<int, PortalCourseProgress>(); }

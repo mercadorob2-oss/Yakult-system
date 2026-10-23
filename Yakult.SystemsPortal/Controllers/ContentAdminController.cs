@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Yakult.SystemsPortal.Models;
 using Yakult.SystemsPortal.Repositories;
+using Yakult.SystemsPortal.Services;
 
 namespace Yakult.SystemsPortal.Controllers;
 
@@ -18,21 +19,31 @@ public sealed class ContentAdminController : Controller
     private readonly IWebHostEnvironment _environment;
     private readonly IHttpClientFactory _http;
     private readonly IConfiguration _config;
+    private readonly IDemoModeService _demoMode;
 
-    public ContentAdminController(IPortalContentRepository content, IWebHostEnvironment environment, IHttpClientFactory http, IConfiguration config)
+    public ContentAdminController(IPortalContentRepository content, IWebHostEnvironment environment, IHttpClientFactory http, IConfiguration config, IDemoModeService demoMode)
     {
         _content = content;
         _environment = environment;
         _http = http;
         _config = config;
+        _demoMode = demoMode;
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index() => View(new ContentEditorViewModel { Items = await _content.GetManagedAsync(), Categories = await _content.GetCategoriesAsync(), CanPublish = User.HasClaim("IsDeveloper", "true") });
+    public async Task<IActionResult> Index()
+    {
+        if (_demoMode.IsEnabled(HttpContext)) return View(new ContentEditorViewModel { Items = LearningDemoSamples.Items, Categories = LearningDemoSamples.Categories, IsDemoData = true });
+        return View(new ContentEditorViewModel { Items = await _content.GetManagedAsync(), Categories = await _content.GetCategoriesAsync(), CanPublish = User.HasClaim("IsDeveloper", "true") });
+    }
+
+    private bool PreviewOnly(int? contentId = null) => _demoMode.IsEnabled(HttpContext) || contentId < 0;
+    private IActionResult DemoWriteBlocked() => BadRequest(new { success = false, message = "Demo learning is a preview. Exit demo view to save, publish, or upload real content." });
 
     [HttpGet("Stats/{contentId:int}")]
     public async Task<IActionResult> Stats(int contentId, int page = 1, int pageSize = 50)
     {
+        if (PreviewOnly(contentId)) return NotFound();
         try
         {
             var stats = await _content.GetCourseCompletionStatsAsync(contentId, page, pageSize);
@@ -56,13 +67,26 @@ public sealed class ContentAdminController : Controller
     [HttpPost("Save"), ValidateAntiForgeryToken]
     public async Task<IActionResult> Save([FromBody] SavePortalContentRequest request)
     {
-        try { ValidateExistingMediaPath(request.ThumbnailUrl, "thumbnail"); ValidateExistingMediaPath(request.MediaUrl, "media"); var saved = await _content.SaveDraftAsync(request, UserId(), User.Identity?.Name); return Json(new { success = true, item = saved }); }
+        if (PreviewOnly(request.ContentId) || LearningDemoSamples.IsSampleSlug(request.Slug) || PublicItInformationSamples.IsSampleSlug(request.Slug)) return DemoWriteBlocked();
+        try
+        {
+            if (request.Body?.StartsWith("yakult-course:", StringComparison.Ordinal) == true)
+            {
+                if (request.ContentType != "Course") throw new ArgumentException("Structured lessons must use the Course content type.");
+                if (LearningCourseDocument.Parse(request.Body) == null) throw new ArgumentException("Check the course outline, block URLs, and knowledge check answers before saving.");
+            }
+            ValidateExistingMediaPath(request.ThumbnailUrl, "thumbnail");
+            ValidateExistingMediaPath(request.MediaUrl, "media");
+            var saved = await _content.SaveDraftAsync(request, UserId(), User.Identity?.Name);
+            return Json(new { success = true, item = saved });
+        }
         catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); }
     }
 
     [HttpPost("Upload"), ValidateAntiForgeryToken, RequestSizeLimit(524_288_000)]
     public async Task<IActionResult> Upload(IFormFile? file, [FromForm] string target = "media")
     {
+        if (PreviewOnly()) return DemoWriteBlocked();
         try
         {
             if (file == null || file.Length == 0) return BadRequest(new { success = false, message = "Choose a file to upload." });
@@ -96,6 +120,7 @@ public sealed class ContentAdminController : Controller
     [HttpPost("ImportUrl"), ValidateAntiForgeryToken]
     public async Task<IActionResult> ImportUrl([FromBody] ImportUrlRequest request)
     {
+        if (PreviewOnly()) return DemoWriteBlocked();
         try
         {
             if (request.Url is null || !Uri.TryCreate(request.Url, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
@@ -261,16 +286,16 @@ public sealed class ContentAdminController : Controller
 
     [HttpPost("Publish"), ValidateAntiForgeryToken, Authorize(Policy = "ContentPublisher")]
     public async Task<IActionResult> Publish([FromBody] ContentWorkflowRequest request)
-    { try { await _content.ChangeStatusAsync(request.ContentId, new[] { "Draft", "PendingReview", "Rejected" }, "Published", UserId(), User.Identity?.Name, request.Remarks, request.PublishStartUtc); return Json(new { success = true }); } catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); } }
+    { if (PreviewOnly(request.ContentId)) return DemoWriteBlocked(); try { await _content.ChangeStatusAsync(request.ContentId, new[] { "Draft", "PendingReview", "Rejected" }, "Published", UserId(), User.Identity?.Name, request.Remarks, request.PublishStartUtc); return Json(new { success = true }); } catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); } }
 
 
     [HttpPost("Archive"), ValidateAntiForgeryToken, Authorize(Policy = "ContentPublisher")]
     public async Task<IActionResult> Archive([FromBody] ContentWorkflowRequest request)
-    { try { await _content.ChangeStatusAsync(request.ContentId, new[] { "Published" }, "Archived", UserId(), User.Identity?.Name, request.Remarks); return Json(new { success = true }); } catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); } }
+    { if (PreviewOnly(request.ContentId)) return DemoWriteBlocked(); try { await _content.ChangeStatusAsync(request.ContentId, new[] { "Published" }, "Archived", UserId(), User.Identity?.Name, request.Remarks); return Json(new { success = true }); } catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); } }
 
     [HttpPost("Restore"), ValidateAntiForgeryToken, Authorize(Policy = "ContentPublisher")]
     public async Task<IActionResult> Restore([FromBody] ContentWorkflowRequest request)
-    { try { await _content.ChangeStatusAsync(request.ContentId, new[] { "Archived" }, "Draft", UserId(), User.Identity?.Name, request.Remarks); return Json(new { success = true }); } catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); } }
+    { if (PreviewOnly(request.ContentId)) return DemoWriteBlocked(); try { await _content.ChangeStatusAsync(request.ContentId, new[] { "Archived" }, "Draft", UserId(), User.Identity?.Name, request.Remarks); return Json(new { success = true }); } catch (Exception ex) { return BadRequest(new { success = false, message = ex.Message }); } }
 
     private int UserId() => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : throw new InvalidOperationException("Authenticated user ID is unavailable.");
 
