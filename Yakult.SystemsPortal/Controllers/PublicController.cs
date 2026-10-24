@@ -201,20 +201,35 @@ public sealed class PublicController : Controller
         return PhysicalFile(path, mime, file == "learning-checklist.txt" ? file : null, enableRangeProcessing: true);
     }
 
-    [HttpGet("/media/learning/demo/policy/{file}")]
-    public IActionResult PolicyDemoAsset(string file)
+    [HttpGet("/media/company-policies/{file}")]
+    public async Task<IActionResult> PolicyAsset(string file, [FromServices] IAuthorizationService authorization)
     {
-        if (!_demoMode.IsEnabled(HttpContext)) return NotFound();
-        var mime = file switch
+        var imageUrl = "/media/company-policies/" + file;
+        if (!CompanyPolicyDocument.IsPolicyImageUrl(imageUrl)) return NotFound();
+        var canEdit = (await authorization.AuthorizeAsync(User, "ContentEditor")).Succeeded;
+        if (!canEdit)
         {
-            "profile-account.svg" or "hardware-deployment.svg" or "internet-access.svg" => "image/svg+xml",
-            "file-sharing.png" => "image/png",
-            _ => null
-        };
-        if (mime == null) return NotFound();
-        var webRoot = string.IsNullOrEmpty(_environment.WebRootPath) ? Path.Combine(_environment.ContentRootPath, "wwwroot") : _environment.WebRootPath;
-        var path = Path.GetFullPath(Path.Combine(webRoot, "..", "App_Data", "PolicyPreview", file));
+            try
+            {
+                var policies = await _companyInfo.GetPublishedPoliciesAsync(file, take: 500);
+                if (!policies.Any(policy => CompanyPolicyDocument.Parse(policy.Body)?.Sections
+                    .SelectMany(section => section.Blocks)
+                    .Any(block => block.Type == "flowchart" && block.ImageUrl == imageUrl) == true)) return NotFound();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Policy diagram publication could not be checked.");
+                return NotFound();
+            }
+        }
+        var path = Path.Combine(_environment.ContentRootPath, "App_Data", "CompanyPolicyMedia", file);
         if (!System.IO.File.Exists(path)) return NotFound();
+        var mime = Path.GetExtension(file).ToLowerInvariant() switch
+        {
+            ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            _ => "image/webp"
+        };
         Response.Headers.CacheControl = "no-store";
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         return PhysicalFile(path, mime);
@@ -245,7 +260,6 @@ public sealed class PublicController : Controller
         {
             items.AddRange(FilterDemoFaqs(query, null));
             policies.AddRange(FilterDemoPolicies(query, null));
-            policies.AddRange(FilterDemoItInformationPolicies(query, null));
         }
         if (!string.IsNullOrWhiteSpace(selectedCategory))
         {
@@ -279,7 +293,6 @@ public sealed class PublicController : Controller
         if (demoModeEnabled)
         {
             items.AddRange(FilterDemoPolicies(query, selectedCategory));
-            items.AddRange(FilterDemoItInformationPolicies(query, selectedCategory));
         }
         if (!string.IsNullOrWhiteSpace(selectedCategory))
             items = items.Where(x => x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -296,8 +309,10 @@ public sealed class PublicController : Controller
     {
         if (PublicItInformationSamples.IsSampleSlug(slug))
         {
-            var reference = _demoMode.IsEnabled(HttpContext) ? PublicItInformationSamples.Find(slug) : null;
-            return reference == null ? NotFound() : View("ItInformationDetails", reference);
+            var reference = PublicItInformationSamples.Find(slug);
+            if (reference is null) return NotFound();
+            var managedSlug = string.Concat(reference.Title.Trim().ToLowerInvariant().Select(ch => char.IsLetterOrDigit(ch) ? ch : '-')).Trim('-');
+            return RedirectToAction(nameof(CompanyPolicyDetails), new { slug = managedSlug });
         }
 
         CompanyPolicyItem? item = _demoMode.IsEnabled(HttpContext)
@@ -356,33 +371,12 @@ public sealed class PublicController : Controller
         return items;
     }
 
-    private static IEnumerable<CompanyPolicyItem> FilterDemoItInformationPolicies(string? query, string? category)
-    {
-        var items = PublicItInformationSamples.Resources.Select((resource, index) => new CompanyPolicyItem
-        {
-            PolicyId = resource.ContentId,
-            Title = resource.Title,
-            Slug = resource.Slug,
-            Summary = resource.Summary,
-            Body = resource.SearchText,
-            Category = index == 0 ? "IT Policy" : "IT Organization",
-            SortOrder = index,
-            IsPublished = true,
-            UpdatedAtUtc = new DateTime(2026, 10, 23, 0, 0, 0, DateTimeKind.Utc)
-        });
-        if (!string.IsNullOrWhiteSpace(query))
-            items = items.Where(x => $"{x.Title} {x.Summary} {x.Body} {x.Category}".Contains(query, StringComparison.OrdinalIgnoreCase));
-        if (!string.IsNullOrWhiteSpace(category))
-            items = items.Where(x => x.Category.Equals(category, StringComparison.OrdinalIgnoreCase));
-        return items;
-    }
-
     [Route("content/{slug}")]
     public async Task<IActionResult> ContentDetails(string slug)
     {
         var demoModeEnabled = _demoMode.IsEnabled(HttpContext);
         if (PublicItInformationSamples.IsSampleSlug(slug))
-            return demoModeEnabled ? RedirectToAction(nameof(CompanyPolicyDetails), new { slug }) : NotFound();
+            return RedirectToAction(nameof(CompanyPolicyDetails), new { slug });
         if (LearningDemoSamples.IsSampleSlug(slug) && !demoModeEnabled) return NotFound();
         PortalContentItem? item = demoModeEnabled
             ? LearningDemoSamples.Find(slug) ?? PublicEmployeeResourceSamples.Items.FirstOrDefault(x => x.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
@@ -444,7 +438,7 @@ public sealed class PublicController : Controller
             var results = new List<PortalContentItem>();
             if (demoModeEnabled)
             {
-                results.AddRange(PublicEmployeeResourceSamples.Items.Concat(PublicItInformationSamples.Items).Where(item =>
+                results.AddRange(PublicEmployeeResourceSamples.Items.Where(item =>
                     $"{item.Title} {item.Summary} {item.Body} {item.CategoryName} {item.ContentType}"
                         .Contains(query, StringComparison.OrdinalIgnoreCase)));
             }

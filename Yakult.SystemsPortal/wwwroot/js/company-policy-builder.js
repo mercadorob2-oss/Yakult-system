@@ -37,6 +37,10 @@
         const node = make('button', className, text);
         node.type = 'button';
         node.disabled = disabled;
+        if (text === '↑' || text === '↓') {
+            node.title = text === '↑' ? 'Move up' : 'Move down';
+            node.setAttribute('aria-label', node.title);
+        }
         node.addEventListener('click', action);
         return node;
     };
@@ -183,21 +187,22 @@
             const title = make('label', 'policy-field policy-section-card__title', 'Section title');
             const titleInput = document.createElement('input'); titleInput.value = section.title || ''; titleInput.placeholder = 'For example, Workplace Guidelines';
             titleInput.addEventListener('input', () => { section.title = titleInput.value; changed(); });
-            title.appendChild(titleInput); head.appendChild(title);
+            title.appendChild(titleInput);
             const actions = make('div', 'policy-icon-actions');
             actions.appendChild(button('↑', '', () => move(doc.sections, index, -1), index === 0));
             actions.appendChild(button('↓', '', () => move(doc.sections, index, 1), index === doc.sections.length - 1));
             actions.appendChild(button('Remove', 'policy-remove-button', () => { doc.sections.splice(index, 1); render(); changed(); }));
-            head.appendChild(actions); card.appendChild(head);
+            head.appendChild(actions); card.appendChild(head); card.appendChild(title);
             card.appendChild(field('Section introduction (optional)', section.intro, value => { section.intro = value; }, true));
             const blockList = make('div', 'policy-block-list');
             section.blocks.forEach((block, blockIndex) => blockList.appendChild(renderBlockEditor(block, blockIndex, section.blocks)));
             card.appendChild(blockList);
             const controls = make('div', 'policy-block-controls');
             const kind = document.createElement('select');
+            const kindLabel = make('label', 'policy-field', 'Content block type');
             Object.entries(labels).forEach(([value, labelText]) => kind.appendChild(new Option(labelText, value)));
             const addBlock = button('+ Add content block', 'admin-button admin-button--ghost', () => { section.blocks.push(newBlock(kind.value)); render(); changed(); });
-            controls.appendChild(kind); controls.appendChild(addBlock); card.appendChild(controls);
+            kindLabel.appendChild(kind); controls.appendChild(kindLabel); controls.appendChild(addBlock); card.appendChild(controls);
             sectionsHost.appendChild(card);
         });
         renderPreview(); syncBody();
@@ -209,6 +214,8 @@
         return node;
     }
     function renderPreview() {
+        $('policyPreview').classList.toggle('it-info-reader--team', doc.accent === 'team');
+        $('policyPreview').classList.toggle('it-info-reader--policy', doc.accent !== 'team');
         $('previewTitle').textContent = $('Title').value.trim() || 'Untitled policy';
         $('previewSummary').textContent = $('Summary').value.trim();
         $('previewSummary').hidden = !$('Summary').value.trim();

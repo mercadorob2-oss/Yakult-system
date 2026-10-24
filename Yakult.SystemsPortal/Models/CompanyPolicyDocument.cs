@@ -10,6 +10,7 @@ public sealed class CompanyPolicyDocument
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public int Version { get; set; } = 1;
+    public string Accent { get; set; } = "policy";
     public List<CompanyPolicySection> Sections { get; set; } = [];
 
     public static CompanyPolicyDocument? Parse(string? body)
@@ -40,6 +41,7 @@ public sealed class CompanyPolicyDocument
     public void Validate()
     {
         if (Version != 1) throw new ArgumentException("This policy uses an unsupported content format.");
+        if (Accent is not ("policy" or "team")) throw new ArgumentException("Choose a supported policy appearance.");
         if (Sections is null || Sections.Count is < 1 or > 40) throw new ArgumentException("Add between 1 and 40 policy sections.");
         foreach (var section in Sections)
         {

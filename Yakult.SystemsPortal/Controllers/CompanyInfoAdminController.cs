@@ -205,9 +205,7 @@ public sealed class CompanyInfoAdminController : Controller
 
     private string PolicyAssetFolder()
     {
-        var webRoot = _environment.WebRootPath;
-        if (string.IsNullOrWhiteSpace(webRoot)) webRoot = Path.Combine(_environment.ContentRootPath, "wwwroot");
-        return Path.Combine(webRoot, "media", "company-policies");
+        return Path.Combine(_environment.ContentRootPath, "App_Data", "CompanyPolicyMedia");
     }
 
     private static bool IsSupportedPolicyImage(string path) => new[] { ".png", ".jpg", ".jpeg", ".webp" }.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);

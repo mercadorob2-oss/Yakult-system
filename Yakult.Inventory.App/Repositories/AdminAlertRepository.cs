@@ -12,6 +12,7 @@ namespace Yakult.Inventory.App.Repositories
         public const string StopSilent = "StopSilent";
         public const string Bsod = "Bsod";
         public const string Maintenance = "Maintenance";
+        public const string ScreenLock = "ScreenLock";
     }
 
     public sealed class AdminAlertDto

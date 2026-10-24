@@ -2,8 +2,8 @@
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Company Policy";
-    var referenceItems = Model.Items.Where(item => PublicItInformationSamples.IsSampleSlug(item.Slug)).ToList();
-    var standardPolicies = Model.Items.Where(item => !PublicItInformationSamples.IsSampleSlug(item.Slug)).ToList();
+    var referenceItems = Model.Items.Where(item => CompanyPolicyDocument.Parse(item.Body) is not null).ToList();
+    var standardPolicies = Model.Items.Where(item => CompanyPolicyDocument.Parse(item.Body) is null).ToList();
 }
 <link rel="stylesheet" href="~/css/it-information.css" asp-append-version="true" />
 
@@ -41,15 +41,14 @@
             @if (referenceItems.Count > 0)
             {
                 <div class="it-information it-info-library">
-                    <p class="it-info-preview" role="status"><span>DEMO PREVIEW</span> Selected employee references from the supplied IT documents.</p>
                     <div class="it-info-resource-grid">
                         @foreach (var item in referenceItems)
                         {
-                            var resource = PublicItInformationSamples.Find(item.Slug)!;
-                            <article class="it-info-resource it-info-resource--@resource.Accent" data-policy-search-card>
-                                <div class="it-info-resource__top"><span>@resource.Kind</span><span class="it-info-resource__number" aria-hidden="true">@(resource.Accent == "policy" ? "01" : "02")</span></div>
+                            var document = CompanyPolicyDocument.Parse(item.Body)!;
+                            <article class="it-info-resource it-info-resource--@document.Accent" data-policy-search-card>
+                                <div class="it-info-resource__top"><span>@item.Category</span><span class="it-info-resource__number" aria-hidden="true">@((referenceItems.IndexOf(item) + 1).ToString("00"))</span></div>
                                 <div class="it-info-resource__symbol" aria-hidden="true">
-                                    @if (resource.Accent == "policy")
+                                    @if (document.Accent == "policy")
                                     {
                                         <svg viewBox="0 0 64 64" fill="none"><path d="M16 10h24l10 10v34H16z" /><path d="M39 10v12h11M25 32h16M25 40h16M25 48h10" /></svg>
                                     }
@@ -58,10 +57,10 @@
                                         <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="18" r="8" /><path d="M18 48v-7c0-8 6-13 14-13s14 5 14 13v7zM13 22a6 6 0 0 0 0 12M51 22a6 6 0 0 1 0 12M12 39c-4 1-6 5-6 10h7M52 39c4 1 6 5 6 10h-7" /></svg>
                                     }
                                 </div>
-                                <h3><a asp-action="CompanyPolicyDetails" asp-route-slug="@resource.Slug">@resource.Title</a></h3>
-                                <p>@resource.Summary</p>
-                                <ul class="it-info-topic-tags" aria-label="Topics included">@foreach (var topic in resource.Sections) { <li>@topic.Title</li> }</ul>
-                                <div class="it-info-resource__footer"><span>@resource.Sections.Count topics · Employee reference</span><a asp-action="CompanyPolicyDetails" asp-route-slug="@resource.Slug">Read reference <span aria-hidden="true">↗</span><span class="sr-only">: @resource.Title</span></a></div>
+                                <h3><a asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">@item.Title</a></h3>
+                                <p>@item.Summary</p>
+                                <ul class="it-info-topic-tags" aria-label="Topics included">@foreach (var topic in document.Sections) { <li>@topic.Title</li> }</ul>
+                                <div class="it-info-resource__footer"><span>@document.Sections.Count topics · Employee reference</span><a asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">Read reference <span aria-hidden="true">↗</span><span class="sr-only">: @item.Title</span></a></div>
                             </article>
                         }
                     </div>

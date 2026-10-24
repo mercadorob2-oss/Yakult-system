@@ -14,24 +14,27 @@
 
 <div class="admin-list-panel admin-ops-panel policy-editor-shell">
     <div class="admin-panel-header">
-        <div><h2>@ViewData["Title"]</h2><p>Build a policy with reusable sections, diagrams, and an employee-facing preview.</p></div>
+        <div><h2>Policy workspace</h2><p>Add policy details, arrange your content, and review the employee preview.</p></div>
         <a class="admin-button admin-button--ghost" asp-action="Index">Back to list</a>
     </div>
     <div class="admin-panel-body">
-        <form class="admin-form policy-editor-form" asp-action="PolicySave" method="post" id="companyPolicyForm">
+        <form class="policy-editor-form" asp-action="PolicySave" method="post" id="companyPolicyForm">
             @Html.AntiForgeryToken()
             @Html.ValidationSummary()
             <input type="hidden" asp-for="PolicyId" />
             <input type="hidden" asp-for="Body" id="policyBody" />
-            <div class="policy-editor-meta">
-                <div><label asp-for="Title">Policy title</label><input type="text" asp-for="Title" maxlength="180" autocomplete="off" /></div>
-                <div><label asp-for="Summary">Short description</label><textarea asp-for="Summary" rows="2" maxlength="500"></textarea></div>
+            <section class="policy-editor-meta" aria-labelledby="policyDetailsHeading">
+                <div class="policy-editor-meta__heading"><span class="policy-builder-kicker">Policy details</span><h3 id="policyDetailsHeading">Start with the essentials</h3></div>
+                <div class="policy-editor-meta__main">
+                    <div class="policy-field"><label asp-for="Title">Policy title</label><input type="text" asp-for="Title" maxlength="180" autocomplete="off" placeholder="For example, Workplace Guidelines" /></div>
+                    <div class="policy-field"><label asp-for="Summary">Short description</label><textarea asp-for="Summary" rows="2" maxlength="500" placeholder="A brief introduction for employees."></textarea></div>
+                </div>
                 <div class="policy-editor-meta__row">
                     <label asp-for="Category">Topic<input type="text" asp-for="Category" maxlength="100" autocomplete="off" /></label>
                     <label asp-for="EffectiveDate">Effective date<input type="date" asp-for="EffectiveDate" /></label>
                     <label asp-for="SortOrder">Sort order<input type="number" asp-for="SortOrder" /></label>
                 </div>
-            </div>
+            </section>
 
             @if (isLegacyMarkdown)
             {
@@ -45,13 +48,13 @@
 
             <section class="policy-structured-editor" id="structuredPolicyEditor" hidden>
                 <div class="policy-builder-heading">
-                    <div><span class="policy-builder-kicker">Structured policy</span><h3>Build the employee reference</h3><p>Arrange sections and choose a content block for each kind of information.</p></div>
+                    <div><span class="policy-builder-kicker">Policy content</span><h3>Sections &amp; content</h3><p>Group related guidance into sections, then add the blocks you need.</p></div>
                     <button type="button" class="admin-button admin-button--primary" id="addPolicySection">+ Add section</button>
                 </div>
                 <div class="policy-builder-workspace" id="policyBuilder" data-assets-url="@Url.Action("PolicyAssets")" data-upload-url="@Url.Action("UploadPolicyAsset")">
                     <div class="policy-section-list" id="policySections" aria-live="polite"></div>
                     <aside class="policy-live-preview" aria-label="Employee policy preview">
-                        <div class="policy-preview-heading"><span>LIVE PREVIEW</span><strong>Employee view</strong></div>
+                        <div class="policy-preview-heading"><div><span>LIVE PREVIEW</span><strong>Employee view</strong></div><span class="policy-preview-status">Updates as you type</span></div>
                         <div class="policy-preview-scroll">
                             <article class="it-information it-info-reader company-policy-reader" id="policyPreview">
                                 <header class="it-info-reader__header"><div class="portal-container"><a class="it-info-back" href="#">← Company Policy</a><div class="it-info-reader__labels"><span id="previewCategory"></span><span>Employee policy</span></div><h1 id="previewTitle"></h1><p id="previewSummary"></p><div class="it-info-reader__facts"><span id="previewSectionCount"></span></div></div></header>
@@ -61,7 +64,7 @@
                     </aside>
                 </div>
             </section>
-            <div class="policy-editor-actions"><a class="admin-button admin-button--ghost" asp-action="Index">Cancel</a><button type="submit" class="admin-button admin-button--primary">Save draft</button></div>
+            <div class="policy-editor-actions"><p>Save your changes as a draft.</p><div><a class="admin-button admin-button--ghost" asp-action="Index">Cancel</a><button type="submit" class="admin-button admin-button--primary">Save draft</button></div></div>
         </form>
     </div>
 </div>
