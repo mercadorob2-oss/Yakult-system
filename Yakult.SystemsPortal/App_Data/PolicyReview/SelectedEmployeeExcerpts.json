@@ -1,0 +1,158 @@
+[
+  {
+    "paragraph": 201,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Hardware and Peripherals internal movement should be done by IT Staff with prior approval from IT Department."
+  },
+  {
+    "paragraph": 203,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Use of NON-YAKULT Hardware to connect to the YAKULT network is strictly prohibited e.g., MP4, MP3 Player, Digicam, Cell phone, and Internet Broadband (USB)."
+  },
+  {
+    "paragraph": 205,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Prevention of Hard Disk Drive Failure as follows:"
+  },
+  {
+    "paragraph": 207,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Never install non-Yakult standard software such as games, utilities, MP3 / MP4 Player, audio files, screen savers and desktop themes."
+  },
+  {
+    "paragraph": 209,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Ensure up to date virus pattern is installed."
+  },
+  {
+    "paragraph": 211,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Never relocate the workstation and printers unless IT Staff has been notified."
+  },
+  {
+    "paragraph": 213,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "The local drive (C:) contains the standard software used in Yakult Philippines Inc.  If the hard disk fails, IT staff will format or replace the disk with a new one containing all the standard software and user specific software as registered by the user with IT."
+  },
+  {
+    "paragraph": 215,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Use other partition drive (D:) to store/save business/personal files to avoid full disk space at local drive (C:) and can easily recover."
+  },
+  {
+    "paragraph": 217,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "All CPUs should be put on the top of the working area so that it will minimize dirt and dust to enter the system unit and to minimize down time of components inside the system unit."
+  },
+  {
+    "paragraph": 219,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Client users should protect Yakult Philippines Incorporated and Yakult Marketing Corporation Property. Client users are liable to any negligence regarding their computer unit, and they are responsible for taking care with their respective monitor, CPU, mouse, keyboard, and printer."
+  },
+  {
+    "paragraph": 221,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Username and password should be known by user only to prevent other user to use their login profile, wherein each user is liable if any circumstances may happen."
+  },
+  {
+    "paragraph": 223,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "Don’t leave computer/laptop unattended without Password protection to avoid your accounts and devices from unauthorized access, keeping confidential information safe, and protected from possible cyber threats and hackers."
+  },
+  {
+    "paragraph": 225,
+    "topic": "Work place/station guidelines",
+    "sourceHeading": "WORKPLACE GUIDELINES",
+    "text": "IT security incidents such as hacking, virus transfer and others, will be reported with written explanation and to be cared of by Personnel Department for disciplinary action."
+  },
+  {
+    "paragraph": 257,
+    "topic": "Computer peripheral requisition",
+    "sourceHeading": "HARDWARE / Deployment Policy",
+    "text": "Deployment of computers hardware and other peripherals should be performed by IT Specialist/ Technical with prior approval of IT Manager. "
+  },
+  {
+    "paragraph": 397,
+    "topic": "Software installation",
+    "sourceHeading": "PROFILE ACCOUNT",
+    "text": "Install Standard Software and should be performed by IT Administrator only."
+  },
+  {
+    "paragraph": 422,
+    "topic": "Internet access requisition",
+    "sourceHeading": "INTERNET ACCESS / Requests for Website Procedure / GUIDELINES",
+    "text": "Name of Requesting Party"
+  },
+  {
+    "paragraph": 426,
+    "topic": "Internet access requisition",
+    "sourceHeading": "INTERNET ACCESS / Requests for Website Procedure / GUIDELINES",
+    "text": "Name of Sites to be open"
+  },
+  {
+    "paragraph": 430,
+    "topic": "Internet access requisition",
+    "sourceHeading": "INTERNET ACCESS / Requests for Website Procedure / GUIDELINES",
+    "text": "Reason/s"
+  },
+  {
+    "paragraph": 424,
+    "topic": "Internet access requisition",
+    "sourceHeading": "INTERNET ACCESS / Requests for Website Procedure / GUIDELINES",
+    "text": "Noted by the Dept. Head"
+  },
+  {
+    "paragraph": 428,
+    "topic": "Internet access requisition",
+    "sourceHeading": "INTERNET ACCESS / Requests for Website Procedure / GUIDELINES",
+    "text": "Approved by the Comptroller"
+  },
+  {
+    "paragraph": 432,
+    "topic": "Internet access requisition",
+    "sourceHeading": "INTERNET ACCESS / Requests for Website Procedure / GUIDELINES",
+    "text": "Submit to IT Department"
+  },
+  {
+    "paragraph": 361,
+    "topic": "Computer User credentials",
+    "sourceHeading": "PROFILE ACCOUNT / Active Domain Account Process",
+    "text": "New users must fill-out an account requisition form with approved by their department head. Forms are available at IT department."
+  },
+  {
+    "paragraph": 179,
+    "topic": "Computer/software application issues",
+    "sourceHeading": "DUTIES AND RESPONSIBILITIES / Support / IT Support Specialist",
+    "text": "Diagnoses and assists users in computer problems, e-mails, and internet and local area network problems."
+  },
+  {
+    "paragraph": 180,
+    "topic": "Computer/software application issues",
+    "sourceHeading": "DUTIES AND RESPONSIBILITIES / Support / IT Support Specialist",
+    "text": "Support end-user for basic troubleshooting of network problems (VPN-Virtual Private Network)."
+  },
+  {
+    "paragraph": 181,
+    "topic": "Computer/software application issues",
+    "sourceHeading": "DUTIES AND RESPONSIBILITIES / Support / IT Support Specialist",
+    "text": "Assist in installation of System/ Computer applications."
+  },
+  {
+    "paragraph": 182,
+    "topic": "Computer/software application issues",
+    "sourceHeading": "DUTIES AND RESPONSIBILITIES / Support / IT Support Specialist",
+    "text": "Deals with the provider/supports if a problem is encountered."
+  }
+]

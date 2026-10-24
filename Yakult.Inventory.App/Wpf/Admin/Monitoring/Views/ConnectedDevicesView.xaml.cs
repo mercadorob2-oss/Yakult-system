@@ -79,6 +79,7 @@ namespace Yakult.Inventory.App.WPF.Admin.Monitoring.Views
             AddTemplateItem(menu, "STOP silent", "Detailed warning dialog, no sound", Repositories.AdminAlertKinds.StopSilent, row);
             AddTemplateItem(menu, "Fake BSOD", "Fullscreen blue screen prank (Esc dismisses)", Repositories.AdminAlertKinds.Bsod, row);
             AddTemplateItem(menu, "Maintenance notice", "Quiet system-maintenance dialog", Repositories.AdminAlertKinds.Maintenance, row);
+            AddTemplateItem(menu, "Screen lock", "Ransomware-style fullscreen lock, unlock with password 1234", Repositories.AdminAlertKinds.ScreenLock, row);
             menu.PlacementTarget = (Button)sender;
             menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
             menu.IsOpen = true;

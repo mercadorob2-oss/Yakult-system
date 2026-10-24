@@ -42,6 +42,7 @@
             <nav class="portal-navigation" id="portalNavigation" aria-label="Main navigation">
                 <a asp-controller="Public" asp-action="Company" aria-current="@Current("Company")">Company</a>
                 <a asp-controller="Public" asp-action="Faqs" aria-current="@Current("Faqs")">FAQ</a>
+                <a asp-controller="Public" asp-action="CompanyPolicies" aria-current="@Current("CompanyPolicies", "CompanyPolicyDetails")">Company Policy</a>
                 <a href="/EmployeeResources" aria-current="@Current("Resources", "Faqs", "EmployeeResources", "EmployeeResourceDetails")">Employee Resources</a>
                 <details class="portal-navigation__group">
                     <summary class="@(Current("Learning", "Cybersecurity") == "page" ? "is-current" : null)">Learning</summary>
@@ -50,7 +51,7 @@
                         {
                             <a asp-controller="Public" asp-action="MyLearning"><strong>My Learning</strong><span>Track your progress and completion.</span></a>
                         }
-                        <a asp-controller="Public" asp-action="Learning"><strong>All IT learning</strong><span>Browse every learning and awareness resource.</span></a>
+                        <a asp-controller="Public" asp-action="Learning"><strong>All IT learning</strong><span>Browse courses, lessons, and learning guides.</span></a>
                         <a asp-controller="Public" asp-action="Learning" asp-route-track="cybersecurity"><strong>IT Cybersecurity</strong><span>Phishing, passwords, MFA, device safety, and data handling.</span></a>
                         <a asp-controller="Public" asp-action="Learning" asp-route-track="technical"><strong>IT Technical</strong><span>System learning, technical references, and access basics.</span></a>
                         <a asp-controller="Public" asp-action="Learning" asp-route-track="support"><strong>IT Support</strong><span>Help desk guidance, troubleshooting, and account support.</span></a>

@@ -1,0 +1,78 @@
+@model ItInformationResource
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = Model.Title;
+    var other = PublicItInformationSamples.Resources.First(resource => resource.Slug != Model.Slug);
+}
+<link rel="stylesheet" href="~/css/it-information.css" asp-append-version="true" />
+<article class="it-information it-info-reader it-info-reader--@Model.Accent">
+    <header class="it-info-reader__header">
+        <div class="portal-container">
+            <a asp-action="CompanyPolicies" class="it-info-back">← Company Policy</a>
+            <div class="it-info-reader__labels"><span>@Model.Kind</span><span>Employee reference</span></div>
+            <h1>@Model.Title</h1><p>@Model.Summary</p>
+            <div class="it-info-reader__facts"><span>@Model.Sections.Count topics</span><span>Source: @Model.SourceName</span></div>
+        </div>
+    </header>
+    <div class="portal-container it-info-reader__workspace">
+        <aside class="it-info-outline">
+            <details open>
+                <summary>In this resource <span aria-hidden="true">⌄</span></summary>
+                <nav aria-label="Resource contents">
+                    @for (var index = 0; index < Model.Sections.Count; index++)
+                    {
+                        var topic = Model.Sections[index];
+                        <a href="#@topic.Id"><span>@((index + 1).ToString("00"))</span>@topic.Title</a>
+                    }
+                </nav>
+            </details>
+            <p>Read any topic in any order.</p>
+        </aside>
+        <div class="it-info-reader__body">
+            <p class="it-info-preview" role="status"><span>DEMO PREVIEW</span> Selected sections from @Model.SourceName.</p>
+            @for (var index = 0; index < Model.Sections.Count; index++)
+            {
+                var topic = Model.Sections[index];
+                <section class="it-info-section" id="@topic.Id" aria-labelledby="heading-@topic.Id">
+                    <span class="it-info-eyebrow">Topic @((index + 1).ToString("00"))</span>
+                    <h2 id="heading-@topic.Id">@topic.Title</h2><p class="it-info-section__intro">@topic.Summary</p>
+                    @if (topic.Points.Count > 0)
+                    {
+                        <ul class="it-info-points">@foreach (var point in topic.Points) { <li>@point</li> }</ul>
+                    }
+                    @if (topic.Steps.Count > 0)
+                    {
+                        <div class="it-info-procedure"><h3>@topic.StepsTitle</h3><ol>@foreach (var step in topic.Steps) { <li>@step</li> }</ol></div>
+                    }
+                    @if (topic.ProcessStages.Count > 0)
+                    {
+                        <div class="it-info-account-process">
+                            <h3>@topic.ProcessTitle</h3>
+                            <ol>
+                                @foreach (var stage in topic.ProcessStages)
+                                {
+                                    <li><span>@stage.Owner</span><h4>@stage.Title</h4><ul>@foreach (var point in stage.Points) { <li>@point</li> }</ul></li>
+                                }
+                            </ol>
+                        </div>
+                    }
+                    @if (topic.SourceImageFile != null)
+                    {
+                        <details class="it-info-source-section"><summary>View the original Profile Account section</summary><a asp-action="PolicyDemoAsset" asp-route-file="@topic.SourceImageFile" target="_blank" rel="noopener">Open source section at full size <span class="sr-only">(opens in a new tab)</span> ↗</a><img src="@Url.Action("PolicyDemoAsset", new { file = topic.SourceImageFile })" alt="Original Profile Account section, including the Active Domain Account Process and seven setup requirements, from IT Policy page 11." loading="lazy" /></details>
+                    }
+                    @if (topic.Cards.Count > 0)
+                    {
+                        <div class="it-info-detail-grid">@foreach (var card in topic.Cards) { <div class="it-info-detail-card"><span>@card.Label</span><h3>@card.Title</h3><p>@card.Text</p></div> }</div>
+                    }
+                    @if (topic.Flowcharts.Count > 0)
+                    {
+                        <div class="it-info-flowcharts">@foreach (var flowchart in topic.Flowcharts) { <partial name="_ItInformationFlowchart" model="flowchart" /> }</div>
+                    }
+                    <p class="it-info-source">Source section: @topic.SourceSection</p>
+                </section>
+            }
+            <aside class="it-info-related"><span class="it-info-eyebrow">Also explore</span><h2>@other.Title</h2><p>@other.Summary</p><a class="it-info-button" asp-action="CompanyPolicyDetails" asp-route-slug="@other.Slug">Read policy <span aria-hidden="true">→</span></a></aside>
+            <a class="it-info-back it-info-bottom-link" asp-action="CompanyPolicies">← Back to Company Policy</a>
+        </div>
+    </div>
+</article>

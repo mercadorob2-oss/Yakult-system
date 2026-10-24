@@ -52,6 +52,60 @@ public sealed class PortalContentRepository : IPortalContentRepository
         return items;
     }
 
+    public async Task<LearningCatalogPage> GetLearningCatalogAsync(IReadOnlyList<string> categories, string? query, string? type, string sort, int page, int pageSize)
+    {
+        if (categories.Count == 0) return new LearningCatalogPage();
+        pageSize = Math.Clamp(pageSize, 1, 48);
+        var categoryParameters = string.Join(",", categories.Select((_, index) => "@Category" + index));
+        var from = $@" FROM dbo.PortalContent pc
+            INNER JOIN dbo.PortalContentCategory cat ON cat.CategoryId = pc.CategoryId
+            LEFT JOIN dbo.[User] author ON author.UserId = pc.AuthorUserId
+            LEFT JOIN dbo.[User] approver ON approver.UserId = pc.ApprovedByUserId
+            WHERE pc.Status = 'Published'
+              AND (pc.PublishStartUtc IS NULL OR pc.PublishStartUtc <= SYSUTCDATETIME())
+              AND (pc.PublishEndUtc IS NULL OR pc.PublishEndUtc > SYSUTCDATETIME())
+              AND cat.Slug IN ({categoryParameters})
+              AND (@Query = '' OR pc.Title LIKE @LikeQuery OR pc.Summary LIKE @LikeQuery OR cat.Name LIKE @LikeQuery)";
+        const string typeFilter = " AND (@Type = '' OR pc.ContentType = @Type)";
+        void AddFilters(SqlCommand command)
+        {
+            for (var i = 0; i < categories.Count; i++) command.Parameters.AddWithValue("@Category" + i, categories[i]);
+            command.Parameters.AddWithValue("@Query", (query ?? "").Trim());
+            command.Parameters.AddWithValue("@LikeQuery", "%" + EscapeLike((query ?? "").Trim()) + "%");
+            command.Parameters.AddWithValue("@Type", (type ?? "").Trim());
+        }
+        await using var connection = new SqlConnection(_connectionStringProvider.GetConnectionString());
+        await connection.OpenAsync();
+        var count = 0;
+        var types = new List<string>();
+        await using (var countCommand = new SqlCommand("SELECT COUNT(*)" + from + typeFilter + "; SELECT DISTINCT pc.ContentType" + from + " ORDER BY pc.ContentType;", connection))
+        {
+            AddFilters(countCommand);
+            await using var counts = await countCommand.ExecuteReaderAsync();
+            if (await counts.ReadAsync()) count = counts.GetInt32(0);
+            if (await counts.NextResultAsync()) while (await counts.ReadAsync()) types.Add(counts.GetString(0));
+        }
+        page = Math.Clamp(page, 1, Math.Max(1, (int)Math.Ceiling(count / (double)pageSize)));
+        var order = sort switch
+        {
+            "newest" => "pc.UpdatedAtUtc DESC, pc.ContentId DESC",
+            "title" => "pc.Title, pc.ContentId",
+            _ => "pc.IsFeatured DESC, pc.SortOrder, pc.UpdatedAtUtc DESC, pc.ContentId DESC"
+        };
+        var sql = @"SELECT pc.ContentId, pc.ContentType, pc.Slug, pc.Title, pc.Summary, pc.BodyMarkdown,
+            cat.Name, cat.Slug, pc.ThumbnailUrl, pc.MediaUrl, pc.Status, pc.IsFeatured, pc.SortOrder,
+            pc.PublishStartUtc, pc.PublishEndUtc, pc.CreatedAtUtc, pc.UpdatedAtUtc, author.Name, approver.Name" + from + typeFilter
+            + " ORDER BY " + order + " OFFSET @Skip ROWS FETCH NEXT @PageSize ROWS ONLY;";
+        await using var command = new SqlCommand(sql, connection);
+        AddFilters(command);
+        command.Parameters.AddWithValue("@Skip", (page - 1) * pageSize);
+        command.Parameters.AddWithValue("@PageSize", pageSize);
+        var items = new List<PortalContentItem>();
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync()) items.Add(Map(reader));
+        return new LearningCatalogPage { Items = items, Types = types, TotalCount = count, Page = page };
+    }
+
     public async Task<PortalContentItem?> GetPublishedBySlugAsync(string slug)
     {
         await using var con = new SqlConnection(_connectionStringProvider.GetConnectionString());
@@ -294,6 +348,7 @@ public sealed class PortalContentRepository : IPortalContentRepository
             INNER JOIN dbo.PortalContentCategory cat ON cat.CategoryId = pc.CategoryId
             WHERE p.UserId=@UserId
               AND pc.Status='Published'
+              AND (pc.BodyMarkdown IS NULL OR pc.BodyMarkdown NOT LIKE 'yakult-course:v1%')
               AND (pc.PublishStartUtc IS NULL OR pc.PublishStartUtc <= SYSUTCDATETIME())
               AND (pc.PublishEndUtc IS NULL OR pc.PublishEndUtc > SYSUTCDATETIME())
             ORDER BY p.UpdatedAtUtc DESC;";

@@ -1,47 +1,76 @@
 @model SaveCompanyPolicyRequest
+@using System.Text.Json
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = Model.PolicyId is > 0 ? "Edit Policy" : "New Policy";
+    var existingDocument = CompanyPolicyDocument.Parse(Model.Body);
+    var isLegacyMarkdown = !string.IsNullOrWhiteSpace(Model.Body) && existingDocument is null;
+    var initialDocument = existingDocument ?? CompanyPolicyDocument.Empty();
+    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 }
+<link rel="stylesheet" href="~/css/it-information.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/company-policy-document.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/company-policy-editor.css" asp-append-version="true" />
 
-<div class="admin-list-panel admin-ops-panel">
+<div class="admin-list-panel admin-ops-panel policy-editor-shell">
     <div class="admin-panel-header">
-        <div>
-            <h2>@ViewData["Title"]</h2>
-            <p>Drafts stay hidden until published by a developer. The URL slug is generated from the title.</p>
-        </div>
+        <div><h2>Policy workspace</h2><p>Add policy details, arrange your content, and review the employee preview.</p></div>
         <a class="admin-button admin-button--ghost" asp-action="Index">Back to list</a>
     </div>
     <div class="admin-panel-body">
-        <form class="admin-form" asp-action="PolicySave" method="post">
+        <form class="policy-editor-form" asp-action="PolicySave" method="post" id="companyPolicyForm">
             @Html.AntiForgeryToken()
             @Html.ValidationSummary()
             <input type="hidden" asp-for="PolicyId" />
-            <div>
-                <label asp-for="Title">Title</label>
-                <input type="text" asp-for="Title" maxlength="180" autocomplete="off" />
-            </div>
-            <div>
-                <label asp-for="Summary">Summary</label>
-                <textarea asp-for="Summary" rows="2" maxlength="500"></textarea>
-            </div>
-            <div>
-                <label asp-for="Body">Body (Markdown supported)</label>
-                <textarea asp-for="Body" rows="12"></textarea>
-            </div>
-            <div>
-                <label asp-for="Category">Topic</label>
-                <input type="text" asp-for="Category" maxlength="100" autocomplete="off" />
-            </div>
-            <div>
-                <label asp-for="EffectiveDate">Effective date</label>
-                <input type="date" asp-for="EffectiveDate" />
-            </div>
-            <div>
-                <label asp-for="SortOrder">Sort order</label>
-                <input type="number" asp-for="SortOrder" />
-            </div>
-            <button type="submit" class="admin-button admin-button--primary">Save draft</button>
+            <input type="hidden" asp-for="Body" id="policyBody" />
+            <section class="policy-editor-meta" aria-labelledby="policyDetailsHeading">
+                <div class="policy-editor-meta__heading"><span class="policy-builder-kicker">Policy details</span><h3 id="policyDetailsHeading">Start with the essentials</h3></div>
+                <div class="policy-editor-meta__main">
+                    <div class="policy-field"><label asp-for="Title">Policy title</label><input type="text" asp-for="Title" maxlength="180" autocomplete="off" placeholder="For example, Workplace Guidelines" /></div>
+                    <div class="policy-field"><label asp-for="Summary">Short description</label><textarea asp-for="Summary" rows="2" maxlength="500" placeholder="A brief introduction for employees."></textarea></div>
+                </div>
+                <div class="policy-editor-meta__row">
+                    <label asp-for="Category">Topic<input type="text" asp-for="Category" maxlength="100" autocomplete="off" /></label>
+                    <label asp-for="EffectiveDate">Effective date<input type="date" asp-for="EffectiveDate" /></label>
+                    <label asp-for="SortOrder">Sort order<input type="number" asp-for="SortOrder" /></label>
+                </div>
+            </section>
+
+            @if (isLegacyMarkdown)
+            {
+                <section class="policy-legacy-editor" id="legacyPolicyEditor">
+                    <div class="policy-builder-heading"><div><span class="policy-builder-kicker">Existing format</span><h3>Markdown policy</h3><p>This saved policy uses the original text format. Keep editing it here or convert it into structured sections.</p></div></div>
+                    <label for="legacyPolicyBody">Policy body</label>
+                    <textarea id="legacyPolicyBody" rows="16">@Model.Body</textarea>
+                    <button type="button" class="admin-button admin-button--ghost" id="convertPolicy">Convert this text to a structured policy</button>
+                </section>
+            }
+
+            <section class="policy-structured-editor" id="structuredPolicyEditor" hidden>
+                <div class="policy-builder-heading">
+                    <div><span class="policy-builder-kicker">Policy content</span><h3>Sections &amp; content</h3><p>Group related guidance into sections, then add the blocks you need.</p></div>
+                    <button type="button" class="admin-button admin-button--primary" id="addPolicySection">+ Add section</button>
+                </div>
+                <div class="policy-builder-workspace" id="policyBuilder" data-assets-url="@Url.Action("PolicyAssets")" data-upload-url="@Url.Action("UploadPolicyAsset")">
+                    <div class="policy-section-list" id="policySections" aria-live="polite"></div>
+                    <aside class="policy-live-preview" aria-label="Employee policy preview">
+                        <div class="policy-preview-heading"><div><span>LIVE PREVIEW</span><strong>Employee view</strong></div><span class="policy-preview-status">Updates as you type</span></div>
+                        <div class="policy-preview-scroll">
+                            <article class="it-information it-info-reader company-policy-reader" id="policyPreview">
+                                <header class="it-info-reader__header"><div class="portal-container"><a class="it-info-back" href="#">← Company Policy</a><div class="it-info-reader__labels"><span id="previewCategory"></span><span>Employee policy</span></div><h1 id="previewTitle"></h1><p id="previewSummary"></p><div class="it-info-reader__facts"><span id="previewSectionCount"></span></div></div></header>
+                                <div class="portal-container it-info-reader__workspace"><aside class="it-info-outline"><details open><summary>In this policy <span aria-hidden="true">⌄</span></summary><nav aria-label="Policy contents" id="previewContents"></nav></details><p>Read each section when you need it.</p></aside><div class="it-info-reader__body company-policy-document" id="previewSections"></div></div>
+                            </article>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+            <div class="policy-editor-actions"><p>Save your changes as a draft.</p><div><a class="admin-button admin-button--ghost" asp-action="Index">Cancel</a><button type="submit" class="admin-button admin-button--primary">Save draft</button></div></div>
         </form>
     </div>
 </div>
+
+<script>
+    window.companyPolicyEditorInitial = @Html.Raw(JsonSerializer.Serialize(initialDocument, jsonOptions));
+    window.companyPolicyEditorLegacy = @isLegacyMarkdown.ToString().ToLowerInvariant();
+</script>
+<script src="~/js/company-policy-builder.js" asp-append-version="true" defer></script>

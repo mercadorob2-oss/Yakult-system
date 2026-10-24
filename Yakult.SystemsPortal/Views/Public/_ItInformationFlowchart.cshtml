@@ -1,0 +1,22 @@
+@model ItInformationFlowchart
+<details class="it-info-flowchart" open="@(Model.Number == 1)">
+    <summary><span class="it-info-flowchart__number">@Model.Number.ToString("00")</span><span>@Model.Title<small>Flowchart @Model.Number · Source diagram</small></span><span class="it-info-flowchart__toggle" aria-hidden="true">⌄</span></summary>
+    <figure aria-labelledby="flow-title-@Model.Id">
+        <figcaption id="flow-title-@Model.Id">@Model.Title</figcaption>
+        <p class="it-info-flowchart__intro">@Model.Summary</p>
+        <a class="it-info-source-open" asp-action="PolicyDemoAsset" asp-route-file="@Model.ImageFile" target="_blank" rel="noopener">Open diagram at full size <span class="sr-only">(opens in a new tab)</span> ↗</a>
+        <img class="it-info-source-diagram" src="@Url.Action("PolicyDemoAsset", new { file = Model.ImageFile })" alt="Original @Model.Title diagram from IT Policy, Flowchart @Model.Number. A text description of its paths follows." loading="lazy" />
+        @if (Model.SourceNote != null)
+        {
+            <aside class="it-info-source-note"><strong>Source wording to confirm</strong><p>@Model.SourceNote</p></aside>
+        }
+        <details class="it-info-flow-description" open>
+            <summary>Read the diagram as text</summary>
+            @foreach (var path in Model.Paths)
+            {
+                <section><h4>@path.Title</h4><ol>@foreach (var step in path.Steps) { <li>@step</li> }</ol></section>
+            }
+        </details>
+        <p class="it-info-flowchart__caption">Source diagram from the supplied IT Policy · Flowchart @Model.Number</p>
+    </figure>
+</details>

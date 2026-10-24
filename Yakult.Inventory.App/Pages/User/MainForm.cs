@@ -186,6 +186,8 @@ namespace Yakult.Inventory.App.Pages.User
                 Dialogs.FakeBsodForm.ShowAlert();
             else if (string.Equals(kind, Repositories.AdminAlertKinds.Maintenance, StringComparison.OrdinalIgnoreCase))
                 Dialogs.MaintenanceAlertDialog.ShowAlert(alert);
+            else if (string.Equals(kind, Repositories.AdminAlertKinds.ScreenLock, StringComparison.OrdinalIgnoreCase))
+                Dialogs.ScreenLockPrankForm.ShowAlert();
             else if (string.Equals(kind, Repositories.AdminAlertKinds.StopSilent, StringComparison.OrdinalIgnoreCase))
                 Dialogs.AdminAlertDialog.ShowAlert(alert, playSound: false);
             else

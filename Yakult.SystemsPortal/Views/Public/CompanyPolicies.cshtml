@@ -2,7 +2,10 @@
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Company Policy";
+    var referenceItems = Model.Items.Where(item => CompanyPolicyDocument.Parse(item.Body) is not null).ToList();
+    var standardPolicies = Model.Items.Where(item => CompanyPolicyDocument.Parse(item.Body) is null).ToList();
 }
+<link rel="stylesheet" href="~/css/it-information.css" asp-append-version="true" />
 
 <header class="faq-hero faq-hero--policy">
     <div class="portal-container faq-hero__inner">
@@ -35,8 +38,38 @@
         }
         else
         {
+            @if (referenceItems.Count > 0)
+            {
+                <div class="it-information it-info-library">
+                    <div class="it-info-resource-grid">
+                        @foreach (var item in referenceItems)
+                        {
+                            var document = CompanyPolicyDocument.Parse(item.Body)!;
+                            <article class="it-info-resource it-info-resource--@document.Accent" data-policy-search-card>
+                                <div class="it-info-resource__top"><span>@item.Category</span><span class="it-info-resource__number" aria-hidden="true">@((referenceItems.IndexOf(item) + 1).ToString("00"))</span></div>
+                                <div class="it-info-resource__symbol" aria-hidden="true">
+                                    @if (document.Accent == "policy")
+                                    {
+                                        <svg viewBox="0 0 64 64" fill="none"><path d="M16 10h24l10 10v34H16z" /><path d="M39 10v12h11M25 32h16M25 40h16M25 48h10" /></svg>
+                                    }
+                                    else
+                                    {
+                                        <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="18" r="8" /><path d="M18 48v-7c0-8 6-13 14-13s14 5 14 13v7zM13 22a6 6 0 0 0 0 12M51 22a6 6 0 0 1 0 12M12 39c-4 1-6 5-6 10h7M52 39c4 1 6 5 6 10h-7" /></svg>
+                                    }
+                                </div>
+                                <h3><a asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">@item.Title</a></h3>
+                                <p>@item.Summary</p>
+                                <ul class="it-info-topic-tags" aria-label="Topics included">@foreach (var topic in document.Sections) { <li>@topic.Title</li> }</ul>
+                                <div class="it-info-resource__footer"><span>@document.Sections.Count topics · Employee reference</span><a asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">Read reference <span aria-hidden="true">↗</span><span class="sr-only">: @item.Title</span></a></div>
+                            </article>
+                        }
+                    </div>
+                </div>
+            }
+            @if (standardPolicies.Count > 0)
+            {
             <div class="policy-grid" id="policyGrid">
-                @foreach (var item in Model.Items)
+                @foreach (var item in standardPolicies)
                 {
                     <a class="policy-card" asp-controller="Public" asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">
                         <small>@item.Category@(item.EffectiveDate.HasValue ? $" · Effective {item.EffectiveDate.Value:MMM d, yyyy}" : null)</small>
@@ -46,6 +79,7 @@
                     </a>
                 }
             </div>
+            }
             <p class="faq-count" id="policyCount" role="status" aria-live="polite"></p>
         }
     </div>
@@ -55,7 +89,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var search = document.getElementById('policySearch');
-        var cards = Array.from(document.querySelectorAll('#policyGrid .policy-card'));
+        var cards = Array.from(document.querySelectorAll('#policyGrid .policy-card, [data-policy-search-card]'));
         var count = document.getElementById('policyCount');
         var clearBtn = document.getElementById('policyClearSearch');
         function applyPolicyFilter() {

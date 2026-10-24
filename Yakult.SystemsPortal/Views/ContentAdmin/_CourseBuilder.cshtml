@@ -1,0 +1,20 @@
+<div class="course-builder-launch" id="courseBuilderLaunch"><div><strong>Go beyond an article.</strong><p>Build modules, short lessons, and interactive content.</p></div><button type="button" class="studio-btn studio-btn--primary" id="enableCourseBuilder">Build a course →</button></div>
+<div class="course-builder" id="courseBuilder" hidden>
+    <header class="builder-heading"><div><span class="builder-eyebrow">Course studio</span><h2>Design the learning journey</h2></div><span class="studio-pill" id="builderLessonCount"></span></header>
+    <div class="builder-course-settings">
+        <label>Audience<input class="studio-input" id="builderAudience" maxlength="200" /></label>
+        <label>Level<select class="studio-select" id="builderLevel"><option>Foundation</option><option>Intermediate</option><option>Advanced</option></select></label>
+        <label class="builder-wide">What will employees learn?<textarea class="studio-textarea" id="builderObjectives" rows="3" placeholder="One learning outcome per line"></textarea></label>
+    </div>
+    <div class="builder-layout">
+        <aside class="builder-outline"><div class="builder-row"><h3>Course outline</h3><button type="button" class="studio-btn" id="builderAddModule">+ Module</button></div><div id="builderOutline"></div></aside>
+        <section class="builder-lesson-editor" aria-label="Selected lesson">
+            <div class="builder-row"><h3 id="builderEditingLabel">Lesson</h3><div class="builder-row"><button type="button" class="studio-btn" id="builderDuplicateLesson">Duplicate</button><button type="button" class="studio-btn" id="builderRemoveLesson">Remove</button></div></div>
+            <div class="builder-lesson-fields"><label>Lesson title<input class="studio-input" id="builderLessonTitle" maxlength="180" /></label><label>Minutes<input class="studio-input" id="builderLessonMinutes" type="number" min="1" max="480" /></label></div>
+            <div class="builder-template-row"><span>Start from a template</span><button type="button" class="studio-tool-btn" data-lesson-template="video">Video lesson</button><button type="button" class="studio-tool-btn" data-lesson-template="walkthrough">Walkthrough</button><button type="button" class="studio-tool-btn" data-lesson-template="awareness">Awareness</button></div>
+            <div id="builderBlocks"></div>
+            <div class="builder-add-block"><label for="builderBlockType">Add content</label><select class="studio-select" id="builderBlockType"><option value="text">Text &amp; heading</option><option value="image">Image &amp; caption</option><option value="video">Video &amp; transcript</option><option value="callout">Highlight / warning</option><option value="steps">Step-by-step</option><option value="accordion">Expandable details</option><option value="comparison">Side-by-side comparison</option><option value="quiz">Knowledge check</option><option value="download">Download / reference</option></select><button class="studio-btn studio-btn--primary" id="builderAddBlock" type="button">+ Add block</button></div>
+        </section>
+    </div>
+    <p class="builder-status" id="builderStatus" role="status"></p>
+</div>

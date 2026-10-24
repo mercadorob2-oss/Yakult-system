@@ -18,6 +18,12 @@ public sealed class PublicHomeViewModel
 
 public sealed class ContentListViewModel
 {
+    public int TotalCount { get; init; }
+    public int Page { get; init; } = 1;
+    public int PageSize { get; init; } = 12;
+    public string Sort { get; init; } = "recommended";
+    public bool CatalogUnavailable { get; init; }
+    public bool IsDemoData { get; init; }
     public string Title { get; init; } = string.Empty;
     public string? Description { get; init; }
     public string? Query { get; init; }
@@ -29,6 +35,14 @@ public sealed class ContentListViewModel
     public IReadOnlyList<PortalContentItem> Items { get; init; } = Array.Empty<PortalContentItem>();
     public IReadOnlyList<PortalSystemLink> Services { get; init; } = Array.Empty<PortalSystemLink>();
     public IReadOnlyDictionary<int, PortalCourseProgress> ProgressByContentId { get; init; } = new Dictionary<int, PortalCourseProgress>();
+}
+
+public sealed class LearningCatalogPage
+{
+    public IReadOnlyList<PortalContentItem> Items { get; init; } = Array.Empty<PortalContentItem>();
+    public IReadOnlyList<string> Types { get; init; } = Array.Empty<string>();
+    public int TotalCount { get; init; }
+    public int Page { get; init; } = 1;
 }
 
 public sealed class ContentTrackOption
@@ -117,6 +131,7 @@ public sealed class MyLearningItem
 
 public sealed class MyLearningViewModel
 {
+    public bool IsDemoData { get; init; }
     public IReadOnlyList<MyLearningItem> InProgress { get; init; } = Array.Empty<MyLearningItem>();
     public IReadOnlyList<MyLearningItem> Completed { get; init; } = Array.Empty<MyLearningItem>();
 }
@@ -148,6 +163,7 @@ public sealed class PortalSectionLink
 
 public sealed class ContentEditorViewModel
 {
+    public bool IsDemoData { get; init; }
     public IReadOnlyList<PortalContentItem> Items { get; init; } = Array.Empty<PortalContentItem>();
     public IReadOnlyList<PortalContentCategory> Categories { get; init; } = Array.Empty<PortalContentCategory>();
     public bool CanPublish { get; init; }
