@@ -72,7 +72,6 @@ data class NavItem(
 
 private val hiddenBottomNavRoutes = setOf(
     "login",
-    "register",
     "scanner_device",
     "scanner_camera")
 

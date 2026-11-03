@@ -232,6 +232,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             topRightFlow.Children.Add(_refreshButton);
             topRightFlow.Children.Add(_toggleFiltersButton);
             topRightFlow.Children.Add(_clearFiltersButton);
+            var monthlyExportButton = CreateAccentButton("Monthly Detailed Report");
+            monthlyExportButton.ToolTip = "Export all tickets and recorded activity for a calendar month to Excel or PDF.";
+            monthlyExportButton.Click += async (_, __) => await ExportMonthlyDetailedAsync(monthlyExportButton);
+            topRightFlow.Children.Add(monthlyExportButton);
             topRightFlow.Children.Add(_statusText);
             Grid.SetColumn(topRightFlow, 1);
             topStrip.Children.Add(topRightFlow);
@@ -1150,6 +1154,75 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var fromText = (_fromDatePicker.SelectedDate ?? DateTime.Today).ToString("MMM dd, yyyy");
             var toText = (_toDatePicker.SelectedDate ?? DateTime.Today).ToString("MMM dd, yyyy");
             _tabSummaryText.Text = $"{tabName} report from {fromText} to {toText}. Click a blue ticket code or double-click any row to open the related ticket.";
+        }
+
+        private async Task ExportMonthlyDetailedAsync(Button exportButton)
+        {
+            if (_repository == null) return;
+            var previousMonth = DateTime.Today.AddMonths(-1);
+            var month = CreateTextComboBox();
+            for (var m = 1; m <= 12; m++) month.Items.Add(new DateTime(2000, m, 1).ToString("MMMM"));
+            month.SelectedIndex = previousMonth.Month - 1;
+            var year = new TextBox { Text = previousMonth.Year.ToString(), Padding = new Thickness(10), Margin = new Thickness(0, 4, 0, 12) };
+            var format = CreateTextComboBox();
+            format.Items.Add("Excel workbook (.xlsx)"); format.Items.Add("Detailed PDF (.pdf)"); format.SelectedIndex = 0;
+            var panel = new StackPanel { Margin = new Thickness(24) };
+            panel.Children.Add(new TextBlock { Text = "Monthly Detailed Report", FontSize = 21, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 12) });
+            panel.Children.Add(new TextBlock { Text = "Includes new tickets, carried-over tickets and recorded monthly activity across all departments. Grid filters and checked rows do not restrict this export. Dates use Philippine time.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 16) });
+            panel.Children.Add(MakeCompactField("Month", month));
+            panel.Children.Add(new TextBlock { Text = "Year", Margin = new Thickness(0, 12, 0, 0) }); panel.Children.Add(year);
+            panel.Children.Add(MakeCompactField("Export format", format));
+            var error = new TextBlock { Foreground = Brushes.DarkRed, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0) };
+            panel.Children.Add(error);
+            var buttons = new WrapPanel { Margin = new Thickness(0, 16, 0, 0) };
+            var proceed = CreateAccentButton("Export report");
+            var cancel = CreateQuietButton("Cancel"); cancel.IsCancel = true;
+            buttons.Children.Add(proceed); buttons.Children.Add(cancel); panel.Children.Add(buttons);
+            var dialog = new Window { Title = "Monthly Detailed Report", Owner = Window.GetWindow(this), Content = panel, Width = 520,
+                SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ShowInTaskbar = false, Background = WpfThemeResources.PageBackgroundBrush };
+            DateTime selectedMonth = previousMonth;
+            proceed.Click += (_, __) =>
+            {
+                if (!int.TryParse(year.Text, out var selectedYear) || selectedYear < 2000 || selectedYear > DateTime.Today.Year)
+                { error.Text = "Enter a year from 2000 through the current year."; return; }
+                selectedMonth = new DateTime(selectedYear, month.SelectedIndex + 1, 1);
+                if (TimeZoneInfo.ConvertTimeToUtc(selectedMonth, CallMonthlyReport.ReportZone) > DateTime.UtcNow)
+                { error.Text = "Choose the current month or an earlier month."; return; }
+                dialog.DialogResult = true;
+            };
+            cancel.Click += (_, __) => dialog.DialogResult = false;
+            if (dialog.ShowDialog() != true) return;
+            var excel = format.SelectedIndex == 0;
+            var save = new SaveFileDialog { Title = "Save Monthly Detailed Report", Filter = excel ? "Excel workbook (*.xlsx)|*.xlsx" : "PDF document (*.pdf)|*.pdf",
+                DefaultExt = excel ? "xlsx" : "pdf", FileName = $"ITCM_Monthly_Detailed_{selectedMonth:yyyy_MM}" };
+            if (save.ShowDialog(Window.GetWindow(this)) != true) return;
+            exportButton.IsEnabled = false;
+            _statusText.Text = "Loading complete monthly ticket records...";
+            string temporaryPath = null;
+            try
+            {
+                var report = await _repository.GetMonthlyDetailedReportAsync(selectedMonth);
+                _statusText.Text = $"Exporting {report.Tickets.Count:N0} tickets...";
+                temporaryPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(save.FileName), ".itcm-" + Guid.NewGuid().ToString("N") + (excel ? ".xlsx" : ".pdf"));
+                await Task.Run(() => { if (excel) CallMonthlyReportExporter.ExportExcel(report, temporaryPath); else CallMonthlyReportExporter.ExportPdf(report, temporaryPath); });
+                if (File.Exists(save.FileName)) File.Replace(temporaryPath, save.FileName, null);
+                else File.Move(temporaryPath, save.FileName);
+                _statusText.Text = $"Monthly report exported: {report.Tickets.Count:N0} tickets.";
+                WpfItcmDialogService.ShowInfo(this, $"Exported {report.Tickets.Count:N0} tickets for {selectedMonth:MMMM yyyy}." +
+                    (report.Warnings.Count > 0 ? "\nData availability notes are listed in the report summary." : ""), "Monthly Detailed Report");
+            }
+            catch (Exception ex)
+            {
+                _statusText.Text = "Monthly export failed.";
+                WpfItcmDialogService.ShowError(this, ex.Message, "Monthly Detailed Report");
+            }
+            finally
+            {
+                exportButton.IsEnabled = true;
+                if (temporaryPath != null && File.Exists(temporaryPath))
+                { try { File.Delete(temporaryPath); } catch (IOException) { } catch (UnauthorizedAccessException) { } }
+            }
         }
 
         private bool HasExportableRows()

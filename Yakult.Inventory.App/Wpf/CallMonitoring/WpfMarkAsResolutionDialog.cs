@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Yakult.Inventory.App.Pages;
+using Yakult.Inventory.App.Models.CallMonitoring;
 
 namespace Yakult.Inventory.App.Wpf.CallMonitoring
 {
@@ -62,6 +63,62 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private readonly FrameworkElement _previewStep;
         private readonly FrameworkElement _remarksSection;
 
+        private readonly List<WpfMarkAsResolutionDialog> _additionalItems = new List<WpfMarkAsResolutionDialog>();
+        private readonly StackPanel _additionalItemList;
+        private readonly bool _allowBatch;
+        private readonly TextBox _oldAssetBox;
+        private readonly TextBox _newAssetBox;
+        private readonly Grid _oldListedGrid;
+        private readonly Grid _oldUnlistedGrid;
+        private readonly FrameworkElement _oldDispositionCard;
+        private readonly FrameworkElement _itemsOverviewCard;
+        private readonly Button _addItemButton;
+        private readonly TextBlock _itemsCountText;
+        private readonly TextBlock _guidanceText;
+        private readonly Border[] _stepIndicators;
+        private readonly ScrollViewer _mainScroll;
+        private readonly CheckBox _includeOldCheck;
+        private readonly CheckBox _includeNewCheck;
+        private readonly StackPanel _oldFields;
+        private readonly StackPanel _newFields;
+        private readonly FrameworkElement _quantityFields;
+        private readonly WrapPanel _addItemActions;
+        private readonly TextBlock _entryHeading;
+        private readonly TextBlock _oldItemHeading;
+        private readonly TextBlock _newItemHeading;
+        private TextBlock _inlineCaption;
+        private int _entryNumber = 1;
+        private readonly TextBox _oldSerialSearchBox;
+        private readonly TextBox _newSerialSearchBox;
+        private readonly ListBox _oldSerialResults;
+        private readonly ListBox _newSerialResults;
+        private bool _serialLookupInProgress;
+        private bool _refreshingValidation;
+        private bool _isInlineEditor;
+        private bool _inheritTicketNotes;
+        private Window _inlineOwner;
+        private bool IncludesOldItem => _includeOldCheck != null && _includeOldCheck.IsChecked == true;
+        private bool IncludesNewItem => _includeNewCheck != null && _includeNewCheck.IsChecked == true;
+
+        public IList<CallReplacementLine> GetReplacementLines()
+        {
+            return new[] { this }.Concat(_additionalItems).Select(x => new CallReplacementLine
+            {
+                OldItemId = x.OldItemId ?? 0, NewItemId = x.NewItemId ?? 0, Quantity = x.Quantity,
+                OldItemConditionId = x.OldItemConditionId, OldItemConditionRemarks = x.OldItemConditionRemarks,
+                OldItemRepairAction = x.OldItemRepairAction, Remarks = x.Remarks,
+                UnlistedOldItem = !x.IncludesOldItem || !x.UseUnlistedOldItem ? null : new ItemDto
+                {
+                    Name = x.UnlistedOldItemName, Description = x.UnlistedOldItemDescription,
+                    ModelNumber = x.UnlistedOldItemModelNumber, SerialNumber = x.UnlistedOldItemSerialNumber,
+                    UnitOfMeasure = x.UnlistedOldItemUnitOfMeasure, Active = true, DateCreated = DateTime.Now,
+                    ItemType = "Hardware", CategoryId = x.UnlistedOldItemCategoryId, Category = x.UnlistedOldItemCategoryName,
+                    StockOnHand = 0, ConditionId = x.OldItemConditionId, Remarks = x.OldItemConditionRemarks,
+                    AffectsInventory = true, IsTrackedAsset = false
+                }
+            }).Where(x => x.HasOldItem || x.HasNewItem).ToList();
+        }
+
         private int _wizardStep;
         private bool _oldActionTouched;
         private bool _suppressOldActionTouched;
@@ -94,24 +151,32 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             List<ItemLookupDto> outHardwareItems,
             List<ItemLookupDto> stockHardwareItems,
             List<ItemCategoryDto> categories,
-            IList<ConditionDto> conditions)
+            IList<ConditionDto> conditions, bool allowBatch = true)
         {
             _outHardwareItems = (outHardwareItems ?? new List<ItemLookupDto>()).Where(x => x != null).OrderBy(x => x.DisplayText).ToList();
             _stockHardwareItems = (stockHardwareItems ?? new List<ItemLookupDto>()).Where(x => x != null).OrderBy(x => x.DisplayText).ToList();
             _categories = (categories ?? new List<ItemCategoryDto>()).Where(x => x != null).OrderBy(x => x.Name).ToList();
             _conditions = (conditions ?? new List<ConditionDto>()).Where(x => x != null).OrderBy(x => x.ConditionId).ToList();
 
+            _allowBatch = allowBatch;
+            var radioScope = Guid.NewGuid().ToString("N");
             Title = "Mark Ticket Resolution";
-            Width = 980;
-            Height = 760;
-            MinWidth = 820;
-            MinHeight = 600;
+            Width = 1440;
+            Height = 900;
+            MinWidth = 1000;
+            MinHeight = 640;
+            WindowState = WindowState.Maximized;
+            FontFamily = new FontFamily("Segoe UI");
+            FontSize = 13;
+            UseLayoutRounding = true;
+            SnapsToDevicePixels = true;
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ResizeMode = ResizeMode.CanResize;
             ShowInTaskbar = false;
-            Background = WpfThemeResources.SurfaceMutedBrush;
+            Background = BrushFromRgb(245, 247, 250);
 
-            var root = new Grid();
+            var root = new Grid { Background = Background };
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -121,7 +186,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var headerBorder = new Border
             {
                 Background = Brushes.White,
-                Padding = new Thickness(22, 16, 22, 12)
+                Padding = new Thickness(28, 20, 28, 16),
+                BorderBrush = BrushFromRgb(226, 232, 240),
+                BorderThickness = new Thickness(0, 0, 0, 1)
             };
             Grid.SetRow(headerBorder, 0);
             root.Children.Add(headerBorder);
@@ -129,10 +196,16 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var header = new StackPanel();
             headerBorder.Child = header;
 
+            header.Children.Add(new TextBlock
+            {
+                Text = "IT CALL MONITORING  /  RESOLUTION", FontSize = 10.5,
+                FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(100, 116, 139),
+                Margin = new Thickness(0, 0, 0, 6)
+            });
             _dialogTitle = new TextBlock
             {
                 Text = "Resolution Details",
-                FontSize = 22,
+                FontSize = 26,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = WpfThemeResources.TextDarkBrush
             };
@@ -150,42 +223,49 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 Margin = new Thickness(0, 8, 0, 0),
                 FontSize = 12.5,
+                TextWrapping = TextWrapping.Wrap,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = BrushFromRgb(71, 85, 105)
             };
-            header.Children.Add(_stepTitle);
-
-            var footer = new DockPanel
+            var progress = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 16, 0, 0) };
+            _stepIndicators = new Border[3];
+            var stepLabels = new[] { "1  Choose resolution", "2  Item details", "3  Review & save" };
+            for (var i = 0; i < stepLabels.Length; i++)
             {
-                Height = 62,
-                Background = Brushes.White,
-                LastChildFill = false,
-                Margin = new Thickness(0)
-            };
-            Grid.SetRow(footer, 2);
-            root.Children.Add(footer);
+                _stepIndicators[i] = new Border
+                {
+                    CornerRadius = new CornerRadius(7), Padding = new Thickness(14, 8, 14, 8),
+                    Margin = new Thickness(0, 0, 8, 0),
+                    Child = new TextBlock { Text = stepLabels[i], FontSize = 12, FontWeight = FontWeights.SemiBold }
+                };
+                progress.Children.Add(_stepIndicators[i]);
+            }
+            header.Children.Add(progress);
 
+            var footerBorder = new Border
+            {
+                Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240),
+                BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(28, 14, 28, 14)
+            };
+            Grid.SetRow(footerBorder, 2);
+            root.Children.Add(footerBorder);
+            var footer = new Grid();
+            footer.ColumnDefinitions.Add(new ColumnDefinition());
+            footer.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            footerBorder.Child = footer;
             var buttonRow = new StackPanel
             {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(18, 10, 18, 10)
+                Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center
             };
-            DockPanel.SetDock(buttonRow, Dock.Right);
+            Grid.SetColumn(buttonRow, 1);
             footer.Children.Add(buttonRow);
-
             _validationText = new TextBlock
             {
-                Margin = new Thickness(22, 0, 12, 0),
-                VerticalAlignment = VerticalAlignment.Center,
-                FontSize = 12,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = BrushFromRgb(185, 28, 28),
-                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 20, 0), VerticalAlignment = VerticalAlignment.Center,
+                FontSize = 12, Foreground = BrushFromRgb(185, 28, 28), TextWrapping = TextWrapping.Wrap,
                 Visibility = Visibility.Collapsed
             };
-            DockPanel.SetDock(_validationText, Dock.Left);
             footer.Children.Add(_validationText);
 
             _backButton = CreateButton("Back", WpfThemeResources.TextMutedBrush);
@@ -193,41 +273,67 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var cancelButton = CreateButton("Cancel", BrushFromRgb(71, 85, 105));
             cancelButton.IsCancel = true;
             cancelButton.Click += (_, __) => DialogResult = false;
-            _nextButton = CreateButton("Next", WpfThemeResources.PrimaryBrush);
+            _nextButton = CreateButton("Continue →", WpfThemeResources.PrimaryBrush);
             _nextButton.Click += (_, __) => GoNext();
-            _confirmButton = CreateButton("Confirm", BrushFromRgb(22, 163, 74));
+            _confirmButton = CreateButton("Save resolution", BrushFromRgb(22, 163, 74));
             _confirmButton.Click += (_, __) => Confirm();
+            _nextButton.MinWidth = 184;
+            _confirmButton.MinWidth = 184;
 
             buttonRow.Children.Add(_backButton);
             buttonRow.Children.Add(cancelButton);
             buttonRow.Children.Add(_nextButton);
             buttonRow.Children.Add(_confirmButton);
 
-            var scroll = new ScrollViewer
+            var workspace = new Grid { Margin = new Thickness(24, 20, 24, 12) };
+            workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star), MinWidth = 500 });
+            workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+            workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star), MinWidth = 350 });
+            Grid.SetRow(workspace, 1);
+            root.Children.Add(workspace);
+            _mainScroll = new ScrollViewer
             {
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Padding = new Thickness(0, 0, 6, 0)
             };
-            Grid.SetRow(scroll, 1);
-            root.Children.Add(scroll);
-
-            var body = new StackPanel
+            workspace.Children.Add(_mainScroll);
+            var body = new StackPanel();
+            _mainScroll.Content = body;
+            var detailScroll = new ScrollViewer
             {
-                Margin = new Thickness(22),
-                Orientation = Orientation.Vertical
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Padding = new Thickness(0, 0, 6, 0)
             };
-            scroll.Content = body;
+            Grid.SetColumn(detailScroll, 2);
+            workspace.Children.Add(detailScroll);
+            var details = new StackPanel();
+            detailScroll.Content = details;
+
+            var guide = CreateCard();
+            guide.Children.Add(CreateSectionTitle("Your resolution"));
+            guide.Children.Add(_stepTitle);
+            _statusChipText = new TextBlock { FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White };
+            _statusChip = new Border
+            {
+                CornerRadius = new CornerRadius(12), Padding = new Thickness(12, 5, 12, 5),
+                HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 12, 0, 10),
+                Background = BrushFromRgb(22, 163, 74), Child = _statusChipText
+            };
+            guide.Children.Add(_statusChip);
+            _guidanceText = CreateHelpText("Choose how this ticket was resolved. You can review everything before saving.");
+            guide.Children.Add(_guidanceText);
+            details.Children.Add(WrapCard(guide));
 
             var typeCard = CreateCard();
-            _typeStep = typeCard;
-            typeCard.Children.Add(CreateSectionTitle("Resolution type"));
-            var typeRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-            _serviceOnlyRadio = new RadioButton { Content = "Service Only (No Parts)", GroupName = "ResolutionType", IsChecked = true, Margin = new Thickness(0, 0, 28, 0), FontWeight = FontWeights.SemiBold };
-            _replacementRadio = new RadioButton { Content = "Replacement (Parts Used)", GroupName = "ResolutionType", FontWeight = FontWeights.SemiBold };
+            _typeStep = WrapCard(typeCard);
+            typeCard.Children.Add(CreateSectionTitle("How was the issue resolved?"));
+            var typeRow = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
+            _serviceOnlyRadio = new RadioButton { Content = "Service Only (No Parts)", GroupName = "ResolutionType" + radioScope, IsChecked = true, Margin = new Thickness(0, 0, 28, 0), FontWeight = FontWeights.SemiBold };
+            _replacementRadio = new RadioButton { Content = "Replacement (Parts Used)", GroupName = "ResolutionType" + radioScope, FontWeight = FontWeights.SemiBold };
             _serviceOnlyRadio.Checked += (_, __) => UpdateWizardStep();
             _replacementRadio.Checked += (_, __) => UpdateWizardStep();
-            typeRow.Children.Add(_serviceOnlyRadio);
-            typeRow.Children.Add(_replacementRadio);
+            typeRow.Children.Add(CreateChoiceCard(_serviceOnlyRadio, "Service only", "The issue was fixed without issuing or replacing an item."));
+            typeRow.Children.Add(CreateChoiceCard(_replacementRadio, "Items used or collected", "Record old items collected, new items issued, or an old / new replacement."));
             typeCard.Children.Add(typeRow);
             _typeHelpText = new TextBlock
             {
@@ -239,35 +345,58 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             typeCard.Children.Add(_typeHelpText);
             _temporaryServiceCheck = new CheckBox
             {
-                Content = "Temporary service (mark as Resolved (Temporary))",
+                Content = "Temporary fix — follow-up needed",
                 Margin = new Thickness(0, 10, 0, 0),
                 FontWeight = FontWeights.SemiBold
             };
             _temporaryServiceCheck.Checked += (_, __) => UpdateWizardStep();
             _temporaryServiceCheck.Unchecked += (_, __) => UpdateWizardStep();
             typeCard.Children.Add(_temporaryServiceCheck);
-            body.Children.Add(typeCard);
+            body.Children.Add(_typeStep);
 
             var replacementCard = CreateCard();
-            _replacementStep = replacementCard;
-            replacementCard.Children.Add(CreateSectionTitle("Old item / new item selection"));
+            _replacementStep = WrapCard(replacementCard);
+            _entryHeading = CreateSectionTitle("What would you like to record?");
+            replacementCard.Children.Add(_entryHeading);
+            replacementCard.Children.Add(CreateHelpText("Choose either side, or both for a direct replacement. Old and new items do not have to be added in equal numbers."));
+            var includeRow = new WrapPanel { Margin = new Thickness(0, 14, 0, 20) };
+            _includeOldCheck = new CheckBox { Content = "Include an old item", IsChecked = true, Margin = new Thickness(0, 0, 24, 8), FontWeight = FontWeights.SemiBold };
+            _includeNewCheck = new CheckBox { Content = "Issue a new item", IsChecked = true, Margin = new Thickness(0, 0, 0, 8), FontWeight = FontWeights.SemiBold };
+            includeRow.Children.Add(_includeOldCheck);
+            includeRow.Children.Add(_includeNewCheck);
+            replacementCard.Children.Add(includeRow);
+            _oldFields = CreateCard();
+            replacementCard.Children.Add(_oldFields);
+            _oldItemHeading = CreateSectionTitle("Old item being collected");
+            _oldFields.Children.Add(_oldItemHeading);
 
-            var oldModeRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 12) };
-            _oldListedRadio = new RadioButton { Content = "Listed in Inventory", GroupName = "OldItemMode", IsChecked = true, Margin = new Thickness(0, 0, 22, 0) };
-            _oldUnlistedRadio = new RadioButton { Content = "Not Listed", GroupName = "OldItemMode" };
+            _oldFields.Children.Add(CreateHelpText("Select the old item from inventory, or enter its details if it is not listed."));
+            var oldModeRow = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 12) };
+            _oldListedRadio = new RadioButton { Content = "Listed in Inventory", GroupName = "OldItemMode" + radioScope, IsChecked = true, Margin = new Thickness(0, 0, 22, 0) };
+            _oldUnlistedRadio = new RadioButton { Content = "Not listed — enter details", GroupName = "OldItemMode" + radioScope };
             _oldListedRadio.Checked += (_, __) => UpdateOldItemMode();
             _oldUnlistedRadio.Checked += (_, __) => UpdateOldItemMode();
             oldModeRow.Children.Add(_oldListedRadio);
             oldModeRow.Children.Add(_oldUnlistedRadio);
-            replacementCard.Children.Add(oldModeRow);
+            _oldFields.Children.Add(oldModeRow);
 
             var oldListedGrid = CreateTwoColumnGrid();
-            oldListedGrid.Tag = "Listed";
+            _oldListedGrid = oldListedGrid;
             _oldCategoryFilter = CreateCombo();
             _oldItemCombo = CreateItemCombo(showStock: false);
-            AddField(oldListedGrid, 0, 0, "Old Category", _oldCategoryFilter);
-            AddField(oldListedGrid, 0, 1, "Old Item", _oldItemCombo);
-            replacementCard.Children.Add(oldListedGrid);
+            AddField(oldListedGrid, 0, 0, "Category", _oldCategoryFilter);
+            AddField(oldListedGrid, 0, 1, "Choose the old item", _oldItemCombo);
+            _oldAssetBox = CreateTextBox();
+            _oldAssetBox.IsReadOnly = true;
+            _oldAssetBox.ToolTip = "Fetched from the inventory item description, where imported fixed asset numbers are stored.";
+            AddField(oldListedGrid, 1, 1, "Fixed asset number / description · automatic", _oldAssetBox);
+            _oldItemCombo.SelectionChanged += (_, __) =>
+            {
+                _oldAssetBox.Text = (_oldItemCombo.SelectedItem as ItemLookupDto)?.FixedAssetNumber ?? "";
+                if (!_serialLookupInProgress && _oldSerialSearchBox != null) _oldSerialSearchBox.Text = "";
+            };
+            _oldFields.Children.Add(oldListedGrid);
+            _oldFields.Children.Insert(1, CreateSerialSearch(false, out _oldSerialSearchBox, out _oldSerialResults));
 
             var oldUnlistedGrid = CreateTwoColumnGrid();
             _oldCategoryCombo = CreateCombo();
@@ -276,35 +405,64 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _oldSerialBox = CreateTextBox();
             _oldUnitCombo = CreateCombo();
             _oldDescriptionBox = CreateTextBox();
-            AddField(oldUnlistedGrid, 0, 0, "Old Name", _oldNameBox);
-            AddField(oldUnlistedGrid, 0, 1, "Old Category", _oldCategoryCombo);
-            AddField(oldUnlistedGrid, 1, 0, "Old Model", _oldModelBox);
-            AddField(oldUnlistedGrid, 1, 1, "Serial", _oldSerialBox);
-            AddField(oldUnlistedGrid, 2, 0, "Unit", _oldUnitCombo);
-            AddField(oldUnlistedGrid, 2, 1, "Description", _oldDescriptionBox);
-            oldUnlistedGrid.Tag = "Unlisted";
-            replacementCard.Children.Add(oldUnlistedGrid);
+            AddField(oldUnlistedGrid, 0, 0, "Item name *", _oldNameBox);
+            AddField(oldUnlistedGrid, 0, 1, "Category", _oldCategoryCombo);
+            AddField(oldUnlistedGrid, 1, 0, "Model number *", _oldModelBox);
+            AddField(oldUnlistedGrid, 1, 1, "Serial number", _oldSerialBox);
+            AddField(oldUnlistedGrid, 2, 0, "Unit of measure *", _oldUnitCombo);
+            var fetchAsset = CreateButton("Fetch by serial", WpfThemeResources.PrimaryBrush);
+            fetchAsset.Click += (_, __) =>
+            {
+                var serial = (_oldSerialBox.Text ?? "").Trim();
+                var matches = _outHardwareItems.Concat(_stockHardwareItems).GroupBy(x => x.ItemId).Select(x => x.First())
+                    .Where(x => serial.Length > 0 && string.Equals(x.SerialNumber?.Trim(), serial, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (matches.Count != 1 || string.IsNullOrWhiteSpace(matches[0].FixedAssetNumber))
+                {
+                    MessageBox.Show(_inlineOwner ?? this, matches.Count > 1 ? "Several items have this serial. Choose Listed in Inventory to select the correct item."
+                        : "No fixed asset number / description was found for this serial.", "Fetch asset number", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                _oldDescriptionBox.Text = matches[0].FixedAssetNumber;
+            };
+            var assetStack = new StackPanel();
+            assetStack.Children.Add(_oldDescriptionBox);
+            assetStack.Children.Add(fetchAsset);
+            AddField(oldUnlistedGrid, 2, 1, "Fixed asset number / description", assetStack);
+            _oldUnlistedGrid = oldUnlistedGrid;
+            _oldFields.Children.Add(oldUnlistedGrid);
 
             var conditionGrid = CreateTwoColumnGrid();
             _oldConditionCombo = CreateCombo();
             _conditionRemarksBox = CreateTextBox();
-            AddField(conditionGrid, 0, 0, "Old Condition", _oldConditionCombo);
-            AddField(conditionGrid, 0, 1, "Condition Remarks", _conditionRemarksBox);
-            replacementCard.Children.Add(conditionGrid);
+            AddField(conditionGrid, 0, 0, "Current condition *", _oldConditionCombo);
+            AddField(conditionGrid, 0, 1, "Condition notes (optional)", _conditionRemarksBox);
+            var dispositionCard = CreateCard();
+            dispositionCard.Children.Add(CreateSectionTitle("What happens to the old item?"));
+            dispositionCard.Children.Add(CreateHelpText("Record its condition and choose how IT will handle it."));
+            dispositionCard.Children.Add(conditionGrid);
 
-            var actionRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 12) };
-            actionRow.Children.Add(new TextBlock { Text = "Old Item Action", Width = 130, VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(71, 85, 105) });
-            _oldActionRepairedRadio = new RadioButton { Content = "Repaired", GroupName = "OldItemAction", IsChecked = true, Margin = new Thickness(0, 0, 22, 0) };
-            _oldActionUnrepairedRadio = new RadioButton { Content = "Unrepaired", GroupName = "OldItemAction", Margin = new Thickness(0, 0, 22, 0) };
-            _oldActionSpareRadio = new RadioButton { Content = "Repaired - Spare inventory", GroupName = "OldItemAction" };
+            var actionRow = new StackPanel { Margin = new Thickness(0, 12, 0, 0) };
+            actionRow.Children.Add(new TextBlock { Text = "After replacement", Margin = new Thickness(0, 0, 0, 10), VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(71, 85, 105) });
+            _oldActionRepairedRadio = new RadioButton { Content = "Repaired — return to available stock", GroupName = "OldItemAction" + radioScope, IsChecked = true, Margin = new Thickness(0, 0, 22, 0) };
+            _oldActionUnrepairedRadio = new RadioButton { Content = "Needs repair — keep out of stock", GroupName = "OldItemAction" + radioScope, Margin = new Thickness(0, 0, 22, 0) };
+            _oldActionSpareRadio = new RadioButton { Content = "Repaired — keep as a spare", GroupName = "OldItemAction" + radioScope };
             _oldActionRepairedRadio.Checked += (_, __) => { TouchOldAction(); RefreshPreviewIfNeeded(); };
             _oldActionUnrepairedRadio.Checked += (_, __) => { TouchOldAction(); RefreshPreviewIfNeeded(); };
             _oldActionSpareRadio.Checked += (_, __) => { TouchOldAction(); RefreshPreviewIfNeeded(); };
             actionRow.Children.Add(_oldActionRepairedRadio);
             actionRow.Children.Add(_oldActionUnrepairedRadio);
             actionRow.Children.Add(_oldActionSpareRadio);
-            replacementCard.Children.Add(actionRow);
+            foreach (var option in actionRow.Children.OfType<RadioButton>()) option.Margin = new Thickness(0, 0, 0, 12);
+            dispositionCard.Children.Add(actionRow);
+            _oldDispositionCard = WrapCard(dispositionCard);
+            details.Children.Add(_oldDispositionCard);
 
+            _newFields = CreateCard();
+            replacementCard.Children.Add(_newFields);
+            _newFields.Children.Add(new Border { Height = 1, Background = BrushFromRgb(226, 232, 240), Margin = new Thickness(0, 18, 0, 22) });
+            _newItemHeading = CreateSectionTitle("New item to issue from stock");
+            _newFields.Children.Add(_newItemHeading);
+            _newFields.Children.Add(CreateHelpText("Search by item name, model, serial number, or fixed asset number. Only available stock can be issued."));
             var newGrid = CreateTwoColumnGrid();
             _newCategoryFilter = CreateCombo();
             _newItemCombo = CreateItemCombo(showStock: true);
@@ -316,16 +474,53 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var newItemStack = new StackPanel();
             newItemStack.Children.Add(_newItemCombo);
             newItemStack.Children.Add(_newStockHint);
-            AddField(newGrid, 0, 0, "New Category", _newCategoryFilter);
-            AddField(newGrid, 0, 1, "Replacement Item", newItemStack);
-            AddField(newGrid, 1, 0, "Quantity", _qtyBox);
-            _temporaryCheck = new CheckBox { Content = "Temporary replacement", Margin = new Thickness(0, 27, 0, 0) };
-            AddField(newGrid, 1, 1, "Follow-up", _temporaryCheck);
-            replacementCard.Children.Add(newGrid);
-            body.Children.Add(replacementCard);
+            AddField(newGrid, 0, 0, "Category", _newCategoryFilter);
+            AddField(newGrid, 0, 1, "Choose a replacement *", newItemStack);
+
+            _temporaryCheck = new CheckBox { Content = "Temporary (return later)", Margin = new Thickness(0, 8, 0, 0) };
+
+            _newAssetBox = CreateTextBox();
+            _newAssetBox.IsReadOnly = true;
+            _newAssetBox.ToolTip = _oldAssetBox.ToolTip;
+            AddField(newGrid, 2, 1, "Fixed asset number / description · automatic", _newAssetBox);
+            _newItemCombo.SelectionChanged += (_, __) =>
+            {
+                _newAssetBox.Text = (_newItemCombo.SelectedItem as ItemLookupDto)?.FixedAssetNumber ?? "";
+                if (!_serialLookupInProgress && _newSerialSearchBox != null) _newSerialSearchBox.Text = "";
+            };
+            _newFields.Children.Add(newGrid);
+            _newFields.Children.Insert(2, CreateSerialSearch(true, out _newSerialSearchBox, out _newSerialResults));
+            var quantityGrid = CreateTwoColumnGrid();
+            AddField(quantityGrid, 0, 0, "Quantity for this entry *", _qtyBox);
+            AddField(quantityGrid, 0, 1, "Return arrangement for issued items", _temporaryCheck);
+            _quantityFields = quantityGrid;
+            replacementCard.Children.Add(quantityGrid);
+            body.Children.Add(_replacementStep);
+
+            var itemsCard = CreateCard();
+            itemsCard.Children.Add(CreateSectionTitle("Add items to this resolution"));
+            _itemsCountText = CreateHelpText("Add an old item, a new item, or both. Each entry has its own quantity and notes.");
+            itemsCard.Children.Add(_itemsCountText);
+            _additionalItemList = new StackPanel { Margin = new Thickness(0, 10, 0, 12) };
+
+            _addItemActions = new WrapPanel();
+            var addOld = CreateButton("+ Add old item", WpfThemeResources.PrimaryBrush);
+            var addNew = CreateButton("+ Add new item", WpfThemeResources.PrimaryBrush);
+            _addItemButton = CreateButton("+ Add both", WpfThemeResources.TextMutedBrush);
+            addOld.Click += (_, __) => AddAnotherItem(true, false);
+            addNew.Click += (_, __) => AddAnotherItem(false, true);
+            _addItemButton.Click += (_, __) => AddAnotherItem(true, true);
+            foreach (var button in new[] { addOld, addNew, _addItemButton })
+            {
+                button.Margin = new Thickness(0, 0, 8, 8);
+                _addItemActions.Children.Add(button);
+            }
+            if (allowBatch) itemsCard.Children.Add(_addItemActions);
+            body.Children.Add(_additionalItemList);
+            _itemsOverviewCard = WrapCard(itemsCard);
 
             var remarksCard = CreateCard();
-            _remarksSection = remarksCard;
+            _remarksSection = WrapCard(remarksCard);
             _remarksTitle = CreateSectionTitle("Service notes");
             remarksCard.Children.Add(_remarksTitle);
             _remarksBox = CreateTextBox();
@@ -333,48 +528,48 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _remarksBox.AcceptsReturn = true;
             _remarksBox.TextWrapping = TextWrapping.Wrap;
             _remarksBox.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+            remarksCard.Children.Add(CreateHelpText("Briefly explain what was done and any follow-up needed. These notes are saved with the ticket."));
+            _remarksBox.Margin = new Thickness(0, 12, 0, 0);
             remarksCard.Children.Add(_remarksBox);
-            body.Children.Add(remarksCard);
+            details.Children.Add(_remarksSection);
+            details.Children.Insert(1, _itemsOverviewCard);
 
             var previewCard = CreateCard();
-            _previewStep = previewCard;
-            var previewHeader = new DockPanel { LastChildFill = true };
-            _statusChipText = new TextBlock
-            {
-                FontSize = 11.5,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = Brushes.White
-            };
-            _statusChip = new Border
-            {
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(10, 4, 10, 4),
-                Background = BrushFromRgb(22, 163, 74),
-                Child = _statusChipText,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            DockPanel.SetDock(_statusChip, Dock.Right);
-            previewHeader.Children.Add(_statusChip);
-            previewHeader.Children.Add(CreateSectionTitle("Confirmation and stock impact preview"));
-            previewCard.Children.Add(previewHeader);
+            _previewStep = WrapCard(previewCard);
+            previewCard.Children.Add(CreateSectionTitle("Review your resolution"));
+            previewCard.Children.Add(CreateHelpText("Check the items, quantities, and stock changes below. Use Back if anything needs changing."));
             _previewBox = CreateTextBox();
-            _previewBox.MinHeight = 260;
+            _previewBox.MinHeight = 380;
+            _previewBox.Margin = new Thickness(0, 16, 0, 0);
+            _previewBox.Background = BrushFromRgb(248, 250, 252);
+            _previewBox.Padding = new Thickness(18);
             _previewBox.AcceptsReturn = true;
             _previewBox.TextWrapping = TextWrapping.Wrap;
             _previewBox.IsReadOnly = true;
             previewCard.Children.Add(_previewBox);
-            body.Children.Add(previewCard);
+            body.Children.Add(_previewStep);
 
+            if (!allowBatch)
+            {
+                _serviceOnlyRadio.IsEnabled = false;
+                _replacementRadio.IsChecked = true;
+                _temporaryCheck.Visibility = Visibility.Collapsed;
+            }
+            _includeOldCheck.Checked += (_, __) => UpdateEntryMode();
+            _includeOldCheck.Unchecked += (_, __) => UpdateEntryMode();
+            _includeNewCheck.Checked += (_, __) => UpdateEntryMode();
+            _includeNewCheck.Unchecked += (_, __) => UpdateEntryMode();
             PopulateLookups();
             HookPreviewRefresh();
             AttachItemSearch(_oldItemCombo, () => _searchBaseOld);
             AttachItemSearch(_newItemCombo, () => _searchBaseNew);
             ApplyAvailabilityGuards();
+            UpdateEntryMode();
             UpdateOldItemMode();
             UpdateWizardStep();
             Loaded += (_, __) =>
             {
-                _wizardStep = 0;
+                _wizardStep = _allowBatch ? 0 : 1;
                 UpdateOldItemMode();
                 UpdateWizardStep();
                 _remarksBox.Focus();
@@ -404,7 +599,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _newCategoryFilter.SelectedIndex = 0;
                 _newCategoryFilter.IsEnabled = false;
                 _newItemCombo.IsEnabled = false;
-                _qtyBox.IsEnabled = false;
+
                 _newStockHint.Text = "No loose stock — add stock or choose Service Only.";
                 _newStockHint.Foreground = BrushFromRgb(185, 28, 28);
             }
@@ -448,7 +643,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             // This matches the repair portal pattern where a section is hidden, not disabled, when empty.
             if (_stockHardwareItems.Count == 0)
             {
-                _typeHelpText.Text = "No replacement stock items are currently available — Service Only is recommended. You can still choose Replacement if you will add stock first.";
+                _typeHelpText.Text = "No new stock is available. You can still record an old item collected.";
             }
 
             if (_categories.Count == 0)
@@ -557,10 +752,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private void UpdateOldItemMode()
         {
             var useUnlisted = _oldUnlistedRadio.IsChecked == true;
-            foreach (var child in ((Panel)_replacementStep).Children.OfType<Grid>().Where(x => Equals(x.Tag, "Listed")))
-                child.Visibility = useUnlisted ? Visibility.Collapsed : Visibility.Visible;
-            foreach (var child in ((Panel)_replacementStep).Children.OfType<Grid>().Where(x => Equals(x.Tag, "Unlisted")))
-                child.Visibility = useUnlisted ? Visibility.Visible : Visibility.Collapsed;
+            if (_oldListedGrid != null) _oldListedGrid.Visibility = useUnlisted ? Visibility.Collapsed : Visibility.Visible;
+            if (_oldUnlistedGrid != null) _oldUnlistedGrid.Visibility = useUnlisted ? Visibility.Visible : Visibility.Collapsed;
             RefreshValidationState();
         }
 
@@ -593,9 +786,293 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private void UpdateNewItemStockHint()
         {
+            if (_serialLookupInProgress) return;
             var item = _newItemCombo.SelectedItem as ItemLookupDto;
             _newStockHint.Text = item == null ? string.Empty : "Available stock: " + item.StockOnHand;
             ClampQuantityToSelectedStock();
+        }
+
+        private IEnumerable<ItemLookupDto> GetSerialSearchItems(bool forNewItem)
+        {
+            var source = forNewItem
+                ? _stockHardwareItems.Where(x => x.StockOnHand > 0 && !IsConsumableCategory(x.Category))
+                : _outHardwareItems.AsEnumerable();
+            return source.Where(x => !string.IsNullOrWhiteSpace(x.SerialNumber))
+                .OrderBy(x => x.SerialNumber, StringComparer.OrdinalIgnoreCase).ThenBy(x => x.DisplayText);
+        }
+
+        private FrameworkElement CreateSerialSearch(bool forNewItem, out TextBox searchBox, out ListBox resultList)
+        {
+            var box = CreateTextBox();
+            box.ToolTip = "Type or scan a serial number. Search covers all eligible categories; choosing a match fills the item and category.";
+            var results = new ListBox
+            {
+                MaxHeight = 170, Visibility = Visibility.Collapsed,
+                Margin = new Thickness(0, 6, 0, 0), Background = Brushes.White,
+                BorderBrush = BrushFromRgb(203, 213, 225), BorderThickness = new Thickness(1),
+                HorizontalContentAlignment = HorizontalAlignment.Stretch
+            };
+            var row = new FrameworkElementFactory(typeof(TextBlock));
+            row.SetBinding(TextBlock.TextProperty, new Binding("DisplayText"));
+            row.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
+            row.SetValue(FrameworkElement.MarginProperty, new Thickness(8, 6, 8, 6));
+            results.ItemTemplate = new DataTemplate { VisualTree = row };
+            var hint = CreateHelpText("Type or scan a serial number to fill the item and category automatically.");
+            hint.Margin = new Thickness(0, 5, 0, 0);
+            Action<ItemLookupDto> choose = item =>
+            {
+                SelectSerialMatch(item, forNewItem);
+                results.Visibility = Visibility.Collapsed;
+                hint.Text = "Selected: " + item.DisplayText + " | Category: " + (string.IsNullOrWhiteSpace(item.Category) ? "Not specified" : item.Category);
+            };
+            box.TextChanged += (_, __) =>
+            {
+                if (_serialLookupInProgress) return;
+                var query = (box.Text ?? "").Trim();
+                if (query.Length == 0)
+                {
+                    results.Visibility = Visibility.Collapsed;
+                    hint.Text = "Type or scan a serial number to fill the item and category automatically.";
+                    return;
+                }
+                var matches = GetSerialSearchItems(forNewItem)
+                    .Where(x => x.SerialNumber.Trim().IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+                var exact = matches.Where(x => string.Equals(x.SerialNumber.Trim(), query, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (exact.Count == 1)
+                {
+                    choose(exact[0]);
+                    return;
+                }
+                // A partial, missing, or ambiguous serial must not retain a stale item selection.
+                _serialLookupInProgress = true;
+                try
+                {
+                    results.SelectedItem = null;
+                    var combo = forNewItem ? _newItemCombo : _oldItemCombo;
+                    combo.SelectedItem = null;
+                    combo.Text = "";
+                    if (forNewItem) _newStockHint.Text = "";
+                }
+                finally { _serialLookupInProgress = false; }
+                results.ItemsSource = matches.Take(40).ToList();
+                results.Visibility = matches.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                hint.Text = matches.Count == 0
+                    ? (forNewItem ? "No available replacement stock matches this serial." : "No listed old item matches this serial. Use Not listed to enter its details.")
+                    : exact.Count > 1 ? "Several items share this serial. Choose the correct item below."
+                    : "Choose a matching serial below" + (matches.Count > 40 ? " (showing the first 40; type more to narrow the results)." : ".");
+                RefreshValidationState();
+            };
+            results.SelectionChanged += (_, __) =>
+            {
+                if (!_serialLookupInProgress && results.SelectedItem is ItemLookupDto item) choose(item);
+            };
+            box.PreviewKeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Escape) { results.Visibility = Visibility.Collapsed; e.Handled = true; }
+                if (e.Key == Key.Enter)
+                {
+                    e.Handled = true; // A scanner's Enter key selects an item, never advances the wizard.
+                    if (results.Visibility == Visibility.Visible && results.Items.Count == 1)
+                        choose((ItemLookupDto)results.Items[0]);
+                }
+            };
+            var panel = new StackPanel { Margin = new Thickness(0, 8, 0, 16) };
+            panel.Children.Add(new TextBlock
+            {
+                Text = forNewItem ? "Search new item by serial number" : "Search old item by serial number",
+                FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6)
+            });
+            panel.Children.Add(box);
+            panel.Children.Add(hint);
+            panel.Children.Add(results);
+            searchBox = box;
+            resultList = results;
+            return panel;
+        }
+
+        private void SelectSerialMatch(ItemLookupDto item, bool forNewItem)
+        {
+            if (item == null || !GetSerialSearchItems(forNewItem).Any(x => x.ItemId == item.ItemId)) return;
+            _serialLookupInProgress = true;
+            try
+            {
+                if (!forNewItem) _oldListedRadio.IsChecked = true;
+                var category = forNewItem ? _newCategoryFilter : _oldCategoryFilter;
+                var categoryName = (item.Category ?? "").Trim();
+                category.SelectedItem = category.Items.Cast<string>().FirstOrDefault(x => string.Equals(
+                    forNewItem ? ParseCategoryDisplay(x) : x, categoryName, StringComparison.OrdinalIgnoreCase))
+                    ?? category.Items.Cast<string>().FirstOrDefault(x => x.StartsWith("All Categories", StringComparison.OrdinalIgnoreCase));
+                // Rebuild even when the category is unchanged, clearing any old name-search filter.
+                if (forNewItem) ApplyNewFilter(); else ApplyOldFilter();
+                var combo = forNewItem ? _newItemCombo : _oldItemCombo;
+                combo.SelectedItem = item;
+                combo.Text = item.DisplayText;
+                (forNewItem ? _newSerialSearchBox : _oldSerialSearchBox).Text = item.SerialNumber.Trim();
+            }
+            finally { _serialLookupInProgress = false; }
+            if (forNewItem) UpdateNewItemStockHint();
+            RefreshValidationState();
+            RefreshPreviewIfNeeded();
+        }
+
+        private static string FormatEntryHeading(int number, bool hasOld, bool hasNew)
+        {
+            if (number <= 0 || (!hasOld && !hasNew)) return "Choose an old or new item";
+            if (hasOld && hasNew) return "Old " + number + " \u2194 New " + number;
+            return (hasOld ? "Old " : "New ") + number + " (no pair)";
+        }
+
+        private void UpdateEntryLabels(int number)
+        {
+            _entryNumber = number;
+            if (_entryHeading == null || _oldItemHeading == null || _newItemHeading == null) return;
+            var heading = FormatEntryHeading(number, IncludesOldItem, IncludesNewItem);
+            _entryHeading.Text = _isInlineEditor ? "Items in this entry" : heading;
+            if (_inlineCaption != null) _inlineCaption.Text = heading;
+            var suffix = number > 0 ? " " + number : "";
+            var pairNote = IncludesOldItem && IncludesNewItem ? "" : " (no pair)";
+            _oldItemHeading.Text = "Old item" + suffix + pairNote + " - being collected";
+            _newItemHeading.Text = "New item" + suffix + pairNote + " - to issue from stock";
+        }
+
+        private void RefreshEntryNumbers()
+        {
+            if (_isInlineEditor)
+            {
+                UpdateEntryLabels(_entryNumber);
+                return;
+            }
+            var number = 1;
+            foreach (var entry in new[] { this }.Concat(_additionalItems))
+            {
+                var hasItems = entry.IncludesOldItem || entry.IncludesNewItem;
+                entry.UpdateEntryLabels(hasItems ? number++ : 0);
+            }
+        }
+
+        private void UpdateEntryMode()
+        {
+            if (_oldFields == null || _newFields == null || _quantityFields == null) return;
+            _oldFields.Visibility = IncludesOldItem ? Visibility.Visible : Visibility.Collapsed;
+            _newFields.Visibility = IncludesNewItem ? Visibility.Visible : Visibility.Collapsed;
+            _qtyBox.IsEnabled = IncludesOldItem || IncludesNewItem;
+            var hasIssuedItems = IncludesNewItem || _additionalItems.Any(x => x.IncludesNewItem);
+            _quantityFields.Visibility = IncludesOldItem || hasIssuedItems ? Visibility.Visible : Visibility.Collapsed;
+            _temporaryCheck.IsEnabled = hasIssuedItems;
+            if (!hasIssuedItems) _temporaryCheck.IsChecked = false;
+            if (IncludesNewItem) ClampQuantityToSelectedStock();
+            UpdateWizardStep();
+        }
+
+        private static void DetachEditorElement(FrameworkElement element)
+        {
+            var panel = element.Parent as Panel;
+            if (panel != null) panel.Children.Remove(element);
+            var border = element.Parent as Border;
+            if (border != null) border.Child = null;
+        }
+
+        private void AddAnotherItem(bool includeOld = true, bool includeNew = true)
+        {
+            // Reuse the same field controller, without showing another window.
+            // Its form sections become children of this page's left scroll panel.
+            var child = new WpfMarkAsResolutionDialog(_outHardwareItems, _stockHardwareItems, _categories, _conditions, false);
+            child._isInlineEditor = true;
+            child._inheritTicketNotes = true;
+            child._inlineOwner = this;
+            child._includeOldCheck.IsChecked = includeOld;
+            child._includeNewCheck.IsChecked = includeNew;
+            child._remarksBox.Text = _remarksBox.Text;
+            child._wizardStep = 1;
+            child.UpdateWizardStep();
+            var editorBody = new StackPanel();
+            foreach (var section in new[] { child._replacementStep, child._oldDispositionCard, child._remarksSection })
+            {
+                DetachEditorElement(section);
+                var card = section as Border;
+                if (card != null)
+                {
+                    card.Padding = new Thickness(0, 12, 0, 0);
+                    card.BorderThickness = new Thickness(0);
+                    card.Background = Brushes.Transparent;
+                    card.Margin = new Thickness(0, 0, 0, 12);
+                }
+                editorBody.Children.Add(section);
+            }
+            var useTicketNotes = new CheckBox
+            {
+                Content = "Use the ticket notes for this entry", IsChecked = true,
+                Margin = new Thickness(0, 12, 0, 12)
+            };
+            useTicketNotes.Checked += (_, __) =>
+            {
+                child._inheritTicketNotes = true;
+                child._remarksSection.Visibility = Visibility.Collapsed;
+                RefreshValidationState();
+            };
+            useTicketNotes.Unchecked += (_, __) =>
+            {
+                child._inheritTicketNotes = false;
+                child._remarksSection.Visibility = Visibility.Visible;
+                RefreshValidationState();
+            };
+            editorBody.Children.Insert(editorBody.Children.Count - 1, useTicketNotes);
+            DetachEditorElement(child._validationText);
+            child._validationText.Margin = new Thickness(0, 8, 0, 0);
+            editorBody.Children.Add(child._validationText);
+            child.Content = null;
+
+            var editor = new Expander
+            {
+                IsExpanded = true, Content = editorBody, Padding = new Thickness(0),
+                HorizontalContentAlignment = HorizontalAlignment.Stretch
+            };
+            var editorCard = new Border
+            {
+                Child = editor, Background = Brushes.White, CornerRadius = new CornerRadius(10),
+                BorderBrush = BrushFromRgb(203, 213, 225), BorderThickness = new Thickness(1),
+                Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 16)
+            };
+            var header = new DockPanel { LastChildFill = true };
+            var remove = CreateButton("Remove", WpfThemeResources.TextMutedBrush);
+            remove.MinWidth = 76;
+            remove.Padding = new Thickness(10, 6, 10, 6);
+            remove.MinHeight = 32;
+            DockPanel.SetDock(remove, Dock.Right);
+            header.Children.Add(remove);
+            var caption = new TextBlock
+            {
+                FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap,
+                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0)
+            };
+            child._inlineCaption = caption;
+            header.Children.Add(caption);
+            editor.Header = header;
+            remove.Click += (_, __) =>
+            {
+                _additionalItems.Remove(child);
+                _additionalItemList.Children.Remove(editorCard);
+                UpdateEntryMode();
+            };
+            Action refreshEntry = () =>
+            {
+                if (!child._serialLookupInProgress && !_refreshingValidation) UpdateEntryMode();
+            };
+            editorBody.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
+                new TextChangedEventHandler((_, __) => refreshEntry()));
+            editorBody.AddHandler(System.Windows.Controls.Primitives.Selector.SelectionChangedEvent,
+                new SelectionChangedEventHandler((_, __) => refreshEntry()));
+            editorBody.AddHandler(System.Windows.Controls.Primitives.ToggleButton.CheckedEvent,
+                new RoutedEventHandler((_, __) => refreshEntry()));
+            editorBody.AddHandler(System.Windows.Controls.Primitives.ToggleButton.UncheckedEvent,
+                new RoutedEventHandler((_, __) => refreshEntry()));
+            _additionalItems.Add(child);
+            _additionalItemList.Children.Add(editorCard);
+            refreshEntry();
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (_additionalItemList.Children.Contains(editorCard)) editorCard.BringIntoView();
+            }), DispatcherPriority.Loaded);
         }
 
         private void GoNext()
@@ -605,6 +1082,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _wizardStep = _replacementRadio.IsChecked == true ? 1 : 2;
                 if (_wizardStep == 2)
                     CaptureServiceOnly();
+                _mainScroll.ScrollToTop();
                 UpdateWizardStep();
                 return;
             }
@@ -617,6 +1095,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     return;
                 }
                 _wizardStep = 2;
+                _mainScroll.ScrollToTop();
                 UpdateWizardStep();
             }
         }
@@ -626,6 +1105,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (_wizardStep <= 0)
                 return;
             _wizardStep = _wizardStep == 2 && _serviceOnlyRadio.IsChecked == true ? 0 : _wizardStep - 1;
+            _mainScroll.ScrollToTop();
             UpdateWizardStep();
         }
 
@@ -636,10 +1116,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var isTemporaryService = isServiceOnly && _temporaryServiceCheck != null && _temporaryServiceCheck.IsChecked == true;
 
             var targetStatus = (isReplacement && _temporaryCheck.IsChecked == true) || isTemporaryService ? "Resolved (Temporary)" : "Solved";
-            _dialogTitle.Text = isReplacement ? "Mark as Replacement Resolution" : (isTemporaryService ? "Mark as Resolved (Temporary)" : "Mark as Solved");
+            _dialogTitle.Text = _allowBatch ? "Mark ticket resolution"
+                : IncludesOldItem && IncludesNewItem ? "Add old and new items"
+                : IncludesOldItem ? "Add old item" : "Add new item";
             _dialogSubtitle.Text = isReplacement
-                ? "Review the replaced item, issued item, inventory impact, and required remarks before changing the ticket status."
-                : "Record the service notes and confirm that no inventory item was issued or replaced.";
+                ? "Record old items collected, new items issued, or both. Add your notes, then review and save."
+                : "Tell us how the issue was fixed, then review and save your resolution.";
             _statusChipText.Text = targetStatus;
             _statusChip.Background = targetStatus.Equals("Resolved (Temporary)", StringComparison.OrdinalIgnoreCase)
                 ? BrushFromRgb(99, 102, 241)
@@ -653,10 +1135,30 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             _typeHelpText.Text = isServiceOnly
                 ? (_stockHardwareItems.Count == 0
-                    ? "No replacement stock items are available, so this ticket can only be marked as Service Only."
-                    : "Use Service Only when no inventory item is issued or replaced. This will only save the service remarks and mark the ticket as Solved, unless Temporary service is checked.")
-                : "Use Replacement when an old item is exchanged for stock. The next step will require old item details, replacement stock, quantity, condition, and stock impact.";
-            _remarksTitle.Text = isServiceOnly ? "Service notes" : "Replacement remarks";
+                    ? "No new stock is available. You can still record old items collected, or choose Service only for a fix without items."
+                    : "Choose this when the issue was fixed without parts. Add your service notes on the right.")
+                : "Next, choose whether to collect an old item, issue a new one, or record both. Add as many entries as needed.";
+            _remarksTitle.Text = isServiceOnly ? "Service notes *" : "Item notes *";
+            _confirmButton.Content = _allowBatch ? "Save resolution" : "Add to resolution";
+            _guidanceText.Text = !_allowBatch
+                ? "This entry will be added to your resolution. Stock changes are applied only when you save the main resolution."
+                : _wizardStep == 2
+                ? "Everything ready? Save resolution will apply the stock changes and update the ticket status shown above."
+                : isReplacement
+                    ? "Add old items and new items independently. Use Add both when two items form a direct replacement. Nothing is saved until the final review."
+                    : "Add a short explanation of the fix. Choose temporary service if further follow-up is needed.";
+            _oldDispositionCard.Visibility = isReplacement && IncludesOldItem && _wizardStep == 1 ? Visibility.Visible : Visibility.Collapsed;
+            _itemsOverviewCard.Visibility = _allowBatch && isReplacement && _wizardStep > 0 ? Visibility.Visible : Visibility.Collapsed;
+            _addItemActions.Visibility = _wizardStep == 1 ? Visibility.Visible : Visibility.Collapsed;
+            _nextButton.Content = _wizardStep == 1 || isServiceOnly ? "Review resolution →" : "Choose items →";
+            for (var i = 0; i < _stepIndicators.Length; i++)
+            {
+                var active = i == _wizardStep;
+                _stepIndicators[i].Background = active ? WpfThemeResources.PrimaryBrush : BrushFromRgb(241, 245, 249);
+                ((TextBlock)_stepIndicators[i].Child).Foreground = active ? Brushes.White : BrushFromRgb(100, 116, 139);
+                _stepIndicators[i].Visibility = isServiceOnly && i == 1 ? Visibility.Collapsed : Visibility.Visible;
+            }
+            ((TextBlock)_stepIndicators[2].Child).Text = isServiceOnly ? "2  Review & save" : "3  Review & save";
 
             _typeStep.Visibility = _wizardStep == 0 ? Visibility.Visible : Visibility.Collapsed;
             if (_temporaryServiceCheck != null)
@@ -665,7 +1167,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var showRemarks = (_wizardStep == 0 && isServiceOnly)
                 || (_wizardStep == 1 && isReplacement)
                 || _wizardStep == 2;
-            _remarksSection.Visibility = showRemarks ? Visibility.Visible : Visibility.Collapsed;
+            _remarksSection.Visibility = showRemarks && (!_isInlineEditor || !_inheritTicketNotes) ? Visibility.Visible : Visibility.Collapsed;
+            _additionalItemList.Visibility = _allowBatch && isReplacement && _wizardStep > 0
+                ? Visibility.Visible : Visibility.Collapsed;
+            _additionalItemList.IsEnabled = _wizardStep == 1;
+            if (_wizardStep == 2)
+                foreach (var editor in _additionalItemList.Children.OfType<Border>().Select(x => x.Child).OfType<Expander>()) editor.IsExpanded = false;
             _previewStep.Visibility = _wizardStep == 2 ? Visibility.Visible : Visibility.Collapsed;
             _backButton.IsEnabled = _wizardStep > 0;
             _nextButton.Visibility = _wizardStep < 2 ? Visibility.Visible : Visibility.Collapsed;
@@ -679,7 +1186,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     ValidateAndCaptureReplacement(out _);
                 else
                     CaptureServiceOnly();
-                _previewBox.Text = BuildPreviewText();
+                _previewBox.Text = BuildAllPreviewText();
             }
 
             RefreshValidationState();
@@ -696,7 +1203,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     ValidateAndCaptureReplacement(out _);
                 else
                     CaptureServiceOnly();
-                _previewBox.Text = BuildPreviewText();
+                _previewBox.Text = BuildAllPreviewText();
             }
             catch
             {
@@ -720,75 +1227,97 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private bool ValidateAndCaptureReplacement(out string message, bool commit = false)
         {
             message = null;
-            if (_stockHardwareItems.Count == 0)
-                return Invalid("No replacement stock items are available.", out message);
-
-            // Typing does not move SelectedItem: re-resolve the edit text to an
-            // exact match first so stale picks can never validate.
-            ResolveItemCombo(_oldItemCombo, FilterByCategory(_outHardwareItems, _oldCategoryFilter.SelectedItem as string), commit);
-            ResolveItemCombo(_newItemCombo, FilterByCategory(_stockHardwareItems, ParseCategoryDisplay(_newCategoryFilter.SelectedItem as string)), commit);
-
-            var newItem = _newItemCombo.SelectedItem as ItemLookupDto;
-            if (newItem == null)
-                return Invalid("Select a replacement item.", out message);
-
-            var condition = _oldConditionCombo.SelectedItem as ConditionDto;
-            if (condition == null)
-                return Invalid("Select an old item condition.", out message);
-
-            if (!int.TryParse((_qtyBox.Text ?? string.Empty).Trim(), out var qty) || qty <= 0)
-                return Invalid("Quantity must be a positive number.", out message);
-
-            if (newItem.StockOnHand < 1)
-                return Invalid("The selected replacement item has no available stock.", out message);
-
-            if (qty > newItem.StockOnHand)
-                return Invalid("Quantity exceeds available stock. Available: " + newItem.StockOnHand + ", requested: " + qty + ".", out message);
-
-            if (_oldUnlistedRadio.IsChecked != true)
+            if (_allowBatch)
             {
-                var oldItem = _oldItemCombo.SelectedItem as ItemLookupDto;
-                if (oldItem == null)
-                    return Invalid("Select the replaced old item, or choose Not Listed.", out message);
-                if (oldItem.ItemId == newItem.ItemId)
-                    return Invalid("Replaced item and replacement item must be different.", out message);
-                OldItemId = oldItem.ItemId;
-                UseUnlistedOldItem = false;
+                for (var index = 0; index < _additionalItems.Count; index++)
+                {
+                    var child = _additionalItems[index];
+                    if (child._inheritTicketNotes) child._remarksBox.Text = _remarksBox.Text;
+                    if (!child.ValidateAndCaptureReplacement(out var entryMessage, commit))
+                    {
+                        child.ShowValidation(entryMessage);
+                        return Invalid("Additional entry " + (index + 1) + ": " + entryMessage, out message);
+                    }
+                    child._validationText.Text = "";
+                    child._validationText.Visibility = Visibility.Collapsed;
+                }
             }
-            else
+            var hasOld = IncludesOldItem;
+            var hasNew = IncludesNewItem;
+            if (!hasOld && !hasNew && (!_allowBatch || _additionalItems.Count == 0))
+                return Invalid("Include an old item, a new item, or both.", out message);
+
+            OldItemId = null;
+            NewItemId = null;
+            UseUnlistedOldItem = false;
+            OldItemConditionId = 0;
+            OldItemConditionRemarks = null;
+            OldItemRepairAction = null;
+            Quantity = 0;
+            if (hasOld || hasNew)
             {
-                var name = (_oldNameBox.Text ?? string.Empty).Trim();
-                var model = (_oldModelBox.Text ?? string.Empty).Trim();
-                var unit = _oldUnitCombo.SelectedItem as string;
-                var category = _oldCategoryCombo.SelectedItem as ItemCategoryDto;
-
-                if (string.IsNullOrWhiteSpace(name)) return Invalid("Old item name is required.", out message);
-                if (string.IsNullOrWhiteSpace(model)) return Invalid("Old item model number is required.", out message);
-                if (string.IsNullOrWhiteSpace(unit)) return Invalid("Old item unit of measure is required.", out message);
-                if (category == null) return Invalid("Old item category is required.", out message);
-
-                UseUnlistedOldItem = true;
-                UnlistedOldItemName = name;
-                UnlistedOldItemDescription = NullIfWhiteSpace(_oldDescriptionBox.Text);
-                UnlistedOldItemCategoryId = category.CategoryId;
-                UnlistedOldItemCategoryName = category.Name;
-                UnlistedOldItemSerialNumber = NullIfWhiteSpace(_oldSerialBox.Text);
-                UnlistedOldItemModelNumber = model;
-                UnlistedOldItemUnitOfMeasure = unit;
-                OldItemId = null;
+                if (!int.TryParse((_qtyBox.Text ?? "").Trim(), out var qty) || qty <= 0)
+                    return Invalid("Quantity must be a positive number.", out message);
+                Quantity = qty;
             }
-
+            if (hasNew)
+            {
+                if (_stockHardwareItems.Count == 0)
+                    return Invalid("No replacement stock items are available.", out message);
+                ResolveItemCombo(_newItemCombo, FilterByCategory(_stockHardwareItems, ParseCategoryDisplay(_newCategoryFilter.SelectedItem as string)), commit);
+                var newItem = _newItemCombo.SelectedItem as ItemLookupDto;
+                if (newItem == null) return Invalid("Select a new item to issue.", out message);
+                if (newItem.StockOnHand < Quantity)
+                    return Invalid("Quantity exceeds available stock. Available: " + newItem.StockOnHand + ".", out message);
+                NewItemId = newItem.ItemId;
+            }
+            if (hasOld)
+            {
+                var condition = _oldConditionCombo.SelectedItem as ConditionDto;
+                if (condition == null) return Invalid("Select an old item condition.", out message);
+                OldItemConditionId = condition.ConditionId;
+                OldItemConditionRemarks = (_conditionRemarksBox.Text ?? "").Trim();
+                OldItemRepairAction = GetSelectedOldItemRepairAction();
+                if (_oldUnlistedRadio.IsChecked != true)
+                {
+                    ResolveItemCombo(_oldItemCombo, FilterByCategory(_outHardwareItems, _oldCategoryFilter.SelectedItem as string), commit);
+                    var oldItem = _oldItemCombo.SelectedItem as ItemLookupDto;
+                    if (oldItem == null) return Invalid("Select the old item, or choose Not listed.", out message);
+                    OldItemId = oldItem.ItemId;
+                }
+                else
+                {
+                    var name = (_oldNameBox.Text ?? "").Trim();
+                    var model = (_oldModelBox.Text ?? "").Trim();
+                    var unit = _oldUnitCombo.SelectedItem as string;
+                    var category = _oldCategoryCombo.SelectedItem as ItemCategoryDto;
+                    if (string.IsNullOrWhiteSpace(name)) return Invalid("Old item name is required.", out message);
+                    if (string.IsNullOrWhiteSpace(model)) return Invalid("Old item model number is required.", out message);
+                    if (string.IsNullOrWhiteSpace(unit)) return Invalid("Old item unit of measure is required.", out message);
+                    if (category == null) return Invalid("Old item category is required.", out message);
+                    UseUnlistedOldItem = true;
+                    UnlistedOldItemName = name;
+                    UnlistedOldItemDescription = NullIfWhiteSpace(_oldDescriptionBox.Text);
+                    UnlistedOldItemCategoryId = category.CategoryId;
+                    UnlistedOldItemCategoryName = category.Name;
+                    UnlistedOldItemSerialNumber = NullIfWhiteSpace(_oldSerialBox.Text);
+                    UnlistedOldItemModelNumber = model;
+                    UnlistedOldItemUnitOfMeasure = unit;
+                }
+            }
             ResolutionType = "Replacement";
-            NewItemId = newItem.ItemId;
-            Quantity = qty;
-            Remarks = (_remarksBox.Text ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(Remarks))
-                return Invalid("Enter replacement remarks before confirming.", out message);
-
-            IsTemporaryReplacement = _temporaryCheck.IsChecked == true;
-            OldItemConditionId = condition.ConditionId;
-            OldItemConditionRemarks = (_conditionRemarksBox.Text ?? string.Empty).Trim();
-            OldItemRepairAction = GetSelectedOldItemRepairAction();
+            Remarks = (_remarksBox.Text ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(Remarks)) return Invalid("Add notes before reviewing this resolution.", out message);
+            var lines = GetReplacementLines();
+            var structuralError = CallReplacementLine.GetValidationError(lines);
+            if (structuralError != null) return Invalid(structuralError, out message);
+            IsTemporaryReplacement = _temporaryCheck.IsChecked == true && lines.Any(x => x.HasNewItem);
+            foreach (var group in lines.Where(x => x.HasNewItem).GroupBy(x => x.NewItemId))
+            {
+                var item = _stockHardwareItems.FirstOrDefault(x => x.ItemId == group.Key);
+                if (item == null || group.Sum(x => (long)x.Quantity) > item.StockOnHand)
+                    return Invalid("Combined quantities exceed stock for " + (item?.DisplayText ?? group.Key.ToString()), out message);
+            }
             return true;
         }
 
@@ -801,60 +1330,71 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             return "Repaired";
         }
 
+        private string BuildAllPreviewText()
+        {
+            if (_replacementRadio.IsChecked != true) return BuildPreviewText();
+            var lines = GetReplacementLines();
+            var sb = new StringBuilder();
+            sb.AppendLine("Status after save: " + (IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved"));
+            sb.AppendLine("Old items: " + lines.Count(x => x.HasOldItem) + " | New items: " + lines.Count(x => x.HasNewItem));
+            var number = 1;
+            foreach (var line in lines)
+            {
+                sb.AppendLine();
+                sb.AppendLine(FormatEntryHeading(number++, line.HasOldItem, line.HasNewItem));
+                sb.AppendLine(line.HasOldItem && line.HasNewItem ? "Old + new (direct replacement)" : line.HasOldItem ? "Old item only (collection)" : "New item only (issue)");
+                sb.AppendLine("Quantity: " + line.Quantity);
+                if (line.HasOldItem)
+                {
+                    var old = _outHardwareItems.FirstOrDefault(x => x.ItemId == line.OldItemId);
+                    sb.AppendLine("Old: " + (line.UnlistedOldItem?.Name ?? old?.DisplayText));
+                    sb.AppendLine("Fixed asset / description: " + (line.UnlistedOldItem?.Description ?? old?.FixedAssetNumber));
+                    sb.AppendLine("Condition: " + (_conditions.FirstOrDefault(x => x.ConditionId == line.OldItemConditionId)?.ConditionName ?? line.OldItemConditionId.ToString()));
+                    sb.AppendLine("Action: " + line.OldItemRepairAction);
+                    sb.AppendLine("Old stock impact: " + (string.Equals(line.OldItemRepairAction, "Unrepaired", StringComparison.OrdinalIgnoreCase) ? "0 (kept out of stock)" : "+" + line.Quantity));
+                }
+                if (line.HasNewItem)
+                {
+                    var item = _stockHardwareItems.FirstOrDefault(x => x.ItemId == line.NewItemId);
+                    sb.AppendLine("New: " + item?.DisplayText);
+                    sb.AppendLine("Fixed asset / description: " + item?.FixedAssetNumber);
+                    sb.AppendLine("New stock impact: -" + line.Quantity);
+                }
+                sb.AppendLine("Notes: " + line.Remarks);
+            }
+            sb.AppendLine();
+            sb.AppendLine("Combined new item stock after save:");
+            foreach (var group in lines.Where(x => x.HasNewItem).GroupBy(x => x.NewItemId))
+            {
+                var item = _stockHardwareItems.FirstOrDefault(x => x.ItemId == group.Key);
+                sb.AppendLine("  " + item?.DisplayText + ": " + ((item?.StockOnHand ?? 0) - group.Sum(x => x.Quantity)));
+            }
+            if (!lines.Any(x => x.HasNewItem)) sb.AppendLine("No new items will be issued.");
+            sb.AppendLine();
+            sb.AppendLine(IsTemporaryReplacement ? "Temporary return: only issued new items will be returned. Old-only entries are not returned again."
+                : "No temporary return is required.");
+            sb.AppendLine("Only entries containing both an old and new item perform a direct set swap.");
+            sb.AppendLine("Ticket notes: " + Remarks);
+            return sb.ToString();
+        }
+
         private string BuildPreviewText()
         {
-            if (_replacementRadio.IsChecked != true)
-            {
-                var followUp = IsTemporaryReplacement
-                    ? "\r\n\r\nFollow-up:\r\n  This ticket remains Resolved (Temporary) until the service fix is confirmed permanent."
-                    : string.Empty;
-                return "Resolution: " + (IsTemporaryReplacement ? "Temporary Service" : "Service Only")
-                    + "\r\nStatus after save: " + (IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved")
-                    + "\r\n\r\nInventory impact: None" + followUp + "\r\n\r\nRemarks:\r\n"
-                    + (string.IsNullOrWhiteSpace(Remarks) ? "(None)" : Remarks);
-            }
-
-            var oldItemText = UseUnlistedOldItem
-                ? UnlistedOldItemName + " (" + UnlistedOldItemModelNumber + ")"
-                : (_outHardwareItems.FirstOrDefault(x => x.ItemId == (OldItemId ?? 0))?.DisplayText ?? "(Unknown)");
-            var newItem = _stockHardwareItems.FirstOrDefault(x => x.ItemId == (NewItemId ?? 0));
-            var conditionText = _conditions.FirstOrDefault(x => x.ConditionId == OldItemConditionId)?.ConditionName ?? OldItemConditionId.ToString();
-            var actionText = string.IsNullOrWhiteSpace(OldItemRepairAction) ? "Repaired" : OldItemRepairAction.Trim();
-            var stockAfter = newItem == null ? (int?)null : newItem.StockOnHand - Quantity;
-            var oldStockImpact = actionText.Equals("Unrepaired", StringComparison.OrdinalIgnoreCase) ? "0 (kept out of stock)" : "+" + Quantity;
-
-            var sb = new StringBuilder();
-            sb.AppendLine("Resolution: " + (IsTemporaryReplacement ? "Temporary Replacement" : "Permanent Replacement"));
-            sb.AppendLine("Status after save: " + (IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved"));
-            sb.AppendLine();
-            sb.AppendLine("Old item:");
-            sb.AppendLine("  " + oldItemText);
-            sb.AppendLine("  Condition: " + conditionText);
-            sb.AppendLine("  Action: " + actionText);
-            sb.AppendLine("  Stock impact: " + oldStockImpact);
-            sb.AppendLine();
-            sb.AppendLine("New item:");
-            sb.AppendLine("  " + (newItem?.DisplayText ?? "(Unknown)"));
-            sb.AppendLine("  Current stock: " + (newItem == null ? "-" : newItem.StockOnHand.ToString()));
-            sb.AppendLine("  Stock impact: -" + Quantity);
-            sb.AppendLine("  Stock after save: " + (stockAfter.HasValue ? stockAfter.Value.ToString() : "-"));
-            sb.AppendLine();
-            sb.AppendLine("Follow-up:");
-            sb.AppendLine(IsTemporaryReplacement
-                ? "  This ticket remains Resolved (Temporary) until the replacement item is returned."
-                : "  No temporary return is required.");
-            sb.AppendLine();
-            sb.AppendLine("Remarks:");
-            sb.AppendLine(string.IsNullOrWhiteSpace(Remarks) ? "(None)" : Remarks);
-            return sb.ToString();
+            if (_replacementRadio.IsChecked == true) return BuildAllPreviewText();
+            return "Resolution: " + (IsTemporaryReplacement ? "Temporary service" : "Service only")
+                + "\r\nStatus after save: " + (IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved")
+                + "\r\n\r\nInventory impact: None\r\n\r\nNotes:\r\n" + Remarks;
         }
 
         private void Confirm()
         {
             if (_replacementRadio.IsChecked == true)
             {
-                if (!ValidateAndCaptureReplacement(out _, commit: true))
+                if (!ValidateAndCaptureReplacement(out var message, commit: true))
+                {
+                    ShowValidation(message);
                     return;
+                }
             }
             else
             {
@@ -878,29 +1418,43 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private void RefreshValidationState()
         {
-            if (_confirmButton == null)
-                return;
+            if (_refreshingValidation || _serialLookupInProgress) return;
+            RefreshEntryNumbers();
+            _refreshingValidation = true;
+            try
+            {
+                if (_confirmButton == null)
+                    return;
 
-            var message = GetValidationMessage();
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                _validationText.Visibility = Visibility.Collapsed;
-                _validationText.Text = string.Empty;
-                _confirmButton.IsEnabled = true;
-            }
-            else
-            {
-                ShowValidation(message);
-                _confirmButton.IsEnabled = false;
-            }
-
-            if (_wizardStep == 2)
-            {
-                if (_replacementRadio.IsChecked == true)
-                    ValidateAndCaptureReplacement(out _);
+                if (_itemsCountText != null)
+                    _itemsCountText.Text = _additionalItems.Count == 0
+                        ? "Add old items, new items, or both. Each entry has its own quantity and notes."
+                        : "Additional entries: " + _additionalItems.Count + ". Old and new items are independent; counts do not need to match.";
+                var message = GetValidationMessage();
+                if (string.IsNullOrWhiteSpace(message))
+                {
+                    _validationText.Visibility = Visibility.Collapsed;
+                    _validationText.Text = string.Empty;
+                    _confirmButton.IsEnabled = true;
+                }
                 else
-                    CaptureServiceOnly();
-                _previewBox.Text = BuildPreviewText();
+                {
+                    ShowValidation(message);
+                    _confirmButton.IsEnabled = false;
+                }
+
+                if (_wizardStep == 2)
+                {
+                    if (_replacementRadio.IsChecked == true)
+                        ValidateAndCaptureReplacement(out _);
+                    else
+                        CaptureServiceOnly();
+                    _previewBox.Text = BuildAllPreviewText();
+                }
+            }
+            finally
+            {
+                _refreshingValidation = false;
             }
         }
 
@@ -931,13 +1485,49 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private static StackPanel CreateCard()
         {
-            var panel = new StackPanel
+            return new StackPanel { Background = Brushes.Transparent };
+        }
+
+        private static Border WrapCard(StackPanel content)
+        {
+            return new Border
             {
-                Background = Brushes.White,
-                Margin = new Thickness(0, 0, 0, 14),
-                MinHeight = 56
+                Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 16), Child = content
             };
-            return panel;
+        }
+
+        private static TextBlock CreateHelpText(string text)
+        {
+            return new TextBlock
+            {
+                Text = text, FontSize = 12.5, Foreground = BrushFromRgb(100, 116, 139),
+                TextWrapping = TextWrapping.Wrap, LineHeight = 19
+            };
+        }
+
+        private static Border CreateChoiceCard(RadioButton radio, string title, string description)
+        {
+            radio.Margin = new Thickness(0);
+            radio.Padding = new Thickness(8, 0, 0, 0);
+            radio.VerticalContentAlignment = VerticalAlignment.Center;
+            var content = new StackPanel();
+            content.Children.Add(new TextBlock { Text = title, FontSize = 16, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 5) });
+            content.Children.Add(CreateHelpText(description));
+            radio.Content = content;
+            var style = new Style(typeof(Border));
+            style.Setters.Add(new Setter(Border.BackgroundProperty, Brushes.White));
+            style.Setters.Add(new Setter(Border.BorderBrushProperty, BrushFromRgb(226, 232, 240)));
+            var selected = new DataTrigger { Binding = new Binding("IsChecked") { Source = radio }, Value = true };
+            selected.Setters.Add(new Setter(Border.BackgroundProperty, BrushFromRgb(252, 240, 241)));
+            selected.Setters.Add(new Setter(Border.BorderBrushProperty, WpfThemeResources.PrimaryBrush));
+            style.Triggers.Add(selected);
+            return new Border
+            {
+                Style = style, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(18), Margin = new Thickness(0, 0, 0, 12), Child = radio
+            };
         }
 
         private static TextBlock CreateSectionTitle(string text)
@@ -945,7 +1535,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             return new TextBlock
             {
                 Text = text,
-                FontSize = 14,
+                FontSize = 15,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = WpfThemeResources.TextDarkBrush,
                 Margin = new Thickness(0, 0, 0, 10)
@@ -972,10 +1562,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             stack.Children.Add(new TextBlock
             {
                 Text = label,
-                FontSize = 11.5,
+                FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = BrushFromRgb(71, 85, 105),
-                Margin = new Thickness(0, 0, 0, 5)
+                Margin = new Thickness(0, 0, 0, 5),
+                TextWrapping = TextWrapping.Wrap
             });
             stack.Children.Add(control);
             Grid.SetRow(stack, row);
@@ -987,7 +1578,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             return new ComboBox
             {
-                MinHeight = 32,
+                MinHeight = 40,
+                MaxDropDownHeight = 320,
+                VerticalContentAlignment = VerticalAlignment.Center,
                 Padding = new Thickness(8, 4, 8, 4),
                 Background = Brushes.White,
                 BorderBrush = BrushFromRgb(203, 213, 225),
@@ -999,6 +1592,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var combo = CreateCombo();
             combo.IsEditable = true;
+            combo.ToolTip = "Type a name, model, serial number, or fixed asset number to search.";
             // Borrow-style live filtering (AttachItemSearch) owns the text:
             // WPF's own text search would append-complete and fight it.
             combo.IsTextSearchEnabled = false;
@@ -1022,7 +1616,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private static string ItemSearchHaystack(ItemLookupDto x)
         {
             if (x == null) return "";
-            return string.Join(" ", new[] { x.Name, x.DisplayText, x.ModelNumber, x.Category, x.SerialNumber });
+            return string.Join(" ", new[] { x.Name, x.DisplayText, x.ModelNumber, x.Category, x.SerialNumber, x.FixedAssetNumber });
         }
 
         /// <summary>
@@ -1171,6 +1765,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private void ClampQuantityToSelectedStock()
         {
+            if (!IncludesNewItem) return;
             var item = _newItemCombo.SelectedItem as ItemLookupDto;
             var max = item != null && item.StockOnHand > 0 ? item.StockOnHand : 1;
             if (!int.TryParse((_qtyBox.Text ?? string.Empty).Trim(), out var qty) || qty < 1)
@@ -1206,7 +1801,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             return new TextBox
             {
-                MinHeight = 32,
+                MinHeight = 40,
                 Padding = new Thickness(8, 6, 8, 6),
                 BorderBrush = BrushFromRgb(203, 213, 225),
                 BorderThickness = new Thickness(1),
@@ -1217,17 +1812,33 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private static Button CreateButton(string text, Brush background)
         {
+            var chrome = new FrameworkElementFactory(typeof(Border));
+            chrome.SetValue(Border.CornerRadiusProperty, new CornerRadius(7));
+            chrome.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty));
+            chrome.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
+            chrome.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty));
+            chrome.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Control.PaddingProperty));
+            var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
+            chrome.AppendChild(presenter);
+            var template = new ControlTemplate(typeof(Button)) { VisualTree = chrome };
+            var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+            hover.Setters.Add(new Setter(UIElement.OpacityProperty, 0.88));
+            template.Triggers.Add(hover);
+            var disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false };
+            disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 0.42));
+            template.Triggers.Add(disabled);
+            var focus = new Trigger { Property = UIElement.IsKeyboardFocusedProperty, Value = true };
+            focus.Setters.Add(new Setter(Control.BorderBrushProperty, BrushFromRgb(96, 165, 250)));
+            template.Triggers.Add(focus);
             return new Button
             {
-                Content = text,
-                MinWidth = 96,
-                Margin = new Thickness(8, 0, 0, 0),
-                Padding = new Thickness(14, 8, 14, 8),
-                Background = background,
-                Foreground = Brushes.White,
-                BorderThickness = new Thickness(0),
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand
+                Content = text, Template = template, MinWidth = 100, MinHeight = 40,
+                Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(18, 10, 18, 10),
+                Background = background, Foreground = Brushes.White, BorderBrush = Brushes.Transparent,
+                BorderThickness = new Thickness(2), FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand
             };
         }
 

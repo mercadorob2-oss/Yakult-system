@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "procedures": 7,
+  "images": 9,
+  "widths": [
+    1440,
+    768,
+    390,
+    320
+  ],
+  "checks": [
+    "approved instructions and order",
+    "image references and intrinsic dimensions",
+    "Profile Account round-trip",
+    "shared preview",
+    "safe Markdown",
+    "validation retention",
+    "navigation and scroll tracking",
+    "search without hiding",
+    "paired screenshot layout",
+    "modal keyboard and focus",
+    "anti-forgery and authorization",
+    "no horizontal overflow",
+    "no JavaScript errors"
+  ]
+}

@@ -488,6 +488,7 @@ namespace Yakult.Inventory.App.Pages
     {
         public int ItemId { get; set; }
         public string Name { get; set; }
+        public string FixedAssetNumber { get; set; }
         public string ModelNumber { get; set; }
         public string Category { get; set; }
         public string SerialNumber { get; set; }

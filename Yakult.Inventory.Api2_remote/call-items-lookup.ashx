@@ -1,4 +1,4 @@
-<%@ WebHandler Language="C#" Class="CallItemsLookupHandler" %>
+﻿<%@ WebHandler Language="C#" Class="CallItemsLookupHandler" %>
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -34,7 +34,8 @@ public class CallItemsLookupHandler : IHttpHandler
             {
                 con.Open();
                 string sql = type == "out"
-                    ? @"SELECT i.ItemId, i.Name, i.ModelNumber,
+                    ? @"SELECT i.ItemId, i.Name, i.ModelNumber, i.SerialNumber,
+                              i.Description AS FixedAssetNumber,
                               ISNULL(NULLIF(LTRIM(RTRIM(i.Category)), ''), cat.Name) AS CategoryName,
                               CAST(ISNULL(i.StockOnHand,0) AS int) AS StockOnHand
                        FROM dbo.Item i
@@ -67,7 +68,8 @@ public class CallItemsLookupHandler : IHttpHandler
                          )
                          AND arch.EntityId IS NULL
                        ORDER BY i.Name"
-                    : @"SELECT i.ItemId, i.Name, i.ModelNumber,
+                    : @"SELECT i.ItemId, i.Name, i.ModelNumber, i.SerialNumber,
+                              i.Description AS FixedAssetNumber,
                               ISNULL(NULLIF(LTRIM(RTRIM(i.Category)), ''), cat.Name) AS CategoryName,
                               CAST(ISNULL(i.StockOnHand,0) AS int) AS StockOnHand
                        FROM dbo.Item i
@@ -76,26 +78,10 @@ public class CallItemsLookupHandler : IHttpHandler
                        WHERE i.Active = 1
                          AND i.ItemType = 'Hardware'
                          AND ISNULL(i.StockOnHand,0) > 0
-                         AND i.DurationStartDate IS NULL
-                         AND NOT EXISTS (
-                              SELECT 1
-                              FROM dbo.SetItem si
-                              INNER JOIN dbo.[Set] s ON s.SetId = si.SetId
-                              LEFT JOIN dbo.ArchiveStatus asSet ON asSet.EntityType = 'Set' AND asSet.EntityId = s.SetId AND asSet.IsArchived = 1
-                              WHERE si.ItemId = i.ItemId
-                                AND ISNULL(s.Active,1) = 1
-                                AND asSet.EntityId IS NULL
-                         )
-                         AND NOT EXISTS (
-                              SELECT 1
-                              FROM dbo.Request req
-                              INNER JOIN dbo.[Set] s2 ON s2.SetId = req.SetId
-                              LEFT JOIN dbo.ArchiveStatus asSet2 ON asSet2.EntityType = 'Set' AND asSet2.EntityId = s2.SetId AND asSet2.IsArchived = 1
-                              WHERE req.ItemId = i.ItemId
-                                AND req.SetId IS NOT NULL
-                                AND ISNULL(s2.Active,1) = 1
-                                AND asSet2.EntityId IS NULL
-                         )
+                         -- Keep the replacement list aligned with the desktop dialog:
+                         -- cartridges, ink, toner, and printheads belong to the consumable workflow.
+                         AND ISNULL(cat.Name, i.Category) NOT IN ('Cartridge','Ink','Toner','Printhead')
+                         AND ISNULL(i.CategoryId,0) NOT IN (1038,1063,1064,1076)
                          AND arch.EntityId IS NULL
                        ORDER BY i.Name";
 
@@ -108,12 +94,16 @@ public class CallItemsLookupHandler : IHttpHandler
                         var name = r["Name"] == DBNull.Value ? "" : r["Name"].ToString();
                         var model = r["ModelNumber"] == DBNull.Value ? null : r["ModelNumber"].ToString();
                         var displayText = string.IsNullOrEmpty(model) ? name : name + " (" + model + ")";
+                        var serial = r["SerialNumber"] == DBNull.Value ? null : r["SerialNumber"].ToString();
+                        var fixedAsset = r["FixedAssetNumber"] == DBNull.Value ? null : r["FixedAssetNumber"].ToString();
                         items.Add(new
                         {
                             itemId = Convert.ToInt32(r["ItemId"]),
                             displayText,
                             category = r["CategoryName"] == DBNull.Value ? null : r["CategoryName"].ToString(),
-                            stockOnHand = Convert.ToInt32(r["StockOnHand"])
+                            stockOnHand = Convert.ToInt32(r["StockOnHand"]),
+                            serialNumber = serial,
+                            fixedAssetNumber = fixedAsset
                         });
                     }
                     Ok(c, new { success = true, items });

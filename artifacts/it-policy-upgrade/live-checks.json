@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "url": "http://192.168.100.186:7016/company-policies/it-policy---employee-guidelines",
+  "procedures": 7,
+  "images": 9,
+  "approvedLiveContentPreserved": true,
+  "assets": [
+    {
+      "asset": "css/company-policy-document.css",
+      "sha256": "6e3f8a43acd4c59d2d41ab8c9e17cb17c9d2a6169e8a8b013ef9fe331a40e4ae"
+    },
+    {
+      "asset": "css/company-policy-editor.css",
+      "sha256": "539910eb8ce6b5e4a028f88b78837bcbfb04a1b03664a4f1679cfe510654f669"
+    },
+    {
+      "asset": "js/company-policy-reader.js",
+      "sha256": "80716a8660328b48fe4ce49784d630cafbe3c6734db08ff92ce554d23ee28674"
+    },
+    {
+      "asset": "js/company-policy-builder.js",
+      "sha256": "ed0f1ef2ccc238cf5c9801ffb3369c3560980c2efc0f38a381e89f598cbd4090"
+    }
+  ],
+  "versions": [
+    "/css/company-policy-document.css?v=bj-KQ6zUxZ0tQauMnhfLF8nSphaeiosBPvn-MxpA5K4",
+    "/js/company-policy-reader.js?v=gHFqhmAyi0j-TOSXhNYwyvvjxnNNsI_5LOVU0j7ihnQ"
+  ],
+  "previewRequiresAuthentication": true,
+  "javaScriptErrors": []
+}

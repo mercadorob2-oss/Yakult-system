@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using System.IO;
 using System.Security.Claims;
+using System.Security.Principal;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Hosting;
@@ -26,6 +28,7 @@ public sealed class HomeController : Controller
     private readonly IConnectionStringProvider _connectionStringProvider;
     private readonly IDemoModeService _demoMode;
     private readonly ILogger<HomeController> _logger;
+    private readonly IConfiguration _configuration;
 
     public HomeController(
         IOptions<PortalOptions> options,
@@ -34,7 +37,8 @@ public sealed class HomeController : Controller
         IPortalCardRepository portalCardRepository,
         IConnectionStringProvider connectionStringProvider,
         IDemoModeService demoMode,
-        ILogger<HomeController> logger)
+        ILogger<HomeController> logger,
+        IConfiguration configuration)
     {
         _options = options.Value;
         _userRepository = userRepository;
@@ -43,6 +47,7 @@ public sealed class HomeController : Controller
         _connectionStringProvider = connectionStringProvider;
         _demoMode = demoMode;
         _logger = logger;
+        _configuration = configuration;
     }
 
     [AllowAnonymous]
@@ -53,8 +58,122 @@ public sealed class HomeController : Controller
             return RedirectToHome();
         }
 
-        ViewData["Title"] = _options.Title;
+        PrepareLoginView();
+        if (TempData["WindowsLoginError"] is string windowsLoginError)
+            ModelState.AddModelError(string.Empty, windowsLoginError);
         return View(new LoginViewModel { ReturnUrl = returnUrl });
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> WindowsLogin(string? returnUrl = null)
+    {
+        if (!_configuration.GetValue<bool>("WindowsAuthentication:Enabled"))
+            return NotFound();
+
+        var allowedDomains = _configuration.GetSection("WindowsAuthentication:AllowedDomains").Get<string[]>() ?? Array.Empty<string>();
+        if (allowedDomains.Length == 0)
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "Windows sign-in is not configured for an allowed Active Directory domain.");
+
+        var windowsResult = await HttpContext.AuthenticateAsync(NegotiateDefaults.AuthenticationScheme);
+        if (!windowsResult.Succeeded || windowsResult.Principal?.Identity?.IsAuthenticated != true)
+            return Challenge(new AuthenticationProperties { RedirectUri = Url.Action(nameof(WindowsLogin), new { returnUrl }) }, NegotiateDefaults.AuthenticationScheme);
+
+        var identityName = windowsResult.Principal.Identity?.Name ?? string.Empty;
+        var (domain, accountName, userPrincipalName) = ParseWindowsIdentity(identityName);
+
+        if (string.IsNullOrWhiteSpace(domain) || !allowedDomains.Contains(domain, StringComparer.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Windows sign-in rejected for an identity outside the allowed domains: {IdentityName}", identityName);
+            TempData["WindowsLoginError"] = "Your Windows account is not in an approved Yakult domain. Contact IT.";
+            return RedirectToAction(nameof(Login), new { returnUrl });
+        }
+
+        try
+        {
+            var securityIdentifier = windowsResult.Principal.FindFirst(ClaimTypes.Sid)?.Value
+                ?? (windowsResult.Principal.Identity as WindowsIdentity)?.User?.Value;
+            if (string.IsNullOrWhiteSpace(securityIdentifier))
+            {
+                TempData["WindowsLoginError"] = "Windows did not provide a security identifier for this account. Contact IT.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            var result = await _userRepository.AuthenticateWindowsAccountAsync(securityIdentifier);
+            if (result == null)
+            {
+                userPrincipalName ??= windowsResult.Principal.FindFirst(ClaimTypes.Upn)?.Value
+                    ?? windowsResult.Principal.FindFirst("upn")?.Value
+                    ?? windowsResult.Principal.FindFirst(ClaimTypes.Email)?.Value;
+                if (string.IsNullOrWhiteSpace(userPrincipalName))
+                {
+                    var upnSuffix = _configuration["WindowsAuthentication:UserPrincipalNameSuffix"]?.Trim().TrimStart('@');
+                    if (!string.IsNullOrWhiteSpace(upnSuffix) && !string.IsNullOrWhiteSpace(accountName))
+                        userPrincipalName = $"{accountName}@{upnSuffix}";
+                }
+
+                await SignInWindowsIdentityAsync(windowsResult.Principal, identityName, userPrincipalName);
+                if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                    return LocalRedirect(returnUrl);
+                return RedirectToHome();
+            }
+
+            if (!result.Success)
+            {
+                TempData["WindowsLoginError"] = result.ErrorMessage ?? "Unable to sign in with this Yakult portal account.";
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            await SignInPortalUserAsync(result, rememberMe: false);
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return LocalRedirect(returnUrl);
+            return RedirectToHome();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Windows sign-in failed for identity {IdentityName}", identityName);
+            TempData["WindowsLoginError"] = "Unable to sign in with your Windows account right now. Please contact IT.";
+            return RedirectToAction(nameof(Login), new { returnUrl });
+        }
+    }
+
+    private async Task SignInWindowsIdentityAsync(ClaimsPrincipal windowsPrincipal, string identityName, string? email)
+    {
+        var stableId = windowsPrincipal.FindFirst(ClaimTypes.Sid)?.Value
+            ?? identityName.Trim().ToUpperInvariant();
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, stableId),
+            new(ClaimTypes.Name, identityName),
+            new("AuthenticationSource", "ActiveDirectory")
+        };
+
+        if (!string.IsNullOrWhiteSpace(email))
+            claims.Add(new Claim(ClaimTypes.Email, email));
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = false,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+        };
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+    }
+
+    private static (string Domain, string AccountName, string? UserPrincipalName) ParseWindowsIdentity(string identityName)
+    {
+        var identity = identityName.Trim();
+        var slash = identity.IndexOf('\\');
+        if (slash > 0 && slash < identity.Length - 1)
+            return (identity[..slash], identity[(slash + 1)..], null);
+
+        var at = identity.IndexOf('@');
+        if (at > 0 && at < identity.Length - 1)
+            return (identity[(at + 1)..], identity[..at], identity);
+
+        return (string.Empty, identity, null);
     }
 
     [AllowAnonymous]
@@ -352,7 +471,7 @@ public sealed class HomeController : Controller
     {
         if (!ModelState.IsValid)
         {
-            ViewData["Title"] = _options.Title;
+            PrepareLoginView();
             return View(model);
         }
 
@@ -363,7 +482,7 @@ public sealed class HomeController : Controller
             if (!result.Success)
             {
                 ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Invalid username or password.");
-                ViewData["Title"] = _options.Title;
+                PrepareLoginView();
                 return View(model);
             }
 
@@ -380,9 +499,15 @@ public sealed class HomeController : Controller
         {
             _logger.LogError(ex, "Portal login failed for username {Username}", model.Username);
             ModelState.AddModelError(string.Empty, "Unable to sign in right now. Please try again later or contact IT support.");
-            ViewData["Title"] = _options.Title;
+            PrepareLoginView();
             return View(model);
         }
+    }
+
+    private void PrepareLoginView()
+    {
+        ViewData["Title"] = _options.Title;
+        ViewData["WindowsAuthEnabled"] = _configuration.GetValue<bool>("WindowsAuthentication:Enabled");
     }
 
     [HttpPost]

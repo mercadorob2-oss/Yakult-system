@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -57,7 +57,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var panel = new StackPanel { Margin = new Thickness(0,12,0,0) };
             var warnBorder = new Border { Background = BrushFromRgb(254,242,242), BorderBrush = BrushFromRgb(252,165,165), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(12,10,12,10) };
-            var warnRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            var warnRow = new DockPanel { VerticalAlignment = VerticalAlignment.Center };
             warnRow.Children.Add(new TextBlock { Text = "\uE7BA", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 15, Foreground = BrushFromRgb(220,38,38), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,8,0) });
             warnRow.Children.Add(new TextBlock { Text = "Cancelled — pick a new technician/date above, then Reschedule to reopen (Cancelled → Scheduled).", Foreground = BrushFromRgb(127,29,29), FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center, FontSize = 12 });
             warnBorder.Child = warnRow;
@@ -76,8 +76,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0,12,0,0), VerticalAlignment = VerticalAlignment.Center };
             var icon = new TextBlock { Text = hasSig ? "\uE73E" : "\uE70B", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 16, Foreground = hasSig ? BrushFromRgb(22,163,74) : BrushFromRgb(148,163,184), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,8,0) };
-            row.Children.Add(icon);
-            row.Children.Add(new TextBlock { Text = hasSig ? "✓ Customer signature on file — tap Signature to replace" : "No signature yet — capture before completing visit", Foreground = hasSig ? BrushFromRgb(22,163,74) : WpfThemeResources.TextMutedBrush, FontStyle = hasSig ? FontStyles.Normal : FontStyles.Italic, FontSize = 12.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            var content = new DockPanel();
+            row.Orientation = Orientation.Vertical;
+            row.Children.Add(content);
+            content.Children.Add(icon);
+            content.Children.Add(new TextBlock { TextWrapping = TextWrapping.Wrap, Text = hasSig ? "✓ Customer signature on file — tap Signature to replace" : "No signature yet — capture before completing visit", Foreground = hasSig ? BrushFromRgb(22,163,74) : WpfThemeResources.TextMutedBrush, FontStyle = hasSig ? FontStyles.Normal : FontStyles.Italic, FontSize = 12.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
             return row;
         }
 
@@ -98,7 +101,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             }
             else
             {
-                var valueRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+                var valueRow = new DockPanel { VerticalAlignment = VerticalAlignment.Center };
                 valueRow.Children.Add(new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 14, Foreground = glyphBrush ?? WpfThemeResources.TextMutedBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,6,0) });
                 valueRow.Children.Add(new TextBlock { Text = display, Foreground = isPlaceholder ? WpfThemeResources.TextMutedBrush : WpfThemeResources.TextDarkBrush, FontStyle = isPlaceholder ? FontStyles.Italic : FontStyles.Normal, FontWeight = FontWeights.SemiBold, FontSize = 13, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center });
                 panel.Children.Add(valueRow);

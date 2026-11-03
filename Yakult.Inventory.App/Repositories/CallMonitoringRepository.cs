@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Net.Mail;
@@ -1178,288 +1178,307 @@ ORDER BY {orderBy};";
             string oldItemConditionRemarks,
             string oldItemRepairAction)
         {
-            if (oldItemId <= 0) throw new ArgumentOutOfRangeException(nameof(oldItemId));
-            if (newItemId <= 0) throw new ArgumentOutOfRangeException(nameof(newItemId));
-            if (oldItemId == newItemId) throw new ArgumentException("Old and new items must be different.");
-            if (quantity < 1) throw new ArgumentOutOfRangeException(nameof(quantity));
-            if (!changedByUserId.HasValue || changedByUserId.Value <= 0)
-                throw new InvalidOperationException("ChangedByUserId is required for replacement.");
-            if (oldItemConditionId <= 0) throw new ArgumentOutOfRangeException(nameof(oldItemConditionId));
-
             using (var connection = new SqlConnection(GetConnectionString()))
             {
                 await connection.OpenAsync();
                 using (var tx = connection.BeginTransaction())
                 {
-                    try
-                    {
-                        var safeOldRepairAction = string.IsNullOrWhiteSpace(oldItemRepairAction) ? "Repaired" : oldItemRepairAction.Trim();
-                        var returnOldToStock = !safeOldRepairAction.Equals("Unrepaired", StringComparison.OrdinalIgnoreCase);
+                    await ApplyTicketReplacementCoreAsync(connection, tx, ticketId, oldItemId, newItemId,
+                        quantity, remarks, changedByUserId, oldItemConditionId, oldItemConditionRemarks, oldItemRepairAction);
+                    tx.Commit();
+                }
+            }
+        }
 
-                        var oldItemAffectsInventory = await connection.ExecuteScalarAsync<bool?>(
-                            new CommandDefinition("SELECT AffectsInventory FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = oldItemId }, tx));
-                        var newItemAffectsInventory = await connection.ExecuteScalarAsync<bool?>(
-                            new CommandDefinition("SELECT AffectsInventory FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = newItemId }, tx));
-                        if (!oldItemAffectsInventory.HasValue)
-                            throw new InvalidOperationException("Old item not found.");
-                        if (!newItemAffectsInventory.HasValue)
-                            throw new InvalidOperationException("New item not found.");
-                        if (!oldItemAffectsInventory.Value || !newItemAffectsInventory.Value)
-                            throw new InvalidOperationException("Replacement items must affect inventory stock.");
+        private async Task ApplyTicketReplacementCoreAsync(SqlConnection connection, SqlTransaction tx,
+            int ticketId, int oldItemId, int newItemId, int quantity, string remarks, int? changedByUserId,
+            int oldItemConditionId, string oldItemConditionRemarks, string oldItemRepairAction)
+        {
+            if (oldItemId < 0) throw new ArgumentOutOfRangeException(nameof(oldItemId));
+            if (newItemId < 0) throw new ArgumentOutOfRangeException(nameof(newItemId));
+            if (oldItemId == 0 && newItemId == 0) throw new ArgumentException("Include an old item, a new item, or both.");
+            if (oldItemId > 0 && oldItemId == newItemId) throw new ArgumentException("Old and new items must be different.");
+            if (quantity < 1) throw new ArgumentOutOfRangeException(nameof(quantity));
+            if (!changedByUserId.HasValue || changedByUserId.Value <= 0)
+                throw new InvalidOperationException("ChangedByUserId is required for replacement.");
+            if (oldItemId > 0 && oldItemConditionId <= 0) throw new ArgumentOutOfRangeException(nameof(oldItemConditionId));
 
-                        // Concurrency-safe: do NOT rely on a separate "read then write" stock check.
-                        // Two operators could both pass a read check and both subtract, causing negative stock.
-                        // Instead, enforce the guard in the UPDATE itself and validate affected rows.
+            var safeOldRepairAction = string.IsNullOrWhiteSpace(oldItemRepairAction) ? "Repaired" : oldItemRepairAction.Trim();
+            var returnOldToStock = !safeOldRepairAction.Equals("Unrepaired", StringComparison.OrdinalIgnoreCase);
 
-                        var oldEntryType = InventoryHelper.DetermineEntryType(oldItemAffectsInventory.Value, quantity);
-                        var newEntryType = InventoryHelper.DetermineEntryType(newItemAffectsInventory.Value, -quantity);
-                        var nowUtc = DateTime.UtcNow;
+            var oldItemAffectsInventory = oldItemId == 0 ? (bool?)true : await connection.ExecuteScalarAsync<bool?>(
+                new CommandDefinition("SELECT AffectsInventory FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = oldItemId }, tx));
+            var newItemAffectsInventory = newItemId == 0 ? (bool?)true : await connection.ExecuteScalarAsync<bool?>(
+                new CommandDefinition("SELECT AffectsInventory FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = newItemId }, tx));
+            if (!oldItemAffectsInventory.HasValue)
+                throw new InvalidOperationException("Old item not found.");
+            if (!newItemAffectsInventory.HasValue)
+                throw new InvalidOperationException("New item not found.");
+            if (!oldItemAffectsInventory.Value || !newItemAffectsInventory.Value)
+                throw new InvalidOperationException("Replacement items must affect inventory stock.");
 
-                        // Old unit pullout handling (return to stock vs keep out-of-stock for repair)
-                        if (returnOldToStock)
-                        {
-                            await connection.ExecuteAsync(
-                                @"INSERT INTO dbo.Inventory (Description, EntryType, Quantity, DatePosted, PostedBy, ReqId, ItemId)
+            // Concurrency-safe: do NOT rely on a separate "read then write" stock check.
+            // Two operators could both pass a read check and both subtract, causing negative stock.
+            // Instead, enforce the guard in the UPDATE itself and validate affected rows.
+
+            var oldEntryType = InventoryHelper.DetermineEntryType(oldItemAffectsInventory.Value, quantity);
+            var newEntryType = InventoryHelper.DetermineEntryType(newItemAffectsInventory.Value, -quantity);
+            var nowUtc = DateTime.UtcNow;
+
+            // Old unit pullout handling (return to stock vs keep out-of-stock for repair)
+            if (oldItemId > 0 && returnOldToStock)
+            {
+                await connection.ExecuteAsync(
+                    @"INSERT INTO dbo.Inventory (Description, EntryType, Quantity, DatePosted, PostedBy, ReqId, ItemId)
 VALUES (@Description, @EntryType, @Quantity, @NowUtc, @PostedBy, NULL, @ItemId);",
-                                new
-                                {
-                                    Description = $"Call ticket replacement pullout (Ticket {ticketId})",
-                                    EntryType = oldEntryType,
-                                    Quantity = quantity,
-                                    PostedBy = changedByUserId.Value,
-                                    ItemId = oldItemId,
-                                    NowUtc = nowUtc
-                                },
-                                transaction: tx);
+                    new
+                    {
+                        Description = $"Call ticket replacement pullout (Ticket {ticketId})",
+                        EntryType = oldEntryType,
+                        Quantity = quantity,
+                        PostedBy = changedByUserId.Value,
+                        ItemId = oldItemId,
+                        NowUtc = nowUtc
+                    },
+                    transaction: tx);
 
-                            await connection.ExecuteAsync(
-                                @"UPDATE dbo.Item
+                await connection.ExecuteAsync(
+                    @"UPDATE dbo.Item
 SET StockOnHand = ISNULL(StockOnHand, 0) + @Quantity,
     DateModified = @NowUtc,
     ModifiedBy = @ModifiedBy
 WHERE ItemId = @ItemId;",
-                                new { Quantity = quantity, ModifiedBy = changedByUserId.Value, ItemId = oldItemId, NowUtc = nowUtc },
-                                transaction: tx);
-                        }
+                    new { Quantity = quantity, ModifiedBy = changedByUserId.Value, ItemId = oldItemId, NowUtc = nowUtc },
+                    transaction: tx);
+            }
 
-                        // Allocate new item from inventory
-                        await connection.ExecuteAsync(
-                            @"INSERT INTO dbo.Inventory (Description, EntryType, Quantity, DatePosted, PostedBy, ReqId, ItemId)
-VALUES (@Description, @EntryType, @Quantity, @NowUtc, @PostedBy, NULL, @ItemId);",
-                            new
-                            {
-                                Description = $"Call ticket replacement allocation (Ticket {ticketId})",
-                                EntryType = newEntryType,
-                                Quantity = quantity,
-                                PostedBy = changedByUserId.Value,
-                                ItemId = newItemId,
-                                NowUtc = nowUtc
-                            },
-                            transaction: tx);
+            if (newItemId > 0)
+            {
+                // Allocate new item from inventory
+                await connection.ExecuteAsync(
+                    @"INSERT INTO dbo.Inventory (Description, EntryType, Quantity, DatePosted, PostedBy, ReqId, ItemId)
+    VALUES (@Description, @EntryType, @Quantity, @NowUtc, @PostedBy, NULL, @ItemId);",
+                    new
+                    {
+                        Description = $"Call ticket replacement allocation (Ticket {ticketId})",
+                        EntryType = newEntryType,
+                        Quantity = quantity,
+                        PostedBy = changedByUserId.Value,
+                        ItemId = newItemId,
+                        NowUtc = nowUtc
+                    },
+                    transaction: tx);
 
-                        var newStockAffected = await connection.ExecuteAsync(
-                            @"UPDATE dbo.Item
-SET StockOnHand = ISNULL(StockOnHand, 0) - @Quantity,
-    DateModified = @NowUtc,
-    ModifiedBy = @ModifiedBy
-WHERE ItemId = @ItemId
-  AND ISNULL(StockOnHand, 0) >= @Quantity;",
-                            new { Quantity = quantity, ModifiedBy = changedByUserId.Value, ItemId = newItemId, NowUtc = nowUtc },
-                            transaction: tx);
+                var newStockAffected = await connection.ExecuteAsync(
+                    @"UPDATE dbo.Item
+    SET StockOnHand = ISNULL(StockOnHand, 0) - @Quantity,
+        DateModified = @NowUtc,
+        ModifiedBy = @ModifiedBy
+    WHERE ItemId = @ItemId
+      AND ISNULL(StockOnHand, 0) >= @Quantity;",
+                    new { Quantity = quantity, ModifiedBy = changedByUserId.Value, ItemId = newItemId, NowUtc = nowUtc },
+                    transaction: tx);
 
-                        if (newStockAffected <= 0)
-                        {
-                            var exists = await connection.ExecuteScalarAsync<int>(
-                                new CommandDefinition(
-                                    "SELECT CASE WHEN EXISTS (SELECT 1 FROM dbo.Item WHERE ItemId = @ItemId) THEN 1 ELSE 0 END;",
-                                    new { ItemId = newItemId },
-                                    tx));
+                if (newStockAffected <= 0)
+                {
+                    var exists = await connection.ExecuteScalarAsync<int>(
+                        new CommandDefinition(
+                            "SELECT CASE WHEN EXISTS (SELECT 1 FROM dbo.Item WHERE ItemId = @ItemId) THEN 1 ELSE 0 END;",
+                            new { ItemId = newItemId },
+                            tx));
 
-                            if (exists <= 0)
-                                throw new InvalidOperationException("Replacement item not found.");
+                    if (exists <= 0)
+                        throw new InvalidOperationException("Replacement item not found.");
 
-                            throw new InvalidOperationException("Not enough stock on hand for the selected replacement item.");
-                        }
+                    throw new InvalidOperationException("Not enough stock on hand for the selected replacement item.");
+                }
 
-                        // Update old item condition (required)
-                        await connection.ExecuteAsync(
-                            @"UPDATE dbo.Item
-SET ConditionID = @ConditionId,
-    StockOnHand = CASE WHEN @ForceStockZero = 1 THEN 0 ELSE StockOnHand END,
-    Remarks = CASE WHEN @Remarks IS NULL OR LTRIM(RTRIM(@Remarks)) = '' THEN Remarks ELSE @Remarks END,
-    DateModified = @NowUtc,
-    ModifiedBy = @ModifiedBy
-WHERE ItemId = @ItemId;",
-                            new
-                            {
-                                ConditionId = oldItemConditionId,
-                                ForceStockZero = returnOldToStock ? 0 : 1,
-                                Remarks = oldItemConditionRemarks,
-                                ModifiedBy = changedByUserId.Value,
-                                ItemId = oldItemId,
-                                NowUtc = nowUtc
-                            },
-                            transaction: tx);
+            }
 
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ResolutionType", null, "Replacement", remarks);
+            if (oldItemId > 0)
+            {
+                // Update old item condition (required)
+                await connection.ExecuteAsync(
+                    @"UPDATE dbo.Item
+    SET ConditionID = @ConditionId,
+        StockOnHand = CASE WHEN @ForceStockZero = 1 THEN 0 ELSE StockOnHand END,
+        Remarks = CASE WHEN @Remarks IS NULL OR LTRIM(RTRIM(@Remarks)) = '' THEN Remarks ELSE @Remarks END,
+        DateModified = @NowUtc,
+        ModifiedBy = @ModifiedBy
+    WHERE ItemId = @ItemId;",
+                    new
+                    {
+                        ConditionId = oldItemConditionId,
+                        ForceStockZero = returnOldToStock ? 0 : 1,
+                        Remarks = oldItemConditionRemarks,
+                        ModifiedBy = changedByUserId.Value,
+                        ItemId = oldItemId,
+                        NowUtc = nowUtc
+                    },
+                    transaction: tx);
 
-                        var snap = await GetTicketSnapshotAsync(connection, tx, ticketId);
-                        if (snap != null)
-                        {
-                            if (!string.IsNullOrWhiteSpace(snap.Department))
-                                await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ResolutionDepartment", null, snap.Department, null);
-                            if (!string.IsNullOrWhiteSpace(snap.ResponsiblePerson))
-                                await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ResolutionResponsiblePerson", null, snap.ResponsiblePerson, null);
-                        }
+            }
 
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementOldItemId", null, oldItemId.ToString(), null);
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementNewItemId", null, newItemId.ToString(), null);
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementQty", null, quantity.ToString(), null);
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementOldItemConditionId", null, oldItemConditionId.ToString(), oldItemConditionRemarks);
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementOldItemRepairAction", null, safeOldRepairAction, null);
+            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ResolutionType", null, "Replacement", remarks);
 
-                        var oldText = await GetItemDisplayTextAsync(connection, tx, oldItemId);
-                        var newText = await GetItemDisplayTextAsync(connection, tx, newItemId);
+            var snap = await GetTicketSnapshotAsync(connection, tx, ticketId);
+            if (snap != null)
+            {
+                if (!string.IsNullOrWhiteSpace(snap.Department))
+                    await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ResolutionDepartment", null, snap.Department, null);
+                if (!string.IsNullOrWhiteSpace(snap.ResponsiblePerson))
+                    await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ResolutionResponsiblePerson", null, snap.ResponsiblePerson, null);
+            }
 
-                        var noteText =
-                            $"Replacement swap completed.\r\n" +
-                            $"Old: {oldText}\r\n" +
-                            $"New: {newText}\r\n" +
-                            $"Old ConditionId: {oldItemConditionId}\r\n" +
-                            $"Qty: {quantity}\r\n" +
-                            (string.IsNullOrWhiteSpace(remarks) ? "" : $"\r\nRemarks: {remarks}");
+            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementOldItemId", null, oldItemId.ToString(), null);
+            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementNewItemId", null, newItemId.ToString(), null);
+            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementQty", null, quantity.ToString(), null);
+            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementOldItemConditionId", null, oldItemConditionId.ToString(), oldItemConditionRemarks);
+            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ReplacementOldItemRepairAction", null, safeOldRepairAction, null);
 
-                        await connection.ExecuteAsync(
-                            "dbo.sp_Call_AddTicketNote",
-                            new
-                            {
-                                TicketId = ticketId,
-                                NoteType = "Replacement",
-                                NoteText = noteText,
-                                CreatedByUserId = changedByUserId
-                            },
-                            commandType: System.Data.CommandType.StoredProcedure,
-                            transaction: tx);
+            var oldText = oldItemId > 0 ? await GetItemDisplayTextAsync(connection, tx, oldItemId) : "(No old item)";
+            var newText = newItemId > 0 ? await GetItemDisplayTextAsync(connection, tx, newItemId) : "(No new item)";
 
-                        // Update the active Set to reflect the physical swap (so Set Details shows the new serial).
-                        // Best-effort: if no active set is found for the old unit, we do nothing.
-                        string swappedSetCode = null;
-                        try
-                        {
-                            var swappedSet = await TrySwapItemInActiveSetAsync(
-                                connection,
-                                tx,
-                                fromItemId: oldItemId,
-                                toItemId: newItemId,
-                                quantity: quantity,
-                                changedByUserId: changedByUserId.Value,
-                                ticketId: ticketId,
-                                actionLabel: safeOldRepairAction);
+            var noteText =
+                $"Replacement item movement completed.\r\n" +
+                $"Old: {oldText}\r\n" +
+                $"New: {newText}\r\n" +
+                $"Old ConditionId: {oldItemConditionId}\r\n" +
+                $"Qty: {quantity}\r\n" +
+                (string.IsNullOrWhiteSpace(remarks) ? "" : $"\r\nRemarks: {remarks}");
 
-                            swappedSetCode = swappedSet?.SetCode;
-                        }
-                        catch
-                        {
-                            // ignore (best-effort set update)
-                        }
+            await connection.ExecuteAsync(
+                "dbo.sp_Call_AddTicketNote",
+                new
+                {
+                    TicketId = ticketId,
+                    NoteType = "Replacement",
+                    NoteText = noteText,
+                    CreatedByUserId = changedByUserId
+                },
+                commandType: System.Data.CommandType.StoredProcedure,
+                transaction: tx);
 
-                        // Best-effort: log replacement movement to ItemAuditTrail (for Audit Movement page).
-                        try
-                        {
-                            var oldSerial = await connection.ExecuteScalarAsync<string>(
-                                new CommandDefinition("SELECT TOP 1 SerialNumber FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = oldItemId }, tx));
-                            var newSerial = await connection.ExecuteScalarAsync<string>(
-                                new CommandDefinition("SELECT TOP 1 SerialNumber FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = newItemId }, tx));
+            // Update the active Set to reflect the physical swap (so Set Details shows the new serial).
+            // Best-effort: if no active set is found for the old unit, we do nothing.
+            string swappedSetCode = null;
+            try
+            {
+                // Only explicitly paired entries identify a set swap.
+                var swappedSet = await TrySwapItemInActiveSetAsync(
+                    connection,
+                    tx,
+                    fromItemId: oldItemId,
+                    toItemId: newItemId,
+                    quantity: quantity,
+                    changedByUserId: changedByUserId.Value,
+                    ticketId: ticketId,
+                    actionLabel: safeOldRepairAction);
 
-                            string createdBy = null;
-                            try
-                            {
-                                createdBy = await connection.ExecuteScalarAsync<string>(
-                                    new CommandDefinition("SELECT TOP 1 Name FROM dbo.[User] WHERE UserId = @UserId", new { UserId = changedByUserId.Value }, tx));
-                            }
-                            catch
-                            {
-                                createdBy = changedByUserId.Value.ToString();
-                            }
+                swappedSetCode = swappedSet?.SetCode;
+            }
+            catch
+            {
+                // ignore (best-effort set update)
+            }
 
-                            // Use UTC consistently for audit timestamps written by Call Monitoring.
-                            var auditTime = nowUtc;
+            // Best-effort: log replacement movement to ItemAuditTrail (for Audit Movement page).
+            try
+            {
+                var oldSerial = await connection.ExecuteScalarAsync<string>(
+                    new CommandDefinition("SELECT TOP 1 SerialNumber FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = oldItemId }, tx));
+                var newSerial = await connection.ExecuteScalarAsync<string>(
+                    new CommandDefinition("SELECT TOP 1 SerialNumber FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = newItemId }, tx));
 
-                            // Keep replacement movement logs atomic: either both entries exist, or neither.
-                            const string auditSavepoint = "CallMonitoring_ReplacementAuditTrail";
-                            tx.Save(auditSavepoint);
+                string createdBy = null;
+                try
+                {
+                    createdBy = await connection.ExecuteScalarAsync<string>(
+                        new CommandDefinition("SELECT TOP 1 Name FROM dbo.[User] WHERE UserId = @UserId", new { UserId = changedByUserId.Value }, tx));
+                }
+                catch
+                {
+                    createdBy = changedByUserId.Value.ToString();
+                }
 
-                            // Old unit pulled out from deployed set (returned to IT)
-                            var okOld = ItemAuditTrailWriter.TryLogWithResult(connection, tx, new ItemAuditTrailDto
-                            {
-                                ItemId = oldItemId,
-                                SerialNumber = oldSerial,
-                                Action = "Call Ticket Replacement Pullout",
-                                ActionTime = auditTime,
-                                Direction = "IN",
-                                Status = safeOldRepairAction,
-                                EmployeeName = snap?.ResponsiblePerson,
-                                DepartmentName = snap?.Department,
-                                ReferenceType = "CallTicket",
-                                ReferenceId = ticketId,
-                                SetCode = swappedSetCode,
-                                Notes = $"Pulled out for replacement • Qty {quantity} • Old: {oldText}",
-                                CreatedBy = createdBy ?? "System"
-                            }, out _);
+                // Use UTC consistently for audit timestamps written by Call Monitoring.
+                var auditTime = nowUtc;
 
-                            // New unit allocated to replace the old one (deployed)
-                            var okNew = ItemAuditTrailWriter.TryLogWithResult(connection, tx, new ItemAuditTrailDto
-                            {
-                                ItemId = newItemId,
-                                SerialNumber = newSerial,
-                                Action = "Call Ticket Replacement Allocation",
-                                ActionTime = auditTime,
-                                Direction = "OUT",
-                                Status = "Completed",
-                                EmployeeName = snap?.ResponsiblePerson,
-                                DepartmentName = snap?.Department,
-                                ReferenceType = "CallTicket",
-                                ReferenceId = ticketId,
-                                SetCode = swappedSetCode,
-                                Notes = $"Allocated as replacement • Qty {quantity} • New: {newText} • Replaced: {oldText}",
-                                CreatedBy = createdBy ?? "System"
-                            }, out _);
+                // Keep replacement movement logs atomic: either both entries exist, or neither.
+                const string auditSavepoint = "CallMonitoring_ReplacementAuditTrail";
+                tx.Save(auditSavepoint);
 
-                            if (!okOld || !okNew)
-                            {
-                                try { tx.Rollback(auditSavepoint); } catch { }
-                            }
-                        }
-                        catch
-                        {
-                            // ignore (best-effort audit movement logging)
-                        }
+                // Old unit pulled out from deployed set (returned to IT)
+                var okOld = oldItemId == 0 || ItemAuditTrailWriter.TryLogWithResult(connection, tx, new ItemAuditTrailDto
+                {
+                    ItemId = oldItemId,
+                    SerialNumber = oldSerial,
+                    Action = "Call Ticket Replacement Pullout",
+                    ActionTime = auditTime,
+                    Direction = "IN",
+                    Status = safeOldRepairAction,
+                    EmployeeName = snap?.ResponsiblePerson,
+                    DepartmentName = snap?.Department,
+                    ReferenceType = "CallTicket",
+                    ReferenceId = ticketId,
+                    SetCode = swappedSetCode,
+                    Notes = $"Pulled out for replacement • Qty {quantity} • Old: {oldText}",
+                    CreatedBy = createdBy ?? "System"
+                }, out _);
 
-                        // Best-effort: log repair action to ItemRepairHistory for visibility in "View Repair Items".
-                        // This is guarded so Call Monitoring can still function against older inventory DBs.
-                        try
-                        {
-                            if (await CallSchemaGate.TableExistsAsync(connection, "dbo.ItemRepairHistory", tx)
-                                && await CallSchemaGate.TableExistsAsync(connection, "dbo.SetItemUpdate", tx))
-                            {
-                                var oldSerial = await connection.ExecuteScalarAsync<string>(
-                                    new CommandDefinition("SELECT TOP 1 SerialNumber FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = oldItemId }, tx));
+                // New unit allocated to replace the old one (deployed)
+                var okNew = newItemId == 0 || ItemAuditTrailWriter.TryLogWithResult(connection, tx, new ItemAuditTrailDto
+                {
+                    ItemId = newItemId,
+                    SerialNumber = newSerial,
+                    Action = "Call Ticket Replacement Allocation",
+                    ActionTime = auditTime,
+                    Direction = "OUT",
+                    Status = "Completed",
+                    EmployeeName = snap?.ResponsiblePerson,
+                    DepartmentName = snap?.Department,
+                    ReferenceType = "CallTicket",
+                    ReferenceId = ticketId,
+                    SetCode = swappedSetCode,
+                    Notes = $"Allocated as replacement • Qty {quantity} • New: {newText} • Replaced: {oldText}",
+                    CreatedBy = createdBy ?? "System"
+                }, out _);
 
-                                if (!string.IsNullOrWhiteSpace(oldSerial))
-                                {
-                                    var conditionName = await connection.ExecuteScalarAsync<string>(
-                                        new CommandDefinition("SELECT TOP 1 ConditionName FROM dbo.[Condition] WHERE ConditionID = @ConditionId", new { ConditionId = oldItemConditionId }, tx));
-                                    var safeConditionName = string.IsNullOrWhiteSpace(conditionName)
-                                        ? oldItemConditionId.ToString()
-                                        : conditionName.Trim();
+                if (!okOld || !okNew)
+                {
+                    try { tx.Rollback(auditSavepoint); } catch { }
+                }
+            }
+            catch
+            {
+                // ignore (best-effort audit movement logging)
+            }
 
-                                    // Prefer the actual deployed SetCode so Movement Details can show the correct Set context.
-                                    var safeSetCode = swappedSetCode ?? $"TCK-{ticketId}";
-                                    var safeRemark = string.IsNullOrWhiteSpace(remarks)
-                                        ? $"Call ticket replacement pullout (Ticket {ticketId})"
-                                        : $"Call ticket replacement pullout (Ticket {ticketId}) | {remarks.Trim()}";
+            // Best-effort: log repair action to ItemRepairHistory for visibility in "View Repair Items".
+            // This is guarded so Call Monitoring can still function against older inventory DBs.
+            try
+            {
+                if (oldItemId > 0 && await CallSchemaGate.TableExistsAsync(connection, "dbo.ItemRepairHistory", tx)
+                    && await CallSchemaGate.TableExistsAsync(connection, "dbo.SetItemUpdate", tx))
+                {
+                    var oldSerial = await connection.ExecuteScalarAsync<string>(
+                        new CommandDefinition("SELECT TOP 1 SerialNumber FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = oldItemId }, tx));
 
-                                    const string insertUpdateSql = @"
+                    if (!string.IsNullOrWhiteSpace(oldSerial))
+                    {
+                        var conditionName = await connection.ExecuteScalarAsync<string>(
+                            new CommandDefinition("SELECT TOP 1 ConditionName FROM dbo.[Condition] WHERE ConditionID = @ConditionId", new { ConditionId = oldItemConditionId }, tx));
+                        var safeConditionName = string.IsNullOrWhiteSpace(conditionName)
+                            ? oldItemConditionId.ToString()
+                            : conditionName.Trim();
+
+                        // Prefer the actual deployed SetCode so Movement Details can show the correct Set context.
+                        var safeSetCode = swappedSetCode ?? $"TCK-{ticketId}";
+                        var safeRemark = string.IsNullOrWhiteSpace(remarks)
+                            ? $"Call ticket replacement pullout (Ticket {ticketId})"
+                            : $"Call ticket replacement pullout (Ticket {ticketId}) | {remarks.Trim()}";
+
+                        const string insertUpdateSql = @"
 INSERT INTO dbo.SetItemUpdate
     (SetId, SetCode, ItemId, SerialNumber, ModelNumber, PreviousStatus, NewStatus, Remark,
      UpdatedByUserId, UpdatedByName, Source, Processed, ProcessedBy, ProcessedAt)
@@ -1468,27 +1487,27 @@ VALUES
      @UpdatedByUserId, NULL, @Source, 1, NULL, @NowUtc);
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-                                    int updateId;
-                                    const string repairBridgeSavepoint = "CallMonitoring_RepairHistoryBridge";
-                                    tx.Save(repairBridgeSavepoint);
+                        int updateId;
+                        const string repairBridgeSavepoint = "CallMonitoring_RepairHistoryBridge";
+                        tx.Save(repairBridgeSavepoint);
 
-                                    try
-                                    {
-                                        using (var cmd = new SqlCommand(insertUpdateSql, connection, tx))
-                                        {
-                                            cmd.Parameters.AddWithValue("@SetCode", safeSetCode);
-                                            cmd.Parameters.AddWithValue("@ItemId", oldItemId);
-                                            cmd.Parameters.AddWithValue("@SerialNumber", oldSerial);
-                                            cmd.Parameters.AddWithValue("@PreviousStatus", "Replacement Pullout");
-                                            cmd.Parameters.AddWithValue("@NewStatus", safeOldRepairAction);
-                                            cmd.Parameters.AddWithValue("@Remark", (object)safeRemark ?? DBNull.Value);
-                                            cmd.Parameters.AddWithValue("@UpdatedByUserId", changedByUserId.Value.ToString());
-                                            cmd.Parameters.AddWithValue("@Source", "CallMonitoring");
-                                            cmd.Parameters.AddWithValue("@NowUtc", nowUtc);
-                                            updateId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-                                        }
+                        try
+                        {
+                            using (var cmd = new SqlCommand(insertUpdateSql, connection, tx))
+                            {
+                                cmd.Parameters.AddWithValue("@SetCode", safeSetCode);
+                                cmd.Parameters.AddWithValue("@ItemId", oldItemId);
+                                cmd.Parameters.AddWithValue("@SerialNumber", oldSerial);
+                                cmd.Parameters.AddWithValue("@PreviousStatus", "Replacement Pullout");
+                                cmd.Parameters.AddWithValue("@NewStatus", safeOldRepairAction);
+                                cmd.Parameters.AddWithValue("@Remark", (object)safeRemark ?? DBNull.Value);
+                                cmd.Parameters.AddWithValue("@UpdatedByUserId", changedByUserId.Value.ToString());
+                                cmd.Parameters.AddWithValue("@Source", "CallMonitoring");
+                                cmd.Parameters.AddWithValue("@NowUtc", nowUtc);
+                                updateId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                            }
 
-                                    const string insertHistorySql = @"
+                        const string insertHistorySql = @"
 INSERT INTO dbo.ItemRepairHistory
     (UpdateId, ItemId, SerialNumber, SetId, SetCode,
      PreviousStatus, NewStatus,
@@ -1500,45 +1519,95 @@ VALUES
      @ConditionId, @ConditionName, @RepairAction,
      @Remark, @NowUtc, @ProcessedByUserId, NULL);";
 
-                                        using (var cmd = new SqlCommand(insertHistorySql, connection, tx))
-                                        {
-                                            cmd.Parameters.AddWithValue("@UpdateId", updateId);
-                                            cmd.Parameters.AddWithValue("@ItemId", oldItemId);
-                                            cmd.Parameters.AddWithValue("@SerialNumber", oldSerial);
-                                            cmd.Parameters.AddWithValue("@SetCode", safeSetCode);
-                                            cmd.Parameters.AddWithValue("@PreviousStatus", "Replacement Pullout");
-                                            cmd.Parameters.AddWithValue("@NewStatus", safeOldRepairAction);
-                                            cmd.Parameters.AddWithValue("@ConditionId", oldItemConditionId);
-                                            cmd.Parameters.AddWithValue("@ConditionName", safeConditionName);
-                                            cmd.Parameters.AddWithValue("@RepairAction", safeOldRepairAction);
-                                            cmd.Parameters.AddWithValue("@Remark", (object)safeRemark ?? DBNull.Value);
-                                            cmd.Parameters.AddWithValue("@ProcessedByUserId", changedByUserId.Value);
-                                            cmd.Parameters.AddWithValue("@NowUtc", nowUtc);
-                                            await cmd.ExecuteNonQueryAsync();
-                                        }
-                                    }
-                                    catch
-                                    {
-                                        // Ensure SetItemUpdate + ItemRepairHistory bridge stays all-or-nothing.
-                                        try { tx.Rollback(repairBridgeSavepoint); } catch { }
-                                    }
-                                }
+                            using (var cmd = new SqlCommand(insertHistorySql, connection, tx))
+                            {
+                                cmd.Parameters.AddWithValue("@UpdateId", updateId);
+                                cmd.Parameters.AddWithValue("@ItemId", oldItemId);
+                                cmd.Parameters.AddWithValue("@SerialNumber", oldSerial);
+                                cmd.Parameters.AddWithValue("@SetCode", safeSetCode);
+                                cmd.Parameters.AddWithValue("@PreviousStatus", "Replacement Pullout");
+                                cmd.Parameters.AddWithValue("@NewStatus", safeOldRepairAction);
+                                cmd.Parameters.AddWithValue("@ConditionId", oldItemConditionId);
+                                cmd.Parameters.AddWithValue("@ConditionName", safeConditionName);
+                                cmd.Parameters.AddWithValue("@RepairAction", safeOldRepairAction);
+                                cmd.Parameters.AddWithValue("@Remark", (object)safeRemark ?? DBNull.Value);
+                                cmd.Parameters.AddWithValue("@ProcessedByUserId", changedByUserId.Value);
+                                cmd.Parameters.AddWithValue("@NowUtc", nowUtc);
+                                await cmd.ExecuteNonQueryAsync();
                             }
                         }
                         catch
                         {
-                            // ignore (best-effort audit trail)
+                            // Ensure SetItemUpdate + ItemRepairHistory bridge stays all-or-nothing.
+                            try { tx.Rollback(repairBridgeSavepoint); } catch { }
                         }
-
-                        tx.Commit();
-                    }
-                    catch
-                    {
-                        tx.Rollback();
-                        throw;
                     }
                 }
             }
+            catch
+            {
+                // ignore (best-effort audit trail)
+            }
+
+        }
+
+        public async Task ApplyTicketReplacementsAsync(int ticketId, IList<CallReplacementLine> lines,
+            int changedByUserId, string createdByName)
+        {
+            var validationError = CallReplacementLine.GetValidationError(lines);
+            if (validationError != null) throw new ArgumentException(validationError);
+            if (changedByUserId <= 0) throw new InvalidOperationException("A logged-in user is required.");
+
+            using (var connection = new SqlConnection(GetConnectionString()))
+            {
+                await connection.OpenAsync();
+                using (var tx = connection.BeginTransaction())
+                {
+                    // Serialize resolution/return operations for this ticket.
+                    await connection.ExecuteScalarAsync<int>(new CommandDefinition(
+                        "SELECT TicketId FROM dbo.CallTicket WITH (UPDLOCK, HOLDLOCK) WHERE TicketId = @TicketId",
+                        new { TicketId = ticketId }, tx));
+                    var batchId = Guid.NewGuid().ToString("N");
+                    foreach (var line in lines)
+                    {
+                        var oldId = line.OldItemId;
+                        if (line.UnlistedOldItem != null)
+                        {
+                            line.UnlistedOldItem.CreatedByUserId = changedByUserId;
+                            line.UnlistedOldItem.CreatedByName = createdByName;
+                            oldId = new ItemRepository().AddItem(line.UnlistedOldItem, connection, tx);
+                        }
+                        await ApplyTicketReplacementCoreAsync(connection, tx, ticketId, oldId, line.NewItemId,
+                            line.Quantity, line.Remarks, changedByUserId, line.OldItemConditionId,
+                            line.OldItemConditionRemarks, line.OldItemRepairAction);
+                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId,
+                            "ReplacementBatchItem", null, oldId + "," + line.NewItemId + "," + line.Quantity, batchId);
+                    }
+                    await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId,
+                        "ReplacementBatchId", null, batchId, null);
+                    tx.Commit();
+                }
+            }
+        }
+
+        private static async Task<List<CallReplacementLine>> GetReplacementBatchAsync(
+            SqlConnection connection, SqlTransaction tx, int ticketId)
+        {
+            var values = await connection.QueryAsync<string>(new CommandDefinition(@"
+SELECT h.NewValue FROM dbo.CallTicketHistory h
+INNER JOIN (
+    SELECT TOP 1 HistoryId, NewValue FROM dbo.CallTicketHistory
+    WHERE TicketId = @TicketId AND FieldName = 'ReplacementBatchId'
+    ORDER BY HistoryId DESC
+) b ON h.Note = b.NewValue
+WHERE h.TicketId = @TicketId AND h.FieldName = 'ReplacementBatchItem'
+AND NOT EXISTS (SELECT 1 FROM dbo.CallTicketHistory later
+    WHERE later.TicketId = @TicketId AND later.FieldName = 'ReplacementNewItemId' AND later.HistoryId > b.HistoryId)
+ORDER BY h.HistoryId;", new { TicketId = ticketId }, tx));
+            return values.Select(value => value.Split(',')).Select(parts => new CallReplacementLine
+            {
+                OldItemId = int.Parse(parts[0]), NewItemId = int.Parse(parts[1]), Quantity = int.Parse(parts[2])
+            }).ToList();
         }
 
         private sealed class ActiveSetPick
@@ -1822,6 +1891,8 @@ SELECT
         SELECT 1
         FROM dbo.CallTicketHistory h
         WHERE h.TicketId = @TicketId AND h.FieldName = 'TemporaryReplacementReturnedAt'
+          AND h.HistoryId > ISNULL((SELECT MAX(a.HistoryId) FROM dbo.CallTicketHistory a
+              WHERE a.TicketId = @TicketId AND a.FieldName = 'ReplacementNewItemId'), 0)
     ) THEN 1 ELSE 0 END;";
 
             var row = await connection.QuerySingleOrDefaultAsync(sql, new { TicketId = ticketId }, tx);
@@ -1867,6 +1938,8 @@ SELECT
         SELECT 1
         FROM dbo.CallTicketHistory h
         WHERE h.TicketId = @TicketId AND h.FieldName = 'TemporaryReplacementReturnedAt'
+          AND h.HistoryId > ISNULL((SELECT MAX(a.HistoryId) FROM dbo.CallTicketHistory a
+              WHERE a.TicketId = @TicketId AND a.FieldName = 'ReplacementNewItemId'), 0)
     ) THEN 1 ELSE 0 END;";
 
                 var row = await connection.QuerySingleOrDefaultAsync(sql, new { TicketId = ticketId }, tx);
@@ -1900,9 +1973,18 @@ SELECT
                     return (0, 0, null, false);
 
                 var (newItemId, qty, alreadyReturned) = await GetTemporaryReplacementDetailsAsync(connection, null, ticketId);
+                var batch = await GetReplacementBatchAsync(connection, null, ticketId);
+                if (batch.Count > 0)
+                {
+                    var issued = batch.Where(x => x.HasNewItem).ToList();
+                    if (issued.Count == 0) return (0, 0, null, alreadyReturned);
+                    var descriptions = new List<string>();
+                    foreach (var line in issued)
+                        descriptions.Add(await GetItemDisplayTextAsync(connection, null, line.NewItemId) + " (Qty: " + line.Quantity + ")");
+                    return (issued[0].NewItemId, issued.Sum(x => x.Quantity), string.Join("\r\n", descriptions), alreadyReturned);
+                }
                 if (newItemId <= 0 || qty <= 0)
                     return (0, 0, null, alreadyReturned);
-
                 var newItemText = await GetItemDisplayTextAsync(connection, null, newItemId);
                 return (newItemId, qty, newItemText, alreadyReturned);
             }
@@ -1924,7 +2006,7 @@ SELECT
                     try
                     {
                         var status = await connection.ExecuteScalarAsync<string>(
-                            new CommandDefinition("SELECT Status FROM dbo.CallTicket WHERE TicketId = @TicketId", new { TicketId = ticketId }, tx));
+                            new CommandDefinition("SELECT Status FROM dbo.CallTicket WITH (UPDLOCK, HOLDLOCK) WHERE TicketId = @TicketId", new { TicketId = ticketId }, tx));
 
                         if (!string.Equals(status, "Resolved (Temporary)", StringComparison.OrdinalIgnoreCase))
                             throw new InvalidOperationException("Ticket is not Resolved (Temporary).");
@@ -1932,112 +2014,120 @@ SELECT
                         var (newItemId, qty, alreadyReturned) = await GetTemporaryReplacementDetailsAsync(connection, tx, ticketId);
                         if (alreadyReturned)
                             throw new InvalidOperationException("Temporary replacement item has already been returned for this ticket.");
-                        if (newItemId <= 0 || qty <= 0)
+                        var batch = await GetReplacementBatchAsync(connection, tx, ticketId);
+                        if (batch.Count == 0 && newItemId > 0 && qty > 0)
+                            batch.Add(new CallReplacementLine { OldItemId = await GetLatestReplacementOldItemIdAsync(connection, tx, ticketId), NewItemId = newItemId, Quantity = qty });
+                        batch = batch.Where(x => x.HasNewItem).ToList();
+                        if (batch.Count == 0)
                             throw new InvalidOperationException("No replacement allocation was found for this ticket.");
-
-                        var newItemAffectsInventory = await connection.ExecuteScalarAsync<bool?>(
-                            new CommandDefinition("SELECT AffectsInventory FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = newItemId }, tx));
-                        if (!newItemAffectsInventory.HasValue)
-                            throw new InvalidOperationException("Replacement item not found.");
-                        if (!newItemAffectsInventory.Value)
-                            throw new InvalidOperationException("Replacement item must affect inventory stock.");
-
-                        var entryType = InventoryHelper.DetermineEntryType(newItemAffectsInventory.Value, qty);
-                        var nowUtc = DateTime.UtcNow;
-
-                        await connection.ExecuteAsync(
-                            @"INSERT INTO dbo.Inventory (Description, EntryType, Quantity, DatePosted, PostedBy, ReqId, ItemId)
-VALUES (@Description, @EntryType, @Quantity, @NowUtc, @PostedBy, NULL, @ItemId);",
-                            new
-                            {
-                                Description = $"Call ticket temporary replacement return (Ticket {ticketId})",
-                                EntryType = entryType,
-                                Quantity = qty,
-                                PostedBy = changedByUserId.Value,
-                                ItemId = newItemId,
-                                NowUtc = nowUtc
-                            },
-                            transaction: tx);
-
-                        await connection.ExecuteAsync(
-                            @"UPDATE dbo.Item
- SET StockOnHand = ISNULL(StockOnHand, 0) + @Quantity,
-     DateModified = @NowUtc,
-     ModifiedBy = @ModifiedBy
- WHERE ItemId = @ItemId;",
-                            new { Quantity = qty, ModifiedBy = changedByUserId.Value, ItemId = newItemId, NowUtc = nowUtc },
-                            transaction: tx);
-
-                        // Best-effort: log return movement to ItemAuditTrail (for Audit Movement page).
-                        try
+                        foreach (var line in batch)
                         {
-                            var snap = await GetTicketSnapshotAsync(connection, tx, ticketId);
-                            var newSerial = await connection.ExecuteScalarAsync<string>(
-                                new CommandDefinition("SELECT TOP 1 SerialNumber FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = newItemId }, tx));
-                            var newItemDisplay = await GetItemDisplayTextAsync(connection, tx, newItemId);
+                            newItemId = line.NewItemId;
+                            qty = line.Quantity;
+                            var newItemAffectsInventory = await connection.ExecuteScalarAsync<bool?>(
+                                new CommandDefinition("SELECT AffectsInventory FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = newItemId }, tx));
+                            if (!newItemAffectsInventory.HasValue)
+                                throw new InvalidOperationException("Replacement item not found.");
+                            if (!newItemAffectsInventory.Value)
+                                throw new InvalidOperationException("Replacement item must affect inventory stock.");
 
-                            string createdBy = null;
+                            var entryType = InventoryHelper.DetermineEntryType(newItemAffectsInventory.Value, qty);
+                            var nowUtc = DateTime.UtcNow;
+
+                            await connection.ExecuteAsync(
+                                @"INSERT INTO dbo.Inventory (Description, EntryType, Quantity, DatePosted, PostedBy, ReqId, ItemId)
+    VALUES (@Description, @EntryType, @Quantity, @NowUtc, @PostedBy, NULL, @ItemId);",
+                                new
+                                {
+                                    Description = $"Call ticket temporary replacement return (Ticket {ticketId})",
+                                    EntryType = entryType,
+                                    Quantity = qty,
+                                    PostedBy = changedByUserId.Value,
+                                    ItemId = newItemId,
+                                    NowUtc = nowUtc
+                                },
+                                transaction: tx);
+
+                            await connection.ExecuteAsync(
+                                @"UPDATE dbo.Item
+     SET StockOnHand = ISNULL(StockOnHand, 0) + @Quantity,
+         DateModified = @NowUtc,
+         ModifiedBy = @ModifiedBy
+     WHERE ItemId = @ItemId;",
+                                new { Quantity = qty, ModifiedBy = changedByUserId.Value, ItemId = newItemId, NowUtc = nowUtc },
+                                transaction: tx);
+
+                            // Best-effort: log return movement to ItemAuditTrail (for Audit Movement page).
                             try
                             {
-                                createdBy = await connection.ExecuteScalarAsync<string>(
-                                    new CommandDefinition("SELECT TOP 1 Name FROM dbo.[User] WHERE UserId = @UserId", new { UserId = changedByUserId.Value }, tx));
+                                var snap = await GetTicketSnapshotAsync(connection, tx, ticketId);
+                                var newSerial = await connection.ExecuteScalarAsync<string>(
+                                    new CommandDefinition("SELECT TOP 1 SerialNumber FROM dbo.Item WHERE ItemId = @ItemId", new { ItemId = newItemId }, tx));
+                                var newItemDisplay = await GetItemDisplayTextAsync(connection, tx, newItemId);
+
+                                string createdBy = null;
+                                try
+                                {
+                                    createdBy = await connection.ExecuteScalarAsync<string>(
+                                        new CommandDefinition("SELECT TOP 1 Name FROM dbo.[User] WHERE UserId = @UserId", new { UserId = changedByUserId.Value }, tx));
+                                }
+                                catch
+                                {
+                                    createdBy = changedByUserId.Value.ToString();
+                                }
+
+                                ItemAuditTrailWriter.TryLog(connection, tx, new ItemAuditTrailDto
+                                {
+                                    ItemId = newItemId,
+                                    SerialNumber = newSerial,
+                                    Action = "Call Ticket Temporary Replacement Return",
+                                    ActionTime = nowUtc,
+                                    Direction = "IN",
+                                    Status = "Completed",
+                                    EmployeeName = snap?.ResponsiblePerson,
+                                    DepartmentName = snap?.Department,
+                                    ReferenceType = "CallTicket",
+                                    ReferenceId = ticketId,
+                                    Notes = $"Temporary replacement returned • Qty {qty} • Item: {newItemDisplay}",
+                                    CreatedBy = createdBy ?? "System"
+                                });
                             }
                             catch
                             {
-                                createdBy = changedByUserId.Value.ToString();
+                                // ignore (best-effort audit movement logging)
                             }
 
-                            ItemAuditTrailWriter.TryLog(connection, tx, new ItemAuditTrailDto
+                            // Swap set item back (temporary replacement returned: put old unit back in the set).
+                            try
                             {
-                                ItemId = newItemId,
-                                SerialNumber = newSerial,
-                                Action = "Call Ticket Temporary Replacement Return",
-                                ActionTime = nowUtc,
-                                Direction = "IN",
-                                Status = "Completed",
-                                EmployeeName = snap?.ResponsiblePerson,
-                                DepartmentName = snap?.Department,
-                                ReferenceType = "CallTicket",
-                                ReferenceId = ticketId,
-                                Notes = $"Temporary replacement returned • Qty {qty} • Item: {newItemDisplay}",
-                                CreatedBy = createdBy ?? "System"
-                            });
-                        }
-                        catch
-                        {
-                            // ignore (best-effort audit movement logging)
-                        }
-
-                        // Swap set item back (temporary replacement returned: put old unit back in the set).
-                        try
-                        {
-                            var oldItemId = await GetLatestReplacementOldItemIdAsync(connection, tx, ticketId);
-                            if (oldItemId > 0)
-                            {
-                                await TrySwapItemInActiveSetAsync(
-                                    connection,
-                                    tx,
-                                    fromItemId: newItemId,
-                                    toItemId: oldItemId,
-                                    quantity: qty,
-                                    changedByUserId: changedByUserId.Value,
-                                    ticketId: ticketId,
-                                    actionLabel: "TemporaryReturn");
+                                var oldItemId = line.OldItemId;
+                                if (oldItemId > 0)
+                                {
+                                    await TrySwapItemInActiveSetAsync(
+                                        connection,
+                                        tx,
+                                        fromItemId: newItemId,
+                                        toItemId: oldItemId,
+                                        quantity: qty,
+                                        changedByUserId: changedByUserId.Value,
+                                        ticketId: ticketId,
+                                        actionLabel: "TemporaryReturn");
+                                }
                             }
+                            catch
+                            {
+                                // ignore (best-effort set revert)
+                            }
+
+                            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "TemporaryReplacementReturnedAt", null, DateTime.UtcNow.ToString("o"), null);
+                            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "TemporaryReplacementReturnedNewItemId", null, newItemId.ToString(), null);
+                            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "TemporaryReplacementReturnedQty", null, qty.ToString(), null);
+
+                            var newItemText = await GetItemDisplayTextAsync(connection, tx, newItemId);
+                            noteTextForUi += $"Temporary replacement returned to inventory.\r\nItem: {newItemText}\r\nQty: {qty}\r\n";
+                            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "TemporaryReplacementReturnNote", null, "TemporaryReturn", noteTextForUi);
+
                         }
-                        catch
-                        {
-                            // ignore (best-effort set revert)
-                        }
-
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "TemporaryReplacementReturnedAt", null, DateTime.UtcNow.ToString("o"), null);
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "TemporaryReplacementReturnedNewItemId", null, newItemId.ToString(), null);
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "TemporaryReplacementReturnedQty", null, qty.ToString(), null);
-
-                        var newItemText = await GetItemDisplayTextAsync(connection, tx, newItemId);
-                        noteTextForUi = $"Temporary replacement returned to inventory.\r\nItem: {newItemText}\r\nQty: {qty}";
-                        await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "TemporaryReplacementReturnNote", null, "TemporaryReturn", noteTextForUi);
-
                         tx.Commit();
                     }
                     catch
@@ -2086,35 +2176,41 @@ VALUES (@Description, @EntryType, @Quantity, @NowUtc, @PostedBy, NULL, @ItemId);
                     try
                     {
                         var details = await GetLatestReplacementSwapDetailsAsync(connection, tx, ticketId);
-                        if (details.OldItemId <= 0 || details.NewItemId <= 0)
-                            throw new InvalidOperationException("No replacement history was found for this ticket.");
-
-                        var qty = details.Quantity > 0 ? details.Quantity : 1;
-
-                        // If temporary replacement was already returned, the set should point back to the old unit.
-                        if (details.AlreadyReturned)
+                        var batch = await GetReplacementBatchAsync(connection, tx, ticketId);
+                        if (batch.Count == 0 && details.OldItemId > 0 && details.NewItemId > 0)
+                            batch.Add(new CallReplacementLine { OldItemId = details.OldItemId, NewItemId = details.NewItemId, Quantity = details.Quantity });
+                        batch = batch.Where(x => x.HasOldItem && x.HasNewItem).ToList();
+                        if (batch.Count == 0)
+                            throw new InvalidOperationException("No replacement history with a paired old and new item was found for this ticket.");
+                        foreach (var line in batch)
                         {
-                            await TrySwapItemInActiveSetAsync(
-                                connection,
-                                tx,
-                                fromItemId: details.NewItemId,
-                                toItemId: details.OldItemId,
-                                quantity: qty,
-                                changedByUserId: changedByUserId.Value,
-                                ticketId: ticketId,
-                                actionLabel: "SetSync (Temp Return)");
-                        }
-                        else
-                        {
-                            await TrySwapItemInActiveSetAsync(
-                                connection,
-                                tx,
-                                fromItemId: details.OldItemId,
-                                toItemId: details.NewItemId,
-                                quantity: qty,
-                                changedByUserId: changedByUserId.Value,
-                                ticketId: ticketId,
-                                actionLabel: "SetSync");
+                            var qty = line.Quantity > 0 ? line.Quantity : 1;
+
+                            // If temporary replacement was already returned, the set should point back to the old unit.
+                            if (details.AlreadyReturned)
+                            {
+                                await TrySwapItemInActiveSetAsync(
+                                    connection,
+                                    tx,
+                                    fromItemId: line.NewItemId,
+                                    toItemId: line.OldItemId,
+                                    quantity: qty,
+                                    changedByUserId: changedByUserId.Value,
+                                    ticketId: ticketId,
+                                    actionLabel: "SetSync (Temp Return)");
+                            }
+                            else
+                            {
+                                await TrySwapItemInActiveSetAsync(
+                                    connection,
+                                    tx,
+                                    fromItemId: line.OldItemId,
+                                    toItemId: line.NewItemId,
+                                    quantity: qty,
+                                    changedByUserId: changedByUserId.Value,
+                                    ticketId: ticketId,
+                                    actionLabel: "SetSync");
+                            }
                         }
 
                         await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "SetSyncAt", null, DateTime.UtcNow.ToString("o"), null);
@@ -2154,34 +2250,40 @@ VALUES (@Description, @EntryType, @Quantity, @NowUtc, @PostedBy, NULL, @ItemId);
                     try
                     {
                         var details = await GetLatestReplacementSwapDetailsAsync(connection, tx, ticketId);
-                        if (details.OldItemId <= 0 || details.NewItemId <= 0)
-                            throw new InvalidOperationException("No replacement history was found for this ticket.");
-
-                        var qty = details.Quantity > 0 ? details.Quantity : 1;
-
-                        if (details.AlreadyReturned)
+                        var batch = await GetReplacementBatchAsync(connection, tx, ticketId);
+                        if (batch.Count == 0 && details.OldItemId > 0 && details.NewItemId > 0)
+                            batch.Add(new CallReplacementLine { OldItemId = details.OldItemId, NewItemId = details.NewItemId, Quantity = details.Quantity });
+                        batch = batch.Where(x => x.HasOldItem && x.HasNewItem).ToList();
+                        if (batch.Count == 0)
+                            throw new InvalidOperationException("No replacement history with a paired old and new item was found for this ticket.");
+                        foreach (var line in batch)
                         {
-                            await TrySwapItemInActiveSetAsync(
-                                connection,
-                                tx,
-                                fromItemId: details.NewItemId,
-                                toItemId: details.OldItemId,
-                                quantity: qty,
-                                changedByUserId: changedByUserId.Value,
-                                ticketId: ticketId,
-                                actionLabel: "SetSync (Temp Return)");
-                        }
-                        else
-                        {
-                            await TrySwapItemInActiveSetAsync(
-                                connection,
-                                tx,
-                                fromItemId: details.OldItemId,
-                                toItemId: details.NewItemId,
-                                quantity: qty,
-                                changedByUserId: changedByUserId.Value,
-                                ticketId: ticketId,
-                                actionLabel: "SetSync");
+                            var qty = line.Quantity > 0 ? line.Quantity : 1;
+
+                            if (details.AlreadyReturned)
+                            {
+                                await TrySwapItemInActiveSetAsync(
+                                    connection,
+                                    tx,
+                                    fromItemId: line.NewItemId,
+                                    toItemId: line.OldItemId,
+                                    quantity: qty,
+                                    changedByUserId: changedByUserId.Value,
+                                    ticketId: ticketId,
+                                    actionLabel: "SetSync (Temp Return)");
+                            }
+                            else
+                            {
+                                await TrySwapItemInActiveSetAsync(
+                                    connection,
+                                    tx,
+                                    fromItemId: line.OldItemId,
+                                    toItemId: line.NewItemId,
+                                    quantity: qty,
+                                    changedByUserId: changedByUserId.Value,
+                                    ticketId: ticketId,
+                                    actionLabel: "SetSync");
+                            }
                         }
 
                         await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "SetSyncAt", null, DateTime.UtcNow.ToString("o"), null);

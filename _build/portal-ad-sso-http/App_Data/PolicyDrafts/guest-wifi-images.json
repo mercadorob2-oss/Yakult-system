@@ -1,0 +1,58 @@
+[
+  {
+    "step": 1,
+    "name": "guest-wifi-step-1-ff66c1205e.png",
+    "url": "/media/company-policies/guest-wifi-step-1-ff66c1205e.png",
+    "width": 579,
+    "height": 649,
+    "sha256": "ff66c1205e01c59eabc8bd0f2d41579ae69c342a6a7daa59e7f3eddc5ae75ef9"
+  },
+  {
+    "step": 2,
+    "name": "guest-wifi-step-2-b7c1372dbe.png",
+    "url": "/media/company-policies/guest-wifi-step-2-b7c1372dbe.png",
+    "width": 940,
+    "height": 546,
+    "sha256": "b7c1372dbef8fa8d8982ca4fceaf0828c16636f68609aaa4db03a2bfd882406f"
+  },
+  {
+    "step": 3,
+    "name": "guest-wifi-step-3-f1b6577734.png",
+    "url": "/media/company-policies/guest-wifi-step-3-f1b6577734.png",
+    "width": 940,
+    "height": 543,
+    "sha256": "f1b6577734fcea5dd3fadd03a7172e015cd818d09e6d38365d33ef4c18749c9e"
+  },
+  {
+    "step": 4,
+    "name": "guest-wifi-step-4-26bfdb7cca.png",
+    "url": "/media/company-policies/guest-wifi-step-4-26bfdb7cca.png",
+    "width": 940,
+    "height": 542,
+    "sha256": "26bfdb7ccaf052758c4158adfffad8bd2882100e21ab3c29ceff7e1fee2826df"
+  },
+  {
+    "step": 5,
+    "name": "guest-wifi-step-5-7e1093d9cf.png",
+    "url": "/media/company-policies/guest-wifi-step-5-7e1093d9cf.png",
+    "width": 940,
+    "height": 538,
+    "sha256": "7e1093d9cf5b339cc15f251df391422a5a4f779a1f0aac9a46dde7c84b8c2ad5"
+  },
+  {
+    "step": 6,
+    "name": "guest-wifi-step-6-d0c9fe4ff8.png",
+    "url": "/media/company-policies/guest-wifi-step-6-d0c9fe4ff8.png",
+    "width": 940,
+    "height": 545,
+    "sha256": "d0c9fe4ff86b075cec2abe5e0b81b396323b6778eaae1a66a215e986423e196a"
+  },
+  {
+    "step": 7,
+    "name": "guest-wifi-step-7-b00ac3327e.png",
+    "url": "/media/company-policies/guest-wifi-step-7-b00ac3327e.png",
+    "width": 586,
+    "height": 634,
+    "sha256": "b00ac3327e64b70864bf84974e92d4e90a7121618ec21e1d757c1ea784ddac13"
+  }
+]

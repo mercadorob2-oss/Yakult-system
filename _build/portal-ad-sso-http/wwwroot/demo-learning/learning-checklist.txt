@@ -1,0 +1,12 @@
+YAKULT LEARNING - DEMO CHECKLIST
+
+This is sample content for exploring the learning portal.
+It is not an official company policy or training certificate.
+
+1. Read the lesson objectives.
+2. Watch the sample clip and inspect the worked example.
+3. Compare the useful approach with the approach to avoid.
+4. Complete the practice question.
+5. Review the checklist before marking the lesson complete.
+
+For real work, follow your current company instructions and approved IT support process.

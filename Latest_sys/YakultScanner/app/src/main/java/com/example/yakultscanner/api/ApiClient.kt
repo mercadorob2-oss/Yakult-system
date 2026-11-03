@@ -1,4 +1,4 @@
-package com.example.yakultscanner.api
+﻿package com.example.yakultscanner.api
 
 import android.os.Handler
 import android.os.Looper
@@ -28,9 +28,6 @@ interface YakultApiService {
 
     @POST("mobile-auth-login.ashx")
     suspend fun login(@Body request: LoginRequest): retrofit2.Response<LoginResponse>
-
-    @POST("api/auth/register")
-    suspend fun register(@Body request: RegisterRequest): retrofit2.Response<RegisterResponse>
 
     @POST("api/SetUpdates/Upload")
     suspend fun uploadSetUpdates(@Body request: SetUpdatesRequest): retrofit2.Response<SetUpdatesResponse>
@@ -422,12 +419,6 @@ data class LoginRequest(
     @SerializedName("password") val password: String
 )
 
-data class RegisterRequest(
-    @SerializedName("username") val username: String,
-    @SerializedName("email") val email: String? = null,
-    @SerializedName("password") val password: String
-)
-
 data class LoginResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
@@ -456,12 +447,6 @@ data class ReceiptImageUploadResponse(
     @SerializedName("image_id") val imageId: Int = 0,
     @SerializedName("set_code") val setCode: String? = null,
     @SerializedName("doc_type") val docType: String? = null
-)
-
-data class RegisterResponse(
-    @SerializedName("success") val success: Boolean,
-    @SerializedName("message") val message: String,
-    @SerializedName("userId") val userId: Int = 0
 )
 
 data class BatchItemsResponse(
@@ -1040,6 +1025,7 @@ data class CallTicketActionResponse(
 )
 
 data class ResolutionRequest(
+    @SerializedName("lines") val lines: List<ResolutionLineRequest>? = null,
     @SerializedName("action") val action: String = "resolution",
     @SerializedName("ticketId") val ticketId: Int,
     @SerializedName("resolutionType") val resolutionType: String,
@@ -1065,11 +1051,31 @@ data class ResolutionRequest(
     @SerializedName("parentOutcome") val parentOutcome: String? = null
 )
 
+data class ResolutionLineRequest(
+    @SerializedName("remarks") val remarks: String? = null,
+    @SerializedName("useUnlistedOldItem") val useUnlistedOldItem: Boolean? = null,
+    @SerializedName("oldItemId") val oldItemId: Int? = null,
+    @SerializedName("newItemId") val newItemId: Int? = null,
+    @SerializedName("quantity") val quantity: Int? = null,
+    @SerializedName("oldItemConditionId") val oldItemConditionId: Int? = null,
+    @SerializedName("oldItemConditionRemarks") val oldItemConditionRemarks: String? = null,
+    @SerializedName("oldItemRepairAction") val oldItemRepairAction: String? = null,
+    @SerializedName("unlistedOldItemName") val unlistedOldItemName: String? = null,
+    @SerializedName("unlistedOldItemDescription") val unlistedOldItemDescription: String? = null,
+    @SerializedName("unlistedOldItemCategoryId") val unlistedOldItemCategoryId: Int? = null,
+    @SerializedName("unlistedOldItemCategoryName") val unlistedOldItemCategoryName: String? = null,
+    @SerializedName("unlistedOldItemSerialNumber") val unlistedOldItemSerialNumber: String? = null,
+    @SerializedName("unlistedOldItemModelNumber") val unlistedOldItemModelNumber: String? = null,
+    @SerializedName("unlistedOldItemUnitOfMeasure") val unlistedOldItemUnitOfMeasure: String? = null
+)
+
 data class CallItemLookupDto(
     @SerializedName("itemId") val itemId: Int,
     @SerializedName("displayText") val displayText: String,
     @SerializedName("category") val category: String?,
-    @SerializedName("stockOnHand") val stockOnHand: Int?
+    @SerializedName("stockOnHand") val stockOnHand: Int?,
+    @SerializedName("serialNumber") val serialNumber: String? = null,
+    @SerializedName("fixedAssetNumber") val fixedAssetNumber: String? = null
 )
 
 data class CallItemLookupResponse(

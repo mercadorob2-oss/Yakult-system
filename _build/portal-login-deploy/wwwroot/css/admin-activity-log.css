@@ -1,0 +1,104 @@
+/* Activity Log follows the administration workspace page system. */
+.activity-admin-page {
+    --activity-ink: #21364f;
+    --activity-muted: #718298;
+    --activity-line: #e3e9f1;
+    --activity-red: #bd1c2a;
+    padding-top: 30px;
+    color: var(--activity-ink);
+}
+
+.activity-admin-page :is(h1, h2, h3, p) { margin: 0; }
+.activity-admin-page :is(button, a, input, select):focus-visible { outline: 2px solid #b82a38; outline-offset: 3px; }
+
+.activity-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.activity-page-heading > div { min-width: 0; flex: 1 1 auto; }
+.activity-page-eyebrow { display: inline-flex; align-items: center; gap: 8px; color: #9c2630; font-size: .65rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.activity-page-eyebrow::before { width: 16px; height: 2px; background: #d71920; content: ''; }
+.activity-page-heading h1 { margin: 9px 0 8px; color: #21364f; font-size: clamp(1.8rem, 2.3vw, 2.2rem); font-weight: 750; line-height: 1.15; letter-spacing: -.035em; }
+.activity-page-heading p { color: var(--activity-muted); font-size: .875rem; line-height: 1.6; }
+.activity-refresh-button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 9px 13px; border: 1px solid #dfe6ef; border-radius: 8px; background: #fff; color: #60748c; text-decoration: none; font-size: .74rem; font-weight: 650; white-space: nowrap; transition: border-color .15s ease, background .15s ease, color .15s ease; }
+.activity-refresh-button:hover { border-color: #e5c5ca; background: #fff8f8; color: #a82936; }
+.activity-refresh-button > span { font-size: 1rem; line-height: 1; }
+
+.activity-admin-page .admin-card-summary--audit { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 11px; margin: 23px 0 17px; padding: 0; border: 0; }
+.activity-admin-page .admin-card-summary--audit .admin-stat { display: flex; min-width: 0; min-height: 76px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 7px; padding: 13px 16px; border: 1px solid var(--activity-line); border-radius: 9px; background: #fff; box-shadow: 0 3px 12px rgba(27, 47, 73, .035); }
+.activity-admin-page .admin-card-summary--audit .admin-stat::before { display: none; }
+.activity-admin-page .admin-card-summary--audit .admin-stat__value { color: #344b67; font-size: 1.3rem; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; }
+.activity-admin-page .admin-card-summary--audit .admin-stat__label { color: #718298; font-size: .7rem; font-weight: 600; letter-spacing: 0; line-height: 1.35; text-transform: none; }
+
+.activity-admin-page .admin-workspace { margin-top: 0; }
+.activity-admin-page .admin-audit-panel { overflow: hidden; border: 1px solid var(--activity-line); border-radius: 12px; background: #fff; box-shadow: 0 3px 14px rgba(27, 47, 73, .035); }
+.activity-admin-page .admin-panel-header { padding: 20px 22px 17px; border-bottom: 1px solid #edf1f6; background: #fff; }
+.activity-admin-page .admin-panel-header h2 { color: #2c435e; font-size: .91rem; font-weight: 700; letter-spacing: -.01em; }
+.activity-admin-page .admin-panel-header p { margin-top: 5px; color: #7b8ba1; font-size: .73rem; line-height: 1.55; }
+
+.activity-admin-page .admin-card-toolbar--audit { display: grid; grid-template-columns: minmax(220px, 1.35fr) repeat(2, minmax(150px, .65fr)); gap: 9px; padding: 14px 18px; border-bottom: 1px solid #edf1f6; background: #fafbfd; }
+.activity-admin-page .admin-card-toolbar--audit :is(input, select) { width: 100%; min-width: 0; min-height: 39px; padding: 8px 10px; border: 1px solid #dfe6ef; border-radius: 8px; background: #fff; color: #405771; font: inherit; font-size: .74rem; }
+.activity-admin-page .admin-card-toolbar--audit input::placeholder { color: #94a1b2; }
+.activity-admin-page .admin-card-toolbar--audit :is(input, select):focus { border-color: #bd5260; outline: 0; box-shadow: 0 0 0 3px #fbebee; }
+
+.activity-admin-page .admin-audit-timeline { display: grid; gap: 18px; padding: 20px 22px 8px; }
+.activity-admin-page .admin-audit-day > h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 9px; color: #7c8da3; font-size: .66rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.activity-admin-page .admin-audit-day > h3::after { height: 1px; flex: 1; background: #edf1f6; content: ''; }
+.activity-admin-page .admin-audit-list--grouped { display: grid; gap: 8px; }
+.activity-admin-page .admin-audit-row--timeline { display: grid; grid-template-columns: 34px minmax(0, 1fr) minmax(150px, auto); align-items: center; gap: 13px; min-width: 0; padding: 13px 14px; border: 1px solid #e7edf4; border-radius: 9px; background: #fff; transition: border-color .15s ease, background .15s ease; }
+.activity-admin-page .admin-audit-row--timeline:hover { border-color: #d8e1ec; background: #fbfcfe; }
+.activity-admin-page .audit-emblem { display: grid; width: 32px; height: 32px; place-items: center; border: 1px solid #e7edf4; border-radius: 9px; background: #f7f9fc; color: #6e8198; font-size: .9rem; font-weight: 750; }
+.activity-admin-page .audit-emblem--create { border-color: #d7ebdf; background: #f2faf5; color: #368257; }
+.activity-admin-page .audit-emblem--update { border-color: #d8e5f2; background: #f2f7fc; color: #4a7199; }
+.activity-admin-page .audit-emblem--archive { border-color: #f0dfdf; background: #fdf5f5; color: #b44b54; }
+.activity-admin-page .audit-emblem--download { border-color: #e3def0; background: #f8f5fc; color: #7862a0; }
+.activity-admin-page .admin-audit-row__main { display: grid; gap: 5px; min-width: 0; }
+.activity-admin-page .admin-audit-row__title { color: #334a65; font-size: .78rem; font-weight: 650; line-height: 1.45; overflow-wrap: anywhere; }
+.activity-admin-page .admin-audit-row__title .admin-status-pill { margin-right: 5px; padding: 4px 7px; border-radius: 5px; font-size: .58rem; font-weight: 700; vertical-align: 1px; }
+.activity-admin-page .admin-audit-row__desc { color: #74859b; font-size: .71rem; line-height: 1.5; overflow-wrap: anywhere; }
+.activity-admin-page .admin-audit-row__meta { display: grid; gap: 4px; justify-items: end; color: #8593a6; font-size: .65rem; line-height: 1.4; text-align: right; font-variant-numeric: tabular-nums; }
+.activity-admin-page .admin-empty-state { margin: 0; padding: 35px 18px; border: 1px dashed #d8e1eb; border-radius: 9px; background: #fafbfd; color: #718298; text-align: center; }
+.activity-admin-page .admin-empty-state strong { color: #435a75; font-size: .85rem; }
+.activity-admin-page .admin-empty-state span { color: #8190a5; font-size: .72rem; line-height: 1.55; }
+body.admin-portal--official .activity-admin-page .admin-audit-pager { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; justify-content: initial; gap: 12px 18px; margin: 0; padding: 14px 20px 17px; border-top: 1px solid #edf1f6; background: #fff; }
+.activity-admin-page .admin-audit-pager :is(.pager__group, .pager__meta) { display: flex; align-items: center; gap: 7px; }
+.activity-admin-page .admin-audit-pager :is(button, select) { min-height: 32px; padding: 6px 9px; border: 1px solid #dfe6ef; border-radius: 7px; background: #fff; color: #5e748e; font: inherit; font-size: .67rem; }
+.activity-admin-page .admin-audit-pager button { cursor: pointer; }
+.activity-admin-page .admin-audit-pager button:hover:not(:disabled) { border-color: #e5c5ca; color: #a82936; }
+.activity-admin-page .admin-audit-pager button:disabled { cursor: default; opacity: .45; }
+.activity-admin-page .pager__numbers { display: inline-flex; gap: 5px; }
+.activity-admin-page .admin-audit-pager .pager__number.is-current { border-color: #c32233; background: #c32233; color: #fff; }
+.activity-admin-page .pager__meta { color: #8190a5; font-size: .67rem; }
+.activity-admin-page .pager__size { display: inline-flex; align-items: center; gap: 6px; }
+body.admin-portal--official .activity-admin-page .admin-audit-pager span { overflow: visible; color: #8190a5; font-size: .67rem; font-weight: 600; text-align: left; text-overflow: clip; }
+body.admin-portal--official .activity-admin-page .admin-audit-pager .pager__group { min-width: 0; justify-content: flex-start; white-space: nowrap; }
+body.admin-portal--official .activity-admin-page .admin-audit-pager .pager__meta { justify-content: flex-end; white-space: nowrap; }
+
+@media (max-width: 850px) {
+    .activity-admin-page .admin-card-summary--audit { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .activity-admin-page .admin-card-toolbar--audit { grid-template-columns: minmax(0, 1fr) minmax(150px, .7fr); }
+    .activity-admin-page .admin-card-toolbar--audit input { grid-column: 1 / -1; }
+    .activity-admin-page .admin-audit-row--timeline { grid-template-columns: 34px minmax(0, 1fr); }
+    .activity-admin-page .admin-audit-row__meta { grid-column: 2; grid-template-columns: repeat(auto-fit, minmax(90px, max-content)); justify-items: start; text-align: left; }
+}
+
+@media (max-width: 640px) {
+    .activity-admin-page { padding-top: 24px; }
+    .activity-page-heading { align-items: flex-start; flex-direction: column; gap: 15px; }
+    .activity-page-heading h1 { font-size: 1.8rem; }
+    .activity-page-heading p { font-size: .81rem; }
+    .activity-admin-page .admin-card-summary--audit { gap: 3px; margin: 18px 0 14px; padding-bottom: 11px; }
+    .activity-admin-page .admin-card-summary--audit .admin-stat { padding-inline: 7px; }
+    .activity-admin-page .admin-card-summary--audit .admin-stat__label { font-size: .68rem; }
+    .activity-admin-page .admin-card-toolbar--audit { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+    .activity-admin-page .admin-card-toolbar--audit input { grid-column: auto; }
+    .activity-admin-page .admin-panel-header { padding: 17px 16px; }
+    .activity-admin-page .admin-audit-timeline { padding: 16px 12px 6px; }
+    .activity-admin-page .admin-audit-row--timeline { gap: 9px; padding: 11px; }
+    .activity-admin-page .admin-audit-row__meta { grid-template-columns: minmax(0, 1fr); }
+    body.admin-portal--official .activity-admin-page .admin-audit-pager { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 13px 14px 15px; }
+    body.admin-portal--official .activity-admin-page .admin-audit-pager .pager__group { grid-column: 1 / -1; justify-content: center; flex-wrap: wrap; }
+    body.admin-portal--official .activity-admin-page .admin-audit-pager .pager__meta { width: 100%; justify-content: space-between; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .activity-admin-page .activity-refresh-button,
+    .activity-admin-page .admin-audit-row--timeline { transition: none; }
+}

@@ -7,6 +7,7 @@
     var isLegacyMarkdown = !string.IsNullOrWhiteSpace(Model.Body) && existingDocument is null;
     var initialDocument = existingDocument ?? CompanyPolicyDocument.Empty();
     var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    var isPublished = ViewBag.IsPublished == true;
 }
 <link rel="stylesheet" href="~/css/it-information.css" asp-append-version="true" />
 <link rel="stylesheet" href="~/css/company-policy-document.css" asp-append-version="true" />
@@ -21,6 +22,21 @@
         <form class="policy-editor-form" asp-action="PolicySave" method="post" id="companyPolicyForm">
             @Html.AntiForgeryToken()
             @Html.ValidationSummary()
+            @if (ViewBag.PreparedPolicy == true)
+            {
+                <p class="policy-editor-notice" role="status">The prepared IT guidelines are loaded for review. Check the instructions, approval wording, and illustrations before saving. Loading this page does not save changes.</p>
+            }
+            @if (isPublished)
+            {
+                <p class="policy-editor-notice" role="status">This policy is published. Saving changes updates the employee page immediately.</p>
+            }
+            <div class="policy-editor-links">
+                <a asp-controller="Public" asp-action="PreparedItPolicy" target="_blank" rel="noopener">Preview saved IT policy</a>
+                @if (Model.Title == "IT Policy & Employee Guidelines" || Model.PolicyId is null)
+                {
+                    <a asp-action="PreparedPolicy" asp-route-id="@Model.PolicyId">Review IT policy</a>
+                }
+            </div>
             <input type="hidden" asp-for="PolicyId" />
             <input type="hidden" asp-for="Body" id="policyBody" />
             <section class="policy-editor-meta" aria-labelledby="policyDetailsHeading">
@@ -51,20 +67,17 @@
                     <div><span class="policy-builder-kicker">Policy content</span><h3>Sections &amp; content</h3><p>Group related guidance into sections, then add the blocks you need.</p></div>
                     <button type="button" class="admin-button admin-button--primary" id="addPolicySection">+ Add section</button>
                 </div>
-                <div class="policy-builder-workspace" id="policyBuilder" data-assets-url="@Url.Action("PolicyAssets")" data-upload-url="@Url.Action("UploadPolicyAsset")">
+                <div class="policy-builder-workspace" id="policyBuilder" data-preview-url="@Url.Action("PolicyPreview")" data-assets-url="@Url.Action("PolicyAssets")" data-upload-url="@Url.Action("UploadPolicyAsset")">
                     <div class="policy-section-list" id="policySections" aria-live="polite"></div>
                     <aside class="policy-live-preview" aria-label="Employee policy preview">
-                        <div class="policy-preview-heading"><div><span>LIVE PREVIEW</span><strong>Employee view</strong></div><span class="policy-preview-status">Updates as you type</span></div>
+                        <div class="policy-preview-heading"><div><span>LIVE PREVIEW</span><strong>Employee view</strong></div><span class="policy-preview-status" id="policyPreviewStatus" role="status" aria-live="polite">Loading preview…</span></div>
                         <div class="policy-preview-scroll">
-                            <article class="it-information it-info-reader company-policy-reader" id="policyPreview">
-                                <header class="it-info-reader__header"><div class="portal-container"><a class="it-info-back" href="#">← Company Policy</a><div class="it-info-reader__labels"><span id="previewCategory"></span><span>Employee policy</span></div><h1 id="previewTitle"></h1><p id="previewSummary"></p><div class="it-info-reader__facts"><span id="previewSectionCount"></span></div></div></header>
-                                <div class="portal-container it-info-reader__workspace"><aside class="it-info-outline"><details open><summary>In this policy <span aria-hidden="true">⌄</span></summary><nav aria-label="Policy contents" id="previewContents"></nav></details><p>Read each section when you need it.</p></aside><div class="it-info-reader__body company-policy-document" id="previewSections"></div></div>
-                            </article>
+                            <div id="policyPreview"></div>
                         </div>
                     </aside>
                 </div>
             </section>
-            <div class="policy-editor-actions"><p>Save your changes as a draft.</p><div><a class="admin-button admin-button--ghost" asp-action="Index">Cancel</a><button type="submit" class="admin-button admin-button--primary">Save draft</button></div></div>
+            <div class="policy-editor-actions"><p>@(isPublished ? "Changes become visible when saved." : "Save the policy for review before publishing.")</p><div><a class="admin-button admin-button--ghost" asp-action="Index">Cancel</a><button type="submit" class="admin-button admin-button--primary">@(isPublished ? "Save changes" : "Save draft")</button></div></div>
         </form>
     </div>
 </div>
@@ -73,4 +86,5 @@
     window.companyPolicyEditorInitial = @Html.Raw(JsonSerializer.Serialize(initialDocument, jsonOptions));
     window.companyPolicyEditorLegacy = @isLegacyMarkdown.ToString().ToLowerInvariant();
 </script>
+<script src="~/js/company-policy-reader.js" asp-append-version="true" defer></script>
 <script src="~/js/company-policy-builder.js" asp-append-version="true" defer></script>

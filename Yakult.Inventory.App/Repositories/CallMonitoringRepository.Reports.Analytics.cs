@@ -42,13 +42,13 @@ SELECT TOP (@MaxRows)
     t.Status AS TicketStatus,
     res.ChangedAt AS ResolutionMarkedAtUtc,
     res.NewValue AS ResolutionType,
-    TRY_CONVERT(int, oldItem.NewValue) AS ReplacementOldItemId,
-    oldItemName = CONCAT(oi.Name, CASE WHEN oi.ModelNumber IS NULL OR LTRIM(RTRIM(oi.ModelNumber)) = '' THEN '' ELSE CONCAT(' (', oi.ModelNumber, ')') END,
+    COALESCE(batch.OldItemId, TRY_CONVERT(int, oldItem.NewValue)) AS ReplacementOldItemId,
+    ReplacementOldItem = CONCAT(oi.Name, CASE WHEN oi.ModelNumber IS NULL OR LTRIM(RTRIM(oi.ModelNumber)) = '' THEN '' ELSE CONCAT(' (', oi.ModelNumber, ')') END,
                          CASE WHEN oi.SerialNumber IS NULL OR LTRIM(RTRIM(oi.SerialNumber)) = '' THEN '' ELSE CONCAT(' - ', oi.SerialNumber) END),
-    TRY_CONVERT(int, newItem.NewValue) AS ReplacementNewItemId,
-    newItemName = CONCAT(ni.Name, CASE WHEN ni.ModelNumber IS NULL OR LTRIM(RTRIM(ni.ModelNumber)) = '' THEN '' ELSE CONCAT(' (', ni.ModelNumber, ')') END,
+    COALESCE(batch.NewItemId, TRY_CONVERT(int, newItem.NewValue)) AS ReplacementNewItemId,
+    ReplacementNewItem = CONCAT(ni.Name, CASE WHEN ni.ModelNumber IS NULL OR LTRIM(RTRIM(ni.ModelNumber)) = '' THEN '' ELSE CONCAT(' (', ni.ModelNumber, ')') END,
                          CASE WHEN ni.SerialNumber IS NULL OR LTRIM(RTRIM(ni.SerialNumber)) = '' THEN '' ELSE CONCAT(' - ', ni.SerialNumber) END),
-    TRY_CONVERT(int, qty.NewValue) AS ReplacementQty,
+    COALESCE(batch.Quantity, TRY_CONVERT(int, qty.NewValue)) AS ReplacementQty,
     res.Note AS Remarks
 FROM dbo.CallTicket t" +
                           branchJoin +
@@ -81,8 +81,24 @@ OUTER APPLY (
     WHERE h.TicketId = t.TicketId AND h.FieldName = 'ReplacementQty'
     ORDER BY h.ChangedAt DESC, h.HistoryId DESC
 ) qty
-LEFT JOIN dbo.Item oi ON oi.ItemId = TRY_CONVERT(int, oldItem.NewValue)
-LEFT JOIN dbo.Item ni ON ni.ItemId = TRY_CONVERT(int, newItem.NewValue)
+OUTER APPLY (
+    SELECT TRY_CONVERT(int, PARSENAME(REPLACE(h.NewValue, ',', '.'), 3)) AS OldItemId,
+           TRY_CONVERT(int, PARSENAME(REPLACE(h.NewValue, ',', '.'), 2)) AS NewItemId,
+           TRY_CONVERT(int, PARSENAME(REPLACE(h.NewValue, ',', '.'), 1)) AS Quantity
+    FROM dbo.CallTicketHistory h
+    INNER JOIN (SELECT TOP 1 HistoryId, NewValue FROM dbo.CallTicketHistory
+                WHERE TicketId = t.TicketId AND FieldName = 'ReplacementBatchId'
+                ORDER BY HistoryId DESC) b ON b.NewValue = h.Note
+    WHERE h.TicketId = t.TicketId AND h.FieldName = 'ReplacementBatchItem'
+      AND res.NewValue = 'Replacement'
+      AND res.HistoryId = (SELECT MAX(r.HistoryId) FROM dbo.CallTicketHistory r
+                          WHERE r.TicketId = t.TicketId AND r.FieldName = 'ResolutionType')
+      AND NOT EXISTS (SELECT 1 FROM dbo.CallTicketHistory later
+                      WHERE later.TicketId = t.TicketId AND later.FieldName = 'ReplacementNewItemId'
+                        AND later.HistoryId > b.HistoryId)
+) batch
+LEFT JOIN dbo.Item oi ON oi.ItemId = COALESCE(batch.OldItemId, TRY_CONVERT(int, oldItem.NewValue))
+LEFT JOIN dbo.Item ni ON ni.ItemId = COALESCE(batch.NewItemId, TRY_CONVERT(int, newItem.NewValue))
 WHERE res.HistoryId IS NOT NULL
 ORDER BY res.ChangedAt DESC, t.TicketId DESC;";
 
@@ -146,13 +162,13 @@ SELECT TOP (@MaxRows)
     res.ChangedAt AS ResolutionMarkedAt,
     res.NewValue AS ResolutionType,
     u.Name AS MarkedByName,
-    TRY_CONVERT(int, oldItem.NewValue) AS ReplacementOldItemId,
-    oldItemName = CONCAT(oi.Name, CASE WHEN oi.ModelNumber IS NULL OR LTRIM(RTRIM(oi.ModelNumber)) = '' THEN '' ELSE CONCAT(' (', oi.ModelNumber, ')') END,
+    COALESCE(batch.OldItemId, TRY_CONVERT(int, oldItem.NewValue)) AS ReplacementOldItemId,
+    ReplacementOldItem = CONCAT(oi.Name, CASE WHEN oi.ModelNumber IS NULL OR LTRIM(RTRIM(oi.ModelNumber)) = '' THEN '' ELSE CONCAT(' (', oi.ModelNumber, ')') END,
                          CASE WHEN oi.SerialNumber IS NULL OR LTRIM(RTRIM(oi.SerialNumber)) = '' THEN '' ELSE CONCAT(' - ', oi.SerialNumber) END),
-    TRY_CONVERT(int, newItem.NewValue) AS ReplacementNewItemId,
-    newItemName = CONCAT(ni.Name, CASE WHEN ni.ModelNumber IS NULL OR LTRIM(RTRIM(ni.ModelNumber)) = '' THEN '' ELSE CONCAT(' (', ni.ModelNumber, ')') END,
+    COALESCE(batch.NewItemId, TRY_CONVERT(int, newItem.NewValue)) AS ReplacementNewItemId,
+    ReplacementNewItem = CONCAT(ni.Name, CASE WHEN ni.ModelNumber IS NULL OR LTRIM(RTRIM(ni.ModelNumber)) = '' THEN '' ELSE CONCAT(' (', ni.ModelNumber, ')') END,
                          CASE WHEN ni.SerialNumber IS NULL OR LTRIM(RTRIM(ni.SerialNumber)) = '' THEN '' ELSE CONCAT(' - ', ni.SerialNumber) END),
-    TRY_CONVERT(int, qty.NewValue) AS ReplacementQty,
+    COALESCE(batch.Quantity, TRY_CONVERT(int, qty.NewValue)) AS ReplacementQty,
     res.Note AS Remarks
 FROM dbo.CallTicket t
 LEFT JOIN dbo.Department d ON d.DeptId = t.DeptId
@@ -196,8 +212,24 @@ OUTER APPLY (
     WHERE h.TicketId = t.TicketId AND h.FieldName = 'ReplacementQty'
     ORDER BY h.ChangedAt DESC, h.HistoryId DESC
 ) qty
-LEFT JOIN dbo.Item oi ON oi.ItemId = TRY_CONVERT(int, oldItem.NewValue)
-LEFT JOIN dbo.Item ni ON ni.ItemId = TRY_CONVERT(int, newItem.NewValue)
+OUTER APPLY (
+    SELECT TRY_CONVERT(int, PARSENAME(REPLACE(h.NewValue, ',', '.'), 3)) AS OldItemId,
+           TRY_CONVERT(int, PARSENAME(REPLACE(h.NewValue, ',', '.'), 2)) AS NewItemId,
+           TRY_CONVERT(int, PARSENAME(REPLACE(h.NewValue, ',', '.'), 1)) AS Quantity
+    FROM dbo.CallTicketHistory h
+    INNER JOIN (SELECT TOP 1 HistoryId, NewValue FROM dbo.CallTicketHistory
+                WHERE TicketId = t.TicketId AND FieldName = 'ReplacementBatchId'
+                ORDER BY HistoryId DESC) b ON b.NewValue = h.Note
+    WHERE h.TicketId = t.TicketId AND h.FieldName = 'ReplacementBatchItem'
+      AND res.NewValue = 'Replacement'
+      AND res.HistoryId = (SELECT MAX(r.HistoryId) FROM dbo.CallTicketHistory r
+                          WHERE r.TicketId = t.TicketId AND r.FieldName = 'ResolutionType')
+      AND NOT EXISTS (SELECT 1 FROM dbo.CallTicketHistory later
+                      WHERE later.TicketId = t.TicketId AND later.FieldName = 'ReplacementNewItemId'
+                        AND later.HistoryId > b.HistoryId)
+) batch
+LEFT JOIN dbo.Item oi ON oi.ItemId = COALESCE(batch.OldItemId, TRY_CONVERT(int, oldItem.NewValue))
+LEFT JOIN dbo.Item ni ON ni.ItemId = COALESCE(batch.NewItemId, TRY_CONVERT(int, newItem.NewValue))
 WHERE res.HistoryId IS NOT NULL
   AND res.ChangedAt >= @FromUtc AND res.ChangedAt <= @ToUtc
   AND (@FilterType = 0 OR res.NewValue = @Type)

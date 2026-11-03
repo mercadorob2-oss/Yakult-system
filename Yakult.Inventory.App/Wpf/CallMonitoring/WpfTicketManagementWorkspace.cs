@@ -2392,42 +2392,15 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     : "Solved";
                 if (dlg.ResolutionType == "Replacement")
                 {
-                    if (!oldItemId.HasValue)
+                    var replacementLines = dlg.GetReplacementLines();
+                    if (forwardToRepair)
                     {
-                        oldItemId = itemRepo.AddItem(new ItemDto
-                        {
-                            Name = dlg.UnlistedOldItemName,
-                            Description = dlg.UnlistedOldItemDescription,
-                            ModelNumber = dlg.UnlistedOldItemModelNumber,
-                            SerialNumber = dlg.UnlistedOldItemSerialNumber,
-                            UnitOfMeasure = dlg.UnlistedOldItemUnitOfMeasure,
-                            CreatedByUserId = AppSession.CurrentUserId,
-                            CreatedByName = AppSession.CurrentUserName,
-                            Active = true,
-                            DateCreated = DateTime.Now,
-                            ItemType = "Hardware",
-                            CategoryId = dlg.UnlistedOldItemCategoryId,
-                            Category = dlg.UnlistedOldItemCategoryName,
-                            StockOnHand = 0,
-                            ConditionId = dlg.OldItemConditionId,
-                            Remarks = dlg.OldItemConditionRemarks,
-                            AffectsInventory = true,
-                            IsTrackedAsset = false
-                        });
+                        replacementLines[0].OldItemId = oldItemId ?? 0;
+                        replacementLines[0].UnlistedOldItem = null;
+                        foreach (var line in replacementLines) line.OldItemRepairAction = "Unrepaired";
                     }
-
-                    // A forwarded old unit must stay out of available stock while Repair assesses it.
-                    var oldItemAction = forwardToRepair ? "Unrepaired" : dlg.OldItemRepairAction;
-                    await _repository.ApplyTicketReplacementAsync(
-                        ticketId,
-                        oldItemId.Value,
-                        dlg.NewItemId ?? 0,
-                        dlg.Quantity,
-                        dlg.Remarks,
-                        AppSession.CurrentUserId,
-                        dlg.OldItemConditionId,
-                        dlg.OldItemConditionRemarks,
-                        oldItemAction);
+                    await _repository.ApplyTicketReplacementsAsync(ticketId, replacementLines,
+                        AppSession.CurrentUserId, AppSession.CurrentUserName);
 
                     if (!forwardToRepair)
                         markAsStatus = dlg.IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved";

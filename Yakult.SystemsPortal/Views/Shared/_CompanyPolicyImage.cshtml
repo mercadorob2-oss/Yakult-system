@@ -1,0 +1,16 @@
+@model CompanyPolicyImageViewModel
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Environment
+@{
+    var block = Model.Block;
+    var size = CompanyPolicyPresentation.ImageSize(Environment.ContentRootPath, block.ImageUrl);
+    var paths = block.Paths.Where(path => Model.PairedInstruction?.EndsWith(path, StringComparison.Ordinal) != true).ToList();
+}
+<figure class="company-policy-flowchart">
+    <a class="policy-image-open" href="@block.ImageUrl" target="_blank" rel="noopener" data-policy-image data-caption="@block.Title" aria-label="Enlarge: @block.AltText">
+        <img src="@block.ImageUrl" alt="@block.AltText" width="@size.Width" height="@size.Height" loading="lazy" decoding="async" />
+        <span class="policy-image-hint">Enlarge image ↗</span>
+    </a>
+    <figcaption>@(string.IsNullOrWhiteSpace(block.Title) ? block.AltText : block.Title)</figcaption>
+    @if (!string.IsNullOrWhiteSpace(block.SourceNote)) { <p class="company-policy-source-note">@block.SourceNote</p> }
+    @if (paths.Count > 0) { <div class="company-policy-flowchart__paths"><h3>Process paths</h3><ul>@foreach (var path in paths) { <li>@Html.SafeMarkdown(path)</li> }</ul></div> }
+</figure>

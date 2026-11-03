@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Drawing.Drawing2D;
 using System.Net.Mail;
+using System.Security.Principal;
 using System.Windows.Forms;
 using Yakult.Inventory.App.Helpers;
 using Yakult.Inventory.App.Session;
@@ -860,6 +861,8 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
         public int? EmpId { get; set; }
         public string EmployeeName { get; set; }
         public string EmployeeNumber { get; set; }
+        public string AdAccountName { get; set; }
+        public string AdAccountSid { get; set; }
         public string Roles { get; set; }
 
         public string LastLoginDisplay => LastLoginDate?.ToString("yyyy-MM-dd HH:mm") ?? "Never";
@@ -885,6 +888,8 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
 
         private TextBox txtUsername;
         private TextBox txtEmail;
+        private TextBox txtAdAccount;
+        private string _adAccountSid;
         private Label   _lblSelectedEmployee;
         private Button  _btnBrowseEmployee;
         private Button  _btnClearEmployee;
@@ -914,7 +919,7 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
         private void InitializeDialog()
         {
             Text = _isEdit ? "Edit User Account" : "Create New User Account";
-            Size = new Size(580, 570);
+            Size = new Size(600, 610);
             StartPosition = FormStartPosition.CenterParent;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -935,6 +940,16 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
             Controls.Add(new Label { Text = "Email:", Location = new Point(20, yPos), Width = labelWidth });
             txtEmail = new TextBox { Location = new Point(controlLeft, yPos), Width = controlWidth };
             Controls.Add(txtEmail);
+            yPos += 35;
+
+            // Link an AD identity to this existing portal user. Resolve and store
+            // the immutable SID so renames do not break the link.
+            Controls.Add(new Label { Text = "AD account:", Location = new Point(20, yPos), Width = labelWidth });
+            txtAdAccount = new TextBox { Location = new Point(controlLeft, yPos), Width = 270, ReadOnly = true };
+            Controls.Add(txtAdAccount);
+            var btnLinkAd = new Button { Text = "Set up link...", Location = new Point(controlLeft + 278, yPos - 1), Width = 95, Height = 26 };
+            btnLinkAd.Click += BtnLinkAd_Click;
+            Controls.Add(btnLinkAd);
             yPos += 35;
 
             // ── Employee row ──────────────────────────────────────────────────
@@ -1184,6 +1199,19 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
 
                     if (_isEdit)
                     {
+                        using (var cmd = new SqlCommand("SELECT AdAccountName, AdAccountSid FROM dbo.[User] WHERE UserId = @UserId", con))
+                        {
+                            cmd.Parameters.AddWithValue("@UserId", _user.UserId);
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    _user.AdAccountName = reader.IsDBNull(0) ? "" : reader.GetString(0);
+                                    _user.AdAccountSid = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                                }
+                            }
+                        }
+
                         const string userRolesSql = "SELECT RoleId FROM UserRole WHERE UserId = @UserId";
                         using (var cmd = new SqlCommand(userRolesSql, con))
                         {
@@ -1241,6 +1269,8 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
         {
             txtUsername.Text              = _user.Username;
             txtEmail.Text                 = _user.Email ?? "";
+            txtAdAccount.Text             = _user.AdAccountName ?? "";
+            _adAccountSid                 = _user.AdAccountSid;
             chkIsDeveloper.Checked        = _user.IsDeveloper;
             chkIsActive.Checked           = _user.IsActive;
             chkMustChangePassword.Checked = _user.MustChangePassword;
@@ -1263,6 +1293,46 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                 if (row.Tag is int roleId && _userRoleIds.Contains(roleId))
                     foreach (CheckBox chk in row.Controls.OfType<CheckBox>())
                         chk.Checked = true;
+            }
+        }
+
+        private void BtnLinkAd_Click(object sender, EventArgs e)
+        {
+            if (!_isEdit)
+            {
+                MessageBox.Show("Create the portal user first, then edit it to link an AD account.", "AD account link",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var current = txtAdAccount.Text;
+            using (var prompt = new Form { Text = "Set up AD account link", Size = new Size(440, 175), StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog, MaximizeBox = false, MinimizeBox = false })
+            {
+                prompt.Controls.Add(new Label { Text = "Enter the domain account (for example, YAKULT\\username):", Left = 16, Top = 16, Width = 390, Height = 36 });
+                var input = new TextBox { Left = 16, Top = 55, Width = 390, Text = current };
+                prompt.Controls.Add(input);
+                var ok = new Button { Text = "Resolve and link", Left = 206, Top = 92, Width = 110, DialogResult = DialogResult.OK };
+                var clear = new Button { Text = "Unlink", Left = 96, Top = 92, Width = 95 };
+                clear.Click += (s, args) => { _adAccountSid = null; txtAdAccount.Clear(); prompt.DialogResult = DialogResult.Abort; prompt.Close(); };
+                var cancel = new Button { Text = "Cancel", Left = 321, Top = 92, Width = 85, DialogResult = DialogResult.Cancel };
+                prompt.Controls.AddRange(new Control[] { ok, clear, cancel });
+                prompt.AcceptButton = ok;
+                prompt.CancelButton = cancel;
+                if (prompt.ShowDialog(this) != DialogResult.OK) return;
+
+                try
+                {
+                    var account = input.Text.Trim();
+                    if (string.IsNullOrWhiteSpace(account)) throw new InvalidOperationException("Enter a domain account.");
+                    var sid = (SecurityIdentifier)new NTAccount(account).Translate(typeof(SecurityIdentifier));
+                    _adAccountSid = sid.Value;
+                    txtAdAccount.Text = account;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Windows could not resolve that account to an AD SID. Check the domain account and network/domain connectivity.\r\n\r\n" + ex.Message,
+                        "Could not resolve AD account", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
             }
         }
 
@@ -1312,6 +1382,23 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
 
                     if (_isEdit)
                     {
+                        if (!string.IsNullOrWhiteSpace(_adAccountSid))
+                        {
+                            const string linkedAccountSql = "SELECT COUNT(*) FROM dbo.[User] WHERE AdAccountSid = @Sid AND UserId <> @UserId";
+                            using (var cmd = new SqlCommand(linkedAccountSql, con))
+                            {
+                                cmd.Parameters.AddWithValue("@Sid", _adAccountSid);
+                                cmd.Parameters.AddWithValue("@UserId", _user.UserId);
+                                if (Convert.ToInt32(await cmd.ExecuteScalarAsync()) > 0)
+                                {
+                                    MessageBox.Show("That AD account is already linked to another portal user.", "AD account already linked",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    DialogResult = DialogResult.None;
+                                    return;
+                                }
+                            }
+                        }
+
                         // Check if username changed and if new username already exists
                         if (username != _user.Username)
                         {
@@ -1347,6 +1434,8 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                             SET Name = @Username,
                                 EmailAddress = @Email,
                                 EmpId = @EmpId,
+                                AdAccountName = @AdAccountName,
+                                AdAccountSid = @AdAccountSid,
                                 IsActive = @IsActive,
                                 MustChangePassword = @MustChangePassword
                             WHERE UserId = @UserId";
@@ -1357,6 +1446,8 @@ namespace Yakult.Inventory.App.Pages.Admin.AccountManagement
                             cmd.Parameters.AddWithValue("@UserId", _user.UserId);
                             cmd.Parameters.AddWithValue("@Email", (object)email ?? DBNull.Value);
                             cmd.Parameters.AddWithValue("@EmpId", (object)empId ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@AdAccountName", (object)(string.IsNullOrWhiteSpace(txtAdAccount.Text) ? null : txtAdAccount.Text.Trim()) ?? DBNull.Value);
+                            cmd.Parameters.AddWithValue("@AdAccountSid", (object)_adAccountSid ?? DBNull.Value);
                             cmd.Parameters.AddWithValue("@IsActive", chkIsActive.Checked);
                             cmd.Parameters.AddWithValue("@MustChangePassword", chkMustChangePassword.Checked);
 

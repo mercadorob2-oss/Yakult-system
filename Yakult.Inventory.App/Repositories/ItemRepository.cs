@@ -535,6 +535,7 @@ ORDER BY i.Name;";
 SELECT
     i.ItemId,
     i.Name,
+    i.Description AS FixedAssetNumber,
     i.ModelNumber,
     ISNULL(NULLIF(LTRIM(RTRIM(i.Category)), ''), c.Name) AS Category,
     i.SerialNumber,
@@ -563,6 +564,7 @@ ORDER BY i.Name;";
                         {
                             ItemId = reader.GetInt32(reader.GetOrdinal("ItemId")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
+                            FixedAssetNumber = reader["FixedAssetNumber"] as string,
                             ModelNumber = reader.IsDBNull(reader.GetOrdinal("ModelNumber"))
                                 ? null
                                 : reader.GetString(reader.GetOrdinal("ModelNumber")),
@@ -589,6 +591,7 @@ ORDER BY i.Name;";
 SELECT
     i.ItemId,
     i.Name,
+    i.Description AS FixedAssetNumber,
     i.ModelNumber,
     ISNULL(NULLIF(LTRIM(RTRIM(i.Category)), ''), c.Name) AS Category,
     i.SerialNumber
@@ -640,6 +643,7 @@ ORDER BY i.Name;";
                         {
                             ItemId = reader.GetInt32(reader.GetOrdinal("ItemId")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
+                            FixedAssetNumber = reader["FixedAssetNumber"] as string,
                             ModelNumber = reader.IsDBNull(reader.GetOrdinal("ModelNumber"))
                                 ? null
                                 : reader.GetString(reader.GetOrdinal("ModelNumber")),

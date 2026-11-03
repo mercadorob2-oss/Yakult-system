@@ -1,0 +1,87 @@
+/* Portal Notice composer, live preview, and scheduling workspace. */
+body.admin-workspace-layout .notice-admin-page { padding-top: 30px; color: #21364f; }
+body.admin-workspace-layout .notice-admin-page :is(h1, h2, h3, p) { margin: 0; }
+body.admin-workspace-layout .notice-admin-page :is(a, button, input, select, textarea):focus-visible { outline: 2px solid #b82a38; outline-offset: 3px; }
+body.admin-workspace-layout .notice-admin-page .notice-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+body.admin-workspace-layout .notice-admin-page .notice-page-heading > div { min-width: 0; }
+body.admin-workspace-layout .notice-admin-page .notice-page-eyebrow { display: inline-flex; align-items: center; gap: 8px; color: #9c2630; font-size: .65rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+body.admin-workspace-layout .notice-admin-page .notice-page-eyebrow::before { width: 16px; height: 2px; background: #d71920; content: ''; }
+body.admin-workspace-layout .notice-admin-page .notice-page-heading h1 { margin: 9px 0 8px; color: #21364f; font-size: clamp(1.8rem, 2.3vw, 2.2rem); font-weight: 750; line-height: 1.15; letter-spacing: -.035em; }
+body.admin-workspace-layout .notice-admin-page .notice-page-heading p { max-width: 650px; color: #718298; font-size: .875rem; line-height: 1.6; }
+body.admin-workspace-layout .notice-admin-page .notice-page-heading > a { flex: 0 0 auto; }
+body.admin-workspace-layout .notice-admin-page .admin-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 39px; padding: 9px 13px; border: 1px solid #dfe6ef; border-radius: 8px; background: #fff; color: #60748c; font: inherit; font-size: .73rem; font-weight: 650; line-height: 1.4; text-decoration: none; white-space: nowrap; cursor: pointer; }
+body.admin-workspace-layout .notice-admin-page .admin-button:hover:not(:disabled) { border-color: #cdd8e5; background: #f5f8fb; color: #435a75; }
+body.admin-workspace-layout .notice-admin-page .admin-button--primary { border-color: #bf1b27; background: #c61c28; color: #fff; box-shadow: 0 3px 8px rgba(183,32,46,.1); }
+body.admin-workspace-layout .notice-admin-page .admin-button--primary:hover:not(:disabled) { border-color: #ac1722; background: #ac1722; color: #fff; }
+body.admin-workspace-layout .notice-admin-page .admin-button:disabled { cursor: not-allowed; opacity: .5; }
+
+body.admin-workspace-layout .notice-admin-page .notice-workspace { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(270px, 1fr); align-items: start; gap: 24px; margin-top: 25px; padding-bottom: 24px; }
+body.admin-workspace-layout .notice-admin-page :is(.notice-editor, .notice-preview-panel, .notice-visibility-panel) { min-width: 0; border: 1px solid #e3e9f1; border-radius: 12px; background: #fff; box-shadow: 0 3px 14px rgba(27,47,73,.035); }
+body.admin-workspace-layout .notice-admin-page .notice-editor { container-type: inline-size; }
+body.admin-workspace-layout .notice-admin-page .admin-panel-header { min-height: 76px; padding: 19px 22px; border-bottom: 1px solid #edf1f6; border-radius: 12px 12px 0 0; background: #fff; }
+body.admin-workspace-layout .notice-admin-page .admin-panel-header h2 { color: #2c435e; font-size: .94rem; font-weight: 700; letter-spacing: -.01em; }
+body.admin-workspace-layout .notice-admin-page .admin-panel-header p { margin-top: 5px; color: #7b8ba1; font-size: .73rem; line-height: 1.6; }
+body.admin-workspace-layout .notice-admin-page .notice-form { display: grid; gap: 21px; margin: 0; padding: 21px 22px 0; }
+body.admin-workspace-layout .notice-admin-page .notice-form label { display: grid; gap: 7px; min-width: 0; color: #51657e; font-size: .74rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+body.admin-workspace-layout .notice-admin-page .notice-form label > span { color: inherit; font-size: inherit; font-weight: inherit; letter-spacing: 0; text-transform: none; }
+body.admin-workspace-layout .notice-admin-page .notice-form :is(input:not([type="checkbox"]), select, textarea) { display: block; width: 100%; min-width: 0; min-height: 41px; padding: 10px 11px; border: 1px solid #dfe6ef; border-radius: 8px; background: #fcfdff; color: #334b67; font: inherit; font-size: .78rem; font-weight: 400; box-shadow: none; }
+body.admin-workspace-layout .notice-admin-page .notice-form textarea { min-height: 120px; line-height: 1.65; resize: vertical; }
+body.admin-workspace-layout .notice-admin-page .notice-form :is(input:not([type="checkbox"]), select, textarea):focus { border-color: #bd5260; outline: 0; box-shadow: 0 0 0 3px #fbebee; }
+body.admin-workspace-layout .notice-admin-page .notice-form .admin-check-row { display: flex; align-items: center; gap: 11px; padding: 13px 14px; border: 1px solid #e6ebf3; border-radius: 9px; background: #f8fafd; color: #49617c; font-size: .75rem; font-weight: 600; line-height: 1.5; }
+body.admin-workspace-layout .notice-admin-page .admin-check-row input { flex: 0 0 17px; width: 17px; height: 17px; min-height: 0; margin: 0; padding: 0; accent-color: #c61c28; }
+body.admin-workspace-layout .notice-admin-page .notice-presets { display: grid; gap: 10px; }
+body.admin-workspace-layout .notice-admin-page :is(.notice-presets h3, .notice-section-heading h3) { color: #51657e; font-size: .74rem; font-weight: 650; }
+body.admin-workspace-layout .notice-admin-page .admin-preset-row { display: flex; flex-wrap: wrap; gap: 7px; padding: 0; }
+body.admin-workspace-layout .notice-admin-page .admin-preset-row .admin-button { min-height: 32px; padding: 7px 10px; font-size: .66rem; font-weight: 600; }
+body.admin-workspace-layout .notice-admin-page .admin-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+body.admin-workspace-layout .notice-admin-page .notice-schedule { display: grid; gap: 15px; padding-top: 20px; border-top: 1px solid #edf1f6; }
+body.admin-workspace-layout .notice-admin-page .notice-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+body.admin-workspace-layout .notice-admin-page .notice-section-heading > span { color: #8796aa; font-size: .66rem; }
+body.admin-workspace-layout .notice-admin-page .admin-timezone-note { padding: 11px 13px; border: 1px solid #e4ebf4; border-radius: 8px; background: #f5f8fc; color: #69809b; font-size: .7rem; line-height: 1.6; }
+body.admin-workspace-layout .notice-admin-page .notice-savebar { position: sticky; bottom: 10px; z-index: 3; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 2px -22px 0; padding: 15px 22px; border-top: 1px solid #e6ecf3; border-radius: 0 0 12px 12px; background: rgba(255,255,255,.97); backdrop-filter: blur(10px); }
+body.admin-workspace-layout .notice-admin-page .notice-savebar .admin-save-status { flex: 1 1 140px; min-width: 0; color: #8190a5; font-size: .71rem; line-height: 1.5; overflow-wrap: anywhere; }
+
+body.admin-workspace-layout .notice-admin-page .notice-context { position: sticky; top: calc(var(--admin-shell-topbar, 76px) + 20px); display: grid; align-content: start; gap: 17px; min-width: 0; }
+body.admin-workspace-layout .notice-admin-page .notice-context-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 7px; min-height: 58px; padding: 17px 18px; border-bottom: 1px solid #edf1f6; }
+body.admin-workspace-layout .notice-admin-page .notice-context-heading h2 { color: #2c435e; font-size: .82rem; font-weight: 700; }
+body.admin-workspace-layout .notice-admin-page .notice-context-heading > span { color: #8a98aa; font-size: .64rem; }
+body.admin-workspace-layout .notice-admin-page .notice-preview-body { padding: 18px; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-preview { display: grid; gap: 8px; min-width: 0; margin: 0; padding: 16px; border: 1px solid #dbe6f2; border-left: 3px solid #6b91bc; border-radius: 9px; background: #f4f8fd; color: #426484; box-shadow: none; overflow-wrap: anywhere; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-preview strong { color: inherit; font-size: .82rem; line-height: 1.5; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-preview p { color: inherit; font-size: .75rem; line-height: 1.65; white-space: pre-wrap; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-preview.portal-notice--warning { border-color: #eddfc3; border-left-color: #bd944d; background: #fffbf2; color: #8a6b35; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-preview:is(.portal-notice--critical, .portal-notice--maintenance) { border-color: #eccdd3; border-left-color: #bd4b5c; background: #fff6f7; color: #9d3b4b; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-preview.portal-notice--success { border-color: #cfe6d9; border-left-color: #5e9d79; background: #f4fbf7; color: #467657; }
+body.admin-workspace-layout .notice-admin-page .notice-preview-caption { margin-top: 12px; color: #8997a9; font-size: .68rem; line-height: 1.6; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-state { display: flex; align-items: flex-start; gap: 9px; margin: 16px 18px 0; padding: 12px; border: 1px solid #e3e9f1; border-radius: 8px; background: #f8fafd; color: #718298; font-size: .72rem; font-weight: 500; line-height: 1.65; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-state::before { flex: 0 0 6px; width: 6px; height: 6px; margin-top: 6px; background: #9aa8ba; box-shadow: none; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-state.is-active { border-color: #cce8d8; background: #f2fbf6; color: #287548; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-state.is-active::before { background: #4e9c6d; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-state.is-scheduled { border-color: #cfe0f1; background: #f3f8fd; color: #426b95; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-state.is-scheduled::before { background: #668db4; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-state.is-expired { border-color: #f0dfbf; background: #fff9ee; color: #946e2e; }
+body.admin-workspace-layout .notice-admin-page .admin-notice-state.is-expired::before { background: #b9904c; }
+body.admin-workspace-layout .notice-admin-page .notice-context-note { padding: 12px 18px 17px; color: #8997a9; font-size: .68rem; line-height: 1.6; }
+body.admin-workspace-layout .notice-admin-page .notice-maintenance-note { padding: 4px 4px 0; }
+body.admin-workspace-layout .notice-admin-page .notice-maintenance-note strong { color: #7b8ba1; font-size: .7rem; font-weight: 650; }
+body.admin-workspace-layout .notice-admin-page .notice-maintenance-note p { margin-top: 6px; color: #8997a9; font-size: .69rem; line-height: 1.65; }
+
+@container (max-width: 470px) {
+    body.admin-workspace-layout .notice-admin-page .admin-form-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1100px) {
+    body.admin-workspace-layout .notice-admin-page .notice-page-heading { align-items: flex-start; flex-direction: column; gap: 17px; }
+    body.admin-workspace-layout .notice-admin-page .notice-workspace { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    body.admin-workspace-layout .notice-admin-page .notice-context { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    body.admin-workspace-layout .notice-admin-page .notice-maintenance-note { grid-column: 1 / -1; }
+}
+@media (max-width: 680px) {
+    body.admin-workspace-layout .notice-admin-page { padding-top: 24px; }
+    body.admin-workspace-layout .notice-admin-page .notice-page-heading p { font-size: .81rem; }
+    body.admin-workspace-layout .notice-admin-page .notice-workspace { margin-top: 20px; }
+    body.admin-workspace-layout .notice-admin-page .notice-context { grid-template-columns: minmax(0, 1fr); }
+    body.admin-workspace-layout .notice-admin-page .admin-panel-header { padding-inline: 16px; }
+    body.admin-workspace-layout .notice-admin-page .notice-form { padding: 18px 16px 0; }
+    body.admin-workspace-layout .notice-admin-page .notice-form :is(input:not([type="checkbox"]), select, textarea) { font-size: 1rem; }
+    body.admin-workspace-layout .notice-admin-page .notice-savebar { bottom: 0; margin-inline: -16px; padding-inline: 16px; }
+}

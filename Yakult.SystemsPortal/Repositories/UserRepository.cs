@@ -118,6 +118,45 @@ public class UserRepository : IUserRepository
         }
     }
 
+    public async Task<AuthResult?> AuthenticateWindowsAccountAsync(string securityIdentifier)
+    {
+        using var con = new SqlConnection(_connectionStringProvider.GetConnectionString());
+        await con.OpenAsync();
+
+        const string sql = @"
+            SELECT u.UserId, u.Name, ISNULL(u.EmailAddress, ''), ISNULL(u.IsDeveloper, 0),
+                   CASE
+                       WHEN u.IsDeveloper = 1 THEN 999
+                       WHEN al_override.LevelRank IS NOT NULL THEN al_override.LevelRank
+                       WHEN UPPER(LTRIM(RTRIM(ISNULL(e.Position, '')))) IN ('MANAGER', 'ASST. MANAGER', 'JR. ASST. MANAGER', 'ACTING JR. ASST. MANAGER') THEN 4
+                       WHEN UPPER(LTRIM(RTRIM(ISNULL(e.Position, '')))) = 'SUPERVISOR' THEN 3
+                       WHEN UPPER(LTRIM(RTRIM(ISNULL(e.Position, '')))) IN ('COORDINATOR', 'ACCOUNT COORDINATOR', 'ACTING ACCOUNT COORDINATOR', 'ASST. COORDINATOR', 'LADY COORDINATOR') THEN 2
+                       WHEN e.EmpId IS NOT NULL THEN 1 ELSE 0
+                   END,
+                   ISNULL(u.IsActive, 1)
+            FROM dbo.[User] u
+            LEFT JOIN dbo.AccountLevel al_override ON u.LevelId = al_override.LevelId
+            LEFT JOIN dbo.Employee e ON u.EmpId = e.EmpId
+            WHERE u.AdAccountSid = @Sid;";
+
+        using var cmd = new SqlCommand(sql, con);
+        cmd.Parameters.AddWithValue("@Sid", securityIdentifier);
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (!await reader.ReadAsync())
+            return null;
+
+        if (!reader.GetBoolean(5))
+            return new AuthResult { Success = false, ErrorMessage = "The linked Yakult portal account is inactive. Contact an Account Management administrator." };
+
+        var userId = reader.GetInt32(0);
+        var name = reader.GetString(1);
+        var email = reader.GetString(2);
+        var isDeveloper = reader.GetBoolean(3);
+        var levelRank = reader.GetInt32(4);
+        await reader.DisposeAsync();
+        return await BuildAuthResultAsync(con, userId, name, email, isDeveloper, levelRank, isDeptAccount: false);
+    }
+
     private async Task<AuthResult?> TryRegularUserSha256LoginAsync(string username, string password, SqlConnection con)
     {
         const string sql = @"

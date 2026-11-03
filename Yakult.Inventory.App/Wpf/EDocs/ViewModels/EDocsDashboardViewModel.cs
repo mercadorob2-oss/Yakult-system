@@ -180,7 +180,10 @@ namespace Yakult.Inventory.App.WPF.EDocs.ViewModels
         public List<string> ApprovedBySignatories { get; } = new List<string>
         {
             BlankSignatory,
-            "RODOLFO L. ANG JR."
+            // Short form on purpose: the printed Transmittal and Gatepass forms
+            // show this exactly as listed, so keep it as "ROD ANG", not the
+            // full legal name.
+            "ROD ANG"
         };
 
         public List<string> NotedBySignatories { get; } = new List<string>

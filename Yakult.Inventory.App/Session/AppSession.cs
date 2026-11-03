@@ -85,7 +85,9 @@ namespace Yakult.Inventory.App.Session
 
         /// <summary>
         /// IT staff are permitted to create assisted requests on behalf of other employees.
-        /// Includes: Developer, Admin, IT Manager, IT Supervisor, Tech Support.
+        /// Includes: Developer, Admin, IT Manager, IT Supervisor, Tech Support, and any
+        /// employee in the Information Technology department (covers IT secretaries and
+        /// other IT-department staff who carry no IT role).
         /// (The plain "Supervisor" role is Request Portal only and is not IT staff.)
         /// </summary>
         public static bool IsITStaff =>
@@ -93,7 +95,27 @@ namespace Yakult.Inventory.App.Session
             || HasRole("Admin")
             || HasRole("IT Manager")
             || HasRole("IT Supervisor")
-            || HasRole("Tech Support");
+            || HasRole("Tech Support")
+            || IsITDepartment;
+
+        /// <summary>
+        /// True when the logged-in employee belongs to the Information Technology department.
+        /// Department-based rather than role-based: every employee in that department counts,
+        /// including secretaries who have no IT role. Uses the same name matcher as
+        /// PrepareRequisitionViewModel.IsInformationTechnologyDept, because department names
+        /// are free-typed ("IT", "IT Department", "Information Technology", ...).
+        /// </summary>
+        public static bool IsITDepartment =>
+            IsDeveloper || IsInformationTechnologyDept(CurrentDepartmentName);
+
+        public static bool IsInformationTechnologyDept(string departmentName)
+        {
+            if (string.IsNullOrWhiteSpace(departmentName)) return false;
+            string n = departmentName.Trim();
+            return n.Equals("IT", StringComparison.OrdinalIgnoreCase)
+                || n.StartsWith("IT", StringComparison.OrdinalIgnoreCase)
+                || n.IndexOf("Information Technology", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
 
         /// <summary>
         /// Check if current user has a specific role

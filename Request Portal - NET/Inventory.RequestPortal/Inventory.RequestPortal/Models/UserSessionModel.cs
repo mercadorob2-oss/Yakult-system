@@ -49,17 +49,17 @@ namespace Inventory.RequestPortal.Models
         /// <summary>
         /// IT staff are permitted to create assisted requests on behalf of other employees.
         /// Mirrors Yakult.Inventory.App/Session/AppSession.cs's IsITStaff exactly (Developer,
-        /// Admin, IT Manager, Supervisor, Tech Support) — this portal previously only checked
-        /// IsDeveloper for IT Assisted Request access, which left Tech Support (and Admin/IT
-        /// Manager/Supervisor) unable to see or use the feature even though the desktop app
-        /// already grants them access.
+        /// Admin, IT Manager, IT Supervisor, Tech Support, and any employee in the Information
+        /// Technology department). The department clause covers IT secretaries and other
+        /// IT-department staff who carry no IT role but still work in IT.
         /// </summary>
         public bool IsITStaff =>
             IsDeveloper
             || HasRole("Admin")
             || HasRole("IT Manager")
             || HasRole("IT Supervisor")
-            || HasRole("Tech Support");
+            || HasRole("Tech Support")
+            || IsITDepartment;
 
         public bool HasRole(string roleName)
         {

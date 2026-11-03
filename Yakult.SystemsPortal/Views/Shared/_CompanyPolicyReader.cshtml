@@ -1,0 +1,109 @@
+@model CompanyPolicyStructuredViewModel
+<article data-policy-reader class="it-information it-info-reader company-policy-reader it-info-reader--@Model.Document.Accent">
+    <header class="it-info-reader__header">
+        <div class="portal-container">
+            <a asp-controller="Public" asp-action="CompanyPolicies" class="it-info-back">← Company Policy</a>
+            <div class="it-info-reader__labels"><span>@Model.Policy.Category</span><span>Employee policy</span></div>
+            <h1>@Model.Policy.Title</h1>
+            @if (ViewBag.PreparedPolicy == true)
+            {
+                <p class="policy-review-notice" role="status">Prepared content preview. Review the instructions and approval wording before publishing. This preview does not update the published policy.</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Policy.Summary)) { <p>@Model.Policy.Summary</p> }
+            <div class="it-info-reader__facts">
+                @if (Model.Policy.EffectiveDate.HasValue) { <span>Effective @Model.Policy.EffectiveDate.Value.ToString("MMM d, yyyy")</span> }
+                <span>@Model.Document.Sections.Count sections</span>
+            </div>
+        </div>
+    </header>
+    <div class="portal-container it-info-reader__workspace">
+        <aside class="it-info-outline">
+            <label class="policy-mobile-jump">Jump to procedure
+                <select data-policy-jump><option value="">Choose a procedure</option>
+                @foreach (var entry in Model.Document.Sections) { <option value="@entry.Id">@entry.Title</option> }
+                </select>
+            </label>
+            <label class="policy-reader-search" >Find in this policy
+                <input type="search" data-policy-search placeholder="Try toner, Wi-Fi, or software" autocomplete="off" />
+            </label>
+            <button type="button" data-policy-clear>Clear search</button>
+            <div data-policy-status role="status" aria-live="polite"></div>
+            <nav data-policy-results aria-label="Matching sections"></nav>
+            <details open>
+                <summary>In this policy <span aria-hidden="true">⌄</span></summary>
+                <nav aria-label="Policy contents">
+                    @for (var i = 0; i < Model.Document.Sections.Count; i++)
+                    {
+                        var policySection = Model.Document.Sections[i];
+                        <a href="#@policySection.Id"><span>@((i + 1).ToString("00"))</span>@policySection.Title</a>
+                    }
+                </nav>
+            </details>
+            <p>Read each section when you need it.</p>
+        </aside>
+        <div class="it-info-reader__body company-policy-document" data-policy-document>
+            @for (var i = 0; i < Model.Document.Sections.Count; i++)
+            {
+                var policySection = Model.Document.Sections[i];
+                <section class="it-info-section" id="@policySection.Id" aria-labelledby="policy-section-@policySection.Id">
+                    <span class="it-info-eyebrow">Section @((i + 1).ToString("00"))</span>
+                    <h2 id="policy-section-@policySection.Id">@policySection.Title</h2>
+                    @if (!string.IsNullOrWhiteSpace(policySection.Intro)) { <div class="it-info-section__intro">@Html.SafeMarkdown(policySection.Intro)</div> }
+                    @{ var paired = new HashSet<CompanyPolicyBlock>(); }
+                    @foreach (var block in policySection.Blocks)
+                    {
+                        if (paired.Contains(block)) { continue; }
+                        var screenshots = CompanyPolicyPresentation.PairedScreenshots(policySection, block);
+                        var callout = CompanyPolicyPresentation.IsCallout(block);
+                        <div class="policy-content-block @(callout ? "policy-callout" : "") @(block.Title == "Implementation note" ? "policy-callout--note" : "")">
+                        @switch (block.Type)
+                        {
+                            case "text":
+                                <div class="company-policy-text-block">
+                                    @if (!string.IsNullOrWhiteSpace(block.Title)) { <h3>@block.Title</h3> }
+                                    @Html.SafeMarkdown(block.Text)
+                                </div>
+                                break;
+                            case "bullets":
+                                @if (!string.IsNullOrWhiteSpace(block.Title)) { <h3>@block.Title</h3> }
+                                <ul class="it-info-points">@foreach (var item in block.Items) { <li>@Html.SafeMarkdown(item)</li> }</ul>
+                                break;
+                            case "steps":
+                                <div class="it-info-procedure">
+                                    @if (!string.IsNullOrWhiteSpace(block.Title)) { <h3>@block.Title</h3> }
+                                    <ol class="@(screenshots.Count > 0 ? "policy-paired-steps" : "")">@for (var step = 0; step < block.Items.Count; step++) {
+                                        <li><div class="policy-step-copy">@Html.SafeMarkdown(block.Items[step])</div>
+                                        @if (screenshots.Count > 0) {
+                                            paired.Add(screenshots[step]);
+                                            @await Html.PartialAsync("_CompanyPolicyImage", new CompanyPolicyImageViewModel(screenshots[step], block.Items[step]))
+                                        }</li>
+                                    }</ol>
+                                </div>
+                                break;
+                            case "process":
+                                <div class="it-info-account-process">
+                                    @if (!string.IsNullOrWhiteSpace(block.Title)) { <h3>@block.Title</h3> }
+                                    <ol>@foreach (var stage in block.Stages) { <li><span>@stage.Owner</span><h4>@stage.Title</h4><ul>@foreach (var point in stage.Points) { <li>@Html.SafeMarkdown(point)</li> }</ul></li> }</ol>
+                                </div>
+                                break;
+                            case "cards":
+                                @if (!string.IsNullOrWhiteSpace(block.Title)) { <h3>@block.Title</h3> }
+                                <div class="it-info-detail-grid">@foreach (var card in block.Cards) { <article class="it-info-detail-card"><span>@card.Label</span><h3>@card.Title</h3><div>@Html.SafeMarkdown(card.Text)</div>    </article> }</div>
+                                break;
+                            case "flowchart":
+                                @await Html.PartialAsync("_CompanyPolicyImage", new CompanyPolicyImageViewModel(block))
+                                break;
+                        }
+                        </div>
+                    }
+                </section>
+            }
+            <a class="it-info-back it-info-bottom-link" asp-controller="Public" asp-action="CompanyPolicies">← Back to Company Policy</a>
+        </div>
+    </div>
+    <dialog class="policy-image-viewer" aria-label="Policy image viewer">
+        <div class="policy-image-toolbar"><button type="button" data-image-prev aria-label="Previous image">← Previous</button><button type="button" data-image-next aria-label="Next image">Next →</button><button type="button" data-image-zoom aria-pressed="false">Zoom in</button><button type="button" data-image-close autofocus>Close</button></div>
+        <p class="policy-viewer-help">Use arrow keys to browse images. Press Escape to close.</p>
+        <figure><div class="policy-viewer-canvas"><img alt="" /></div><figcaption aria-live="polite"></figcaption></figure>
+    </dialog>
+</article>
