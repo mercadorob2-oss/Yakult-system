@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -42,6 +42,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private Border _photoCapHintBorder;
         private TextBlock _photoCapHintText;
         private TextBlock _photoCountLabel;
+        private Border _emptyPhotoHint;
+        private readonly TextBlock _visitStatusText;
+        private readonly Border _visitStatusBadge;
+        private readonly Button _closeButton;
         private CallFieldVisitItem _currentVisit;
         private List<CallFieldVisitAttachmentItem> _photos = new List<CallFieldVisitAttachmentItem>();
         public WpfCallFieldWorkDialog(ICallMonitoringRepository repo, int ticketId, string ticketCode)
@@ -49,63 +53,101 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
             _ticketId = ticketId;
             Title = "Field Work — " + (ticketCode ?? "Ticket #" + ticketId);
-            Width = 1180; Height = 780; MinWidth = 960; MinHeight = 620;
+            Width = 1440; Height = 900; MinWidth = 1000; MinHeight = 640;
+            WindowState = WindowState.Maximized;
+            FontFamily = new FontFamily("Segoe UI");
+            FontSize = 13;
+            UseLayoutRounding = true;
+            SnapsToDevicePixels = true;
+            TextOptions.SetTextFormattingMode(this, TextFormattingMode.Display);
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
             ShowInTaskbar = false;
-            Background = BrushFromRgb(241, 245, 249);
+            Background = BrushFromRgb(245, 247, 250);
             try
             {
                 Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/Yakult.Inventory.App;component/Wpf/RepairPortal/RepairPortalStyles.xaml", UriKind.Relative) });
                 Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("/Yakult.Inventory.App;component/Wpf/Shared/Styles/ListPageStyles.xaml", UriKind.Relative) });
             }
             catch { }
-            var root = new DockPanel();
+            var root = new Grid { Background = Background };
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             Content = root;
-            // Header — Tier 2 popup with red/blue accent, like Repair Portal detail
-            var header = new Border { Style = TryFindStyle("PopupHeaderBar") ?? new Style(typeof(Border)), MinHeight = 84 };
-            if (header.Style == null || header.Style.Setters.Count == 0) { header.Background = Brushes.White; header.BorderBrush = BrushFromRgb(226,232,240); header.BorderThickness = new Thickness(0,0,0,1); header.Padding = new Thickness(24,18,24,18); }
-            DockPanel.SetDock(header, Dock.Top);
+            var header = new Border
+            {
+                Background = Brushes.White, Padding = new Thickness(28, 20, 28, 18),
+                BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(0, 0, 0, 1)
+            };
             root.Children.Add(header);
-            var headerGrid = new Grid();
-            header.Child = headerGrid;
-            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4) });
-            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var accent = new Border { Style = TryFindStyle("PopupTitleAccentBar") ?? new Style(typeof(Border)), VerticalAlignment = VerticalAlignment.Stretch };
-            if (accent.Style == null || accent.Style.Setters.Count == 0) { accent.Width = 4; accent.CornerRadius = new CornerRadius(2); accent.Margin = new Thickness(0,0,16,0); accent.Background = (Brush)FindResourceOrDefault("RepairIdentityAccentBrush", new LinearGradientBrush{ StartPoint=new Point(0,0), EndPoint=new Point(0,1), GradientStops={ new GradientStop(Color.FromRgb(0xDC,0x26,0x26),0), new GradientStop(Color.FromRgb(0x25,0x63,0xEB),1)}}); }
-            Grid.SetColumn(accent, 0); headerGrid.Children.Add(accent);
-            var titleStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetColumn(titleStack, 1); headerGrid.Children.Add(titleStack);
-            var titleRow = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            titleStack.Children.Add(titleRow);
-            var glyph = new TextBlock { Text = "\uE80F", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 22, Foreground = WpfThemeResources.PrimaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,10,0) };
-            titleRow.Children.Add(glyph);
-            var title = new TextBlock { Text = "Field Work", FontSize = 20, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextDarkBrush, VerticalAlignment = VerticalAlignment.Center };
-            titleRow.Children.Add(title);
-            var badge = new Border { CornerRadius = new CornerRadius(8), Background = BrushFromRgb(219,234,254), Padding = new Thickness(8,3,8,3), Margin = new Thickness(12,0,0,0), VerticalAlignment = VerticalAlignment.Center };
-            badge.Child = new TextBlock { Text = ticketCode ?? $"#{ticketId}", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = BrushFromRgb(29,78,216) };
-            titleRow.Children.Add(badge);
-            var subtitle = new TextBlock { Text = "One visit per ticket • Schedule → Complete/Cancel  •  Photos + customer signature", FontSize = 12.5, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(2,6,0,0), TextWrapping = TextWrapping.Wrap };
-            titleStack.Children.Add(subtitle);
-            var closeBtn = new Button { Content = "Close", MinWidth = 100, Padding = new Thickness(16,9,16,9), Cursor = Cursors.Hand, FontWeight = FontWeights.SemiBold, FontSize=13 };
-            var closeStyle = TryFindStyle("RepairSecondaryBtn");
-            if (closeStyle != null) closeBtn.Style = closeStyle; else { closeBtn.Background = BrushFromRgb(52,73,94); closeBtn.Foreground = Brushes.White; closeBtn.BorderThickness = new Thickness(0); }
-            closeBtn.Click += (_, __) => Close();
-            Grid.SetColumn(closeBtn, 2); headerGrid.Children.Add(closeBtn);
-            var footer = new DockPanel { Height = 62, Background = Brushes.White, LastChildFill = false };
-            DockPanel.SetDock(footer, Dock.Bottom);
-            root.Children.Add(footer);
-            _statusLine = new TextBlock { Text = "Loading field work...", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(20,0,0,0), Foreground = WpfThemeResources.TextMutedBrush, FontSize=12.5 };
+            var headerBody = new StackPanel();
+            header.Child = headerBody;
+            headerBody.Children.Add(new TextBlock
+            {
+                Text = "IT CALL MONITORING  /  FIELD WORK", FontSize = 10.5, FontWeight = FontWeights.SemiBold,
+                Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0, 0, 0, 6)
+            });
+            var titleRow = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
+            titleRow.Children.Add(new TextBlock
+            {
+                Text = "Field work", FontSize = 26, FontWeight = FontWeights.SemiBold,
+                Foreground = WpfThemeResources.TextDarkBrush, VerticalAlignment = VerticalAlignment.Center
+            });
+            titleRow.Children.Add(new Border
+            {
+                Background = BrushFromRgb(252, 240, 241), CornerRadius = new CornerRadius(7),
+                Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(16, 0, 10, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock { Text = ticketCode ?? "Ticket #" + ticketId, FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.PrimaryBrush }
+            });
+            _visitStatusText = new TextBlock { Text = "Loading visit", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White };
+            _visitStatusBadge = new Border
+            {
+                Background = WpfThemeResources.TextMutedBrush, CornerRadius = new CornerRadius(12),
+                Padding = new Thickness(12, 5, 12, 5), VerticalAlignment = VerticalAlignment.Center, Child = _visitStatusText
+            };
+            titleRow.Children.Add(_visitStatusBadge);
+            headerBody.Children.Add(titleRow);
+            headerBody.Children.Add(new TextBlock
+            {
+                Text = "Plan the visit, attach photos, and capture the customer's signature before completing field work.",
+                FontSize = 12.5, Foreground = WpfThemeResources.TextMutedBrush, TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 6, 0, 0)
+            });
+
+            var footerBorder = new Border
+            {
+                Background = Brushes.White, Padding = new Thickness(28, 12, 28, 12),
+                BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(0, 1, 0, 0)
+            };
+            Grid.SetRow(footerBorder, 2);
+            root.Children.Add(footerBorder);
+            var footer = new Grid();
+            footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            footerBorder.Child = footer;
+            _statusLine = new TextBlock
+            {
+                Text = "Loading field work...", Foreground = WpfThemeResources.TextMutedBrush,
+                FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10)
+            };
             footer.Children.Add(_statusLine);
-            var buildTag = new TextBlock { Text = "footer v3", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8,0,0,0), Foreground = BrushFromRgb(180,190,205), FontSize = 10 };
-            footer.Children.Add(buildTag);
-            var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16,10,16,10) };
-            DockPanel.SetDock(actions, Dock.Right);
-            footer.Children.Add(actions);
-            _scheduleBtn = CreateFooterButton("+ Schedule", WpfThemeResources.Primary);
-            _editFinishBtn = CreateFooterButton("Edit Finish", Color.FromRgb(124, 58, 237));
-            _completeBtn = CreateFooterButton("Complete", Color.FromRgb(22, 163, 74));
-            _cancelBtn = CreateFooterButton("Cancel", Color.FromRgb(220, 38, 38));
+            var actionGrid = new Grid();
+            actionGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            actionGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            Grid.SetRow(actionGrid, 1);
+            footer.Children.Add(actionGrid);
+            _closeButton = CreateFooterButton("Close", Color.FromRgb(71, 85, 105));
+            _closeButton.Margin = new Thickness(0, 0, 16, 0);
+            _closeButton.Click += (_, __) => Close();
+            actionGrid.Children.Add(_closeButton);
+            var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
+            Grid.SetColumn(actions, 1);
+            actionGrid.Children.Add(actions);
+            _scheduleBtn = CreateFooterButton("Schedule visit", WpfThemeResources.Primary);
+            _editFinishBtn = CreateFooterButton("Edit finish time", Color.FromRgb(71, 85, 105));
+            _completeBtn = CreateFooterButton("Complete visit", Color.FromRgb(22, 163, 74));
+            _cancelBtn = CreateFooterButton("Cancel visit", Color.FromRgb(220, 38, 38));
             _rescheduleBtn = CreateFooterButton("Reschedule", Color.FromRgb(245, 158, 11));
             _scheduleBtn.Click += async (_, __) => await ScheduleAsync();
             _editFinishBtn.Click += (_, __) => OpenFinishTimeEditor();
@@ -122,17 +164,36 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             actions.Children.Add(_completeBtn);
             actions.Children.Add(_cancelBtn);
             actions.Children.Add(_rescheduleBtn);
-            var bodyScroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(20), Background = BrushFromRgb(241,245,249) };
-            root.Children.Add(bodyScroll);
+            var workspace = new Grid { Margin = new Thickness(24, 20, 24, 12) };
+            workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star), MinWidth = 500 });
+            workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+            workspace.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star), MinWidth = 350 });
+            Grid.SetRow(workspace, 1);
+            root.Children.Add(workspace);
+            var bodyScroll = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Padding = new Thickness(0, 0, 6, 0)
+            };
+            workspace.Children.Add(bodyScroll);
             var bodyStack = new StackPanel();
             bodyScroll.Content = bodyStack;
+            var evidenceScroll = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Padding = new Thickness(0, 0, 6, 0)
+            };
+            Grid.SetColumn(evidenceScroll, 2);
+            workspace.Children.Add(evidenceScroll);
+            var evidenceStack = new StackPanel();
+            evidenceScroll.Content = evidenceStack;
             // Schedule card — FeedCardStyle with icon header
-            var scheduleCard = NewCard("Schedule / Notes", "\uE77B", "Pick technician, add notes, then Schedule — one visit per ticket");
+            var scheduleCard = NewCard("Schedule the visit", "\uE77B", "Choose a technician, date, and time. Each ticket has one field visit.");
             bodyStack.Children.Add(scheduleCard);
             var scheduleInner = (StackPanel)scheduleCard.Child;
             // Use extracted ScheduleSection (now 3-col: tech + date + time, notes below)
-            _techCombo = new ComboBox { MinHeight = 36, DisplayMemberPath = "Name", Padding = new Thickness(8,6,8,6), Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), BorderThickness = new Thickness(1), Foreground = WpfThemeResources.TextDarkBrush, FontSize = 13 };
-            _notesBox = new TextBox { MinHeight = 36, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, Padding = new Thickness(10,8,10,8), BorderBrush = BrushFromRgb(203,213,225), BorderThickness = new Thickness(1), Background = Brushes.White, Foreground = BrushFromRgb(30,41,59), FontSize = 13 };
+            _techCombo = new ComboBox { MinHeight = 40, DisplayMemberPath = "Name", Padding = new Thickness(8,6,8,6), Background = Brushes.White, BorderBrush = BrushFromRgb(203,213,225), BorderThickness = new Thickness(1), Foreground = WpfThemeResources.TextDarkBrush, FontSize = 13 };
+            _notesBox = new TextBox { MinHeight = 100, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, Padding = new Thickness(10,8,10,8), BorderBrush = BrushFromRgb(203,213,225), BorderThickness = new Thickness(1), Background = Brushes.White, Foreground = BrushFromRgb(30,41,59), FontSize = 13 };
             var schedForm = BuildScheduleSection();
             scheduleInner.Children.Add(schedForm);
             _scheduleModeHint = new TextBlock { FontSize = 12, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
@@ -140,36 +201,36 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             scheduleInner.Children.Add(_scheduleModeHintBorder);
             // Notes below the 3-col grid (as in original 2-col, but now stacked)
             var notesStack2 = new StackPanel { Margin = new Thickness(0,12,0,0) };
-            notesStack2.Children.Add(new TextBlock { Text = "Notes (optional)", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0,0,0,6) });
+            notesStack2.Children.Add(new TextBlock { Text = "Visit notes (optional)", FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(0,0,0,6) });
             notesStack2.Children.Add(_notesBox);
             scheduleInner.Children.Add(notesStack2);
             // Visit card — main focus, with status pill + simplified info
-            var visitCard = NewCard("Visit Status", "\uE787", "Scheduled → Completed/Cancelled");
+            var visitCard = NewCard("Visit details", "\uE787", "Review the assigned technician, recorded times, and current status.");
             bodyStack.Children.Add(visitCard);
             _visitHost = new StackPanel { Margin = new Thickness(0,8,0,0) };
             ((StackPanel)visitCard.Child).Children.Add(_visitHost);
             // Evidence card — photos + signature (polished WPF table + cleaner buttons)
-            var photoCard = NewCard("Evidence", "\uEB9F", "Photos + customer signature (up to 20 photos, PNG/JPG ≤20 MB)");
-            bodyStack.Children.Add(photoCard);
+            var photoCard = NewCard("Photos & customer signature", "\uEB9F", "Add up to 20 photos (PNG/JPG, 20 MB each). A customer signature is required to complete the visit; photos are optional.");
+            evidenceStack.Children.Add(photoCard);
             var photoInner = (StackPanel)photoCard.Child;
             var photoHeader = new DockPanel { LastChildFill = false, Margin = new Thickness(0,10,0,0) };
             photoInner.Children.Add(photoHeader);
-            var photoBtns = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            DockPanel.SetDock(photoBtns, Dock.Right); photoHeader.Children.Add(photoBtns);
+            var photoBtns = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Left };
+            DockPanel.SetDock(photoBtns, Dock.Left); photoHeader.Children.Add(photoBtns);
             // Cleaner segmented toolbar — ghost secondary for add, solid primary for view
-            _uploadPhotoBtn = CreatePillButton("Add Photo", "\uEB9F", BrushFromRgb(37,99,235), isPrimary:true);
+            _uploadPhotoBtn = CreatePillButton("Add photo", "\uEB9F", WpfThemeResources.PrimaryBrush, isPrimary:true);
             _uploadPhotoBtn.Click += async (_, __) => await UploadPhotoAsync();
-            _signatureBtn = CreatePillButton("Signature", "\uE70B", BrushFromRgb(124,58,237), isPrimary:false);
+            _signatureBtn = CreatePillButton("Capture signature", "\uE70B", WpfThemeResources.PrimaryBrush, isPrimary:false);
             _signatureBtn.Click += async (_, __) => await SaveSignatureAsync();
-            _viewPhotoBtn = CreatePillButton("View", "\uE8A7", BrushFromRgb(37,99,235), isPrimary:true);
+            _viewPhotoBtn = CreatePillButton("Open photo", "\uE8A7", WpfThemeResources.PrimaryBrush, isPrimary:false);
             _viewPhotoBtn.Click += async (_, __) => await PreviewSelectedPhotoAsync();
-            _viewSignatureBtn = CreatePillButton("View Sig", "\uE73E", BrushFromRgb(16,185,129), isPrimary:true);
+            _viewSignatureBtn = CreatePillButton("Open signature", "\uE73E", WpfThemeResources.PrimaryBrush, isPrimary:false);
             _viewSignatureBtn.Click += async (_, __) => await PreviewSignatureAsync();
             photoBtns.Children.Add(_uploadPhotoBtn); photoBtns.Children.Add(_signatureBtn); photoBtns.Children.Add(_viewPhotoBtn); photoBtns.Children.Add(_viewSignatureBtn);
             // Modern table container — rounded, subtle shadow, header pill styling
             var tableBorder = new Border { CornerRadius = new CornerRadius(12), BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1), Background = Brushes.White, Margin = new Thickness(0,10,0,0), ClipToBounds = true, SnapsToDevicePixels = true };
-            try { tableBorder.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 14, ShadowDepth = 2, Opacity = 0.06, Direction = 270, Color = Colors.Black }; } catch { }
-            _photoGrid = new DataGrid { AutoGenerateColumns = false, IsReadOnly = true, CanUserAddRows = false, CanUserDeleteRows = false, HeadersVisibility = DataGridHeadersVisibility.Column, GridLinesVisibility = DataGridGridLinesVisibility.None, BorderThickness = new Thickness(0), RowHeaderWidth = 0, Background = Brushes.White, AlternatingRowBackground = WpfThemeResources.SurfaceMutedBrush, MinHeight = 160, MaxHeight = 260, FontSize = 12.5, ColumnWidth = new DataGridLength(1, DataGridLengthUnitType.Auto), CanUserResizeColumns = true, CanUserSortColumns = true, SelectionMode = DataGridSelectionMode.Single, SelectionUnit = DataGridSelectionUnit.FullRow, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+
+            _photoGrid = new DataGrid { AutoGenerateColumns = false, IsReadOnly = true, CanUserAddRows = false, CanUserDeleteRows = false, HeadersVisibility = DataGridHeadersVisibility.Column, GridLinesVisibility = DataGridGridLinesVisibility.None, BorderThickness = new Thickness(0), RowHeaderWidth = 0, Background = Brushes.White, AlternatingRowBackground = WpfThemeResources.SurfaceMutedBrush, MinHeight = 160, MaxHeight = 260, FontSize = 12.5, ColumnWidth = new DataGridLength(1, DataGridLengthUnitType.Auto), CanUserResizeColumns = true, CanUserSortColumns = true, SelectionMode = DataGridSelectionMode.Single, SelectionUnit = DataGridSelectionUnit.FullRow, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto };
             // Header style — pill-like, muted slate, semibold
             var headerStyle = new Style(typeof(System.Windows.Controls.Primitives.DataGridColumnHeader));
             headerStyle.Setters.Add(new Setter(Control.BackgroundProperty, WpfThemeResources.SurfaceMutedBrush));
@@ -280,39 +341,42 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             _photoCapHintBorder.Child = _photoCapHintText;
             DockPanel.SetDock(_photoCapHintBorder, Dock.Right);
             photoMetaRow.Children.Add(_photoCapHintBorder);
-            _photoPreviewLabel = new TextBlock { Text = "Select a photo to preview", Foreground = WpfThemeResources.TextMutedBrush, FontStyle = FontStyles.Italic, Margin = new Thickness(0,8,0,4), FontSize=11 };
+            _photoPreviewLabel = new TextBlock { TextWrapping = TextWrapping.Wrap, Text = "Select a photo to preview", Foreground = WpfThemeResources.TextMutedBrush, FontStyle = FontStyles.Italic, Margin = new Thickness(0,8,0,4), FontSize=11 };
             photoInner.Children.Add(_photoPreviewLabel);
             _photoPreviewBorder = new Border { Background = WpfThemeResources.SurfaceMutedBrush, CornerRadius = new CornerRadius(10), BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1), Padding = new Thickness(8), MinHeight = 140, Visibility = Visibility.Collapsed, Margin = new Thickness(0,0,0,8) };
             _photoPreviewImage = new Image { Stretch = Stretch.Uniform, MaxHeight = 220, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
             _photoPreviewBorder.Child = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = _photoPreviewImage, MaxHeight = 220 };
             photoInner.Children.Add(_photoPreviewBorder);
-            _signaturePreviewLabel = new TextBlock { Text = "No signature yet — capture before completing visit", Foreground = WpfThemeResources.TextMutedBrush, FontStyle = FontStyles.Italic, Margin = new Thickness(0,8,0,4), FontSize=11 };
+            _signaturePreviewLabel = new TextBlock { TextWrapping = TextWrapping.Wrap, Text = "No signature yet — capture before completing visit", Foreground = WpfThemeResources.TextMutedBrush, FontStyle = FontStyles.Italic, Margin = new Thickness(0,8,0,4), FontSize=11 };
             photoInner.Children.Add(_signaturePreviewLabel);
             _signaturePreviewBorder = new Border { Background = Brushes.White, CornerRadius = new CornerRadius(10), BorderBrush = BrushFromRgb(203,213,225), BorderThickness = new Thickness(1), Padding = new Thickness(8), MinHeight = 100, Visibility = Visibility.Collapsed, Margin = new Thickness(0,0,0,4) };
             _signaturePreviewImage = new Image { Stretch = Stretch.Uniform, MaxHeight = 120, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
             _signaturePreviewBorder.Child = _signaturePreviewImage;
             photoInner.Children.Add(_signaturePreviewBorder);
             var emptyPhotoHint = new Border { Background = WpfThemeResources.SurfaceMutedBrush, CornerRadius = new CornerRadius(10), Padding = new Thickness(14), Margin = new Thickness(0,10,0,0), BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1) };
-            emptyPhotoHint.Child = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            emptyPhotoHint.Child = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             ((StackPanel)emptyPhotoHint.Child).Children.Add(new TextBlock { Text = "\uE91B", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 16, Foreground = BrushFromRgb(148,163,184), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,8,0) });
-            ((StackPanel)emptyPhotoHint.Child).Children.Add(new TextBlock { Text = "No photos yet — add photos and signature before completing the visit.", Foreground = WpfThemeResources.TextMutedBrush, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap });
+            ((StackPanel)emptyPhotoHint.Child).Children.Add(new TextBlock { Text = "No photos attached yet. You can add photos to document the work; the customer signature is required for completion.", Foreground = WpfThemeResources.TextMutedBrush, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap });
+            _emptyPhotoHint = emptyPhotoHint;
             photoInner.Children.Add(emptyPhotoHint);
+            UpdateButtons(null);
             Loaded += async (_, __) => await LoadAsync();
         }
         private Border NewCard(string title, string glyph, string subtitle)
         {
-            var card = new Border { CornerRadius = new CornerRadius(16), Padding = new Thickness(18), Margin = new Thickness(0,0,0,16), Background = Brushes.White, BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1) };
-            var style = TryFindStyle("FeedCardStyle");
-            if (style != null) card.Style = style;
-            try { card.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 12, ShadowDepth = 3, Opacity = 0.08, Direction = 270, Color = Colors.Black }; } catch { }
+            var card = new Border
+            {
+                CornerRadius = new CornerRadius(10), Padding = new Thickness(22), Margin = new Thickness(0, 0, 0, 16),
+                Background = Brushes.White, BorderBrush = BrushFromRgb(226, 232, 240), BorderThickness = new Thickness(1)
+            };
             var stack = new StackPanel();
             card.Child = stack;
             var header = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,0,4) };
             stack.Children.Add(header);
             header.Children.Add(new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 18, Foreground = WpfThemeResources.PrimaryBrush, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,10,0) });
-            header.Children.Add(new TextBlock { Text = title, FontSize = 14, FontWeight = FontWeights.Bold, Foreground = WpfThemeResources.TextDarkBrush, VerticalAlignment = VerticalAlignment.Center });
+            header.Children.Add(new TextBlock { Text = title, FontSize = 15, FontWeight = FontWeights.SemiBold, Foreground = WpfThemeResources.TextDarkBrush, VerticalAlignment = VerticalAlignment.Center });
             if (!string.IsNullOrWhiteSpace(subtitle))
-                stack.Children.Add(new TextBlock { Text = subtitle, FontSize = 11.5, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(2,2,0,0), TextWrapping = TextWrapping.Wrap });
+                stack.Children.Add(new TextBlock { Text = subtitle, FontSize = 12.5, LineHeight = 19, Foreground = WpfThemeResources.TextMutedBrush, Margin = new Thickness(2,2,0,0), TextWrapping = TextWrapping.Wrap });
             return card;
         }
         private async Task LoadAsync()
@@ -406,7 +470,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (_currentVisit == null)
             {
                 var empty = new Border { Background = WpfThemeResources.SurfaceMutedBrush, CornerRadius = new CornerRadius(12), Padding = new Thickness(16), Margin = new Thickness(0,12,0,0), BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1) };
-                var row = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+                var row = new DockPanel { VerticalAlignment = VerticalAlignment.Center };
                 empty.Child = row;
                 row.Children.Add(new TextBlock { Text = "\uE946", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 20, Foreground = BrushFromRgb(148,163,184), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,12,0) });
                 row.Children.Add(new TextBlock { Text = "No field visit scheduled. Pick a technician, add a note, and click Schedule — one visit per ticket.", Foreground = WpfThemeResources.TextMutedBrush, FontStyle = FontStyles.Italic, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center, FontSize = 13 });
@@ -417,16 +481,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var v = _currentVisit;
             _visitHost.Children.Add(BuildOverviewPillRow(v));
             _visitHost.Children.Add(BuildOverviewGrid(v));
-            // Status card (centered)
-            var statusCard = new Border { Background = WpfThemeResources.SurfaceMutedBrush, CornerRadius = new CornerRadius(12), Padding = new Thickness(14,12,14,12), Margin = new Thickness(0,14,0,0), BorderBrush = BrushFromRgb(226,232,240), BorderThickness = new Thickness(1) };
-            _visitHost.Children.Add(statusCard);
-            var statusStack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
-            statusCard.Child = statusStack;
-            statusStack.Children.Add(new TextBlock { Text = "Current Status", FontSize = 11, Foreground = WpfThemeResources.TextMutedBrush, TextAlignment = TextAlignment.Center, Margin = new Thickness(0,0,0,8) });
-            var statusPill = new Border { CornerRadius = new CornerRadius(16), Padding = new Thickness(20,8,20,8), HorizontalAlignment = HorizontalAlignment.Center, Background = GetFieldWorkStatusBrush(v.Status) };
-            statusPill.Child = new TextBlock { Text = (v.Status ?? "-").ToUpperInvariant(), Foreground = Brushes.White, FontWeight = FontWeights.Bold, FontSize = 14 };
-            statusStack.Children.Add(statusPill);
-            statusStack.Children.Add(new TextBlock { Text = GetStatusHint(v.Status), FontSize = 11, Foreground = WpfThemeResources.TextMutedBrush, TextAlignment = TextAlignment.Center, Margin = new Thickness(0,8,0,0), TextWrapping = TextWrapping.Wrap });
+            _visitHost.Children.Add(new TextBlock
+            {
+                Text = GetStatusHint(v.Status), FontSize = 12.5, Foreground = WpfThemeResources.TextMutedBrush,
+                TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 14, 0, 0)
+            });
             if (v.Status != null && v.Status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
                 _visitHost.Children.Add(BuildCancelledHint());
             var notesCard = BuildNotesCard(v.Notes);
@@ -446,7 +505,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             var template = new ControlTemplate(typeof(Button));
             var border = new FrameworkElementFactory(typeof(Border));
-            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(7));
             border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
             border.SetValue(Border.PaddingProperty, new Thickness(16, 0, 16, 0));
             var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
@@ -458,9 +517,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var style = new Style(typeof(Button));
             style.Setters.Add(new Setter(Control.BackgroundProperty, normal));
             style.Setters.Add(new Setter(Control.ForegroundProperty, Brushes.White));
-            style.Setters.Add(new Setter(Control.HeightProperty, 36.0));
+            style.Setters.Add(new Setter(Control.HeightProperty, 40.0));
             style.Setters.Add(new Setter(Control.MinWidthProperty, 112.0));
-            style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(8, 0, 0, 0)));
+            style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(8, 0, 0, 4)));
             style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
             style.Setters.Add(new Setter(Control.FontSizeProperty, 13.0));
             style.Setters.Add(new Setter(Control.CursorProperty, Cursors.Hand));
@@ -493,6 +552,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private void UpdateButtons(string status)
         {
             var s = (status ?? string.Empty).Trim();
+            _visitStatusText.Text = string.IsNullOrEmpty(s) ? "Not scheduled" : s;
+            _visitStatusBadge.Background = GetFieldWorkStatusBrush(s);
             bool none = string.IsNullOrEmpty(s);
             bool isCompleted = s.Equals("Completed", StringComparison.OrdinalIgnoreCase);
             bool isCancelled = s.Equals("Cancelled", StringComparison.OrdinalIgnoreCase);
@@ -651,6 +712,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             }
             if (_photoCapHintBorder != null)
                 _photoCapHintBorder.Visibility = atCap ? Visibility.Visible : Visibility.Collapsed;
+            if (_emptyPhotoHint != null) _emptyPhotoHint.Visibility = count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private async Task UploadPhotoAsync()
@@ -808,16 +870,16 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var panel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             panel.Children.Add(new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 13, Foreground = isPrimary ? Brushes.White : accent, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,6,0) });
             panel.Children.Add(new TextBlock { Text = text, Foreground = isPrimary ? Brushes.White : accent, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, FontSize = 12.5 });
-            var btn = new Button { Content = panel, MinWidth = 102, Height = 34, Margin = new Thickness(6,0,0,0), Padding = new Thickness(14,0,14,0), Background = isPrimary ? accent : Brushes.White, Foreground = isPrimary ? Brushes.White : accent, BorderBrush = accent, BorderThickness = new Thickness(isPrimary ? 0 : 1), FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand, FontSize = 12.5 };
+            var btn = new Button { Content = panel, MinWidth = 102, Height = 40, Margin = new Thickness(0,0,8,8), Padding = new Thickness(14,0,14,0), Background = isPrimary ? accent : Brushes.White, Foreground = isPrimary ? Brushes.White : accent, BorderBrush = accent, BorderThickness = new Thickness(isPrimary ? 0 : 1), FontWeight = FontWeights.SemiBold, Cursor = Cursors.Hand, FontSize = 12.5 };
             btn.SetValue(Control.TemplateProperty, CreatePillButtonTemplate());
-            try { btn.Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 8, ShadowDepth = 1, Opacity = 0.08, Direction = 270, Color = Colors.Black }; } catch { }
+
             return btn;
         }
 
         private static ControlTemplate CreatePillButtonTemplate()
         {
             var borderFactory = new FrameworkElementFactory(typeof(Border));
-            borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+            borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(7));
             borderFactory.SetValue(Border.BackgroundProperty, new System.Windows.Data.Binding("Background") { RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent) });
             borderFactory.SetValue(Border.BorderBrushProperty, new System.Windows.Data.Binding("BorderBrush") { RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent) });
             borderFactory.SetValue(Border.BorderThicknessProperty, new System.Windows.Data.Binding("BorderThickness") { RelativeSource = new System.Windows.Data.RelativeSource(System.Windows.Data.RelativeSourceMode.TemplatedParent) });

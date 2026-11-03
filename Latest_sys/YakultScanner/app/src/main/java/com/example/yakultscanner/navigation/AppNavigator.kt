@@ -102,9 +102,6 @@ fun AppNavigator(
             composable("login") {
                 LoginScreen(navController = navController)
             }
-            composable("register") {
-                RegisterScreen(navController = navController)
-            }
             composable("root_home") {
                 RootHomeScreen(navController = navController)
             }

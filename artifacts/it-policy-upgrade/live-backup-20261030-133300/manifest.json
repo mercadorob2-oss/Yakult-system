@@ -1,0 +1,32 @@
+[
+  {
+    "Path": "Yakult.SystemsPortal.dll",
+    "Existed": true,
+    "SHA256": "6F1D7DE4DF70ACD43FB93D18E145E058D59E891A9B245AA5E4E4D9E17358671D"
+  },
+  {
+    "Path": "Yakult.SystemsPortal.pdb",
+    "Existed": true,
+    "SHA256": "BE2F20883CE4D81D2A539CEAB6D9B582F0BFB64C0F0B332BCF9EDF1CC28279FE"
+  },
+  {
+    "Path": "wwwroot/css/company-policy-document.css",
+    "Existed": true,
+    "SHA256": "66490B4AB40B5C3FBE6CB0A9A45636BB716BF54ED182967DF72FDADDC3AE1970"
+  },
+  {
+    "Path": "wwwroot/css/company-policy-editor.css",
+    "Existed": true,
+    "SHA256": "A798431C20AD51062D70E938A8C035BDE40A50C589EFD2D704A46BAF2C60EE24"
+  },
+  {
+    "Path": "wwwroot/js/company-policy-builder.js",
+    "Existed": true,
+    "SHA256": "306DCE91ECE65E56727AB90729F0433D7AD08EA47AC42D125B065BCEE0F61163"
+  },
+  {
+    "Path": "wwwroot/js/company-policy-reader.js",
+    "Existed": false,
+    "SHA256": null
+  }
+]

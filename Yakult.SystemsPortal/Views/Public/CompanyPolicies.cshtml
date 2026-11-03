@@ -59,7 +59,7 @@
                                 </div>
                                 <h3><a asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">@item.Title</a></h3>
                                 <p>@item.Summary</p>
-                                <ul class="it-info-topic-tags" aria-label="Topics included">@foreach (var topic in document.Sections) { <li>@topic.Title</li> }</ul>
+                                <ul class="it-info-topic-tags" aria-label="Topics included">@foreach (var topic in document.Sections.Take(4)) { <li>@topic.Title</li> } @if (document.Sections.Count > 4) { <li>+@(document.Sections.Count - 4) more</li> }</ul>
                                 <div class="it-info-resource__footer"><span>@document.Sections.Count topics · Employee reference</span><a asp-action="CompanyPolicyDetails" asp-route-slug="@item.Slug">Read reference <span aria-hidden="true">↗</span><span class="sr-only">: @item.Title</span></a></div>
                             </article>
                         }

@@ -8,4 +8,5 @@ namespace Yakult.SystemsPortal.Repositories;
 public interface IUserRepository
 {
     Task<AuthResult> AuthenticateAsync(string username, string password);
+    Task<AuthResult?> AuthenticateWindowsAccountAsync(string securityIdentifier);
 }

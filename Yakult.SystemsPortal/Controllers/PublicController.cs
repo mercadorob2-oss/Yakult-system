@@ -351,6 +351,27 @@ public sealed class PublicController : Controller
         return View("CompanyPolicyDetails", item);
     }
 
+    [HttpGet("/policy-preview/it")]
+    public async Task<IActionResult> PreparedItPolicy([FromServices] IAuthorizationService authorization)
+    {
+        var localDevelopment = _environment.IsDevelopment() && HttpContext.Connection.RemoteIpAddress is { } address
+            && System.Net.IPAddress.IsLoopback(address);
+        if (!localDevelopment && !(await authorization.AuthorizeAsync(User, "ContentEditor")).Succeeded) return NotFound();
+        Response.Headers.CacheControl = "no-store";
+        var item = (await _companyInfo.GetManagedPoliciesAsync()).FirstOrDefault(policy => policy.Slug == ItPolicyContent.Slug);
+        if (item is null)
+        {
+            if (!ItPolicyContent.TryLoad(_environment.ContentRootPath, out item))
+                return StatusCode(503, "The IT policy preview is unavailable. Please open the policy editor.");
+            ViewBag.PreparedPolicy = true;
+        }
+        var document = CompanyPolicyDocument.Parse(item!.Body);
+        if (document is null) return View("CompanyPolicyDetails", item);
+        try { document.Validate(); }
+        catch (ArgumentException) { return StatusCode(503, "The saved policy needs correction in the policy editor before it can be previewed."); }
+        return View("CompanyPolicyStructured", new CompanyPolicyStructuredViewModel { Policy = item, Document = document });
+    }
+
     private static IEnumerable<CompanyFaqItem> FilterDemoFaqs(string? query, string? category)
     {
         var items = CompanyInfoSamples.Faqs.AsEnumerable();

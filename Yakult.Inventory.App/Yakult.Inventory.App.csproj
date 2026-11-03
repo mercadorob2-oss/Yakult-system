@@ -281,8 +281,8 @@
     <Reference Include="System.Security.AccessControl, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Security.AccessControl.5.0.0\lib\net461\System.Security.AccessControl.dll</HintPath>
     </Reference>
-    <Reference Include="System.Security.Cryptography.Pkcs, Version=8.0.0.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>packages\System.Security.Cryptography.Pkcs.8.0.1\lib\net462\System.Security.Cryptography.Pkcs.dll</HintPath>
+    <Reference Include="System.Security.Cryptography.Pkcs, Version=8.0.0.2, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.Security.Cryptography.Pkcs.8.0.2\lib\net462\System.Security.Cryptography.Pkcs.dll</HintPath>
     </Reference>
     <Reference Include="System.Security.Cryptography.ProtectedData, Version=4.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Security.Cryptography.ProtectedData.4.5.0\lib\net461\System.Security.Cryptography.ProtectedData.dll</HintPath>
@@ -1479,6 +1479,7 @@
     <Compile Include="Helpers\ReportHelper.cs" />
     <Compile Include="Helpers\ItemPdfGenerator.cs" />
     <Compile Include="Helpers\TabularPdfGenerator.cs" />
+    <Compile Include="Helpers\CallMonthlyReportExporter.cs" />
     <Compile Include="Helpers\SetQRGenerator.cs" />
     <Compile Include="Helpers\RepairTicketQRGenerator.cs" />
     <Compile Include="Helpers\VideoRotationReader.cs" />
@@ -1542,10 +1543,12 @@
     <Compile Include="Models\CallMonitoring\CallResolutionReportRow.cs" />
     <Compile Include="Models\CallMonitoring\CallSlaComplianceReportRow.cs" />
     <Compile Include="Models\CallMonitoring\CallSolvedSummaryReportRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallMonthlyReport.cs" />
     <Compile Include="Models\CallMonitoring\CallEmployeeProfileLookup.cs" />
     <Compile Include="Models\CallMonitoring\CallEmployeeOrgInfo.cs" />
     <Compile Include="Models\EmployeeLocationDto.cs" />
     <Compile Include="Models\CallMonitoring\CallEmployeeReplacementItemRow.cs" />
+    <Compile Include="Models\CallMonitoring\CallReplacementLine.cs" />
     <Compile Include="Models\CallMonitoring\CallTechProfileSummary.cs" />
     <Compile Include="Models\CallMonitoring\CallTechHandledTicketRow.cs" />
     <Compile Include="Models\CallMonitoring\CallTechOpenTicketRow.cs" />
@@ -1728,6 +1731,7 @@
     <Compile Include="Repositories\CallMonitoringRepository.Reports.DashboardAndTech.cs" />
     <Compile Include="Repositories\CallMonitoringRepository.Reports.Analytics.cs" />
     <Compile Include="Repositories\CallMonitoringRepository.Reports.SolvedSummary.cs" />
+    <Compile Include="Repositories\CallMonitoringRepository.Reports.Monthly.cs" />
     <Compile Include="Repositories\CallMonitoringRepository.FieldWork.cs" />
     <Compile Include="Wpf\CallMonitoring\WpfCallFieldWorkDialog.cs">
       <SubType>Form</SubType>

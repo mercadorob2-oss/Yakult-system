@@ -1,0 +1,14 @@
+[
+  {
+    "Path": "Yakult.SystemsPortal.dll",
+    "Existed": true
+  },
+  {
+    "Path": "Yakult.SystemsPortal.pdb",
+    "Existed": true
+  },
+  {
+    "Path": "App_Data/PolicyDrafts/it-policy.json",
+    "Existed": false
+  }
+]

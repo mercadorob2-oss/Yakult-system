@@ -6,14 +6,12 @@
     const $ = (id) => document.getElementById(id);
     const bodyInput = $('policyBody');
     const sectionsHost = $('policySections');
-    const previewSections = $('previewSections');
-    const previewContents = $('previewContents');
     const legacy = window.companyPolicyEditorLegacy === true;
     let legacyMode = legacy;
     let doc = JSON.parse(JSON.stringify(window.companyPolicyEditorInitial || { version: 1, sections: [] }));
     let assets = [];
     const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
-    const labels = { text: 'Text', bullets: 'Bullet list', steps: 'Numbered steps', process: 'Account process', cards: 'Role cards', flowchart: 'Flowchart' };
+    const labels = { text: 'Text', bullets: 'Bullet list', steps: 'Numbered steps', process: 'Process / approval stages', cards: 'Role cards', flowchart: 'Flowchart' };
 
     const ensureArrays = () => {
         if (!Array.isArray(doc.sections)) doc.sections = [];
@@ -62,7 +60,11 @@
         [list[index], list[next]] = [list[next], list[index]];
         render();
     };
-    const newSection = () => ({ id: 'section-' + crypto.randomUUID().replaceAll('-', '').slice(0, 16), title: '', intro: '', blocks: [] });
+    const createSectionId = () => {
+        if (window.crypto?.randomUUID) return 'section-' + window.crypto.randomUUID().replaceAll('-', '').slice(0, 16);
+        return 'section-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    };
+    const newSection = () => ({ id: createSectionId(), title: '', intro: '', blocks: [] });
     const newBlock = type => ({ type, title: '', text: '', items: [], stages: [], cards: [], imageUrl: '', altText: '', paths: [], sourceNote: '' });
     const changed = () => { syncBody(); renderPreview(); };
     const syncBody = () => {
@@ -176,6 +178,63 @@
         }
     }
 
+    // Profile Account editor: structured fields, compatible with existing policy readers.
+    function readProfileAccount(section) {
+        if (section.id !== 'accounts' || section.blocks?.length !== 3 ||
+            !section.blocks.every(block => block.type === 'text') ||
+            section.blocks[1].title !== 'Active Domain Account Process') return null;
+        const requirements = Array.from((section.blocks[0].text + '\n\n' + section.blocks[2].text)
+            .matchAll(/\*\*([1-5])\.\*\* ([\s\S]*?)(?=\n\n\*\*[1-5]\.\*\* |$)/g));
+        const entries = Array.from(section.blocks[1].text.matchAll(/\*\*([abc])\.\*\* ([\s\S]*?)(?=\n\n\*\*[abc]\.\*\* |$)/g));
+        if (requirements.map(match => match[1]).join('') !== '12345' || entries.map(match => match[1]).join('') !== 'abc') return null;
+        return {
+            requirements: requirements.map(match => match[2]),
+            entries: entries.map(match => {
+                const split = match[2].indexOf('\n\n- ');
+                return { text: split < 0 ? match[2] : match[2].slice(0, split),
+                    points: split < 0 ? [] : match[2].slice(split + 2).split('\n').map(line => line.replace(/^- /, '')) };
+            })
+        };
+    }
+
+    function writeProfileAccount(section, profile) {
+        section.blocks[0].text = '**1.** ' + profile.requirements[0];
+        section.blocks[1].text = profile.entries.map((entry, index) =>
+            '**' + String.fromCharCode(97 + index) + '.** ' + entry.text +
+            (entry.points.length ? '\n\n' + entry.points.map(point => '- ' + point).join('\n') : '')).join('\n\n');
+        section.blocks[2].text = profile.requirements.slice(1).map((value, index) => '**' + (index + 2) + '.** ' + value).join('\n\n');
+    }
+
+    function renderProfileAccountEditor(section, profile) {
+        const editor = make('div', 'policy-block-card');
+        editor.dataset.editorFormat = 'profile-account';
+        appendText(editor, 'strong', 'Profile Account', 'policy-builder-kicker');
+        const requirement = index => editor.appendChild(field('Requirement ' + (index + 1), profile.requirements[index], value => {
+            profile.requirements[index] = value; writeProfileAccount(section, profile);
+        }, true));
+        requirement(0);
+        const process = make('div', 'policy-nested-card');
+        appendText(process, 'h3', 'Active Domain Account Process');
+        profile.entries.forEach((entry, index) => {
+            const label = String.fromCharCode(97 + index);
+            const group = make('div', 'policy-nested-card');
+            group.appendChild(field('Process ' + label + '.', entry.text, value => {
+                entry.text = value; writeProfileAccount(section, profile);
+            }, true));
+            entry.points.forEach((point, pointIndex) => {
+                group.appendChild(field('Process ' + label + '. - bullet ' + (pointIndex + 1), point, value => {
+                    entry.points[pointIndex] = value; writeProfileAccount(section, profile);
+                }, true));
+            });
+            process.appendChild(group);
+        });
+        editor.appendChild(process);
+        for (let index = 1; index < 5; index++) requirement(index);
+        return editor;
+    }
+
+    // End Profile Account editor.
+
     function render() {
         ensureArrays();
         sectionsHost.replaceChildren();
@@ -194,6 +253,10 @@
             actions.appendChild(button('Remove', 'policy-remove-button', () => { doc.sections.splice(index, 1); render(); changed(); }));
             head.appendChild(actions); card.appendChild(head); card.appendChild(title);
             card.appendChild(field('Section introduction (optional)', section.intro, value => { section.intro = value; }, true));
+            const profile = readProfileAccount(section);
+            if (profile) {
+                card.appendChild(renderProfileAccountEditor(section, profile));
+            } else {
             const blockList = make('div', 'policy-block-list');
             section.blocks.forEach((block, blockIndex) => blockList.appendChild(renderBlockEditor(block, blockIndex, section.blocks)));
             card.appendChild(blockList);
@@ -203,6 +266,7 @@
             Object.entries(labels).forEach(([value, labelText]) => kind.appendChild(new Option(labelText, value)));
             const addBlock = button('+ Add content block', 'admin-button admin-button--ghost', () => { section.blocks.push(newBlock(kind.value)); render(); changed(); });
             kindLabel.appendChild(kind); controls.appendChild(kindLabel); controls.appendChild(addBlock); card.appendChild(controls);
+            }
             sectionsHost.appendChild(card);
         });
         renderPreview(); syncBody();
@@ -213,74 +277,58 @@
         parent.appendChild(node);
         return node;
     }
+    let previewTimer;
+    let previewVersion = 0;
+    let previewRequest;
     function renderPreview() {
-        $('policyPreview').classList.toggle('it-info-reader--team', doc.accent === 'team');
-        $('policyPreview').classList.toggle('it-info-reader--policy', doc.accent !== 'team');
-        $('previewTitle').textContent = $('Title').value.trim() || 'Untitled policy';
-        $('previewSummary').textContent = $('Summary').value.trim();
-        $('previewSummary').hidden = !$('Summary').value.trim();
-        $('previewCategory').textContent = $('Category').value.trim() || 'Policy';
-        $('previewSectionCount').textContent = doc.sections.length + (doc.sections.length === 1 ? ' section' : ' sections');
-        previewSections.replaceChildren(); previewContents.replaceChildren();
-        doc.sections.forEach((section, index) => {
-            const link = make('a'); link.href = '#' + section.id;
-            appendText(link, 'span', String(index + 1).padStart(2, '0'));
-            link.appendChild(document.createTextNode(section.title || 'Untitled section'));
-            previewContents.appendChild(link);
-            const wrapper = make('section', 'it-info-section'); wrapper.id = section.id || 'preview-section-' + index;
-            appendText(wrapper, 'span', 'SECTION ' + String(index + 1).padStart(2, '0'), 'it-info-eyebrow');
-            appendText(wrapper, 'h2', section.title || 'Untitled section');
-            if (section.intro) appendText(wrapper, 'p', section.intro, 'it-info-section__intro policy-preview-text');
-            (section.blocks || []).forEach(block => renderPreviewBlock(wrapper, block));
-            previewSections.appendChild(wrapper);
-        });
-        if (legacyMode) {
-            previewSections.replaceChildren();
-            const section = make('section', 'it-info-section');
-            appendText(section, 'span', 'EXISTING POLICY', 'it-info-eyebrow');
-            appendText(section, 'h2', 'Markdown content');
-            appendText(section, 'p', $('legacyPolicyBody')?.value || '', 'policy-preview-text');
-            previewSections.appendChild(section);
-            $('previewSectionCount').textContent = 'Markdown policy';
-        }
-    }
-    function renderPreviewBlock(parent, block) {
-        if (block.title) appendText(parent, 'h3', block.title);
-        if (block.type === 'text') appendText(parent, 'p', block.text, 'policy-preview-text');
-        if (block.type === 'bullets' || block.type === 'steps') {
-            const list = make(block.type === 'steps' ? 'ol' : 'ul', block.type === 'steps' ? '' : 'it-info-points');
-            (block.items || []).forEach(item => appendText(list, 'li', item, 'policy-preview-text'));
-            parent.appendChild(list);
-        }
-        if (block.type === 'process') {
-            const process = make('div', 'it-info-account-process'); const list = make('ol');
-            (block.stages || []).forEach(stage => {
-                const row = make('li'); appendText(row, 'span', stage.owner); appendText(row, 'h4', stage.title);
-                const details = make('ul'); (stage.points || []).forEach(point => appendText(details, 'li', point, 'policy-preview-text'));
-                row.appendChild(details); list.appendChild(row);
-            }); process.appendChild(list); parent.appendChild(process);
-        }
-        if (block.type === 'cards') {
-            const grid = make('div', 'it-info-detail-grid');
-            (block.cards || []).forEach(entry => { const card = make('article', 'it-info-detail-card'); appendText(card, 'span', entry.label); appendText(card, 'h3', entry.title); appendText(card, 'p', entry.text, 'policy-preview-text'); grid.appendChild(card); });
-            parent.appendChild(grid);
-        }
-        if (block.type === 'flowchart') {
-            const details = make('details', 'company-policy-flowchart'); details.open = true;
-            appendText(details, 'summary', block.title || 'Process flowchart');
-            if (block.imageUrl) { const figure = make('figure'); const imageLink = make('a'); imageLink.href = block.imageUrl; const image = make('img'); image.src = block.imageUrl; image.alt = block.altText || ''; image.loading = 'lazy'; imageLink.appendChild(image); figure.appendChild(imageLink); details.appendChild(figure); }
-            if (block.sourceNote) appendText(details, 'p', block.sourceNote, 'company-policy-source-note');
-            if ((block.paths || []).length) { const paths = make('div', 'company-policy-flowchart__paths'); appendText(paths, 'h3', 'Process paths'); const list = make('ul'); block.paths.forEach(path => appendText(list, 'li', path, 'policy-preview-text')); paths.appendChild(list); details.appendChild(paths); }
-            parent.appendChild(details);
-        }
+        const version = ++previewVersion;
+        clearTimeout(previewTimer);
+        previewRequest?.abort();
+        $('policyPreviewStatus').textContent = 'Updating preview…';
+        previewTimer = setTimeout(async () => {
+            syncBody();
+            const validation = legacyMode ? '' : validateDocument();
+            if (validation) {
+                $('policyPreviewStatus').textContent = 'Showing last valid preview. ' + validation;
+                return;
+            }
+            previewRequest = new AbortController();
+            try {
+                const response = await fetch(root.dataset.previewUrl, {
+                    method: 'POST', body: new FormData(form), signal: previewRequest.signal,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (version !== previewVersion) return;
+                if (!response.ok) {
+                    const error = response.status === 400 ? await response.json() : null;
+                    throw new Error(error?.message || 'Preview is unavailable. Check your connection and sign-in.');
+                }
+                if (!response.headers.get('content-type')?.includes('text/html') || response.redirected)
+                    throw new Error('Sign in again to update the preview.');
+                const html = await response.text();
+                if (version !== previewVersion) return;
+                const host = $('policyPreview');
+                host.querySelector('[data-policy-reader]')?.policyReaderCleanup?.();
+                host.innerHTML = html;
+                window.CompanyPolicyReader?.init(host);
+                $('policyPreviewStatus').textContent = 'Preview up to date';
+            } catch (error) {
+                if (version === previewVersion && error.name !== 'AbortError')
+                    $('policyPreviewStatus').textContent = 'Showing last valid preview. ' + error.message;
+            }
+        }, 350);
     }
     function validateDocument() {
+        if (bodyInput.value.includes('[Confirm title:')) return 'Replace each approver title placeholder with the official job title before saving.';
         if (!$('Title').value.trim()) return 'Enter a policy title.';
         if (!$('Category').value.trim()) return 'Enter a policy topic.';
         if (!doc.sections.length) return 'Add at least one section.';
         for (const section of doc.sections) {
             if (!section.title?.trim()) return 'Give every section a title.';
             if (!section.blocks?.length) return 'Add at least one content block to “' + section.title + '”.';
+            const profile = readProfileAccount(section);
+            if (profile && (profile.requirements.some(value => !value.trim()) || profile.entries.some(entry =>
+                !entry.text.trim() || entry.points.some(point => !point.trim())))) return 'Complete every Profile Account requirement and process field.';
             for (const block of section.blocks) {
                 if (block.type === 'text' && !block.text?.trim()) return 'Fill in the text block in “' + section.title + '”.';
                 if (['bullets', 'steps'].includes(block.type) && !(block.items || []).some(x => x.trim())) return 'Add at least one list item in “' + section.title + '”.';
@@ -292,26 +340,40 @@
         return '';
     }
 
-    $('addPolicySection').addEventListener('click', () => { doc.sections.push(newSection()); render(); changed(); sectionsHost.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
+    $('addPolicySection').addEventListener('click', () => {
+        doc.sections.push(newSection());
+        render();
+        sectionsHost.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        sectionsHost.lastElementChild?.querySelector('input')?.focus({ preventScroll: true });
+        window.yakultToast?.('Section added. Add a title and content block.', 'success');
+    });
     if (legacy) {
         $('legacyPolicyEditor').hidden = false;
-        $('structuredPolicyEditor').hidden = true;
+        $('structuredPolicyEditor').hidden = false;
+        root.classList.add('is-legacy');
+        sectionsHost.hidden = true;
+        $('structuredPolicyEditor').querySelector('.policy-builder-heading').hidden = true;
         $('legacyPolicyBody').addEventListener('input', renderPreview);
         $('convertPolicy').addEventListener('click', () => {
             const markdown = $('legacyPolicyBody').value;
-            doc = { version: 1, sections: [{ id: 'section-' + crypto.randomUUID().replaceAll('-', '').slice(0, 16), title: 'Policy details', intro: '', blocks: [{ type: 'text', title: '', text: markdown, items: [], stages: [], cards: [], imageUrl: '', altText: '', paths: [], sourceNote: '' }] }] };
+            doc = { version: 1, sections: [{ id: createSectionId(), title: 'Policy details', intro: '', blocks: [{ type: 'text', title: '', text: markdown, items: [], stages: [], cards: [], imageUrl: '', altText: '', paths: [], sourceNote: '' }] }] };
             legacyMode = false; $('legacyPolicyEditor').hidden = true; $('structuredPolicyEditor').hidden = false;
+            root.classList.remove('is-legacy');
+            sectionsHost.hidden = false;
+            $('structuredPolicyEditor').querySelector('.policy-builder-heading').hidden = false;
             render(); changed();
+            window.yakultToast?.('Policy converted to structured sections.', 'success');
         });
     } else {
         $('structuredPolicyEditor').hidden = false;
     }
-    for (const id of ['Title', 'Summary', 'Category']) $(id).addEventListener('input', renderPreview);
+    for (const id of ['Title', 'Summary', 'Category', 'EffectiveDate']) $(id).addEventListener('input', renderPreview);
     form.addEventListener('submit', event => {
         syncBody();
         if (legacyMode) return;
         const error = validateDocument();
-        if (error) { event.preventDefault(); window.alert(error); }
+        if (error) { event.preventDefault(); window.yakultToast?.(error, 'error'); return; }
+        window.yakultToast?.('Saving policy…', 'info');
     });
     async function loadAssets() {
         try { const response = await fetch(root.dataset.assetsUrl, { credentials: 'same-origin' }); if (response.ok) assets = await response.json(); }

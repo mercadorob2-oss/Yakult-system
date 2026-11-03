@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Server.IISIntegration;
 using Yakult.SystemsPortal.Models;
 using Yakult.SystemsPortal.Repositories;
 using Yakult.SystemsPortal.Services;
@@ -64,7 +66,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LogoutPath = "/Home/Logout";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
-    });
+    })
+    .AddNegotiate();
+
+// Keep IIS Windows identities available for the explicit SSO challenge only.
+// This lets Logout clear the portal cookie and show the login page instead of
+// immediately treating the still-authenticated Windows session as a portal login.
+builder.Services.Configure<IISServerOptions>(options => options.AutomaticAuthentication = false);
 
 builder.Services.AddAuthorization(options =>
 {
@@ -95,7 +103,10 @@ else
     app.UseStatusCodePagesWithReExecute("/Home/Error", "?code={0}");
 }
 
-app.UseHttpsRedirection();
+if (builder.Configuration.GetValue("PortalSecurity:RequireHttps", true))
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 app.Use(async (context, next) =>
 {

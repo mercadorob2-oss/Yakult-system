@@ -1,4 +1,4 @@
-<%@ WebHandler Language="C#" Class="CallTicketActionHandler" %>
+﻿<%@ WebHandler Language="C#" Class="CallTicketActionHandler" %>
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -143,7 +143,8 @@ public class CallTicketActionHandler : IHttpHandler {
                     if(string.IsNullOrWhiteSpace(resolutionType)){Err(c,400,"resolutionType is required");return;}
                     if(resolutionType!="Service Only"&&resolutionType!="Replacement"){Err(c,400,"resolutionType must be 'Service Only' or 'Replacement'");return;}
 
-                    string remarks=body.ContainsKey("remarks")?body["remarks"].ToString():"";
+                    string remarks=ReadText(body,"remarks");
+                    if(string.IsNullOrWhiteSpace(remarks)){Err(c,400,"Resolution notes are required");return;}
                     bool isTemporary=false; if(body.ContainsKey("isTemporary")) bool.TryParse(body["isTemporary"].ToString(),out isTemporary);
                     int? forwardedRepairTicketId=null, forwardedOldItemId=null, forwardedRepairItemId=null;
                     string forwardedRepairTicketCode=null, parentOutcome=null;
@@ -177,8 +178,38 @@ public class CallTicketActionHandler : IHttpHandler {
                     bool useUnlisted=false; if(body.ContainsKey("useUnlistedOldItem")) bool.TryParse(body["useUnlistedOldItem"].ToString(),out useUnlisted);
                     if(forwardedOldItemId.HasValue) useUnlisted=false;
 
+                    List<Dictionary<string,object>> replacementLines = null;
+                    if(resolutionType=="Replacement") {
+                        try {
+                            if(!body.ContainsKey("lines")) {
+                                if(!body.ContainsKey("quantity")) body["quantity"]=1;
+                                if(!body.ContainsKey("oldItemRepairAction")) body["oldItemRepairAction"]="Repaired";
+                            }
+                            replacementLines = body.ContainsKey("lines")
+                                ? JsonConvert.DeserializeObject<List<Dictionary<string,object>>>(JsonConvert.SerializeObject(body["lines"]))
+                                : new List<Dictionary<string,object>> { body };
+                            foreach(var entry in replacementLines ?? new List<Dictionary<string,object>>()) {
+                                if(entry!=null && string.IsNullOrWhiteSpace(ReadText(entry,"remarks"))) entry["remarks"]=remarks;
+                            }
+                            var validationError = ValidateReplacementLines(replacementLines);
+                            if(validationError != null) { Err(c,400,validationError); return; }
+                            if(isForwardedToRepair && body.ContainsKey("lines")) { Err(c,400,"Batch repair forwarding is not supported"); return; }
+                            if(!replacementLines.Any(x => ReadInt(x,"newItemId") > 0)) {
+                                isTemporary=false;
+                                resolutionStatus="Solved";
+                            }
+                        } catch { Err(c,400,"Invalid replacement entries"); return; }
+                    }
+
                     using(var tx=con.BeginTransaction()){
                         try{
+                                // Lock the ticket so concurrent resolution requests cannot allocate twice.
+                                using(var lockCmd=new SqlCommand("SELECT Status FROM dbo.CallTicket WITH (UPDLOCK,HOLDLOCK) WHERE TicketId=@Tid",con,tx)) {
+                                    lockCmd.Parameters.Add("@Tid",SqlDbType.Int).Value=ticketId;
+                                    var lockedStatus=Convert.ToString(lockCmd.ExecuteScalar());
+                                    if(!string.Equals(lockedStatus,currentTicketStatus,StringComparison.OrdinalIgnoreCase))
+                                        throw new InvalidOperationException("Ticket changed. Refresh before resolving it.");
+                                }
                             // Snapshot the department and assignee for resolution history.
                             // Those are display fields from vw_Call_TicketList, not columns on CallTicket.
                             string resDept="", resPerson="";
@@ -235,36 +266,57 @@ WHERE t.TicketId=@Tid",con,tx)){
                                     sCmd.ExecuteNonQuery();
                                 }
                             }else{
+                                var batchId=Guid.NewGuid().ToString("N");
+                                foreach(var group in replacementLines.Where(x=>ReadInt(x,"newItemId")>0).GroupBy(x=>ReadInt(x,"newItemId")).OrderBy(x=>x.Key)) {
+                                    var needed=group.Sum(x=>(long)ReadInt(x,"quantity"));
+                                    using(var stockCmd=new SqlCommand(@"SELECT ISNULL(i.StockOnHand,0) FROM dbo.Item i WITH (UPDLOCK,HOLDLOCK)
+LEFT JOIN dbo.ItemCategory cat ON cat.CategoryId=i.CategoryId
+WHERE i.ItemId=@Id AND i.Active=1 AND i.ItemType='Hardware' AND i.AffectsInventory=1
+AND ISNULL(cat.Name,i.Category) NOT IN ('Cartridge','Ink','Toner','Printhead')
+AND ISNULL(i.CategoryId,0) NOT IN (1038,1063,1064,1076)
+AND NOT EXISTS(SELECT 1 FROM dbo.ArchiveStatus a WHERE a.EntityType='Item' AND a.EntityId=i.ItemId AND a.IsArchived=1)",con,tx)) {
+                                        stockCmd.Parameters.Add("@Id",SqlDbType.Int).Value=group.Key;
+                                        var available=stockCmd.ExecuteScalar();
+                                        if(available==null || available==DBNull.Value || Convert.ToInt64(available)<needed)
+                                            throw new InvalidOperationException("Replacement stock is unavailable or combined quantities exceed stock. Refresh and review the entries.");
+                                    }
+                                }
+                                foreach(var lineBody in replacementLines) {
+                                var lineRemarks=ReadText(lineBody,"remarks");
+                                if(string.IsNullOrWhiteSpace(lineRemarks)) lineRemarks=remarks;
+                                useUnlisted=ReadBool(lineBody,"useUnlistedOldItem");
+                                bool hasOld=useUnlisted || ReadInt(lineBody,"oldItemId")>0 || forwardedOldItemId.HasValue;
+                                bool hasNew=ReadInt(lineBody,"newItemId")>0;
                                 // Parse replacement fields
-                                int quantity=1; if(body.ContainsKey("quantity")) int.TryParse(body["quantity"].ToString(),out quantity);
-                                int? newItemId=null; if(body.ContainsKey("newItemId")&&body["newItemId"]!=null){int v; if(int.TryParse(body["newItemId"].ToString(),out v))newItemId=v;}
-                                int? oldItemConditionId=null; if(body.ContainsKey("oldItemConditionId")&&body["oldItemConditionId"]!=null){int v; if(int.TryParse(body["oldItemConditionId"].ToString(),out v))oldItemConditionId=v;}
-                                string oldItemConditionRemarks=body.ContainsKey("oldItemConditionRemarks")?body["oldItemConditionRemarks"].ToString():"";
-                                string oldItemRepairAction=body.ContainsKey("oldItemRepairAction")?body["oldItemRepairAction"].ToString():"Repaired";
+                                int quantity=1; if(lineBody.ContainsKey("quantity")) int.TryParse(lineBody["quantity"].ToString(),out quantity);
+                                int? newItemId=null; if(lineBody.ContainsKey("newItemId")&&lineBody["newItemId"]!=null){int v; if(int.TryParse(lineBody["newItemId"].ToString(),out v))newItemId=v;}
+                                int? oldItemConditionId=null; if(lineBody.ContainsKey("oldItemConditionId")&&lineBody["oldItemConditionId"]!=null){int v; if(int.TryParse(lineBody["oldItemConditionId"].ToString(),out v))oldItemConditionId=v;}
+                                string oldItemConditionRemarks=ReadText(lineBody,"oldItemConditionRemarks");
+                                string oldItemRepairAction=ReadText(lineBody,"oldItemRepairAction");
                                 // A physical unit already linked to Repair must remain out of available
                                 // inventory while its technician assessment is pending, regardless of the
                                 // original replacement-screen default.
                                 if(isForwardedToRepair) oldItemRepairAction="Unrepaired";
                                 bool isSpare=oldItemRepairAction.IndexOf("Spare",StringComparison.OrdinalIgnoreCase)>=0;
 
-                                if(!newItemId.HasValue||newItemId.Value<=0){Err(c,400,"newItemId is required for Replacement");return;}
+                                if(!hasNew) newItemId=0;
                                 if(quantity<=0){Err(c,400,"quantity must be > 0");return;}
-                                if(!oldItemConditionId.HasValue||oldItemConditionId.Value<=0){Err(c,400,"oldItemConditionId is required");return;}
+                                if(!hasOld) oldItemConditionId=0;
 
                                 // Determine old item ID. A forward of an unlisted old unit has
                                 // already created that unit during the explicit Repair Ticket step;
                                 // reuse it here instead of creating a duplicate inventory record.
-                                int oldItemId;
-                                if(forwardedOldItemId.HasValue){
+                                int oldItemId=0;
+                                if(!hasOld) { oldItemId=0; } else if(forwardedOldItemId.HasValue){
                                     oldItemId=forwardedOldItemId.Value;
                                 }else if(useUnlisted){
-                                    string uname=body.ContainsKey("unlistedOldItemName")?body["unlistedOldItemName"].ToString():"";
-                                    string udesc=body.ContainsKey("unlistedOldItemDescription")?body["unlistedOldItemDescription"].ToString():"";
-                                    int? ucatId=null; if(body.ContainsKey("unlistedOldItemCategoryId")&&body["unlistedOldItemCategoryId"]!=null){int v; if(int.TryParse(body["unlistedOldItemCategoryId"].ToString(),out v))ucatId=v;}
-                                    string ucatName=body.ContainsKey("unlistedOldItemCategoryName")?body["unlistedOldItemCategoryName"].ToString():"";
-                                    string userial=body.ContainsKey("unlistedOldItemSerialNumber")?body["unlistedOldItemSerialNumber"].ToString():"";
-                                    string umodel=body.ContainsKey("unlistedOldItemModelNumber")?body["unlistedOldItemModelNumber"].ToString():"";
-                                    string uunit=body.ContainsKey("unlistedOldItemUnitOfMeasure")?body["unlistedOldItemUnitOfMeasure"].ToString():"Unit";
+                                    string uname=ReadText(lineBody,"unlistedOldItemName");
+                                    string udesc=ReadText(lineBody,"unlistedOldItemDescription");
+                                    int? ucatId=null; if(lineBody.ContainsKey("unlistedOldItemCategoryId")&&lineBody["unlistedOldItemCategoryId"]!=null){int v; if(int.TryParse(lineBody["unlistedOldItemCategoryId"].ToString(),out v))ucatId=v;}
+                                    string ucatName=ReadText(lineBody,"unlistedOldItemCategoryName");
+                                    string userial=ReadText(lineBody,"unlistedOldItemSerialNumber");
+                                    string umodel=ReadText(lineBody,"unlistedOldItemModelNumber");
+                                    string uunit=ReadText(lineBody,"unlistedOldItemUnitOfMeasure");
                                     if(string.IsNullOrWhiteSpace(uname)){Err(c,400,"unlistedOldItemName is required");return;}
                                     if(string.IsNullOrWhiteSpace(umodel)){Err(c,400,"unlistedOldItemModelNumber is required");return;}
                                     if(string.IsNullOrWhiteSpace(uunit)){Err(c,400,"unlistedOldItemUnitOfMeasure is required");return;}
@@ -287,7 +339,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                         oldItemId=(int)iCmd.ExecuteScalar();
                                     }
                                 }else{
-                                    if(!body.ContainsKey("oldItemId")||!int.TryParse(body["oldItemId"].ToString(),out oldItemId)||oldItemId<=0){Err(c,400,"oldItemId is required");return;}
+                                    if(!lineBody.ContainsKey("oldItemId")||!int.TryParse(lineBody["oldItemId"].ToString(),out oldItemId)||oldItemId<=0){Err(c,400,"oldItemId is required");return;}
                                 }
 
                                 if(isForwardedToRepair && (!forwardedRepairItemId.HasValue || forwardedRepairItemId.Value!=oldItemId)){
@@ -295,19 +347,19 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                     Err(c,409,"The linked Repair Ticket must match the physical old item being replaced");
                                     return;
                                 }
-                                if(oldItemId==newItemId.Value){
+                                if(hasOld && hasNew && oldItemId==newItemId.Value){
                                     tx.Rollback();
                                     Err(c,400,"Old and new items must be different");
                                     return;
                                 }
-                                bool oldAffectsInventory=false, newAffectsInventory=false;
-                                using(var affectsCmd=new SqlCommand("SELECT AffectsInventory FROM dbo.Item WHERE ItemId=@Id",con,tx)){
+                                bool oldAffectsInventory=!hasOld, newAffectsInventory=!hasNew;
+                                if(hasOld) using(var affectsCmd=new SqlCommand("SELECT AffectsInventory FROM dbo.Item WHERE ItemId=@Id",con,tx)){
                                     affectsCmd.Parameters.Add("@Id",SqlDbType.Int).Value=oldItemId;
                                     object affectsValue=affectsCmd.ExecuteScalar();
                                     if(affectsValue==null||affectsValue==DBNull.Value){tx.Rollback();Err(c,400,"Old item not found");return;}
                                     oldAffectsInventory=Convert.ToBoolean(affectsValue);
                                 }
-                                using(var affectsCmd=new SqlCommand("SELECT AffectsInventory FROM dbo.Item WHERE ItemId=@Id",con,tx)){
+                                if(hasNew) using(var affectsCmd=new SqlCommand("SELECT AffectsInventory FROM dbo.Item WHERE ItemId=@Id",con,tx)){
                                     affectsCmd.Parameters.Add("@Id",SqlDbType.Int).Value=newItemId.Value;
                                     object affectsValue=affectsCmd.ExecuteScalar();
                                     if(affectsValue==null||affectsValue==DBNull.Value){tx.Rollback();Err(c,400,"Replacement item not found");return;}
@@ -319,6 +371,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                     return;
                                 }
 
+                                if(hasNew) {
                                 // Concurrency-safe stock deduction for new item
                                 using(var uCmd=new SqlCommand("UPDATE dbo.Item SET StockOnHand=ISNULL(StockOnHand,0)-@Qty WHERE ItemId=@NewId AND ISNULL(StockOnHand,0)>=@Qty",con,tx)){
                                     uCmd.Parameters.Add("@NewId",SqlDbType.Int).Value=newItemId.Value;
@@ -344,9 +397,10 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                     invCmd.ExecuteNonQuery();
                                 }
 
+                                }
                                 bool isUnrepaired=oldItemRepairAction.Equals("Unrepaired",StringComparison.OrdinalIgnoreCase);
                                 // Old item condition and stock mirror the desktop transaction.
-                                using(var oldUpd=new SqlCommand("UPDATE dbo.Item SET ConditionId=@CondId,Remarks=CASE WHEN @Remarks IS NULL OR LTRIM(RTRIM(@Remarks))='' THEN Remarks ELSE @Remarks END,StockOnHand=CASE WHEN @Unrepaired=1 THEN 0 ELSE ISNULL(StockOnHand,0)+@Qty END WHERE ItemId=@OldId",con,tx)){
+                                if(hasOld) using(var oldUpd=new SqlCommand("UPDATE dbo.Item SET ConditionId=@CondId,Remarks=CASE WHEN @Remarks IS NULL OR LTRIM(RTRIM(@Remarks))='' THEN Remarks ELSE @Remarks END,StockOnHand=CASE WHEN @Unrepaired=1 THEN 0 ELSE ISNULL(StockOnHand,0)+@Qty END WHERE ItemId=@OldId",con,tx)){
                                     oldUpd.Parameters.Add("@OldId",SqlDbType.Int).Value=oldItemId;
                                     oldUpd.Parameters.Add("@CondId",SqlDbType.Int).Value=oldItemConditionId.Value;
                                     oldUpd.Parameters.Add("@Remarks",SqlDbType.NVarChar).Value=(object)oldItemConditionRemarks??DBNull.Value;
@@ -355,7 +409,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                     oldUpd.ExecuteNonQuery();
                                 }
 
-                                if(!isUnrepaired){
+                                if(hasOld && !isUnrepaired){
                                     // Inventory IN for old item pullout
                                     string invDesc=isSpare?"Call ticket #"+ticketId+" resolution - old unit to spare inventory":"Call ticket #"+ticketId+" resolution - old unit pullout (repaired)";
                                     using(var invCmd=new SqlCommand("INSERT dbo.Inventory(ItemId,EntryType,Quantity,DatePosted,PostedBy,Description)VALUES(@ItemId,'Positive',@Qty,SYSUTCDATETIME(),@Uid,@Desc)",con,tx)){
@@ -380,7 +434,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                 }
                                 using(var hCmd=new SqlCommand("INSERT dbo.CallTicketHistory(TicketId,FieldName,NewValue,Note,ChangedByUserId)VALUES(@Tid,'ResolutionType','Replacement',@Note,@Uid)",con,tx)){
                                     hCmd.Parameters.Add("@Tid",SqlDbType.Int).Value=ticketId;
-                                    hCmd.Parameters.Add("@Note",SqlDbType.NVarChar).Value=(object)remarks??DBNull.Value;
+                                    hCmd.Parameters.Add("@Note",SqlDbType.NVarChar).Value=(object)lineRemarks??DBNull.Value;
                                     hCmd.Parameters.Add("@Uid",SqlDbType.Int).Value=userId==null?(object)DBNull.Value:(object)userId.Value;
                                     hCmd.ExecuteNonQuery();
                                 }
@@ -395,7 +449,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                     hCmd.Parameters["@Field"].Value="ReplacementOldItemConditionId"; hCmd.Parameters["@Value"].Value=oldItemConditionId.Value.ToString(); hCmd.ExecuteNonQuery();
                                     hCmd.Parameters["@Field"].Value="ReplacementOldItemRepairAction"; hCmd.Parameters["@Value"].Value=oldItemRepairAction; hCmd.ExecuteNonQuery();
                                 }
-                                string replacementNote="Replacement swap completed.\r\nOld: "+oldText+"\r\nNew: "+newText+"\r\nOld ConditionId: "+oldItemConditionId.Value+"\r\nQty: "+quantity+(string.IsNullOrWhiteSpace(remarks)?"":"\r\n\r\nRemarks: "+remarks);
+                                string replacementNote="Replacement swap completed.\r\nOld: "+oldText+"\r\nNew: "+newText+"\r\nOld ConditionId: "+oldItemConditionId.Value+"\r\nQty: "+quantity+(string.IsNullOrWhiteSpace(lineRemarks)?"":"\r\n\r\nRemarks: "+lineRemarks);
                                 using(var nCmd=new SqlCommand("INSERT dbo.CallTicketNote(TicketId,NoteType,NoteText,CreatedByUserId)VALUES(@Tid,'Replacement',@Note,@Uid)",con,tx)){
                                     nCmd.Parameters.Add("@Tid",SqlDbType.Int).Value=ticketId;
                                     nCmd.Parameters.Add("@Note",SqlDbType.NVarChar).Value=replacementNote;
@@ -405,9 +459,13 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
 
                                 // Desktop-compatible side effects are best effort. Each helper uses its own savepoint.
                                 string swappedSetCode=null;
-                                try{TrySwapReplacementInActiveSet(con,tx,oldItemId,newItemId.Value,quantity,ticketId,userId,oldItemRepairAction,out swappedSetCode);}catch{}
+                                if(hasOld && hasNew) try{TrySwapReplacementInActiveSet(con,tx,oldItemId,newItemId.Value,quantity,ticketId,userId,oldItemRepairAction,out swappedSetCode);}catch{}
                                 try{TryLogReplacementAudit(con,tx,ticketId,oldItemId,newItemId.Value,quantity,oldText,newText,oldItemRepairAction,resDept,resPerson,userId,swappedSetCode);}catch{}
-                                try{TryLogReplacementRepairHistory(con,tx,ticketId,oldItemId,oldItemConditionId.Value,oldItemConditionRemarks,oldItemRepairAction,userId,swappedSetCode);}catch{}
+                                if(hasOld) try{TryLogReplacementRepairHistory(con,tx,ticketId,oldItemId,oldItemConditionId.Value,oldItemConditionRemarks,oldItemRepairAction,userId,swappedSetCode);}catch{}
+
+                                InsertReplacementHistory(con,tx,ticketId,userId,"ReplacementBatchItem",oldItemId+","+newItemId.Value+","+quantity,batchId);
+                                }
+                                InsertReplacementHistory(con,tx,ticketId,userId,"ReplacementBatchId",batchId,null);
 
                                 // Status update
                                 string newStatus=isForwardedToRepair?parentOutcome:(isTemporary?"Resolved (Temporary)":"Solved");
@@ -430,6 +488,9 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                             // resolutionStatus covers Service Only, Replacement and forwarded outcomes;
                             // currentTicketStatus is the pre-resolution status read at request start.
                             ItcmActionEmailHelper.TrySendStatusUpdateEmailAsync(Cs(),ticketId,currentTicketStatus,resolutionStatus,remarks,userId);
+                        }catch(InvalidOperationException ex){
+                            try{tx.Rollback();}catch{}
+                            Err(c,409,ex.Message);
                         }catch(Exception){
                             try{tx.Rollback();}catch{}
                             Err(c,503,"Resolution could not be completed");
@@ -440,6 +501,40 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
             }
         } catch { Err(c,503,"Action could not be completed"); }
 
+    }
+
+    static string ReadText(Dictionary<string,object> entry,string key) {
+        object value; return entry.TryGetValue(key,out value) && value!=null ? value.ToString().Trim() : "";
+    }
+    static int ReadInt(Dictionary<string,object> entry,string key) {
+        int value; return int.TryParse(ReadText(entry,key),out value) ? value : 0;
+    }
+    static bool ReadBool(Dictionary<string,object> entry,string key) {
+        bool value; return bool.TryParse(ReadText(entry,key),out value) && value;
+    }
+    static string ValidateReplacementLines(List<Dictionary<string,object>> lines) {
+        if(lines==null || lines.Count==0 || lines.Count>100) return "Add between 1 and 100 item entries.";
+        var oldIds=new HashSet<int>();
+        var serials=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach(var line in lines) {
+            if(line==null) return "Invalid item entry.";
+            var oldId=ReadInt(line,"oldItemId"); var newId=ReadInt(line,"newItemId");
+            bool unlisted=ReadBool(line,"useUnlistedOldItem");
+            bool hasOld=oldId>0 || unlisted;
+            if(oldId<0 || newId<0 || (!hasOld && newId==0)) return "Each entry needs an old item, a new item, or both.";
+            if(ReadInt(line,"quantity")<=0) return "Every entry needs a positive quantity.";
+            if(hasOld && ReadInt(line,"oldItemConditionId")<=0) return "Select a condition for every old item.";
+            if(hasOld && !new[]{"Repaired","Unrepaired","Repaired - Spare inventory"}.Contains(ReadText(line,"oldItemRepairAction"))) return "Select a valid old item action.";
+            if(!unlisted && oldId>0 && !oldIds.Add(oldId)) return "Each old item can only be included once.";
+            if(unlisted) {
+                if(ReadText(line,"unlistedOldItemName")=="" || ReadText(line,"unlistedOldItemModelNumber")=="" || ReadText(line,"unlistedOldItemUnitOfMeasure")=="" || ReadInt(line,"unlistedOldItemCategoryId")<=0)
+                    return "Unlisted items need a name, model, unit and category.";
+                var serial=ReadText(line,"unlistedOldItemSerialNumber");
+                if(serial!="" && !serials.Add(serial)) return "Unlisted old items cannot share a serial number.";
+            }
+        }
+        if(lines.Any(x=>ReadInt(x,"newItemId")>0 && oldIds.Contains(ReadInt(x,"newItemId")))) return "An old item cannot also be issued as new.";
+        return null;
     }
 
     static bool TableExists(SqlConnection con, string name) {
@@ -583,8 +678,15 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
             const string sql="INSERT dbo.ItemAuditTrail(ItemId,SerialNumber,Action,ActionTime,EmployeeName,DepartmentName,Direction,Status,ReferenceType,ReferenceId,SetCode,Notes,CreatedBy)VALUES(@ItemId,@Serial,@Action,@Time,@Employee,@Department,@Direction,@Status,@ReferenceType,@ReferenceId,@SetCode,@Notes,@CreatedBy)";
             using(var cmd=new SqlCommand(sql,con,tx)){
                 cmd.Parameters.Add("@ItemId",SqlDbType.Int); cmd.Parameters.Add("@Serial",SqlDbType.NVarChar); cmd.Parameters.Add("@Action",SqlDbType.VarChar); cmd.Parameters.Add("@Time",SqlDbType.DateTime).Value=DateTime.UtcNow; cmd.Parameters.Add("@Employee",SqlDbType.VarChar); cmd.Parameters.Add("@Department",SqlDbType.VarChar); cmd.Parameters.Add("@Direction",SqlDbType.VarChar); cmd.Parameters.Add("@Status",SqlDbType.VarChar); cmd.Parameters.Add("@ReferenceType",SqlDbType.VarChar).Value="CallTicket"; cmd.Parameters.Add("@ReferenceId",SqlDbType.Int).Value=ticketId; cmd.Parameters.Add("@SetCode",SqlDbType.VarChar); cmd.Parameters.Add("@Notes",SqlDbType.Text); cmd.Parameters.Add("@CreatedBy",SqlDbType.VarChar).Value=createdBy;
+                cmd.Parameters["@Employee"].Value=(object)responsiblePerson??DBNull.Value;
+                cmd.Parameters["@Department"].Value=(object)department??DBNull.Value;
+                cmd.Parameters["@SetCode"].Value=(object)setCode??DBNull.Value;
+                if(oldItemId>0) {
                 cmd.Parameters["@ItemId"].Value=oldItemId; cmd.Parameters["@Serial"].Value=(object)oldSerial??DBNull.Value; cmd.Parameters["@Action"].Value="Call Ticket Replacement Pullout"; cmd.Parameters["@Employee"].Value=(object)responsiblePerson??DBNull.Value; cmd.Parameters["@Department"].Value=(object)department??DBNull.Value; cmd.Parameters["@Direction"].Value="IN"; cmd.Parameters["@Status"].Value=(object)repairAction??DBNull.Value; cmd.Parameters["@SetCode"].Value=(object)setCode??DBNull.Value; cmd.Parameters["@Notes"].Value="Pulled out for replacement | Qty "+quantity+" | Old: "+(oldText??""); cmd.ExecuteNonQuery();
+                }
+                if(newItemId>0) {
                 cmd.Parameters["@ItemId"].Value=newItemId; cmd.Parameters["@Serial"].Value=(object)newSerial??DBNull.Value; cmd.Parameters["@Action"].Value="Call Ticket Replacement Allocation"; cmd.Parameters["@Direction"].Value="OUT"; cmd.Parameters["@Status"].Value="Completed"; cmd.Parameters["@Notes"].Value="Allocated as replacement | Qty "+quantity+" | New: "+(newText??"")+" | Replaced: "+(oldText??""); cmd.ExecuteNonQuery();
+                }
             }
         }catch{try{tx.Rollback("CallMonitoring_ReplacementAudit");}catch{} }
     }

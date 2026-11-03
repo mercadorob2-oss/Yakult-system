@@ -96,6 +96,27 @@ public sealed class CompanyInfoAdminController : Controller
     }
 
     // ── Policy ───────────────────────────────────────────────────────────
+    [HttpGet("Policy/Prepared/{id:int?}")]
+    public async Task<IActionResult> PreparedPolicy(int? id)
+    {
+        Response.Headers.CacheControl = "no-store";
+        var existing = id is > 0
+            ? await _companyInfo.GetPolicyByIdAsync(id.Value)
+            : (await _companyInfo.GetManagedPoliciesAsync()).FirstOrDefault(policy => policy.Slug == ItPolicyContent.Slug);
+        if (id is > 0 && (existing is null || existing.Slug != ItPolicyContent.Slug)) return NotFound();
+        if (existing is not null) return RedirectToAction(nameof(PolicyEdit), new { id = existing.PolicyId });
+        if (!ItPolicyContent.TryLoad(_environment.ContentRootPath, out var prepared))
+        {
+            TempData["CompanyInfoError"] = "The IT policy template is unavailable. Create a policy using the normal editor.";
+            return RedirectToAction(nameof(Index));
+        }
+        ViewBag.PreparedPolicy = true;
+        return View("PolicyEdit", new SaveCompanyPolicyRequest {
+            Title = prepared!.Title, Summary = prepared.Summary, Body = prepared.Body, Category = prepared.Category
+        });
+    }
+
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [HttpGet("Policy/{id:int?}")]
     public async Task<IActionResult> PolicyEdit(int? id)
     {
@@ -107,8 +128,32 @@ public sealed class CompanyInfoAdminController : Controller
             catch { item = null; }
             if (item is null) return NotFound();
             model = new SaveCompanyPolicyRequest { PolicyId = item.PolicyId, Title = item.Title, Summary = item.Summary, Body = item.Body, Category = item.Category, EffectiveDate = item.EffectiveDate, SortOrder = item.SortOrder };
+            ViewBag.IsPublished = item.IsPublished;
         }
         return View(model);
+    }
+
+    [HttpPost("Policy/Preview"), ValidateAntiForgeryToken, RequestSizeLimit(2_097_152)]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public IActionResult PolicyPreview(SaveCompanyPolicyRequest request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new { message = "Complete the policy details to update the preview." });
+        var document = CompanyPolicyDocument.Parse(request.Body);
+        if (document is null && request.Body.StartsWith(CompanyPolicyDocument.Prefix, StringComparison.Ordinal))
+            return BadRequest(new { message = "The structured policy data could not be read." });
+        // Legacy Markdown also uses the shared reader without changing its saved format.
+        document ??= new CompanyPolicyDocument { Sections = [new CompanyPolicySection {
+            Id = "policy-content", Title = request.Title,
+            Blocks = [new CompanyPolicyBlock { Type = "text", Text = request.Body }]
+        }] };
+        try { document.ToBody(); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+        return PartialView("_CompanyPolicyReader", new CompanyPolicyStructuredViewModel {
+            Policy = new CompanyPolicyItem { Title = request.Title, Summary = request.Summary,
+                Category = request.Category, EffectiveDate = request.EffectiveDate, Body = request.Body },
+            Document = document
+        });
     }
 
     [HttpGet("Policy/Assets")]
@@ -150,6 +195,10 @@ public sealed class CompanyInfoAdminController : Controller
     [HttpPost("Policy"), ValidateAntiForgeryToken]
     public async Task<IActionResult> PolicySave(SaveCompanyPolicyRequest request)
     {
+        if (request.Body?.Contains(ItPolicyContent.PendingTitle, StringComparison.Ordinal) == true)
+            ModelState.AddModelError(nameof(request.Body), "Replace all approver title placeholders before saving this policy.");
+        if (request.PolicyId is > 0)
+            ViewBag.IsPublished = (await _companyInfo.GetPolicyByIdAsync(request.PolicyId.Value))?.IsPublished == true;
         if (request.Body?.StartsWith(CompanyPolicyDocument.Prefix, StringComparison.Ordinal) == true)
         {
             var document = CompanyPolicyDocument.Parse(request.Body);
@@ -178,6 +227,12 @@ public sealed class CompanyInfoAdminController : Controller
     public async Task<IActionResult> PolicyPublish(int id)
     {
         if (!User.HasClaim("IsDeveloper", "true")) return Forbid();
+        var item = await _companyInfo.GetPolicyByIdAsync(id);
+        if (item?.Body.Contains(ItPolicyContent.PendingTitle, StringComparison.Ordinal) == true)
+        {
+            TempData["CompanyInfoError"] = "Replace the approver title placeholders before publishing.";
+            return RedirectToAction(nameof(Index));
+        }
         try { await _companyInfo.SetPolicyPublishedAsync(id, true, UserId()); TempData["CompanyInfoMessage"] = "Policy published."; }
         catch (Exception ex) { TempData["CompanyInfoError"] = ex.Message; }
         return RedirectToAction(nameof(Index));

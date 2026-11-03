@@ -1,0 +1,85 @@
+/* Service Health aligned with the Services & Portals administration workspace. */
+.service-health-page {
+    --health-ink: #21364f;
+    --health-muted: #718298;
+    --health-line: #e3e9f1;
+    --health-red: #bd1c2a;
+    padding-top: 30px;
+    color: var(--health-ink);
+}
+
+.service-health-page :is(h1, h2, h3, p) { margin: 0; }
+.service-health-page button { font-family: inherit; }
+.service-health-page :is(button, a, input, select):focus-visible { outline: 2px solid #b82a38; outline-offset: 3px; }
+
+.health-page-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.health-page-eyebrow { display: inline-flex; align-items: center; gap: 8px; color: #9c2630; font-size: .65rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.health-page-eyebrow::before { width: 16px; height: 2px; background: #d71920; content: ''; }
+.health-page-heading h1 { margin: 9px 0 8px; color: #21364f; font-size: clamp(1.8rem, 2.3vw, 2.2rem); font-weight: 750; line-height: 1.15; letter-spacing: -.035em; }
+.health-page-heading p { color: var(--health-muted); font-size: .875rem; line-height: 1.6; }
+
+.service-health-page .admin-card-summary--health { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0 20px; }
+.service-health-page .admin-card-summary--health .admin-stat { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0; min-height: 88px; padding: 15px 17px; border: 1px solid var(--health-line); border-radius: 10px; background: #fff; box-shadow: 0 3px 12px rgba(27, 47, 73, .035); }
+.service-health-page .admin-card-summary--health .admin-stat__value { color: #2c435e; font-size: 1.45rem; font-weight: 750; line-height: 1; font-variant-numeric: tabular-nums; }
+.service-health-page .admin-card-summary--health .admin-stat__label { margin-top: 9px; color: #718298; font-size: .7rem; font-weight: 600; letter-spacing: 0; line-height: 1.35; text-transform: none; }
+.service-health-page .admin-card-summary--health .admin-stat.is-attention { border-color: #f0d7da; background: #fffafb; }
+.service-health-page .admin-card-summary--health .admin-stat.is-attention .admin-stat__value { color: #b22433; }
+
+.service-health-page .admin-workspace { display: block; margin: 0; padding: 0; }
+.service-health-page .admin-health-panel { overflow: hidden; border: 1px solid var(--health-line); border-radius: 12px; background: #fff; box-shadow: 0 3px 14px rgba(27, 47, 73, .035); }
+.service-health-page .admin-panel-header { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 18px; padding: 20px 22px 17px; border-bottom: 1px solid #edf1f6; background: #fff; }
+.service-health-page .admin-panel-header h2 { color: #2c435e; font-size: 1rem; font-weight: 700; letter-spacing: -.02em; }
+.service-health-page .admin-panel-header p { max-width: 760px; margin-top: 5px; color: #7b8ba1; font-size: .73rem; line-height: 1.55; }
+.service-health-page .admin-form-actions { flex: 0 0 auto; flex-direction: row; flex-wrap: wrap; gap: 8px; }
+.service-health-page .admin-form-actions .admin-button { min-height: 39px; padding: 9px 13px; border-radius: 8px; font-size: .73rem; font-weight: 650; }
+.service-health-page .admin-form-actions .admin-button--primary { border-color: #bf1b27; background: #c61c28; box-shadow: 0 3px 8px rgba(183, 32, 46, .12); }
+.service-health-page .admin-form-actions .admin-button--primary:hover { border-color: #ac1722; background: #ac1722; }
+.service-health-page .admin-form-actions .admin-button--ghost { border-color: #e1e7ef; background: #fff; color: #617791; }
+
+.service-health-page .admin-health-run-status { margin: 14px 18px 0; padding: 10px 12px; border: 1px solid #e4ebf4; border-radius: 8px; background: #f7f9fc; color: #697e98; font-size: .72rem; line-height: 1.5; }
+.service-health-page .admin-health-toolbar { grid-template-columns: minmax(220px, 1fr) minmax(160px, .55fr) minmax(160px, .55fr); gap: 9px; padding: 14px 18px; border-bottom: 1px solid #edf1f6; background: #fbfcfe; }
+.service-health-page .admin-health-toolbar input,
+.service-health-page .admin-health-toolbar select { width: 100%; min-width: 0; min-height: 40px; padding: 9px 11px; border: 1px solid #e1e7f0; border-radius: 8px; background: #fff; color: #405771; font: inherit; font-size: .75rem; }
+.service-health-page .admin-health-toolbar input::placeholder { color: #94a1b2; }
+.service-health-page .admin-health-toolbar :is(input, select):focus { border-color: #bd5260; outline: 0; box-shadow: 0 0 0 3px #fbebee; }
+
+.service-health-page .admin-health-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 12px; padding: 16px; }
+.service-health-page .admin-health-card { min-width: 0; gap: 12px; padding: 15px; border: 1px solid #e5ebf3; border-left-width: 3px; border-radius: 10px; background: #fff; box-shadow: 0 2px 9px rgba(27, 47, 73, .025); }
+.service-health-page .admin-health-card:hover { border-top-color: #d4deea; border-right-color: #d4deea; border-bottom-color: #d4deea; box-shadow: 0 6px 17px rgba(27, 47, 73, .06); }
+.service-health-page .admin-health-card__main { display: grid; gap: 10px; }
+.service-health-page .admin-health-card__eyebrow,
+.service-health-page .admin-health-card__label { color: #8998aa; font-size: .62rem; font-weight: 650; letter-spacing: .08em; }
+.service-health-page .admin-health-card h3 { margin-top: 4px; color: #2c435e; font-size: .9rem; font-weight: 700; line-height: 1.35; }
+.service-health-page .admin-health-card__pills { justify-content: flex-start; gap: 5px; }
+.service-health-page .admin-health-card .admin-status-pill { padding: 5px 8px; border-radius: 6px; font-size: .6rem; font-weight: 650; letter-spacing: .015em; }
+.service-health-page .admin-health-card__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.service-health-page .admin-health-card__grid > div { min-width: 0; padding: 9px; border-color: #e8edf3; border-radius: 8px; background: #f8fafd; }
+.service-health-page .admin-health-card__grid strong { color: #465f7c; font-size: .71rem; font-weight: 650; line-height: 1.45; }
+.service-health-page .admin-health-card__detail { color: #8190a3; font-size: .65rem; line-height: 1.45; }
+.service-health-page .admin-health-state { font-size: .71rem; }
+.service-health-page .admin-health-card__actions { margin-top: 0; }
+.service-health-page .admin-health-card__actions .admin-button { min-height: 34px; padding: 7px 10px; border: 1px solid #e1e7ef; border-radius: 7px; color: #617791; font-size: .68rem; font-weight: 650; }
+.service-health-page .admin-health-card__actions .admin-button:hover { border-color: #e5c5ca; background: #fff8f8; color: #ad2936; }
+
+@media (max-width: 1120px) {
+    .service-health-page .admin-health-board { grid-template-columns: minmax(0, 1fr); }
+    .service-health-page .admin-health-card__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+    .service-health-page { padding-top: 24px; }
+    .health-page-heading h1 { font-size: 1.8rem; }
+    .health-page-heading p { font-size: .81rem; }
+    .service-health-page .admin-card-summary--health { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 19px; }
+    .service-health-page .admin-card-summary--health .admin-stat { min-height: 78px; padding: 13px 14px; }
+    .service-health-page .admin-card-summary--health .admin-stat__value { font-size: 1.25rem; }
+    .service-health-page .admin-card-summary--health .admin-stat__label { font-size: .68rem; }
+    .service-health-page .admin-panel-header { align-items: stretch; flex-direction: column; padding: 17px 15px; }
+    .service-health-page .admin-form-actions { width: 100%; }
+    .service-health-page .admin-form-actions .admin-button { flex: 1; justify-content: center; }
+    .service-health-page .admin-health-toolbar { grid-template-columns: minmax(0, 1fr); padding: 13px; }
+    .service-health-page .admin-health-board { padding: 12px; }
+    .service-health-page .admin-health-card__grid { grid-template-columns: minmax(0, 1fr); }
+    .service-health-page .admin-health-card__main { gap: 8px; }
+    .service-health-page .admin-health-card__actions .admin-button { width: 100%; justify-content: center; }
+}

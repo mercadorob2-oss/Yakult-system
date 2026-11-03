@@ -1,4 +1,13 @@
 /* Overview body. Scoped to this page so administration editors retain their layout. */
+/* Bottle-pattern wallpaper behind the overview workspace. This stylesheet is
+   only linked by the Overview page, so the rule does not leak to other editors.
+   The pale wash keeps the white panels and light text legible over the artwork. */
+body.admin-workspace-layout {
+    background:
+        linear-gradient(180deg, rgba(245, 247, 251, 0.80) 0%, rgba(245, 247, 251, 0.88) 100%),
+        url('../images/yakult-bottles-pattern.jpg') 0 0 / 480px auto repeat;
+}
+
 .overview-page {
     --overview-ink: #1b3049;
     --overview-muted: #65768c;

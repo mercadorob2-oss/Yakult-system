@@ -88,6 +88,7 @@
                     <p>@Model.Policies.Count total · @publishedPolicies visible to employees</p>
                 </div>
                 <a class="admin-button admin-button--primary" asp-action="PolicyEdit">+ New Policy</a>
+                <a class="admin-button admin-button--ghost" asp-controller="Public" asp-action="PreparedItPolicy" target="_blank" rel="noopener">Preview saved IT policy</a>
             </header>
             <div class="ci-panel__body">
                 @if (Model.Policies.Count == 0)
@@ -111,6 +112,10 @@
                             </div>
                             <div class="ci-row__actions">
                                 <a class="admin-button admin-button--ghost" asp-action="PolicyEdit" asp-route-id="@policy.PolicyId">Edit</a>
+                                @if (policy.Slug == ItPolicyContent.Slug)
+                                {
+                                    <a class="admin-button admin-button--ghost" asp-action="PreparedPolicy" asp-route-id="@policy.PolicyId">Review IT policy update</a>
+                                }
                                 @if (Model.CanPublish)
                                 {
                                     @if (policy.IsPublished)

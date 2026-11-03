@@ -4086,7 +4086,7 @@ body {
 
 .toast-region {
     position: fixed;
-    right: 18px;
+    left: 18px;
     bottom: 18px;
     z-index: 500;
     display: grid;

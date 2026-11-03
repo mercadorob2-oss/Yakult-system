@@ -35,7 +35,9 @@ namespace Yakult.Inventory.App.Pages.RequestPortal
     ///   Identity and destination are resolved from the login session and cannot be edited.
     ///   The submitter always requests for themselves.
     ///
-    /// Assisted Request (IT staff only — Developer / Admin / IT Manager / Supervisor / Tech Support):
+    /// Assisted Request (IT staff only — Developer / Admin / IT Manager / IT Supervisor /
+    /// Tech Support, plus any employee in the Information Technology department — including
+    /// IT secretaries with no IT role):
     ///   IT user selects the target employee and creates the request on their behalf.
     ///   Destination auto-fills from the selected employee's profile.
     ///   Visually distinguished with an amber header.

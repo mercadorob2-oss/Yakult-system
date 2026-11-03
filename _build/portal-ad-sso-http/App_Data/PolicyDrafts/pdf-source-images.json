@@ -1,0 +1,20 @@
+{
+  "account": {
+    "url": "/media/company-policies/pdf-source-account-f623574fb5.png",
+    "source": "Computer_User_Credentials_Requisition_Procedure_With_Flowchart.pdf",
+    "page": 1,
+    "sha256": "f623574fb587b31e48669e5b84c789bf251b2027686bca2ee4212cacc2abb4aa"
+  },
+  "internet": {
+    "url": "/media/company-policies/pdf-source-internet-d79b75f01f.png",
+    "source": "Computer_User_Credentials_Requisition_Procedure_With_Flowchart.pdf",
+    "page": 2,
+    "sha256": "d79b75f01f42657174150de54259ba9f6b99eac6d6bef1833a3ad5f0040db773"
+  },
+  "hardware": {
+    "url": "/media/company-policies/pdf-source-hardware-e48ad44f86.png",
+    "source": "IT_Request_Procedure_Updated.pdf",
+    "page": 2,
+    "sha256": "e48ad44f860acc326ef13f95cca5465c4fb53de5fc4b1545eddfe50652c367be"
+  }
+}

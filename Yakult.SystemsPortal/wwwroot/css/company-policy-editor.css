@@ -70,7 +70,8 @@ body.admin-workspace-layout .admin-ops-panel.policy-editor-shell{overflow:visibl
 .policy-preview-scroll #policyPreview .it-info-account-process ol{padding-left:22px}
 .policy-preview-scroll #policyPreview .it-info-detail-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))}
 .policy-preview-scroll #policyPreview .company-policy-flowchart img{max-height:320px}
-.policy-preview-text{margin:6px 0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
+.policy-builder-workspace.is-legacy{display:block}
+.policy-builder-workspace.is-legacy .policy-section-list{display:none}
 .policy-editor-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:18px 22px;border:1px solid var(--policy-line);border-radius:10px;background:#fff}
 .policy-editor-actions p{margin:0;color:var(--policy-muted);font-size:.8rem}
 .policy-editor-actions>div{display:flex;gap:10px}
@@ -80,3 +81,6 @@ body.admin-workspace-layout .admin-ops-panel.policy-editor-shell{overflow:visibl
 .policy-source-note{padding:9px 10px;border-left:3px solid var(--policy-accent);background:#fff8f8;color:var(--policy-muted);font-size:.7rem;line-height:1.5}
 @media(max-width:1250px){.policy-builder-workspace{grid-template-columns:minmax(0,1fr)}.policy-live-preview{position:static}.policy-preview-scroll{max-height:640px}}
 @media(max-width:700px){.policy-editor-shell>.admin-panel-header,.policy-builder-heading{align-items:stretch;flex-direction:column}.policy-editor-meta__main,.policy-editor-meta__row{grid-template-columns:minmax(0,1fr);gap:16px}.policy-editor-meta,.policy-legacy-editor,.policy-section-card{padding:16px}.policy-block-card{padding:14px}.policy-section-card__head,.policy-block-head{align-items:flex-start;flex-wrap:wrap}.policy-block-controls{align-items:stretch;flex-direction:column}.policy-block-controls .policy-field{flex-basis:auto}.policy-editor-actions>div{width:100%}.policy-editor-actions>div>*{flex:1;text-align:center}.policy-editor-form :is(input:not([type=hidden]),textarea,select){font-size:1rem}}
+
+.policy-editor-notice{margin:0;padding:16px 20px;border:1px solid #e5cc98;border-radius:10px;background:#fff8e9;color:#694d22;line-height:1.65;font-size:.85rem}
+.policy-editor-links{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem}.policy-editor-links a{color:#923341;text-underline-offset:3px}

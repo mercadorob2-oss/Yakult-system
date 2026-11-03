@@ -1,0 +1,28 @@
+IT Policy presentation upgrade, deployed 2026-10-30
+
+Live URL: http://192.168.100.186:7016/company-policies/it-policy---employee-guidelines
+Target: \\192.168.100.186\c$\inetpub\wwwroot\Yakult.SystemsPortal
+
+Implemented shared Razor presentation, current-section navigation, mobile procedure selector, expanded procedure containers, paired Guest Wi-Fi screenshots, image viewer with keyboard/zoom/captions/focus restoration, reminder and implementation callouts, approval-name emphasis, readable typography, non-filtering search with highlights/results/clear, and debounced authenticated anti-forgery-protected editor preview. Invalid edits retain the last valid preview. Printing controls removed. Header branding preserved.
+
+Deployment copied only these six files after a backup:
+- Yakult.SystemsPortal.dll (application code and compiled Razor views)
+- Yakult.SystemsPortal.pdb
+- wwwroot/css/company-policy-document.css
+- wwwroot/css/company-policy-editor.css
+- wwwroot/js/company-policy-builder.js
+- wwwroot/js/company-policy-reader.js
+
+Backup location: see backup-path.txt and the backup manifest.json.
+The existing runtimeconfig.json and deps.json matched the publish output exactly and were not copied.
+All 19 configuration/media file fingerprints remained unchanged. No database save or migration was performed. GitHub was untouched.
+
+Verification:
+- Release build/publish: zero warnings, zero errors.
+- Isolated browser checks passed: seven procedures, nine image references, all approved instructions, Profile Account round-trip, preview parity, safe Markdown, invalid-edit retention, navigation, search, image keyboard/focus controls, anti-forgery/authentication/authorization, responsive pairing, no overflow at 320/390/768/1440px, no JavaScript errors.
+- Live checks passed: existing URL HTTP 200, every previously live instruction retained, nine images decode, served asset SHA256 hashes match the new local files, reader CSS/JS have versioned URLs, search and viewer work, mobile layout fits, preview requires authentication.
+- Authenticated editor interactions were verified against the isolated host, not a live editor session.
+
+Artifacts: checks.json, live-checks.json, desktop-accounts.png, desktop-guest.png, mobile-guest.png, editor-preview.png.
+
+Rollback: use the backup manifest to restore the five originally present files while IIS is briefly taken offline with app_offline.htm; remove only the newly introduced wwwroot/js/company-policy-reader.js; remove app_offline.htm and verify the same live URL. Do not copy configuration, database, or media files.

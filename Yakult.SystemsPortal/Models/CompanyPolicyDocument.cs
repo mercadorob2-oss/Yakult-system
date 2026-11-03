@@ -43,6 +43,8 @@ public sealed class CompanyPolicyDocument
         if (Version != 1) throw new ArgumentException("This policy uses an unsupported content format.");
         if (Accent is not ("policy" or "team")) throw new ArgumentException("Choose a supported policy appearance.");
         if (Sections is null || Sections.Count is < 1 or > 40) throw new ArgumentException("Add between 1 and 40 policy sections.");
+        if (Sections.Where(section => section is not null).Select(section => section.Id).Distinct(StringComparer.Ordinal).Count() != Sections.Count)
+            throw new ArgumentException("Give every policy section a unique identifier.");
         foreach (var section in Sections)
         {
             if (section is null) throw new ArgumentException("Remove the empty policy section and add it again.");

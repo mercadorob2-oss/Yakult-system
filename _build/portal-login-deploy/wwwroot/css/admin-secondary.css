@@ -1,0 +1,84 @@
+/* Shared workspace polish for the admin screens outside the primary studios. */
+body.admin-workspace-layout {
+    --secondary-ink: #243a53;
+    --secondary-muted: #718298;
+    --secondary-line: #e3e9f1;
+    --secondary-red: #c61c28;
+}
+
+body.admin-workspace-layout .admin-content > :is(.admin-workspace, .admin-card-summary, .connection-editor-page, .connection-security-page, .ci-page, #employeeResourcesAdminApp) {
+    color: var(--secondary-ink);
+}
+
+body.admin-workspace-layout .admin-content :is(.admin-list-panel, .admin-ops-panel, .ci-panel, .resource-admin-library, .resource-admin-editor, .connection-panel, .connection-security-card) {
+    border-color: var(--secondary-line);
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(27, 47, 73, .04);
+}
+
+/* FAQ and company policy library */
+body.admin-workspace-layout .ci-page { gap: 18px; }
+body.admin-workspace-layout .ci-stats { gap: 12px; }
+body.admin-workspace-layout .ci-stat { min-height: 86px; justify-content: center; padding: 15px 18px; border-color: var(--secondary-line); border-radius: 10px; box-shadow: 0 3px 12px rgba(27, 47, 73, .035); }
+body.admin-workspace-layout .ci-stat__number { color: #2c435e; font-size: 1.45rem; }
+body.admin-workspace-layout .ci-stat__label { color: var(--secondary-muted); font-size: .7rem; }
+body.admin-workspace-layout .ci-stat--link:hover { border-color: #e4c5ca; box-shadow: 0 6px 18px rgba(27,47,73,.06); }
+body.admin-workspace-layout .ci-grid { gap: 16px; }
+body.admin-workspace-layout .ci-panel { border-radius: 12px; }
+body.admin-workspace-layout .ci-panel__header { min-height: 76px; padding: 17px 19px; border-color: #edf1f6; background: #fff; }
+body.admin-workspace-layout .ci-panel__header h2 { color: #2c435e; font-size: .9rem; }
+body.admin-workspace-layout .ci-panel__header p { margin-top: 5px; color: var(--secondary-muted); font-size: .71rem; }
+body.admin-workspace-layout .ci-panel__body { gap: 9px; padding: 14px; }
+body.admin-workspace-layout .ci-row { align-items: center; padding: 13px 14px; border-color: #e7edf4; border-radius: 9px; }
+body.admin-workspace-layout .ci-row__main strong { color: #334a65; font-size: .78rem; line-height: 1.5; }
+body.admin-workspace-layout .ci-row__main small { color: #8190a5; font-size: .68rem; }
+body.admin-workspace-layout .ci-row__actions { flex-wrap: wrap; justify-content: flex-end; }
+body.admin-workspace-layout .ci-empty { border-color: #dbe4ee; border-radius: 10px; background: #fafbfd; }
+body.admin-workspace-layout .ci-empty span { background: #fff1f3; color: var(--secondary-red); }
+
+/* Admin forms and protected database tools */
+body.admin-workspace-layout .admin-ops-panel { overflow: hidden; }
+body.admin-workspace-layout .admin-ops-panel .admin-panel-header { padding: 20px 24px; border-bottom: 1px solid #edf1f6; background: #fff; }
+body.admin-workspace-layout .admin-ops-panel .admin-panel-header h2 { color: #2c435e; font-size: .94rem; }
+body.admin-workspace-layout .admin-ops-panel .admin-panel-header p { margin-top: 6px; color: var(--secondary-muted); font-size: .75rem; line-height: 1.6; }
+body.admin-workspace-layout .admin-ops-panel .admin-panel-body { padding: 22px 24px; }
+body.admin-workspace-layout .admin-ops-panel .admin-form { max-width: 900px; gap: 18px; }
+body.admin-workspace-layout .admin-ops-panel .admin-form > div { gap: 7px; }
+body.admin-workspace-layout .admin-ops-panel .admin-form label { color: #51657e; font-size: .74rem; font-weight: 650; }
+body.admin-workspace-layout .admin-ops-panel .admin-form :is(input, textarea, select) { min-height: 41px; border-color: #dfe6ef; border-radius: 8px; background: #fcfdff; color: #334b67; font-size: .8rem; }
+body.admin-workspace-layout .admin-ops-panel .admin-form textarea { min-height: 110px; line-height: 1.6; }
+body.admin-workspace-layout #admin-main-content > .admin-container > .admin-workspace .admin-form { max-width: 980px; margin-inline: auto; }
+body.admin-workspace-layout .admin-workspace > .admin-list-panel .admin-form { padding: 20px 24px 24px; }
+body.admin-workspace-layout .connection-editor-page { padding-top: 8px; }
+body.admin-workspace-layout .connection-editor-hero,
+body.admin-workspace-layout .connection-panel { border-color: var(--secondary-line); border-radius: 12px; }
+body.admin-workspace-layout .connection-editor-hero { background: #fff; }
+body.admin-workspace-layout .connection-editor-hero h2,
+body.admin-workspace-layout .connection-panel h3 { color: #2c435e; }
+body.admin-workspace-layout .connection-editor-hero p,
+body.admin-workspace-layout .connection-input-help { color: var(--secondary-muted); }
+body.admin-workspace-layout .connection-editor-steps li { border-color: var(--secondary-line); border-radius: 9px; background: #fff; color: #63778f; }
+body.admin-workspace-layout .connection-editor-status-row { border-color: var(--secondary-line); border-radius: 10px; background: #fff; }
+body.admin-workspace-layout .connection-security-page { padding-top: 8px; }
+body.admin-workspace-layout .connection-security-card { border-radius: 12px; }
+body.admin-workspace-layout .connection-security-card__hero { background: linear-gradient(135deg, #fff7f8, #fff); }
+
+body.admin-workspace-layout :is(.admin-ops-panel, .admin-audit-panel, .ci-page, .connection-editor-page, .connection-security-page, #employeeResourcesAdminApp) :is(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid #b82a38;
+    outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+    body.admin-workspace-layout .admin-audit-timeline { padding: 16px 14px 6px; }
+    body.admin-workspace-layout .admin-audit-panel .admin-panel-header,
+    body.admin-workspace-layout .admin-ops-panel .admin-panel-header,
+    body.admin-workspace-layout .admin-ops-panel .admin-panel-body { padding-inline: 16px; }
+    body.admin-workspace-layout .admin-audit-row--timeline { flex-wrap: wrap; }
+    body.admin-workspace-layout .admin-audit-row__meta { flex-basis: 100%; padding-left: 40px; }
+    body.admin-workspace-layout .ci-row { align-items: flex-start; flex-direction: column; }
+    body.admin-workspace-layout .ci-row__actions { justify-content: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.admin-workspace-layout .ci-stat--link { transition: none; }
+}

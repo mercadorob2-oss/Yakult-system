@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Sample application access journey">
+<rect width="960" height="540" fill="#edf3f8"/><text x="65" y="82" fill="#bd1825" font-family="Segoe UI,Arial" font-size="19" font-weight="700">YAKULT LEARNING · DEMO</text>
+<text x="65" y="143" fill="#14263c" font-family="Segoe UI,Arial" font-size="36" font-weight="700">Find your application. Follow the right path.</text>
+<g font-family="Segoe UI,Arial"><rect x="65" y="210" width="250" height="180" rx="16" fill="#fff"/><rect x="355" y="210" width="250" height="180" rx="16" fill="#fff"/><rect x="645" y="210" width="250" height="180" rx="16" fill="#14263c"/>
+<text x="90" y="258" fill="#bd1825" font-size="30">01</text><text x="380" y="258" fill="#bd1825" font-size="30">02</text><text x="670" y="258" fill="#ffa4ad" font-size="30">03</text>
+<text x="90" y="309" fill="#14263c" font-size="23" font-weight="700">Service directory</text><text x="380" y="309" fill="#14263c" font-size="23" font-weight="700">Access instructions</text><text x="670" y="309" fill="#fff" font-size="23" font-weight="700">Your application</text>
+<text x="90" y="350" fill="#65758a" font-size="19">Find the official entry.</text><text x="380" y="350" fill="#65758a" font-size="19">Check the account needed.</text><text x="670" y="350" fill="#c7d5e3" font-size="19">Use authorized access.</text>
+<text x="65" y="465" fill="#526276" font-size="21">Sample journey only. Always follow your current company instructions.</text></g></svg>

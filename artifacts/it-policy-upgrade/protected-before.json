@@ -1,0 +1,78 @@
+[
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\appsettings.Development.json",
+    "Hash": "278927D26F126225A7E09D6F22EBFCD67D4E03F56879317A87EBEDFAD34DD8BA"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\appsettings.json",
+    "Hash": "9EEB0AB0222BED46F623FB25327449318586272F89CF0C041D4689312B14A303"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\appsettings.Local.example.json",
+    "Hash": "DE22B23D9082F7AA3EEB3B871D1AAB18E25A970DC1F90E738B9E1FBD37448B95"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\appsettings.Local.json",
+    "Hash": "6092EA260F461138D85C724C2A219C244F659114C4564BC4967BBD6ADB399146"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\web.config",
+    "Hash": "706E3EE8DEE3C261E127E40CB7D68B16EA6896515DBF19C8A14EEDDAB6CF7D02"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\file-sharing.png",
+    "Hash": "9B5F1F7C0682760DA21018C6007FEB77C9F13D84C067B2A4571B315745D6FA95"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\guest-wifi-step-1-ff66c1205e.png",
+    "Hash": "FF66C1205E01C59EABC8BD0F2D41579AE69C342A6A7DAA59E7F3EDDC5AE75EF9"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\guest-wifi-step-2-b7c1372dbe.png",
+    "Hash": "B7C1372DBEF8FA8D8982CA4FCEAF0828C16636F68609AAA4DB03A2BFD882406F"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\guest-wifi-step-3-f1b6577734.png",
+    "Hash": "F1B6577734FCEA5DD3FADD03A7172E015CD818D09E6D38365D33EF4C18749C9E"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\guest-wifi-step-4-26bfdb7cca.png",
+    "Hash": "26BFDB7CCAF052758C4158ADFFFAD8BD2882100E21AB3C29CEFF7E1FEE2826DF"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\guest-wifi-step-5-7e1093d9cf.png",
+    "Hash": "7E1093D9CF5B339CC15F251DF391422A5A4F779A1F0AAC9A46DDE7C84B8C2AD5"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\guest-wifi-step-6-d0c9fe4ff8.png",
+    "Hash": "D0C9FE4FF86B075CEC2ABE5E0B81B396323B6778EAAE1A66A215E986423E196A"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\guest-wifi-step-7-b00ac3327e.png",
+    "Hash": "B00AC3327E64B70864BF84974E92D4E90A7121618EC21E1D757C1EA784DDAC13"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\hardware-deployment.png",
+    "Hash": "8FA8363D6825C7C95D6B4639A4D80A4550ABA761F5CEE6811836425F7E989743"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\internet-access.png",
+    "Hash": "797BE9FEFFC4861D8555AC3220F9829F74E152C5B71FCDBED5BAEEF47882146B"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\pdf-source-account-f623574fb5.png",
+    "Hash": "F623574FB587B31E48669E5B84C789BF251B2027686BCA2EE4212CACC2ABB4AA"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\pdf-source-hardware-e48ad44f86.png",
+    "Hash": "E48AD44F860ACC326EF13F95CCA5465C4FB53DE5FC4B1545EDDFE50652C367BE"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\pdf-source-internet-d79b75f01f.png",
+    "Hash": "D79B75F01F42657174150DE54259BA9F6B99EAC6D6BEF1833A3AD5F0040DB773"
+  },
+  {
+    "Path": "\\\\192.168.100.186\\c$\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia\\profile-account.png",
+    "Hash": "F7F7498D828C715867059ACB3772212049670FA78358F3FDA4B2AF3083C40427"
+  }
+]

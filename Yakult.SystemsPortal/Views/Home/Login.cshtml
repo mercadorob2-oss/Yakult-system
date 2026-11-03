@@ -18,7 +18,8 @@
                 linear-gradient(90deg, rgba(255, 255, 255, 0.58) 0%, rgba(255, 255, 255, 0.24) 43%, rgba(255, 255, 255, 0.05) 100%),
                 linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(4, 9, 24, 0.24)),
                 url('@Url.Content("~/images/Yakult_background.jpg")') center center / cover no-repeat fixed;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
         [data-theme="light"] .login-body {
             background:
@@ -263,6 +264,56 @@
             background: #b91c1c;
             transform: translateY(-2px);
         }
+        .login-button--windows {
+            justify-content: flex-start;
+            min-height: 66px;
+            margin-top: 13px;
+            padding: 10px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            background: #ffffff;
+            color: #162a43;
+            text-decoration: none;
+            text-align: left;
+            box-shadow: 0 9px 22px rgba(4, 9, 24, 0.16);
+        }
+        .login-button--windows:hover {
+            background: #f4f7fb;
+            color: #102a43;
+            transform: translateY(-2px);
+            box-shadow: 0 13px 26px rgba(4, 9, 24, 0.22);
+        }
+        .login-windows-mark {
+            display: grid;
+            grid-template-columns: repeat(2, 9px);
+            grid-template-rows: repeat(2, 9px);
+            gap: 2px;
+            flex: 0 0 auto;
+            padding: 8px;
+            border-radius: 8px;
+            background: #fff1f1;
+        }
+        .login-windows-mark span { display: block; border-radius: 2px; background: #dc2626; }
+        .login-windows-mark span:nth-child(2) { background: #ef4444; }
+        .login-windows-mark span:nth-child(3) { background: #b91c1c; }
+        .login-windows-mark span:nth-child(4) { background: #f87171; }
+        .login-windows-label { display: grid; gap: 3px; flex: 1; }
+        .login-windows-label strong { font-size: 0.86rem; font-weight: 800; line-height: 1.2; }
+        .login-windows-label small { color: #64748b; font-size: 0.72rem; font-weight: 550; line-height: 1.2; }
+        .login-windows-arrow { width: 17px; height: 17px; flex: 0 0 auto; color: #64748b; }
+        .login-sso-divider {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            margin: 20px 0 17px;
+            color: rgba(255, 255, 255, 0.58);
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-align: center;
+        }
+        .login-sso-divider::before,
+        .login-sso-divider::after { content: ''; height: 1px; flex: 1; background: rgba(255, 255, 255, 0.2); }
         .login-button:focus-visible {
             outline: 3px solid rgba(248, 113, 113, 0.35);
             outline-offset: 3px;
@@ -426,6 +477,15 @@
         [data-theme="light"] .form-group label {
             color: #374151;
         }
+        [data-theme="light"] .login-sso-divider { color: #64748b; }
+        [data-theme="light"] .login-sso-divider::before,
+        [data-theme="light"] .login-sso-divider::after { background: rgba(100, 116, 139, 0.25); }
+        [data-theme="light"] .login-button--windows {
+            background: #ffffff;
+            border-color: rgba(148, 163, 184, 0.45);
+            color: #162a43;
+        }
+        [data-theme="light"] .login-button--windows:hover { background: #f8fafc; color: #102a43; }
         [data-theme="light"] .form-group input {
             background: rgba(255, 255, 255, 0.9);
             border-color: rgba(148, 163, 184, 0.42);
@@ -569,6 +629,16 @@
                 <h1>Welcome back</h1>
                 <p>Sign in to access internal systems</p>
             </div>
+
+            @if (ViewData["WindowsAuthEnabled"] is true)
+            {
+                <a class="login-button login-button--windows" asp-controller="Home" asp-action="WindowsLogin" asp-route-returnUrl="@Model.ReturnUrl" aria-label="Continue with your Yakult Windows account">
+                    <span class="login-windows-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+                    <span class="login-windows-label"><strong>Continue with your Yakult account</strong><small>Use the Windows account signed in on this computer</small></span>
+                    <svg class="login-windows-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </a>
+                <div class="login-sso-divider"><span>OR SIGN IN WITH PORTAL CREDENTIALS</span></div>
+            }
 
             <form asp-action="Login" asp-controller="Home" method="post" class="login-form" autocomplete="off" id="loginForm">
                 <input type="hidden" asp-for="ReturnUrl" />

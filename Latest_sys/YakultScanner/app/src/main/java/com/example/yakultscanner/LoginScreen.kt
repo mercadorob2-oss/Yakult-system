@@ -649,13 +649,6 @@ fun LoginScreen(navController: NavController) {
                                     Text("Use only your authorized Yakult account.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
-
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                                Text("New to Yakult?", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                TextButton(onClick = { navController.navigate("register") }, enabled = !isLoading) {
-                                    Text("Create an account")
-                                }
-                            }
                         }
                     }
                 }

@@ -16,6 +16,7 @@ namespace Yakult.Inventory.App.Repositories
         // --- Properties ---
 
         string ConnectionString { get; }
+        Task<CallMonthlyReport> GetMonthlyDetailedReportAsync(DateTime monthLocal);
 
         // --- Schema / Feature Flags ---
 
@@ -155,6 +156,8 @@ namespace Yakult.Inventory.App.Repositories
 
         Task<bool> DeleteTicketAsync(int ticketId, int? deletedByUserId);
         Task LogTicketResolutionAsync(int ticketId, string resolutionType, string remarks, int? changedByUserId);
+        Task ApplyTicketReplacementsAsync(int ticketId, IList<CallReplacementLine> lines, int changedByUserId, string createdByName);
+
         Task ApplyTicketReplacementAsync(
             int ticketId,
             int oldItemId,
