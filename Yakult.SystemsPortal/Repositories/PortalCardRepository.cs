@@ -331,7 +331,7 @@ VALUES
         const string sql = @"
 SELECT TOP (@Take) Id, Action, EntityType, EntityId, UserName, Timestamp, Notes, IpAddress
 FROM dbo.AuditTrail
-WHERE EntityType IN ('PortalCard', 'PortalDownload', 'Portal', 'EmployeeResource')
+WHERE EntityType IN ('PortalCard', 'PortalDownload', 'Portal', 'EmployeeResource', 'PortalAuthentication', 'PortalTicket')
 ORDER BY Timestamp DESC, Id DESC;";
 
         var items = new List<PortalAuditLogItem>();

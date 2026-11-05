@@ -27,11 +27,16 @@ public sealed class HelpItController : Controller
     private const string SessionLastTicketCodeKey = "HelpIt:LastTicketCode";
 
     private readonly IHelpItRepository _helpItRepository;
+    private readonly IPortalCardRepository _portalCardRepository;
     private readonly ILogger<HelpItController> _logger;
 
-    public HelpItController(IHelpItRepository helpItRepository, ILogger<HelpItController> logger)
+    public HelpItController(
+        IHelpItRepository helpItRepository,
+        IPortalCardRepository portalCardRepository,
+        ILogger<HelpItController> logger)
     {
         _helpItRepository = helpItRepository;
+        _portalCardRepository = portalCardRepository;
         _logger = logger;
     }
 
@@ -40,6 +45,29 @@ public sealed class HelpItController : Controller
     {
         ViewData["Title"] = "Help IT";
         return View(await BuildSubmitViewModelAsync());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResolveContactEmail(int? companyId, int? departmentId, int? branchId)
+    {
+        if (!companyId.HasValue || (!departmentId.HasValue && !branchId.HasValue))
+            return BadRequest(new { error = "Select a company and a department or branch first." });
+
+        var organization = await _helpItRepository.ValidateOrganizationSelectionAsync(
+            companyId.Value,
+            departmentId,
+            branchId);
+
+        if (organization == null)
+            return BadRequest(new { error = "The selected organization combination is not valid." });
+
+        var contact = await _helpItRepository.GetOrganizationContactEmailAsync(
+            organization.CompanyId,
+            organization.DepartmentId,
+            organization.BranchId);
+
+        return Json(new { email = contact.Email, source = contact.Source });
     }
 
     [HttpPost]
@@ -71,9 +99,10 @@ public sealed class HelpItController : Controller
         }
 
         var isAuthenticated = User.Identity?.IsAuthenticated == true;
+        var isIndependentAdUser = User.HasClaim("AuthenticationSource", "ActiveDirectory");
         var (companyId, departmentId, branchId, sessionCallerName, userId) = GetCurrentUserContext();
 
-        if (!isAuthenticated)
+        if (!isAuthenticated || isIndependentAdUser)
         {
             if (!request.CompanyId.HasValue
                 || (!request.DepartmentId.HasValue && !request.BranchId.HasValue))
@@ -138,6 +167,25 @@ public sealed class HelpItController : Controller
                 branchId,
                 callerName,
                 userId);
+
+            if (isIndependentAdUser)
+            {
+                try
+                {
+                    await _portalCardRepository.LogPortalEventAsync(
+                        "Create",
+                        "PortalTicket",
+                        ticket.TicketId,
+                        userId,
+                        User.Identity?.Name,
+                        $"Submitted Help IT ticket {ticket.TicketCode}.",
+                        HttpContext.Connection.RemoteIpAddress?.ToString());
+                }
+                catch (Exception auditException)
+                {
+                    _logger.LogWarning(auditException, "Unable to write ticket audit event for {TicketCode}.", ticket.TicketCode);
+                }
+            }
 
             // Remember this submission so the next ticket in this session is
             // gated by the "already submitted a ticket" confirmation.
@@ -252,6 +300,8 @@ public sealed class HelpItController : Controller
     private async Task<HelpItSubmitViewModel> BuildSubmitViewModelAsync()
     {
         var (companyId, departmentId, branchId, callerName, _) = GetCurrentUserContext();
+        var isAnonymous = User.Identity?.IsAuthenticated != true;
+        var isIndependentAdUser = User.HasClaim("AuthenticationSource", "ActiveDirectory");
 
         string? companyName = null;
         string? branchName = null;
@@ -263,13 +313,31 @@ public sealed class HelpItController : Controller
             (companyName, branchName, departmentName) = await _helpItRepository.GetEmployeeOrgNamesAsync(employeeId);
         }
 
-        var isAnonymous = User.Identity?.IsAuthenticated != true;
-        var organizationOptions = isAnonymous
+        HelpItOrganizationSelection? adOrganization = null;
+        if (isIndependentAdUser)
+        {
+            var adEmail = User.FindFirstValue("AdEmail");
+            if (!string.IsNullOrWhiteSpace(adEmail))
+                adOrganization = await _helpItRepository.FindUniqueEmployeeOrganizationByEmailAsync(adEmail);
+
+            if (adOrganization != null)
+            {
+                companyId = adOrganization.CompanyId;
+                departmentId = adOrganization.DepartmentId;
+                branchId = adOrganization.BranchId;
+                companyName = adOrganization.CompanyName;
+                departmentName = adOrganization.DepartmentName;
+                branchName = adOrganization.BranchName;
+            }
+        }
+
+        var showOrganizationPicker = isAnonymous || isIndependentAdUser;
+        var organizationOptions = showOrganizationPicker
             ? await _helpItRepository.GetOrganizationOptionsAsync()
             : Array.Empty<HelpItOrganizationCompanyOption>();
 
         var organizationContact = await _helpItRepository.GetOrganizationContactEmailAsync(companyId, departmentId, branchId);
-        return new HelpItSubmitViewModel
+        var model = new HelpItSubmitViewModel
         {
             CallerName = callerName,
             CompanyName = companyName,
@@ -279,9 +347,19 @@ public sealed class HelpItController : Controller
             OrganizationContactEmail = organizationContact.Email,
             OrganizationContactEmailSource = organizationContact.Source,
             IsAnonymous = isAnonymous,
+            ShowOrganizationPicker = showOrganizationPicker,
             HasPriorSubmission = HasPriorSubmission(),
             PriorTicketCode = HttpContext.Session.GetString(SessionLastTicketCodeKey)
         };
+
+        if (adOrganization != null)
+        {
+            model.Request.CompanyId = adOrganization.CompanyId;
+            model.Request.DepartmentId = adOrganization.DepartmentId;
+            model.Request.BranchId = adOrganization.BranchId;
+        }
+
+        return model;
     }
 
     private bool HasPriorSubmission() =>
@@ -293,7 +371,9 @@ public sealed class HelpItController : Controller
         int? departmentId = int.TryParse(User.FindFirstValue("DepartmentId"), out var deptId) ? deptId : null;
         int? branchId = int.TryParse(User.FindFirstValue("BranchId"), out var brId) ? brId : null;
         int? userId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uId) ? uId : null;
-        var callerName = User.Identity?.Name ?? string.Empty;
+        var callerName = User.HasClaim("AuthenticationSource", "ActiveDirectory")
+            ? User.FindFirstValue("AdDisplayName") ?? User.Identity?.Name ?? string.Empty
+            : User.Identity?.Name ?? string.Empty;
 
         return (companyId, departmentId, branchId, callerName, userId);
     }

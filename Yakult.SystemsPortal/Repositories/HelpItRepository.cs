@@ -49,6 +49,58 @@ public sealed class HelpItRepository : IHelpItRepository
             reader.IsDBNull(2) ? null : reader.GetString(2));
     }
 
+    public async Task<HelpItOrganizationSelection?> FindUniqueEmployeeOrganizationByEmailAsync(string email)
+    {
+        var normalizedEmail = (email ?? string.Empty).Trim();
+        if (normalizedEmail.Length == 0) return null;
+
+        const string sql = @"
+WITH MatchingEmployees AS (
+    SELECT DISTINCT e.EmpId
+    FROM dbo.Employee e
+    INNER JOIN dbo.EmployeeEmail ee ON ee.EmpId = e.EmpId AND ee.IsActive = 1
+    INNER JOIN dbo.EmailAddress ea ON ea.EmailId = ee.EmailId AND ea.IsActive = 1
+    WHERE ISNULL(e.Active, 1) = 1
+      AND LOWER(LTRIM(RTRIM(ea.EmailAddress))) = LOWER(@Email)
+
+    UNION
+
+    SELECT DISTINCT e.EmpId
+    FROM dbo.[User] u
+    INNER JOIN dbo.Employee e ON e.EmpId = u.EmpId
+    WHERE ISNULL(u.IsActive, 1) = 1
+      AND ISNULL(e.Active, 1) = 1
+      AND u.EmpId IS NOT NULL
+      AND LOWER(LTRIM(RTRIM(u.EmailAddress))) = LOWER(@Email)
+)
+SELECT e.ComId, c.Name AS CompanyName,
+       e.DeptId, d.Name AS DepartmentName,
+       e.BranchId, b.Name AS BranchName
+FROM MatchingEmployees matches
+INNER JOIN dbo.Employee e ON e.EmpId = matches.EmpId
+INNER JOIN dbo.Company c ON c.ComId = e.ComId AND ISNULL(c.Active, 1) = 1
+LEFT JOIN dbo.Department d ON d.DeptId = e.DeptId AND ISNULL(d.Active, 1) = 1
+LEFT JOIN dbo.Branch b ON b.BranchId = e.BranchId AND ISNULL(b.Active, 1) = 1
+WHERE (SELECT COUNT(*) FROM MatchingEmployees) = 1;";
+
+        using var con = new SqlConnection(_connectionStringProvider.GetConnectionString());
+        await con.OpenAsync();
+        using var cmd = new SqlCommand(sql, con);
+        cmd.Parameters.Add("@Email", SqlDbType.NVarChar, 255).Value = normalizedEmail;
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (!await reader.ReadAsync()) return null;
+
+        return new HelpItOrganizationSelection
+        {
+            CompanyId = reader.GetInt32(0),
+            CompanyName = reader.GetString(1),
+            DepartmentId = reader.IsDBNull(2) ? null : reader.GetInt32(2),
+            DepartmentName = reader.IsDBNull(3) ? null : reader.GetString(3),
+            BranchId = reader.IsDBNull(4) ? null : reader.GetInt32(4),
+            BranchName = reader.IsDBNull(5) ? null : reader.GetString(5)
+        };
+    }
+
     public async Task<IReadOnlyList<HelpItOrganizationCompanyOption>> GetOrganizationOptionsAsync()
     {
         const string sql = @"
@@ -207,31 +259,39 @@ public sealed class HelpItRepository : IHelpItRepository
 
         var hasDepartmentEmail = await HasTableAsync(con, "dbo.DepartmentEmail");
         var hasDepartmentAccount = await HasTableAsync(con, "dbo.DepartmentAccount");
-        var branchEmailSelect = hasDepartmentAccount
-            ? "branchEmail.EmailAddress AS BranchEmail"
-            : "NULL AS BranchEmail";
-        var branchEmailJoin = hasDepartmentAccount
-            ? @"
-                LEFT JOIN dbo.DepartmentAccount da
-                    ON da.CompanyName = c.Name
-                   AND da.DepartmentName = d.Name
-                   AND da.BranchName = b.Name
-                LEFT JOIN dbo.EmailAddress branchEmail
-                    ON branchEmail.EmailId = da.EmailAddressId
-                   AND branchEmail.IsActive = 1"
-            : string.Empty;
+        var hasBranchEmail = await HasTableAsync(con, "dbo.BranchEmail");
+        var hasLegacyBranchEmail = await HasColumnAsync(con, "dbo.Branch", "EmailId");
+        var branchAccountEmail = hasDepartmentAccount
+            ? @"(
+                SELECT TOP (1) ea.EmailAddress
+                FROM dbo.DepartmentAccount da
+                INNER JOIN dbo.EmailAddress ea ON ea.EmailId = da.EmailAddressId AND ea.IsActive = 1
+                WHERE da.CompanyName = c.Name
+                  AND da.BranchName = b.Name
+                  AND (d.DeptId IS NULL OR da.DepartmentName = d.Name)
+                  AND ISNULL(da.IsActive, 1) = 1
+                ORDER BY da.Id)"
+            : "NULL";
+        var branchMappingEmail = hasBranchEmail
+            ? @"(
+                SELECT TOP (1) ea.EmailAddress
+                FROM dbo.BranchEmail be
+                INNER JOIN dbo.EmailAddress ea ON ea.EmailId = be.EmailAddressId AND ea.IsActive = 1
+                WHERE be.CompanyName = c.Name AND be.BranchName = b.Name
+                ORDER BY be.Id)"
+            : "NULL";
+        var legacyBranchEmail = hasLegacyBranchEmail
+            ? "(SELECT ea.EmailAddress FROM dbo.EmailAddress ea WHERE ea.EmailId = b.EmailId AND ea.IsActive = 1)"
+            : "NULL";
+        var branchEmailSelect = $"COALESCE(NULLIF(LTRIM(RTRIM({branchAccountEmail})), ''), NULLIF(LTRIM(RTRIM({branchMappingEmail})), ''), NULLIF(LTRIM(RTRIM({legacyBranchEmail})), '')) AS BranchEmail";
         var departmentEmailSelect = hasDepartmentEmail
-            ? "departmentEmail.EmailAddress AS DepartmentEmail"
+            ? @"(
+                SELECT TOP (1) ea.EmailAddress
+                FROM dbo.DepartmentEmail de
+                INNER JOIN dbo.EmailAddress ea ON ea.EmailId = de.EmailAddressId AND ea.IsActive = 1
+                WHERE de.CompanyName = c.Name AND de.DepartmentName = d.Name
+                ORDER BY de.Id) AS DepartmentEmail"
             : "NULL AS DepartmentEmail";
-        var departmentEmailJoin = hasDepartmentEmail
-            ? @"
-                LEFT JOIN dbo.DepartmentEmail de
-                    ON de.CompanyName = c.Name
-                   AND de.DepartmentName = d.Name
-                LEFT JOIN dbo.EmailAddress departmentEmail
-                    ON departmentEmail.EmailId = de.EmailAddressId
-                   AND departmentEmail.IsActive = 1"
-            : string.Empty;
 
         var sql = $@"
             SELECT TOP (1)
@@ -241,8 +301,7 @@ public sealed class HelpItRepository : IHelpItRepository
             LEFT JOIN dbo.Company c ON c.ComId = @CompanyId
             LEFT JOIN dbo.Department d ON d.DeptId = @DepartmentId
             LEFT JOIN dbo.Branch b ON b.BranchId = @BranchId
-            {branchEmailJoin}
-            {departmentEmailJoin};";
+            ;";
 
         using var cmd = new SqlCommand(sql, con);
         cmd.Parameters.Add("@CompanyId", SqlDbType.Int).Value = (object?)companyId ?? DBNull.Value;
@@ -454,35 +513,43 @@ public sealed class HelpItRepository : IHelpItRepository
         var hasTicketContactEmail = await HasColumnAsync(con, "dbo.CallTicket", "ContactEmail");
         var hasDepartmentEmail = await HasTableAsync(con, "dbo.DepartmentEmail");
         var hasDepartmentAccount = await HasTableAsync(con, "dbo.DepartmentAccount");
+        var hasBranchEmail = await HasTableAsync(con, "dbo.BranchEmail");
+        var hasLegacyBranchEmail = await HasColumnAsync(con, "dbo.Branch", "EmailId");
 
         var ticketContactSelect = hasTicketContactEmail
             ? "NULLIF(LTRIM(RTRIM(t.ContactEmail)), '') AS TicketContactEmail"
             : "NULL AS TicketContactEmail";
-        var branchEmailSelect = hasDepartmentAccount
-            ? "branchEmail.EmailAddress AS BranchEmail"
-            : "NULL AS BranchEmail";
-        var branchEmailJoin = hasDepartmentAccount
-            ? @"
-                LEFT JOIN dbo.DepartmentAccount da
-                    ON da.CompanyName = c.Name
-                   AND da.DepartmentName = d.Name
-                   AND da.BranchName = b.Name
-                LEFT JOIN dbo.EmailAddress branchEmail
-                    ON branchEmail.EmailId = da.EmailAddressId
-                   AND branchEmail.IsActive = 1"
-            : string.Empty;
+        var branchAccountEmail = hasDepartmentAccount
+            ? @"(
+                SELECT TOP (1) ea.EmailAddress
+                FROM dbo.DepartmentAccount da
+                INNER JOIN dbo.EmailAddress ea ON ea.EmailId = da.EmailAddressId AND ea.IsActive = 1
+                WHERE da.CompanyName = c.Name
+                  AND da.BranchName = b.Name
+                  AND (d.DeptId IS NULL OR da.DepartmentName = d.Name)
+                  AND ISNULL(da.IsActive, 1) = 1
+                ORDER BY da.Id)"
+            : "NULL";
+        var branchMappingEmail = hasBranchEmail
+            ? @"(
+                SELECT TOP (1) ea.EmailAddress
+                FROM dbo.BranchEmail be
+                INNER JOIN dbo.EmailAddress ea ON ea.EmailId = be.EmailAddressId AND ea.IsActive = 1
+                WHERE be.CompanyName = c.Name AND be.BranchName = b.Name
+                ORDER BY be.Id)"
+            : "NULL";
+        var legacyBranchEmail = hasLegacyBranchEmail
+            ? "(SELECT ea.EmailAddress FROM dbo.EmailAddress ea WHERE ea.EmailId = b.EmailId AND ea.IsActive = 1)"
+            : "NULL";
+        var branchEmailSelect = $"COALESCE(NULLIF(LTRIM(RTRIM({branchAccountEmail})), ''), NULLIF(LTRIM(RTRIM({branchMappingEmail})), ''), NULLIF(LTRIM(RTRIM({legacyBranchEmail})), '')) AS BranchEmail";
         var departmentEmailSelect = hasDepartmentEmail
-            ? "departmentEmail.EmailAddress AS DepartmentEmail"
+            ? @"(
+                SELECT TOP (1) ea.EmailAddress
+                FROM dbo.DepartmentEmail de
+                INNER JOIN dbo.EmailAddress ea ON ea.EmailId = de.EmailAddressId AND ea.IsActive = 1
+                WHERE de.CompanyName = c.Name AND de.DepartmentName = d.Name
+                ORDER BY de.Id) AS DepartmentEmail"
             : "NULL AS DepartmentEmail";
-        var departmentEmailJoin = hasDepartmentEmail
-            ? @"
-                LEFT JOIN dbo.DepartmentEmail de
-                    ON de.CompanyName = c.Name
-                   AND de.DepartmentName = d.Name
-                LEFT JOIN dbo.EmailAddress departmentEmail
-                    ON departmentEmail.EmailId = de.EmailAddressId
-                   AND departmentEmail.IsActive = 1"
-            : string.Empty;
 
         var sql = $@"
             SELECT
@@ -493,8 +560,6 @@ public sealed class HelpItRepository : IHelpItRepository
             LEFT JOIN dbo.Company c ON c.ComId = t.ComId
             LEFT JOIN dbo.Department d ON d.DeptId = t.DeptId
             LEFT JOIN dbo.Branch b ON b.BranchId = t.BranchId
-            {branchEmailJoin}
-            {departmentEmailJoin}
             WHERE t.TicketCode = @TicketCode
               AND UPPER(LTRIM(RTRIM(t.TicketSource))) = 'PORTAL';";
 
