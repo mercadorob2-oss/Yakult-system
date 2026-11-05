@@ -15,6 +15,9 @@ public interface IHelpItRepository
     /// </summary>
     Task<(string? CompanyName, string? BranchName, string? DepartmentName)> GetEmployeeOrgNamesAsync(int employeeId);
 
+    /// <summary>Resolves an exact email address to one active employee organization, if unique.</summary>
+    Task<HelpItOrganizationSelection?> FindUniqueEmployeeOrganizationByEmailAsync(string email);
+
     /// <summary>
     /// Gets the public-safe organization hierarchy used by anonymous ticket submitters.
     /// The hierarchy contains names and IDs only; it does not expose employee or email data.

@@ -11,8 +11,8 @@ public sealed class CreateHelpItTicketRequest
     public string? IssueType { get; set; }
 
     /// <summary>
-    /// Selected only for anonymous submissions. Authenticated submissions use the
-    /// organization resolved from the signed-in account on the server.
+    /// Selected by anonymous and independent Active Directory submissions. Portal
+    /// account submissions use the organization resolved from the signed-in account.
     /// </summary>
     public int? CompanyId { get; set; }
     public int? DepartmentId { get; set; }
@@ -131,6 +131,7 @@ public sealed class HelpItSubmitViewModel
     public string? OrganizationContactEmail { get; set; }
     public string? OrganizationContactEmailSource { get; set; }
     public bool IsAnonymous { get; set; }
+    public bool ShowOrganizationPicker { get; set; }
 
     public bool RequiresContactEmail => string.IsNullOrWhiteSpace(OrganizationContactEmail);
 

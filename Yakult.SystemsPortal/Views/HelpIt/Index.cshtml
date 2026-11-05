@@ -32,10 +32,24 @@
                 </div>
             </div>
 
+        }
+
+        @if (Model.ShowOrganizationPicker)
+        {
+            @if (!Model.IsAnonymous)
+            {
+                <div class="help-it-caller-summary">
+                    <div>
+                        <span class="help-it-caller-summary__label">Submitting as</span>
+                        <strong>@Model.CallerName</strong>
+                    </div>
+                </div>
+            }
+
             <div class="help-it-organization-picker">
                 <div class="help-it-field">
                     <label for="companyId">Company <span class="help-it-required">*</span></label>
-                    <select id="companyId" name="CompanyId" required>
+                    <select form="helpItTicketForm" id="companyId" name="CompanyId" required>
                         <option value="">Select your company</option>
                         @foreach (var company in Model.OrganizationOptions)
                         {
@@ -45,13 +59,13 @@
                 </div>
                 <div class="help-it-field">
                     <label for="departmentId">Department <span class="help-it-optional">(optional)</span></label>
-                    <select id="departmentId" name="DepartmentId" disabled>
+                    <select form="helpItTicketForm" id="departmentId" name="DepartmentId" disabled>
                         <option value="">Select department (optional)</option>
                     </select>
                 </div>
                 <div class="help-it-field">
                     <label for="branchId">Branch <span class="help-it-optional">(optional)</span></label>
-                    <select id="branchId" name="BranchId" disabled>
+                    <select form="helpItTicketForm" id="branchId" name="BranchId" disabled>
                         <option value="">Select branch (optional)</option>
                     </select>
                 </div>
@@ -65,7 +79,7 @@
                 }
             </div>
         }
-        else
+        else if (!Model.ShowOrganizationPicker)
         {
             <div class="help-it-caller-summary">
                 <div>
@@ -144,13 +158,28 @@
                 <div><dt>Issue type</dt><dd id="helpItReviewIssueType"></dd></div>
                 <div><dt>Requester</dt><dd id="helpItReviewRequester"></dd></div>
                 <div><dt>Company / department / branch</dt><dd id="helpItReviewOrganization"></dd></div>
-                @if (Model.RequiresContactEmail)
+                @if (Model.RequiresContactEmail || Model.ShowOrganizationPicker)
                 {
                     <div class="help-it-review-contact-field">
-                        <dt><label for="helpItContactEmail">Department or branch contact email <span class="help-it-required">*</span></label></dt>
+                        <dt><span>Department or branch contact email</span></dt>
                         <dd>
-                            <input form="helpItTicketForm" id="helpItContactEmail" type="email" name="ContactEmail" maxlength="255" autocomplete="email" value="@Model.Request.ContactEmail" placeholder="name@example.com" aria-describedby="helpItContactEmailHint" />
-                            <span id="helpItContactEmailHint">No active branch or department email is configured. This address is saved only on this ticket.</span>
+                            <span id="helpItResolvedContact" role="status">
+                                @if (!string.IsNullOrWhiteSpace(Model.OrganizationContactEmail))
+                                {
+                                    <strong>@Model.OrganizationContactEmail</strong><span class="help-it-review-source">@Model.OrganizationContactEmailSource</span>
+                                }
+                                else if (Model.ShowOrganizationPicker)
+                                {
+                                    <span>Select a department or branch to look up its contact email.</span>
+                                }
+                                else
+                                {
+                                    <span>No contact email is configured for this organization.</span>
+                                }
+                            </span>
+                            <label id="helpItContactEmailLabel" for="helpItContactEmail" class="help-it-muted" hidden>Enter a contact email for this ticket <span class="help-it-required">*</span></label>
+                            <input form="helpItTicketForm" id="helpItContactEmail" type="email" name="ContactEmail" maxlength="255" autocomplete="email" value="@Model.Request.ContactEmail" placeholder="name@example.com" aria-describedby="helpItContactEmailHint" hidden />
+                            <span id="helpItContactEmailHint" hidden>No contact is configured for that organization. This address will be saved only on this ticket.</span>
                         </dd>
                     </div>
                 }
@@ -287,6 +316,13 @@
         var organizationOptions = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OrganizationOptions));
         var initialOrganization = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new { companyId = Model.Request.CompanyId, departmentId = Model.Request.DepartmentId, branchId = Model.Request.BranchId }));
         var contactEmail = document.getElementById('helpItContactEmail');
+        var contactEmailLabel = document.getElementById('helpItContactEmailLabel');
+        var contactEmailHint = document.getElementById('helpItContactEmailHint');
+        var resolvedContact = document.getElementById('helpItResolvedContact');
+        var contactLookupUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Action("ResolveContactEmail", "HelpIt")));
+        var requiresContactEmail = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RequiresContactEmail));
+        var contactLookupPending = false;
+        var contactLookupSequence = 0;
         var confirmed = document.getElementById('helpItConfirmedSubmission');
         var confirmedRepeat = document.getElementById('helpItConfirmedRepeatSubmission');
         var repeatCheckbox = document.getElementById('helpItRepeatConfirm');
@@ -367,6 +403,68 @@
             return [selectedText(companySelect) || '—', selectedText(departmentSelect) || '—', selectedText(branchSelect) || '—'].join(' / ');
         }
 
+        function setContactEmailState(email, source, message, allowFallback) {
+            if (allowFallback === undefined) allowFallback = true;
+            requiresContactEmail = !email;
+            if (resolvedContact) {
+                resolvedContact.replaceChildren();
+                if (email) {
+                    var address = document.createElement('strong');
+                    address.textContent = email;
+                    resolvedContact.appendChild(address);
+                    if (source) {
+                        var sourceLabel = document.createElement('span');
+                        sourceLabel.className = 'help-it-review-source';
+                        sourceLabel.textContent = source;
+                        resolvedContact.appendChild(sourceLabel);
+                    }
+                } else {
+                    resolvedContact.textContent = message || 'No contact email is configured for this organization.';
+                }
+            }
+            if (contactEmail) {
+                contactEmail.hidden = !!email || !allowFallback;
+                contactEmail.required = !email && allowFallback;
+                if (email) contactEmail.value = '';
+            }
+            if (contactEmailLabel) contactEmailLabel.hidden = !!email || !requiresContactEmail || !allowFallback;
+            if (contactEmailHint) contactEmailHint.hidden = !!email || !requiresContactEmail || !allowFallback;
+        }
+
+        async function refreshContactEmail() {
+            if (!companySelect || !resolvedContact) return;
+            var sequence = ++contactLookupSequence;
+            if (!companySelect.value || (!departmentSelect.value && !branchSelect.value)) {
+                contactLookupPending = false;
+                setContactEmailState('', '', 'Select a department or branch to look up its contact email.', false);
+                return;
+            }
+
+            contactLookupPending = true;
+            setContactEmailState('', '', 'Looking up the organization contact email…', false);
+            try {
+                var formData = new FormData();
+                var token = form.querySelector('input[name="__RequestVerificationToken"]');
+                if (token) formData.append('__RequestVerificationToken', token.value);
+                formData.append('companyId', companySelect.value);
+                if (departmentSelect.value) formData.append('departmentId', departmentSelect.value);
+                if (branchSelect.value) formData.append('branchId', branchSelect.value);
+                var response = await fetch(contactLookupUrl, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                var payload = await response.json().catch(function () { return {}; });
+                if (!response.ok) throw new Error(payload.error || 'Unable to look up the organization contact email.');
+                if (sequence === contactLookupSequence) setContactEmailState(payload.email || '', payload.source || '', 'No contact email is configured for this organization. Enter one for this ticket.');
+            } catch (error) {
+                if (sequence === contactLookupSequence) setContactEmailState('', '', error && error.message ? error.message : 'Unable to look up the contact email. Enter one for this ticket.');
+            } finally {
+                if (sequence === contactLookupSequence) contactLookupPending = false;
+            }
+        }
+
         function validateOrganizationSelection() {
             if (!companySelect || !departmentSelect || !branchSelect) return true;
             if (!companySelect.value) return true;
@@ -381,14 +479,22 @@
             companySelect.addEventListener('change', function () {
                 departmentSelect.setCustomValidity('');
                 populateDepartments(null, null);
+                refreshContactEmail();
             });
             departmentSelect.addEventListener('change', function () {
                 departmentSelect.setCustomValidity('');
                 populateBranches(null);
+                refreshContactEmail();
             });
             branchSelect.addEventListener('change', function () {
                 departmentSelect.setCustomValidity('');
+                refreshContactEmail();
             });
+            if (initialOrganization.companyId && (initialOrganization.departmentId || initialOrganization.branchId)) {
+                setContactEmailState(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OrganizationContactEmail)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OrganizationContactEmailSource)), 'No contact email is configured for this organization. Enter one for this ticket.');
+            } else {
+                setContactEmailState('', '', 'Select a department or branch to look up its contact email.', false);
+            }
         }
 
         function text(id, value) { document.getElementById(id).textContent = value || '—'; }
@@ -408,7 +514,7 @@
             text('helpItReviewRequester', caller ? caller.value.trim() : signedInCaller);
             text('helpItReviewOrganization', organizationLabel());
             overlay.hidden = false;
-            (contactEmail || confirmButton).focus();
+            (contactEmail && !contactEmail.hidden ? contactEmail : confirmButton).focus();
         }
         function showSuccess(ticket) {
             reviewPanel.hidden = true;
@@ -428,6 +534,7 @@
 
         form.addEventListener('submit', function (event) {
             event.preventDefault();
+            if (contactLookupPending) return;
             if (!validateOrganizationSelection() || !form.reportValidity()) return;
             openReview();
         });
@@ -446,7 +553,7 @@
             else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
         });
         confirmButton.addEventListener('click', async function () {
-            if (contactEmail && (!contactEmail.value.trim() || !contactEmail.checkValidity())) {
+            if (requiresContactEmail && contactEmail && (!contactEmail.value.trim() || !contactEmail.checkValidity())) {
                 showError('Enter a valid department or branch contact email before submitting.');
                 contactEmail.focus();
                 return;

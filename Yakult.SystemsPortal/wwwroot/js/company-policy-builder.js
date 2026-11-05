@@ -10,6 +10,7 @@
     let legacyMode = legacy;
     let doc = JSON.parse(JSON.stringify(window.companyPolicyEditorInitial || { version: 1, sections: [] }));
     let assets = [];
+    const removedFlowchartImages = new WeakMap();
     const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
     const labels = { text: 'Text', bullets: 'Bullet list', steps: 'Numbered steps', process: 'Process / approval stages', cards: 'Role cards', flowchart: 'Flowchart' };
 
@@ -141,9 +142,29 @@
         assets.forEach(asset => select.appendChild(new Option(asset.name, asset.url)));
         if (block.imageUrl && !assets.some(asset => asset.url === block.imageUrl)) select.appendChild(new Option(block.imageUrl.split('/').pop(), block.imageUrl));
         select.value = block.imageUrl || '';
-        select.addEventListener('change', () => { block.imageUrl = select.value; changed(); render(); });
+        select.addEventListener('change', () => {
+            removedFlowchartImages.delete(block);
+            block.imageUrl = select.value;
+            changed(); render();
+        });
         label.appendChild(select);
         card.appendChild(label);
+        const imageActions = make('div', 'policy-icon-actions');
+        const removedImageUrl = removedFlowchartImages.get(block);
+        if (removedImageUrl) {
+            imageActions.appendChild(button('Undo remove', 'admin-button admin-button--ghost', () => {
+                block.imageUrl = removedImageUrl;
+                removedFlowchartImages.delete(block);
+                changed(); render();
+            }));
+        }
+        imageActions.appendChild(button('Remove image from this flowchart', 'policy-remove-button', () => {
+            if (!block.imageUrl) return;
+            removedFlowchartImages.set(block, block.imageUrl);
+            block.imageUrl = '';
+            changed(); render();
+        }, !block.imageUrl));
+        card.appendChild(imageActions);
 
         const uploadLabel = make('label', 'policy-field', 'Upload PNG, JPG, or WebP (10 MB max)');
         const upload = document.createElement('input');
@@ -158,6 +179,7 @@
                 const result = await response.json();
                 if (!response.ok || !result.success) throw new Error(result.message || 'The diagram upload failed.');
                 assets = [{ name: result.name, url: result.url }, ...assets.filter(x => x.url !== result.url)];
+                removedFlowchartImages.delete(block);
                 block.imageUrl = result.url;
                 render(); changed();
             } catch (error) {
@@ -183,12 +205,15 @@
         if (section.id !== 'accounts' || section.blocks?.length !== 3 ||
             !section.blocks.every(block => block.type === 'text') ||
             section.blocks[1].title !== 'Active Domain Account Process') return null;
-        const requirements = Array.from((section.blocks[0].text + '\n\n' + section.blocks[2].text)
-            .matchAll(/\*\*([1-5])\.\*\* ([\s\S]*?)(?=\n\n\*\*[1-5]\.\*\* |$)/g));
-        const entries = Array.from(section.blocks[1].text.matchAll(/\*\*([abc])\.\*\* ([\s\S]*?)(?=\n\n\*\*[abc]\.\*\* |$)/g));
-        if (requirements.map(match => match[1]).join('') !== '12345' || entries.map(match => match[1]).join('') !== 'abc') return null;
+        const parseItems = (text, expression) => Array.from(text.matchAll(expression), match => match[2]);
+        const requirements = [
+            ...parseItems(section.blocks[0].text, /\*\*(\d+)\.\*\* ([\s\S]*?)(?=\n\n\*\*\d+\.\*\* |$)/g),
+            ...parseItems(section.blocks[2].text, /\*\*(\d+)\.\*\* ([\s\S]*?)(?=\n\n\*\*\d+\.\*\* |$)/g)
+        ];
+        const entries = Array.from(section.blocks[1].text.matchAll(/\*\*([a-z]+)\.\*\* ([\s\S]*?)(?=\n\n\*\*[a-z]+\.\*\* |$)/gi));
+        if (requirements.length < 2 || entries.length < 1) return null;
         return {
-            requirements: requirements.map(match => match[2]),
+            requirements,
             entries: entries.map(match => {
                 const split = match[2].indexOf('\n\n- ');
                 return { text: split < 0 ? match[2] : match[2].slice(0, split),
@@ -209,27 +234,83 @@
         const editor = make('div', 'policy-block-card');
         editor.dataset.editorFormat = 'profile-account';
         appendText(editor, 'strong', 'Profile Account', 'policy-builder-kicker');
-        const requirement = index => editor.appendChild(field('Requirement ' + (index + 1), profile.requirements[index], value => {
-            profile.requirements[index] = value; writeProfileAccount(section, profile);
-        }, true));
-        requirement(0);
+
+        const update = () => { writeProfileAccount(section, profile); render(); changed(); };
+        const renderItemActions = (list, index, removeLabel, minimum, onChange) => {
+            const actions = make('div', 'policy-icon-actions');
+            actions.appendChild(button('↑', '', () => {
+                if (index === 0) return;
+                [list[index - 1], list[index]] = [list[index], list[index - 1]];
+                onChange();
+            }, index === 0));
+            actions.appendChild(button('↓', '', () => {
+                if (index >= list.length - 1) return;
+                [list[index], list[index + 1]] = [list[index + 1], list[index]];
+                onChange();
+            }, index === list.length - 1));
+            actions.appendChild(button(removeLabel, 'policy-remove-button', () => {
+                if (list.length <= minimum) return;
+                list.splice(index, 1);
+                onChange();
+            }, list.length <= minimum));
+            return actions;
+        };
+
+        const requirements = make('div', 'policy-nested-card');
+        const requirementsHead = make('div', 'policy-stage-head');
+        appendText(requirementsHead, 'h3', 'Requirements');
+        requirements.appendChild(requirementsHead);
+        profile.requirements.forEach((value, index) => {
+            const row = make('div', 'policy-nested-card');
+            const head = make('div', 'policy-stage-head');
+            head.appendChild(make('strong', '', 'Requirement ' + (index + 1)));
+            head.appendChild(renderItemActions(profile.requirements, index, 'Remove requirement', 2, update));
+            row.appendChild(head);
+            row.appendChild(field('Requirement text', value, next => {
+                profile.requirements[index] = next; writeProfileAccount(section, profile);
+            }, true));
+            requirements.appendChild(row);
+        });
+        requirements.appendChild(button('+ Add requirement', 'admin-button admin-button--ghost', () => {
+            profile.requirements.push(''); update();
+        }));
+        editor.appendChild(requirements);
+
         const process = make('div', 'policy-nested-card');
-        appendText(process, 'h3', 'Active Domain Account Process');
+        const processHead = make('div', 'policy-stage-head');
+        appendText(processHead, 'h3', 'Active Domain Account Process');
+        process.appendChild(processHead);
         profile.entries.forEach((entry, index) => {
             const label = String.fromCharCode(97 + index);
             const group = make('div', 'policy-nested-card');
+            const entryHead = make('div', 'policy-stage-head');
+            entryHead.appendChild(make('strong', '', 'Process ' + label + '.'));
+            entryHead.appendChild(renderItemActions(profile.entries, index, 'Remove process', 1, update));
+            group.appendChild(entryHead);
             group.appendChild(field('Process ' + label + '.', entry.text, value => {
                 entry.text = value; writeProfileAccount(section, profile);
             }, true));
             entry.points.forEach((point, pointIndex) => {
-                group.appendChild(field('Process ' + label + '. - bullet ' + (pointIndex + 1), point, value => {
+                const bullet = make('div', 'policy-nested-card');
+                const bulletHead = make('div', 'policy-stage-head');
+                bulletHead.appendChild(make('strong', '', 'Bullet ' + (pointIndex + 1)));
+                bulletHead.appendChild(renderItemActions(entry.points, pointIndex, 'Remove bullet', 0, update));
+                bullet.appendChild(bulletHead);
+                bullet.appendChild(field('Bullet text', point, value => {
                     entry.points[pointIndex] = value; writeProfileAccount(section, profile);
                 }, true));
+                group.appendChild(bullet);
             });
+            group.appendChild(button('+ Add bullet', 'admin-button admin-button--ghost', () => {
+                entry.points.push(''); update();
+            }));
             process.appendChild(group);
         });
+        process.appendChild(button('+ Add process', 'admin-button admin-button--ghost', () => {
+            if (profile.entries.length >= 26) return;
+            profile.entries.push({ text: '', points: [] }); update();
+        }, profile.entries.length >= 26));
         editor.appendChild(process);
-        for (let index = 1; index < 5; index++) requirement(index);
         return editor;
     }
 

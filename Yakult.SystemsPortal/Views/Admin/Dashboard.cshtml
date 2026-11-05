@@ -48,6 +48,8 @@
             "PortalCard" => "Service settings",
             "PortalNotice" or "PortalSettings" => "Homepage notice",
             "PortalDownload" => "Service file",
+            "PortalAuthentication" => "Portal sign-in",
+            "PortalTicket" => "Help IT ticket",
             _ => string.IsNullOrWhiteSpace(item.EntityType) ? "Portal activity" : item.EntityType
         };
         var action = (item.Action ?? string.Empty).ToLowerInvariant() switch
@@ -59,6 +61,8 @@
             "download" => "downloaded",
             "approve" => "approved",
             "reject" => "rejected",
+            "login" => "signed in",
+            "loginfailed" => "had a failed sign-in",
             _ => item.Action
         };
         return string.IsNullOrWhiteSpace(action) ? entity : entity + " · " + action;

@@ -4,6 +4,8 @@ using System.Security.Claims;
 using System.Security.Principal;
 using System.Security.Cryptography;
 using System.Text;
+using System.DirectoryServices;
+using System.Runtime.Versioning;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Negotiate;
@@ -85,16 +87,19 @@ public sealed class HomeController : Controller
         if (string.IsNullOrWhiteSpace(domain) || !allowedDomains.Contains(domain, StringComparer.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Windows sign-in rejected for an identity outside the allowed domains: {IdentityName}", identityName);
+            await LogWindowsSignInAuditAsync(identityName, null, succeeded: false, "Account domain is not allowed.");
             TempData["WindowsLoginError"] = "Your Windows account is not in an approved Yakult domain. Contact IT.";
             return RedirectToAction(nameof(Login), new { returnUrl });
         }
 
         try
         {
-            var securityIdentifier = windowsResult.Principal.FindFirst(ClaimTypes.Sid)?.Value
-                ?? (windowsResult.Principal.Identity as WindowsIdentity)?.User?.Value;
+            var securityIdentifier = windowsResult.Principal.FindFirst(ClaimTypes.Sid)?.Value;
+            if (string.IsNullOrWhiteSpace(securityIdentifier) && OperatingSystem.IsWindows())
+                securityIdentifier = (windowsResult.Principal.Identity as WindowsIdentity)?.User?.Value;
             if (string.IsNullOrWhiteSpace(securityIdentifier))
             {
+                await LogWindowsSignInAuditAsync(identityName, null, succeeded: false, "Windows account identifier was unavailable.");
                 TempData["WindowsLoginError"] = "Windows did not provide a security identifier for this account. Contact IT.";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
@@ -112,7 +117,17 @@ public sealed class HomeController : Controller
                         userPrincipalName = $"{accountName}@{upnSuffix}";
                 }
 
-                await SignInWindowsIdentityAsync(windowsResult.Principal, identityName, userPrincipalName);
+                var directoryDetails = OperatingSystem.IsWindows()
+                    ? await ReadActiveDirectoryDetailsAsync(accountName)
+                    : (Mail: (string?)null, DisplayName: (string?)null, Department: (string?)null);
+                await SignInWindowsIdentityAsync(
+                    windowsResult.Principal,
+                    identityName,
+                    userPrincipalName,
+                    directoryDetails.Mail,
+                    directoryDetails.DisplayName,
+                    directoryDetails.Department);
+                await LogWindowsSignInAuditAsync(identityName, null, succeeded: true, "Independent AD sign-in succeeded.");
                 if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return LocalRedirect(returnUrl);
                 return RedirectToHome();
@@ -120,11 +135,13 @@ public sealed class HomeController : Controller
 
             if (!result.Success)
             {
+                await LogWindowsSignInAuditAsync(identityName, null, succeeded: false, "Windows sign-in was rejected by portal account validation.");
                 TempData["WindowsLoginError"] = result.ErrorMessage ?? "Unable to sign in with this Yakult portal account.";
                 return RedirectToAction(nameof(Login), new { returnUrl });
             }
 
             await SignInPortalUserAsync(result, rememberMe: false);
+            await LogWindowsSignInAuditAsync(identityName, result.UserId, succeeded: true, "Linked Windows account sign-in succeeded.");
             if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return LocalRedirect(returnUrl);
             return RedirectToHome();
@@ -132,12 +149,38 @@ public sealed class HomeController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Windows sign-in failed for identity {IdentityName}", identityName);
+            await LogWindowsSignInAuditAsync(identityName, null, succeeded: false, "Windows sign-in processing failed.");
             TempData["WindowsLoginError"] = "Unable to sign in with your Windows account right now. Please contact IT.";
             return RedirectToAction(nameof(Login), new { returnUrl });
         }
     }
 
-    private async Task SignInWindowsIdentityAsync(ClaimsPrincipal windowsPrincipal, string identityName, string? email)
+    private async Task LogWindowsSignInAuditAsync(string identityName, int? userId, bool succeeded, string notes)
+    {
+        try
+        {
+            await _portalCardRepository.LogPortalEventAsync(
+                succeeded ? "Login" : "LoginFailed",
+                "PortalAuthentication",
+                null,
+                userId,
+                identityName,
+                notes,
+                HttpContext.Connection.RemoteIpAddress?.ToString());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Unable to write Windows sign-in audit event for {IdentityName}.", identityName);
+        }
+    }
+
+    private async Task SignInWindowsIdentityAsync(
+        ClaimsPrincipal windowsPrincipal,
+        string identityName,
+        string? userPrincipalName,
+        string? adMail,
+        string? displayName,
+        string? department)
     {
         var stableId = windowsPrincipal.FindFirst(ClaimTypes.Sid)?.Value
             ?? identityName.Trim().ToUpperInvariant();
@@ -148,8 +191,17 @@ public sealed class HomeController : Controller
             new("AuthenticationSource", "ActiveDirectory")
         };
 
-        if (!string.IsNullOrWhiteSpace(email))
-            claims.Add(new Claim(ClaimTypes.Email, email));
+        if (!string.IsNullOrWhiteSpace(userPrincipalName))
+            claims.Add(new Claim(ClaimTypes.Email, userPrincipalName));
+
+        if (!string.IsNullOrWhiteSpace(adMail))
+            claims.Add(new Claim("AdEmail", adMail));
+
+        if (!string.IsNullOrWhiteSpace(displayName))
+            claims.Add(new Claim("AdDisplayName", displayName));
+
+        if (!string.IsNullOrWhiteSpace(department))
+            claims.Add(new Claim("AdDepartment", department));
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
@@ -161,6 +213,56 @@ public sealed class HomeController : Controller
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
     }
+
+    [SupportedOSPlatform("windows")]
+    private async Task<(string? Mail, string? DisplayName, string? Department)> ReadActiveDirectoryDetailsAsync(string accountName)
+    {
+        if (string.IsNullOrWhiteSpace(accountName)) return (null, null, null);
+
+        try
+        {
+            return await Task.Run(() =>
+            {
+                using var rootDse = new DirectoryEntry("LDAP://RootDSE");
+                var namingContext = rootDse.Properties["defaultNamingContext"].Value?.ToString();
+                if (string.IsNullOrWhiteSpace(namingContext)) return (null, null, null);
+
+                using var directory = new DirectoryEntry($"LDAP://{namingContext}");
+                using var searcher = new DirectorySearcher(directory)
+                {
+                    Filter = $"(&(objectCategory=person)(objectClass=user)(sAMAccountName={EscapeLdapFilterValue(accountName)}))",
+                    SearchScope = SearchScope.Subtree,
+                    ClientTimeout = TimeSpan.FromSeconds(5)
+                };
+                searcher.PropertiesToLoad.Add("mail");
+                searcher.PropertiesToLoad.Add("displayName");
+                searcher.PropertiesToLoad.Add("department");
+                var result = searcher.FindOne();
+                return (
+                    ReadDirectoryProperty(result, "mail"),
+                    ReadDirectoryProperty(result, "displayName"),
+                    ReadDirectoryProperty(result, "department"));
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not read Active Directory attributes for account {AccountName}.", accountName);
+            return (null, null, null);
+        }
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static string? ReadDirectoryProperty(SearchResult? result, string propertyName) =>
+        result?.Properties[propertyName]?.Count > 0
+            ? result.Properties[propertyName][0]?.ToString()?.Trim()
+            : null;
+
+    private static string EscapeLdapFilterValue(string value) => value
+        .Replace("\\", "\\5c", StringComparison.Ordinal)
+        .Replace("*", "\\2a", StringComparison.Ordinal)
+        .Replace("(", "\\28", StringComparison.Ordinal)
+        .Replace(")", "\\29", StringComparison.Ordinal)
+        .Replace("\0", "\\00", StringComparison.Ordinal);
 
     private static (string Domain, string AccountName, string? UserPrincipalName) ParseWindowsIdentity(string identityName)
     {
