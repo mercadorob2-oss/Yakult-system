@@ -64,6 +64,9 @@ Use `SubType`:
 
 ## Key Table Column Notes
 
+- Desktop database naming: `Yakult_Inventory_System_DEV` is the intended working database on `192.168.100.186,50301`; the `_DEV` suffix is historical. `YIMS_PROD` is the dummy database. Do not infer the deployment environment from those suffixes.
+- Desktop release builds package the canonical `Yakult.Inventory.App\appsettings.json` as the default, preserve existing per-user/base overrides, and exclude extra environment JSON files. Ctrl+Shift+D uses the WPF connection window; View all must reverify an active developer account's password.
+
 - `dbo.Title` columns: `TitleId`, `Code`, `Description` — **not** `TitleName`
 - Join to get a title: `LEFT JOIN dbo.Title t ON e.TitleId = t.TitleId`, then select `t.Code` (preferred display value)
 
@@ -580,3 +583,9 @@ Two non-obvious fixes baked into this:
 - Verification: run the handler's exact view query for the ticket in PROD/DEV (must return a row, not "Invalid column name"); a fresh mobile status change must then write a `CallEmailLog` row (`Sent`, or `Skipped`/`Failed` with a reason, never silent zero).
 
 **Also note:** 723 `Failed` Reminder rows in PROD (`SMTP password decrypt failed`) are a separate scheduler/DPAPI issue, not this one.
+
+## Desktop updater EXE missing in Debug builds
+
+The desktop updater is a separate executable, not a managed assembly dependency of the main app. Visual Studio can disable normal project-reference building, so copying a presumed `Yakult.DesktopUpdater\bin\Debug` file after the app builds can fail on a fresh checkout or after Clean.
+
+`BuildDesktopUpdater` in the app csproj explicitly builds the helper for the active configuration and receives its actual output path from MSBuild. `CopyDesktopUpdater` depends on that target. The solution also declares the helper as a build dependency, and the helper csproj declares both Debug and Release configurations. Keep this wiring when changing the updater project. `tools\Test-DesktopUpdaterBuild.ps1` checks fresh Debug/Release builds with Visual Studio reference building disabled and custom output paths.

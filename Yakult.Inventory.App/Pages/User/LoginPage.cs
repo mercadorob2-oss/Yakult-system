@@ -304,14 +304,12 @@ namespace Yakult.Inventory.App.Pages.User
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            // TEMPORARY: Ctrl+Shift+D opens the DB switcher from the login screen too.
-            // Normally suppressed here because no session exists yet to verify
-            // IsDeveloper + IsSuperAdmin — revert to returning true once done testing.
+            // Connection recovery is available before login; View all verifies developer credentials.
             if (keyData == (Keys.Control | Keys.Shift | Keys.D))
             {
                 using (var form = new Pages.Admin.DBConn.DatabaseSetupForm())
                 {
-                    if (form.ShowDialog() == DialogResult.OK)
+                    if (form.ShowDialog(this) == DialogResult.OK)
                     {
                         Application.Restart();
                         Environment.Exit(0);

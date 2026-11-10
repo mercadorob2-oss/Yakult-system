@@ -745,15 +745,19 @@ public sealed class HomeController : Controller
     /// <paramref name="code"/>) and by <c>UseStatusCodePagesWithReExecute</c> (with one).
     /// </summary>
     [AllowAnonymous]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error(int? code = null)
     {
-        if (code is > 0)
-            Response.StatusCode = code.Value;
+        // Exception handling takes precedence over a code in the original query string.
+        var statusCode = HttpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>() != null
+            ? StatusCodes.Status500InternalServerError
+            : code is >= 400 and <= 599 ? code.Value : StatusCodes.Status500InternalServerError;
+        Response.StatusCode = statusCode;
 
         return View(new ErrorViewModel
         {
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
-            StatusCode = code
+            StatusCode = statusCode
         });
     }
 

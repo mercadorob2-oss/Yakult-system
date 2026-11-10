@@ -316,6 +316,8 @@ namespace Yakult.Inventory.App.Pages.User
                     e.Cancel = true;
             }
 
+            if (e.Cancel) return;
+
             _homeNotifPoller?.Dispose();
             _homeNotifPoller = null;
 
@@ -422,6 +424,17 @@ namespace Yakult.Inventory.App.Pages.User
                 var portal = new Yakult.Inventory.App.Wpf.Portal.WpfMainDashboardShell();
                 Yakult.Inventory.App.Services.YakumiAssistantHost.Register(portal, "Workspace");
                 portal.ShowDialog();
+                if (portal.UpdateRestartRequested)
+                {
+                    var exitRequest = new System.ComponentModel.CancelEventArgs();
+                    Application.Exit(exitRequest);
+                    if (exitRequest.Cancel)
+                    {
+                        Services.DesktopUpdateService.Instance.CancelPendingInstall();
+                        continue;
+                    }
+                    return;
+                }
                 selectedModule = portal.SelectedModule;
 
                 // If user selected Logout OR restricted closing the window (None)
@@ -5154,8 +5167,7 @@ private void UpdateAdminMenuVisibility()
 
         private static bool CanAccessDatabaseSwitcher()
         {
-            if (Yakult.Inventory.App.Session.AppSession.IsDeveloper &&
-                Yakult.Inventory.App.Session.AppSession.IsSuperAdmin)
+            if (Yakult.Inventory.App.Session.AppSession.IsDeveloper)
                 return true;
 
             return string.Equals(Yakult.Inventory.App.Session.AppSession.CurrentCompanyName,    "YPI",                    StringComparison.OrdinalIgnoreCase)
@@ -5167,7 +5179,7 @@ private void UpdateAdminMenuVisibility()
         {
             using (var form = new Pages.Admin.DBConn.DatabaseSetupForm())
             {
-                if (form.ShowDialog() == DialogResult.OK)
+                if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     Application.Restart();
                     Environment.Exit(0);

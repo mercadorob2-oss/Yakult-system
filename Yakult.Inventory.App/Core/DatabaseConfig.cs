@@ -52,6 +52,19 @@ namespace Yakult.Inventory.App.Core
             _jsonDefaultConnectionString = connectionString;
         }
 
+        public static string DefaultConnectionString => _jsonDefaultConnectionString ?? AppSettingsLoader.LoadConnectionString() ?? string.Empty;
+
+        public static string ConnectionSource
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_bootstrapConnectionString)) return "Host configuration";
+                try { if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.DbConnectionString)) return "Saved override on this PC"; }
+                catch { }
+                return string.IsNullOrWhiteSpace(DefaultConnectionString) ? "Manual setup" : "Application default";
+            }
+        }
+
         /// <summary>
         /// Gets the current connection string. Priority order:
         ///   1. Bootstrap (non-WinForms console hosts only)
