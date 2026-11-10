@@ -76,6 +76,16 @@ cd "C:\Users\russel.mercado\source\repos\Yakult-System-for-Merging\Yakult.System
 
 ## Scripts Overview
 
+Policy image uploads are saved on the IIS server in `App_Data\CompanyPolicyMedia`. The publish script preserves this folder during its mirror operation and copies bundled diagrams only when their filenames are missing on the server. When run with `-LocalDeploy`, it also grants the selected app pool Modify access to this folder. For a first remote deployment, run the following once in elevated PowerShell on the IIS server (using the actual pool name if different):
+
+```powershell
+$policyMedia = 'C:\inetpub\wwwroot\Yakult.SystemsPortal\App_Data\CompanyPolicyMedia'
+New-Item -ItemType Directory -Path $policyMedia -Force | Out-Null
+icacls $policyMedia /grant 'IIS AppPool\Yakult.SystemPortal:(OI)(CI)M'
+```
+
+An upload HTTP 500 with `UnauthorizedAccessException` in the server's Application event log indicates that the portal process cannot write to this folder. Inspect these events remotely with `Get-WinEvent -ComputerName <server> -LogName Application`; this uses the event log service and does not require PowerShell remoting.
+
 ### Deploy-Launcher.ps1
 **Run from:** Development machine  
 **Purpose:** Builds and deploys YakultLauncher.exe to the target server

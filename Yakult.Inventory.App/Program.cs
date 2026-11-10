@@ -24,7 +24,7 @@ namespace Yakult.Inventory.App
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -112,7 +112,7 @@ namespace Yakult.Inventory.App
             // (no JSON files and no previously saved user settings).
             if (!DatabaseConfig.IsConfigured)
             {
-                using (var setupForm = new DatabaseSetupForm())
+                using (var setupForm = new DatabaseSetupForm(initialSetup: true))
                 {
                     if (setupForm.ShowDialog() != DialogResult.OK)
                         return;
@@ -121,6 +121,29 @@ namespace Yakult.Inventory.App
 
             // Start with MainForm which will show login/register dialog
             var mainForm = new MainForm();
+            Services.DesktopUpdateService.Instance.Start(args);
+            string announcedUpdate = null;
+            Action notifyUpdate = () =>
+            {
+                if (mainForm.IsDisposed || !mainForm.IsHandleCreated) return;
+                try
+                {
+                    mainForm.BeginInvoke(new Action(() =>
+                    {
+                        var release = Services.DesktopUpdateService.Instance.State.Release;
+                        if (release == null || release.Version == announcedUpdate || !Session.AppSession.IsLoggedIn || !Session.AppSession.NotificationsEnabled) return;
+                        announcedUpdate = release.Version;
+                        Services.ToastNotificationService.Instance.ShowInfo("Yakult update available", "Version " + release.Version + " is ready. Open Updates on the Workspace dashboard when you are ready to install.");
+                    }));
+                }
+                catch (InvalidOperationException) { /* The application is closing. */ }
+            };
+            Services.DesktopUpdateService.Instance.Changed += notifyUpdate;
+            Application.ApplicationExit += (_, __) =>
+            {
+                Services.DesktopUpdateService.Instance.Changed -= notifyUpdate;
+                Services.DesktopUpdateService.Instance.Dispose();
+            };
             Yakult.Inventory.App.Services.YakumiAssistantHost.Install(mainForm);
             Application.Run(mainForm);
         }

@@ -212,14 +212,15 @@ try {
     # mirror. The installer folder may contain files maintained on the IIS
     # server, so copying it would overwrite files and mirroring it could delete
     # files that are not present in the repository publish output. The media
-    # tree is preserved as a whole; employee-resources is also listed explicitly
-    # so its uploaded PDFs and other attachments remain protected if the broader
-    # media exclusion is ever changed.
+    # tree is preserved as a whole; employee-resources is listed explicitly
+    # as well. CompanyPolicyMedia holds policy images uploaded to App_Data.
     $serverMediaDirectory = Join-Path $publishDir "wwwroot\media"
     $employeeResourcesDirectory = Join-Path $publishDir "wwwroot\media\employee-resources"
+    $companyPolicyMediaDirectory = Join-Path $publishDir "App_Data\CompanyPolicyMedia"
     $excludedServerDirectories = @(
         $serverMediaDirectory,
         $employeeResourcesDirectory,
+        $companyPolicyMediaDirectory,
         (Join-Path $publishDir "installer")
     )
     $robocopyArgs = @($publishDir, $remoteShare, "/E", "/NJH", "/NJS", "/NP", "/R:3", "/W:5", "/MIR", "/XD") + $excludedServerDirectories
@@ -230,14 +231,27 @@ try {
 
     # /XD protects uploaded content that is already on the IIS server. It cannot
     # recreate a directory deleted by an older /MIR deployment, so establish the
-    # writable Employee Resources root after every successful deployment.
+    # writable Employee Resources and CompanyPolicyMedia roots after deployment.
     $remoteMediaDirectory = Join-Path $remoteShare "wwwroot\media"
     $remoteEmployeeResourcesDirectory = Join-Path $remoteMediaDirectory "employee-resources"
     New-Item -ItemType Directory -Path $remoteEmployeeResourcesDirectory -Force | Out-Null
+    $remoteCompanyPolicyMediaDirectory = Join-Path $remoteShare "App_Data\CompanyPolicyMedia"
+    New-Item -ItemType Directory -Path $remoteCompanyPolicyMediaDirectory -Force | Out-Null
+    # Install bundled diagrams that are missing, while preserving uploaded files
+    # and any server-maintained versions of existing diagrams.
+    if (Test-Path -LiteralPath $companyPolicyMediaDirectory) {
+        foreach ($diagram in Get-ChildItem -LiteralPath $companyPolicyMediaDirectory -File) {
+            $deployedDiagram = Join-Path $remoteCompanyPolicyMediaDirectory $diagram.Name
+            if (-not (Test-Path -LiteralPath $deployedDiagram)) {
+                Copy-Item -LiteralPath $diagram.FullName -Destination $deployedDiagram
+            }
+        }
+    }
 
     Write-Ok "Files copied to $remoteShare"
     Write-Ok "Preserved server directory: $remoteMediaDirectory"
     Write-Ok "Ensured and preserved Employee Resources attachments: $remoteEmployeeResourcesDirectory"
+    Write-Ok "Ensured and preserved company policy uploads: $remoteCompanyPolicyMediaDirectory"
     Write-Ok "Preserved server directory: $(Join-Path $remoteShare 'installer')"
 } catch {
     Write-Err "Copy failed: $_"
@@ -245,6 +259,17 @@ try {
 }
 
 if ($LocalDeploy) {
+    Write-Step "Granting IIS write access to company policy uploads"
+    $policyMediaDirectory = Join-Path $SitePath "App_Data\CompanyPolicyMedia"
+    New-Item -ItemType Directory -Path $policyMediaDirectory -Force | Out-Null
+    $poolIdentity = "IIS AppPool\$AppPoolName"
+    $poolModifyGrant = "${poolIdentity}:(OI)(CI)M"
+    & icacls $policyMediaDirectory /grant $poolModifyGrant
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not grant Modify permission to $poolIdentity on $policyMediaDirectory"
+    }
+    Write-Ok "Granted Modify permission to $poolIdentity on $policyMediaDirectory"
+
     Write-Step "Starting IIS App Pool: $AppPoolName"
     & appcmd start apppool /apppool.name:$AppPoolName 2>$null
     if ($LASTEXITCODE -ne 0) {

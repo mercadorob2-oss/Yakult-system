@@ -4,10 +4,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 18.3.11520.95
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yakult.Inventory.App", "Yakult.Inventory.App\Yakult.Inventory.App.csproj", "{9C526A20-03D2-EFAB-09E0-F4CC37F38B20}"
+	ProjectSection(ProjectDependencies) = postProject
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B} = {21389C64-30B5-4B97-9D96-26D650AE1A8B}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yakult.ITCM.Scheduler", "Yakult.ITCM.Scheduler\Yakult.ITCM.Scheduler.csproj", "{3B7F8E20-1A4C-4D89-B562-F9A03C7D5E16}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yakult.ITCM.Server", "Yakult.ITCM.Server\Yakult.ITCM.Server.csproj", "{52348618-6C24-47A3-8593-79D2AB8A6A5B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yakult.DesktopUpdater", "Yakult.DesktopUpdater\Yakult.DesktopUpdater.csproj", "{21389C64-30B5-4B97-9D96-26D650AE1A8B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,6 +24,18 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Debug|Any CPU.ActiveCfg = Debug|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Debug|Any CPU.Build.0 = Debug|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Release|Any CPU.ActiveCfg = Release|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Release|Any CPU.Build.0 = Release|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Debug|x64.ActiveCfg = Debug|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Debug|x64.Build.0 = Debug|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Release|x64.ActiveCfg = Release|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Release|x64.Build.0 = Release|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Debug|x86.ActiveCfg = Debug|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Debug|x86.Build.0 = Debug|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Release|x86.ActiveCfg = Release|AnyCPU
+		{21389C64-30B5-4B97-9D96-26D650AE1A8B}.Release|x86.Build.0 = Release|AnyCPU
 		{9C526A20-03D2-EFAB-09E0-F4CC37F38B20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9C526A20-03D2-EFAB-09E0-F4CC37F38B20}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C526A20-03D2-EFAB-09E0-F4CC37F38B20}.Debug|x64.ActiveCfg = Debug|x64

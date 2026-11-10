@@ -29,6 +29,8 @@ namespace Yakult.Inventory.App.Wpf.Portal
     public sealed class WpfMainDashboardShell : Window
     {
         public PortalSelection SelectedModule { get; private set; } = PortalSelection.None;
+        public bool UpdateRestartRequested { get; private set; }
+        private TextBlock _updateLabel;
 
         private static readonly Color TextSecondary = Color.FromRgb(103, 112, 129);
         private static readonly Brush Ink = Brush("#202635");
@@ -105,6 +107,13 @@ namespace Yakult.Inventory.App.Wpf.Portal
             BuildFooter();
             Content = _rootGrid;
             PreviewKeyDown += HandleShortcut;
+            DesktopUpdateService.Instance.Changed += OnDesktopUpdateChanged;
+            Closed += (_, __) => DesktopUpdateService.Instance.Changed -= OnDesktopUpdateChanged;
+            Loaded += async (_, __) => {
+                var completion = DesktopUpdateService.Instance.TakeCompletionMessage();
+                if (completion != null) ShowDesktopUpdates(completion);
+                await DesktopUpdateService.Instance.CheckAsync();
+            };
         }
 
         private const string EmployeePortalUrl = "http://192.168.100.186:7016";
@@ -163,6 +172,17 @@ namespace Yakult.Inventory.App.Wpf.Portal
             }
 
             var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            var updates = ActionButton("Updates", null, () => ShowDesktopUpdates());
+            _updateLabel = new TextBlock { Text = "Updates", VerticalAlignment = VerticalAlignment.Center };
+            var updateContent = new StackPanel { Orientation = Orientation.Horizontal };
+            var updateIcon = MakeIcon("bell", Brush("#F8FAFC"), 17);
+            updateIcon.Margin = new Thickness(0, 0, 6, 0);
+            updateContent.Children.Add(updateIcon);
+            updateContent.Children.Add(_updateLabel);
+            updates.Content = updateContent;
+            updates.ToolTip = "Check for desktop updates";
+            actions.Children.Add(updates);
+            OnDesktopUpdateChanged();
             Button recent = null;
             recent = ActionButton("Recent", null, () => ShowSystemMenu(recent, _preferences.Recent));
             actions.Children.Add(recent);
@@ -183,6 +203,22 @@ namespace Yakult.Inventory.App.Wpf.Portal
             grid.Children.Add(actions);
             header.Child = grid;
             _rootGrid.Children.Add(header);
+        }
+
+        private void OnDesktopUpdateChanged()
+        {
+            if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(OnDesktopUpdateChanged)); return; }
+            if (_updateLabel == null) return;
+            var release = DesktopUpdateService.Instance.State.Release;
+            _updateLabel.Text = release == null ? "Updates" : "Updates (1)";
+            _updateLabel.Foreground = release == null ? Brush("#F8FAFC") : Brush("#FFD38B");
+        }
+
+        private void ShowDesktopUpdates(string completion = null)
+        {
+            var dialog = new DesktopUpdateWindow(completion) { Owner = this };
+            dialog.ShowDialog();
+            if (dialog.RestartRequested) { UpdateRestartRequested = true; Close(); }
         }
 
         private void BuildContent()
@@ -845,7 +881,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
         {
             var footer = new Border { Background = Brushes.White, BorderBrush = Line, BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(24, 10, 24, 10) };
             var dock = new DockPanel();
-            var version = Label("v" + (Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.0.0"), 10, Muted);
+            var version = Label("v" + DesktopUpdateService.Instance.InstalledVersion.ToString(3), 10, Muted);
             version.HorizontalAlignment = HorizontalAlignment.Right;
             DockPanel.SetDock(version, Dock.Right);
             dock.Children.Add(version);
@@ -1048,6 +1084,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
                 case "logout": data = "M10,3 L3,3 3,21 10,21 M8,12 L22,12 M17,7 L22,12 17,17"; break;
                 case "help": data = "M22,12 A10,10 0 1 1 2,12 A10,10 0 1 1 22,12 M8,8 Q8,4 13,6 Q18,8 12,12 L12,14 M12,17 L12,18"; break;
                 case "chat": data = "M4,4 L20,4 20,14 14,14 10,20 10,14 4,14 Z"; break;
+                case "bell": data = "M5,17 L19,17 17,14 17,9 A5,5 0 0 0 7,9 L7,14 Z M10,20 Q12,23 14,20 M12,2 L12,4"; break;
                 default: data = "M3,12 L21,12 M15,6 L21,12 15,18"; break;
             }
             var path = new System.Windows.Shapes.Path { Data = Geometry.Parse(data), StrokeThickness = 1.6, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round, Stretch = Stretch.Uniform, Width = size, Height = size, VerticalAlignment = VerticalAlignment.Center };
@@ -1109,7 +1146,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
 
         private static bool CanAccessDatabaseSwitcher()
         {
-            if (AppSession.IsDeveloper && AppSession.IsSuperAdmin)
+            if (AppSession.IsDeveloper)
                 return true;
 
             return string.Equals(AppSession.CurrentCompanyName,    "YPI",                    StringComparison.OrdinalIgnoreCase)
@@ -1121,7 +1158,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
         {
             using (var form = new Pages.Admin.DBConn.DatabaseSetupForm())
             {
-                if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                if (form.ShowDialog(this) == System.Windows.Forms.DialogResult.OK)
                 {
                     System.Windows.Forms.Application.Restart();
                     Environment.Exit(0);

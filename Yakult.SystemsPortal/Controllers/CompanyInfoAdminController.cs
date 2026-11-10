@@ -13,11 +13,16 @@ public sealed class CompanyInfoAdminController : Controller
 {
     private readonly ICompanyInfoRepository _companyInfo;
     private readonly IWebHostEnvironment _environment;
+    private readonly ILogger<CompanyInfoAdminController> _logger;
 
-    public CompanyInfoAdminController(ICompanyInfoRepository companyInfo, IWebHostEnvironment environment)
+    public CompanyInfoAdminController(
+        ICompanyInfoRepository companyInfo,
+        IWebHostEnvironment environment,
+        ILogger<CompanyInfoAdminController> logger)
     {
         _companyInfo = companyInfo;
         _environment = environment;
+        _logger = logger;
     }
 
     [HttpGet("")]
@@ -187,8 +192,20 @@ public sealed class CompanyInfoAdminController : Controller
 
         var name = $"policy-diagram-{DateTime.UtcNow:yyyyMMddHHmmss}-{Convert.ToHexString(RandomNumberGenerator.GetBytes(6)).ToLowerInvariant()}{extension}";
         var folder = PolicyAssetFolder();
-        Directory.CreateDirectory(folder);
-        await System.IO.File.WriteAllBytesAsync(Path.Combine(folder, name), bytes, HttpContext.RequestAborted);
+        try
+        {
+            Directory.CreateDirectory(folder);
+            await System.IO.File.WriteAllBytesAsync(Path.Combine(folder, name), bytes, HttpContext.RequestAborted);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogError(ex, "Failed to save company policy image to {PolicyAssetFolder}.", folder);
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                success = false,
+                message = "The portal could not save the image. Check the portal server's write access to its CompanyPolicyMedia folder and review the server log."
+            });
+        }
         return Json(new { success = true, name, url = "/media/company-policies/" + name });
     }
 

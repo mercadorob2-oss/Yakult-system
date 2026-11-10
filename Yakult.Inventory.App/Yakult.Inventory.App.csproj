@@ -312,6 +312,7 @@
       <HintPath>packages\System.Text.Encoding.CodePages.4.7.1\lib\net461\System.Text.Encoding.CodePages.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -380,6 +381,10 @@
     <Compile Include="Core\AppConfig.cs" />
     <Compile Include="Core\AppSettingsLoader.cs" />
     <Compile Include="Core\DatabaseConfig.cs" />
+    <Compile Include="Core\DatabaseConnectionProfile.cs" />
+    <Compile Include="Security\DeveloperConnectionAuthorizer.cs" />
+    <Compile Include="Wpf\Admin\Database\DatabaseConnectionWindow.cs" />
+    <Compile Include="Wpf\Admin\Database\DeveloperPasswordWindow.cs" />
     <Compile Include="Core\EntryTypes.cs" />
     <Compile Include="Core\ItemTypes.cs" />
     <Compile Include="Core\AppTime.cs" />
@@ -1912,6 +1917,17 @@
     <Compile Include="Services\PortalNotificationService.cs" />
     <Compile Include="Services\QRDataService.cs" />
     <Compile Include="Services\DesktopNotificationPoller.cs" />
+    <Compile Include="Services\DesktopUpdateService.cs" />
+    <Compile Include="Wpf\Portal\DesktopUpdateWindow.cs" />
+    <Compile Include="..\Yakult.DesktopUpdater\UpdateProtocol.cs">
+      <Link>Services\UpdateProtocol.cs</Link>
+    </Compile>
+    <Compile Include="..\Yakult.DesktopUpdater\UpdateCache.cs">
+      <Link>Services\UpdateCache.cs</Link>
+    </Compile>
+    <EmbeddedResource Include="Installer\UpdatePublicKey.xml">
+      <LogicalName>Yakult.DesktopUpdates.ReleasePublicKey.xml</LogicalName>
+    </EmbeddedResource>
     <Compile Include="Services\HomeNotificationPoller.cs" />
     <Compile Include="Services\InventoryActivityNotifier.cs" />
     <Compile Include="Services\RepairPortalNotificationPoller.cs" />
@@ -2933,9 +2949,7 @@
     <Compile Include="Pages\Admin\ReceiptBackfillPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Pages\Admin\DBConn\DatabaseSetupForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Pages\Admin\DBConn\DatabaseSetupForm.cs" />
     <Compile Include="Pages\Admin\Email-Management\BranchEmailBindingPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -3457,6 +3471,27 @@
     </Compile>
     <EmbeddedResource Include="Pages\**\*.resx" Exclude="Pages\InvoiceImportDialog.resx" />
   </ItemGroup>
+  <ItemGroup>
+    <DesktopUpdaterProject Include="$(MSBuildThisFileDirectory)..\Yakult.DesktopUpdater\Yakult.DesktopUpdater.csproj" />
+    <Compile Include="$(DesktopVersionSource)" Condition="'$(DesktopVersionSource)' != ''" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(DesktopVersionSource)' != ''">
+    <DefineConstants>$(DefineConstants);DESKTOP_RELEASE_VERSION</DefineConstants>
+  </PropertyGroup>
+  <Target Name="BuildDesktopUpdater" BeforeTargets="BeforeBuild" Condition="'$(DesignTimeBuild)' != 'true'">
+    <MSBuild Projects="@(DesktopUpdaterProject)" Targets="Build"
+             Properties="Configuration=$(Configuration);Platform=AnyCPU"
+             RemoveProperties="OutDir;OutputPath;BaseOutputPath;BaseIntermediateOutputPath;IntermediateOutputPath;DesktopVersionSource;BuildingInsideVisualStudio;BuildProjectReferences">
+      <Output TaskParameter="TargetOutputs" ItemName="_DesktopUpdaterBuiltOutputs" />
+    </MSBuild>
+    <Error Condition="'@(_DesktopUpdaterBuiltOutputs)' == ''" Text="The desktop updater project did not produce an executable." />
+  </Target>
+  <Target Name="CopyDesktopUpdater" AfterTargets="Build" DependsOnTargets="BuildDesktopUpdater" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Copy SourceFiles="@(_DesktopUpdaterBuiltOutputs)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <FileWrites Include="@(_DesktopUpdaterBuiltOutputs->'$(TargetDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+  </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildToolsPath)Sdks\Microsoft.NET.Sdk.WindowsDesktop\targets\Microsoft.WinFX.targets" Condition="Exists('$(MSBuildToolsPath)Sdks\Microsoft.NET.Sdk.WindowsDesktop\targets\Microsoft.WinFX.targets')" />
   <Import Project="packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets" Condition="Exists('packages\Microsoft.Data.SqlClient.SNI.6.0.2\build\net462\Microsoft.Data.SqlClient.SNI.targets')" />

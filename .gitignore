@@ -14,6 +14,16 @@ packages/
 **/_build_verify/
 *.zip
 
+# Desktop release output and isolated updater checks
+/artifacts/desktop-releases/
+/artifacts/desktop-update-checks-*/
+/artifacts/desktop-updater-build-checks-*/
+/artifacts/desktop-update-previews/
+/artifacts/database-connection-checks-*/
+/artifacts/desktop-updater*.log
+/artifacts/desktop-release-package.log
+**/manifest-private.xml
+
 # Local secrets and machine-specific overrides
 **/appsettings.Local.json
 

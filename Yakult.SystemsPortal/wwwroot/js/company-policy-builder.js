@@ -176,7 +176,12 @@
             const payload = new FormData(); payload.append('file', upload.files[0]);
             try {
                 const response = await fetch(root.dataset.uploadUrl, { method: 'POST', headers: { RequestVerificationToken: token }, body: payload, credentials: 'same-origin' });
-                const result = await response.json();
+                const responseText = await response.text();
+                let result;
+                try { result = JSON.parse(responseText); }
+                catch {
+                    throw new Error(`Image upload failed (HTTP ${response.status}). The server returned an HTML error page; check the portal server log.`);
+                }
                 if (!response.ok || !result.success) throw new Error(result.message || 'The diagram upload failed.');
                 assets = [{ name: result.name, url: result.url }, ...assets.filter(x => x.url !== result.url)];
                 removedFlowchartImages.delete(block);

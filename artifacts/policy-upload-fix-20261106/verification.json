@@ -1,0 +1,14 @@
+{
+  "Server": "192.168.100.186",
+  "Pool": "Yakult.SystemPortal",
+  "Folder": "C:\\inetpub\\wwwroot\\Yakult.SystemsPortal\\App_Data\\CompanyPolicyMedia",
+  "RootCause": "UnauthorizedAccessException from File.WriteAllBytesAsync",
+  "GrantedSid": "S-1-5-82-2802162947-2550923367-2377396759-3045567466-1557006035",
+  "Rights": "Modify with file/directory inheritance",
+  "VerifiedPostUtc": "2026-11-06T02:05:09Z",
+  "VerifiedPostStatus": 200,
+  "UploadedFile": "policy-diagram-20261106020509-24242444efa6.png",
+  "UploadedBytes": 144107,
+  "Build": "0 warnings, 0 errors",
+  "DeploymentMirrorCheck": "passed"
+}

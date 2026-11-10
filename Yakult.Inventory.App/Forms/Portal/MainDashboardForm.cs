@@ -455,7 +455,7 @@ namespace Yakult.Inventory.App.Forms.Portal
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                if (IsDeveloperEnvironment())
+                if (CanAccessDatabaseSwitcher())
                 {
                     HandleDeveloperDatabaseReset();
                 }
@@ -465,21 +465,21 @@ namespace Yakult.Inventory.App.Forms.Portal
         #region Developer-Only Database Reset
 
         /// <summary>
-        /// A machine is a developer environment when appsettings.Development.json is present
-        /// next to the executable. Production deployments exclude that file.
+        /// Match the connection settings access used by the WPF dashboard and inventory shell.
         /// </summary>
-        private static bool IsDeveloperEnvironment()
+        private static bool CanAccessDatabaseSwitcher()
         {
-            var devConfig = System.IO.Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory, "appsettings.Development.json");
-            return System.IO.File.Exists(devConfig);
+            return Yakult.Inventory.App.Session.AppSession.IsDeveloper
+                || (string.Equals(Yakult.Inventory.App.Session.AppSession.CurrentCompanyName, "YPI", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(Yakult.Inventory.App.Session.AppSession.CurrentDepartmentName, "INFORMATION TECHNOLOGY", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(Yakult.Inventory.App.Session.AppSession.CurrentBranchName, "MANILA LIAISON OFFICE", StringComparison.OrdinalIgnoreCase));
         }
 
         private void HandleDeveloperDatabaseReset()
         {
             using (var form = new Yakult.Inventory.App.Pages.Admin.DBConn.DatabaseSetupForm())
             {
-                if (form.ShowDialog() == DialogResult.OK)
+                if (form.ShowDialog(this) == DialogResult.OK)
                 {
                     Application.Restart();
                     Environment.Exit(0);

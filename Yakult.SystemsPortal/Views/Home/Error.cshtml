@@ -1,32 +1,106 @@
 @model ErrorViewModel
 @{
-    ViewData["Title"] = Model.Title;
-    var code = Model.StatusCode ?? 500;
+    Layout = null;
+    var code = Model.EffectiveStatusCode;
 }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>@Model.Title - Yakult Employee Portal</title>
+    <link rel="stylesheet" href="~/css/error-page.css" asp-append-version="true" />
+    <script src="~/js/error-page.js" asp-append-version="true" defer></script>
+</head>
+<body class="portal-error">
+    <a class="portal-error__skip" href="#main-content">Skip to main content</a>
+    <header class="portal-error__header">
+        <a class="portal-error__brand" asp-controller="Public" asp-action="Index" aria-label="Yakult Employee Portal home">
+            <span class="portal-error__brand-mark" aria-hidden="true">Y</span>
+            <span><strong>Yakult</strong><small>Employee Portal</small></span>
+        </a>
+        <a class="portal-error__help-link" asp-controller="Public" asp-action="Help">
+            IT Help Center <span aria-hidden="true">↗</span>
+        </a>
+    </header>
 
-<section class="error-page">
-    <div class="error-card" data-code="@code">
-        <div class="error-code">@code</div>
-        <h1 class="error-title">@Model.Title</h1>
-        <p class="error-message">@Model.Message</p>
+    <main id="main-content" class="portal-error__main">
+        <div class="portal-error__intro">A little help getting back on track</div>
+        <section class="portal-error__card" aria-labelledby="error-title" data-code="@code">
+            <div class="portal-error__content">
+                <span class="portal-error__eyebrow">Error @code</span>
+                <h1 id="error-title">@Model.Title</h1>
+                <p class="portal-error__message">@Model.Message</p>
+                <p class="portal-error__hint">@Model.RecoveryHint</p>
+                <div class="portal-error__actions">
+                    @if (code == 401)
+                    {
+                        <a class="portal-error__button portal-error__button--primary" asp-controller="Home" asp-action="Login">
+                            Sign in <span aria-hidden="true">→</span>
+                        </a>
+                        <a class="portal-error__button portal-error__button--secondary" asp-controller="Public" asp-action="Index">Back to portal</a>
+                    }
+                    else
+                    {
+                        <a class="portal-error__button portal-error__button--primary" asp-controller="Public" asp-action="Index">
+                            Back to portal <span aria-hidden="true">→</span>
+                        </a>
+                        <a class="portal-error__button portal-error__button--secondary" asp-controller="Public" asp-action="Services">Services &amp; portals</a>
+                    }
+                </div>
+            </div>
+            <div class="portal-error__visual" aria-hidden="true">
+                <div class="portal-error__symbol">
+                    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">
+                        @if (code is 401 or 403)
+                        {
+                            <rect x="12" y="21" width="24" height="20" rx="4" />
+                            <path d="M17 21v-7a7 7 0 0 1 14 0v7M24 29v5" />
+                        }
+                        else if (code == 404)
+                        {
+                            <path d="M28 6H14a4 4 0 0 0-4 4v28a4 4 0 0 0 4 4h20a4 4 0 0 0 4-4V16L28 6Z" />
+                            <path d="M28 6v10h10M19 25l10 10M29 25 19 35" />
+                        }
+                        else
+                        {
+                            <path d="m21 9-17 29a3 3 0 0 0 3 4h34a3 3 0 0 0 3-4L27 9a3.5 3.5 0 0 0-6 0Z" />
+                            <path d="M24 20v9M24 35h.01" />
+                        }
+                    </svg>
+                </div>
+                <span class="portal-error__code">@code</span>
+                <span class="portal-error__visual-caption">You're still in the right place.</span>
+                <span class="portal-error__visual-note">Let's find your next step.</span>
+            </div>
+            <aside class="portal-error__support" aria-labelledby="support-title">
+                <div class="portal-error__support-heading">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13v-1a8 8 0 0 1 16 0v1M6 12H4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2V12ZM18 12h2a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-2V12ZM18 18v1a2 2 0 0 1-2 2h-4" /></svg>
+                    <h2 id="support-title">Need a hand?</h2>
+                </div>
+                <p>Visit the <a asp-controller="Public" asp-action="Help">IT Help Center</a> for support.@if (Model.ShowRequestId){<text> Share the reference below so IT can look into this request.</text>}</p>
+                @if (Model.ShowRequestId)
+                {
+                    <div class="portal-error__reference">
+                        <div class="portal-error__reference-value">
+                            <span>Support reference</span>
+                            <code id="support-reference">@Model.RequestId</code>
+                        </div>
+                        <button class="portal-error__copy" type="button" data-copy-reference hidden>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="8" y="8" width="12" height="13" rx="2" /><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3" /></svg>
+                            Copy reference
+                        </button>
+                    </div>
+                    <p class="portal-error__copy-status" role="status" aria-live="polite" aria-atomic="true"></p>
+                }
+            </aside>
+        </section>
+    </main>
 
-        <div class="error-actions">
-            <a class="system-button system-button--primary" href="/">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <span>Back to Home</span>
-            </a>
-            <a class="system-button system-button--secondary" href="/docs/index.html" target="_blank">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                <span>View Documentation</span>
-            </a>
-        </div>
-
-        @if (Model.ShowRequestId)
-        {
-            <p class="error-request-id">
-                <span>Request ID:</span>
-                <code>@Model.RequestId</code>
-            </p>
-        }
-    </div>
-</section>
+    <footer class="portal-error__footer">
+        <span>&copy; @DateTime.Now.Year Yakult Philippines Incorporated</span>
+        <span>For authorized employee use</span>
+    </footer>
+</body>
+</html>
