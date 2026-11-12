@@ -1,4 +1,5 @@
 using System.Windows.Media;
+using System.Windows.Input;
 using ToastNotifications.Core;
 
 namespace Yakult.Inventory.App.Wpf.Toast
@@ -28,7 +29,22 @@ namespace Yakult.Inventory.App.Wpf.Toast
 
             ApplyKindStyle(notification.Kind);
 
-            CloseButton.Click += (s, e) => Notification.Close();
+            CloseButton.Click += (s, e) => { e.Handled = true; Notification.Close(); };
+            if (notification.Activate != null)
+            {
+                Cursor = Cursors.Hand; Focusable = true;
+                ToolTip = "Open this conversation";
+                MouseLeftButtonUp += (_,e) =>
+                {
+                    if (CloseButton.IsMouseOver) return;
+                    e.Handled = true; Notification.Close(); notification.Activate();
+                };
+                KeyDown += (_,e) =>
+                {
+                    if (e.Key != Key.Enter || CloseButton.IsKeyboardFocusWithin) return;
+                    e.Handled = true; Notification.Close(); notification.Activate();
+                };
+            }
         }
 
         private void ApplyKindStyle(YakultToastKind kind)

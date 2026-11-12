@@ -589,3 +589,15 @@ Two non-obvious fixes baked into this:
 The desktop updater is a separate executable, not a managed assembly dependency of the main app. Visual Studio can disable normal project-reference building, so copying a presumed `Yakult.DesktopUpdater\bin\Debug` file after the app builds can fail on a fresh checkout or after Clean.
 
 `BuildDesktopUpdater` in the app csproj explicitly builds the helper for the active configuration and receives its actual output path from MSBuild. `CopyDesktopUpdater` depends on that target. The solution also declares the helper as a build dependency, and the helper csproj declares both Debug and Release configurations. Keep this wiring when changing the updater project. `tools\Test-DesktopUpdaterBuild.ps1` checks fresh Debug/Release builds with Visual Studio reference building disabled and custom output paths.
+
+## Desktop update publication denied when renaming to EXE
+
+`ypi-hqfs` applies an active FSRM `Block Executable and System Files` screen at `E:\YPI-HQFS\My_Dept\IT`. This permits `.partial` uploads but denies their rename to `.exe`, even when the account has Modify access. Local administrator mode does not remove that server restriction.
+
+The fix applied on 2026-11-10 is a folder-specific file-screen exception at `E:\YPI-HQFS\My_Dept\IT\ITDSharedFolder\Russel\Yakult_Desktop_Installer\New Versions\patch_versions`. Its custom group `Yakult Desktop Update Installers` includes only `YISP_Setup_*.exe` and `YISP_PublishProbe_*.exe`. Yakult installer publication is allowed; unrelated EXEs remain blocked. Preserve the parent screen and built-in file groups. If this error recurs, inspect this exception on the server before changing the publisher or permissions.
+
+`Publish-DesktopRelease.ps1` tests an executable rename before uploading the full installer, and only announces the release through `latest.json` after the installer is available. Failed publication can be retried with the same local installer/version; no rebuild is needed.
+
+Double-clicking `Publish-DesktopInstaller.cmd` automatically selects the highest numeric completed build under `artifacts\desktop-releases` and verifies its signed `latest.json` against the installer. Do not reintroduce mandatory installer-path/version prompts. Saved build release notes are preserved. Repeating an unchanged published release reports "already published" without rewriting the feed; automatic discovery never downgrades a newer feed. Explicit `-InstallerPath`/`-Version` overrides and read-only `-WhatIf` previews remain supported.
+
+The publish CMD launcher clears inherited `PSModulePath` within `setlocal` before starting Windows PowerShell. Without this isolation, launching it through PowerShell 7 can make Windows PowerShell load incompatible modules and report that `Get-FileHash` does not exist.

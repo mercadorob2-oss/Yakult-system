@@ -1,0 +1,20 @@
+{
+  "Server": "YPI-HQFS",
+  "Path": "E:\\YPI-HQFS\\My_Dept\\IT\\ITDSharedFolder\\Russel\\Yakult_Desktop_Installer\\New Versions\\patch_versions",
+  "FileGroup": [],
+  "Exception": [],
+  "ActiveParentScreens": [
+    {
+      "Path": "E:\\YPI-HQFS\\My_Dept\\IT",
+      "Active": true,
+      "IncludeGroup": [
+        "Executable Files",
+        "System Files"
+      ],
+      "Template": "Block Executable and System Files"
+    }
+  ],
+  "PSComputerName": "ypi-hqfs",
+  "RunspaceId": "719cccea-2fbf-4ae9-8e51-8aa9f533e59c",
+  "PSShowComputerName": true
+}

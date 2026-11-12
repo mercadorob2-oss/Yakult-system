@@ -1119,6 +1119,7 @@
     <Compile Include="Repositories\UserNotificationSettingRepository.cs" />
     <Compile Include="Repositories\ReportsRepository.cs" />
     <Compile Include="Repositories\AdminAlertRepository.cs" />
+    <Compile Include="Repositories\DeviceMessengerRepository.cs" />
     <Compile Include="Services\CartridgeApprovalService.cs" />
     <Compile Include="Services\OllamaChatService.cs" />
     <Compile Include="Services\OllamaConnectionSettings.cs" />
@@ -1401,6 +1402,7 @@
     <Compile Include="Wpf\CallMonitoring\WpfCallMonitoringShell.cs" />
     <Compile Include="Wpf\CallMonitoring\WpfNotificationDrawer.cs" />
     <Compile Include="Wpf\Portal\WpfMainDashboardShell.cs" />
+    <Compile Include="Wpf\Portal\WpfDeviceMessengerWindow.cs" />
     <Compile Include="Wpf\Portal\ConsumableManagementPortalShell.xaml.cs">
       <DependentUpon>ConsumableManagementPortalShell.xaml</DependentUpon>
     </Compile>
@@ -1933,6 +1935,7 @@
     <Compile Include="Services\RepairPortalNotificationPoller.cs" />
     <Compile Include="Services\INotificationService.cs" />
     <Compile Include="Services\ToastNotificationService.cs" />
+    <Compile Include="Services\DeviceMessengerNotifications.cs" />
     <Compile Include="Services\TrayIconService.cs" />
     <Compile Include="Services\RequesterPortalService.cs" />
     <Compile Include="Services\SmtpService.cs" />

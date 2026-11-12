@@ -116,7 +116,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             };
 
             cboType = new ComboBox { Width = 170, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 10F), FlatStyle = FlatStyle.Flat };
-            cboType.Items.AddRange(new object[] { "All", "Service Only", "Replacement", "Temporary Replacement", "Temporary Service" });
+            cboType.Items.AddRange(new object[] { "All", "Service Only", "Replacement", "Pull Out", "Temporary Replacement", "Temporary Service", "Temporary Pull Out" });
             cboType.SelectedIndex = 0;
             cboType.SelectedIndexChanged += async (_, __) => await RefreshActiveAsync();
 
@@ -973,6 +973,16 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
                 foreach (var r in rows)
                     r.ResolutionType = "Temporary Service";
+            }
+            else if (string.Equals(type, "Temporary Pull Out", StringComparison.OrdinalIgnoreCase))
+            {
+                rows = await _repo.GetResolutionReportAsync(fromUtc, toUtc, "Pull Out", MaxReportRows);
+                rows = (rows ?? new List<CallResolutionReportRow>())
+                    .Where(r => string.Equals(r.TicketStatus, "Resolved (Temporary)", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                foreach (var r in rows)
+                    r.ResolutionType = "Temporary Pull Out";
             }
             else
             {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data.SqlClient;
@@ -156,6 +156,26 @@ namespace Yakult.Inventory.App.WPF.Admin.Monitoring.ViewModels
                     : "Could not queue alert. Check the database connection.";
             StatusMessage = message;
             return message;
+        }
+
+        public async Task SendMessageAsync(ConnectedDeviceRow row, string title, string message)
+        {
+            if (!(Session.AppSession.IsDeveloper || Session.AppSession.IsSuperAdmin || Session.AppSession.IsAdmin))
+                throw new UnauthorizedAccessException("Admin privileges are required to send device messages.");
+            if (row == null || !row.Online || string.IsNullOrWhiteSpace(row.MachineName) || string.IsNullOrWhiteSpace(row.UserName))
+                throw new InvalidOperationException("Select an online device with a signed-in user.");
+            title = (title ?? "").Trim();
+            message = (message ?? "").Trim();
+            if (title.Length == 0 || title.Length > 100 || message.Length == 0 || message.Length > 500)
+                throw new ArgumentException("Enter a title (up to 100 characters) and a message (up to 500 characters).");
+            var id = await Task.Run(() => new AdminAlertRepository().SendStopAlert(
+                row.MachineName, row.UserName, Session.AppSession.CurrentUserId,
+                Session.AppSession.CurrentUserName, title: title, message: message,
+                expireMinutes: 10, alertKind: AdminAlertKinds.Maintenance));
+            if (id <= 0)
+                throw new InvalidOperationException("The message could not be queued. Check the connection and the device-alert database setup.");
+            StatusMessage = "Message queued for " + row.MachineName + " / " + row.UserName
+                + ". The open app checks about every 20 seconds. Expires after 10 minutes.";
         }
 
         private void ApplyFilter()

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -8,7 +8,7 @@ namespace Yakult.Inventory.App.WPF.Admin.Monitoring.Views
 {
     /// <summary>
     /// Admin Portal > Connected Devices (WPF). Live presence grid with a
-    /// per-row STOP prank button; auto-refreshes every 15 seconds.
+    /// per-device message composer and alert menu; auto-refreshes every 15 seconds.
     /// </summary>
     public partial class ConnectedDevicesView : UserControl
     {
@@ -59,6 +59,88 @@ namespace Yakult.Inventory.App.WPF.Admin.Monitoring.Views
                 MessageBox.Show($"Failed to load connected devices: {ex.Message}",
                     "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void MessageButton_Click(object sender, RoutedEventArgs e)
+        {
+            var row = ((Button)sender).DataContext as ConnectedDeviceRow;
+            if (row == null) return;
+            if (!(Session.AppSession.IsDeveloper || Session.AppSession.IsSuperAdmin || Session.AppSession.IsAdmin))
+            {
+                MessageBox.Show("Admin privileges are required to send device messages.", "Send notification",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            var dialog = new Window
+            {
+                Title = "Send device notification", Owner = Window.GetWindow(this),
+                Width = 580, Height = 670, MinWidth = 460, MinHeight = 540,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Background = System.Windows.Media.Brushes.White, FontFamily = new System.Windows.Media.FontFamily("Segoe UI")
+            };
+            var root = new DockPanel { Margin = new Thickness(24) };
+            dialog.Content = root;
+            var footer = new StackPanel { Margin = new Thickness(0,16,0,0) };
+            DockPanel.SetDock(footer, Dock.Bottom); root.Children.Add(footer);
+            var status = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = System.Windows.Media.Brushes.Firebrick, Margin = new Thickness(0,0,0,8) };
+            footer.Children.Add(status);
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            var cancel = new Button { Content = "Cancel", IsCancel = true, Padding = new Thickness(18,8,18,8), Margin = new Thickness(0,0,8,0) };
+            var send = new Button { Content = "Send to device", Padding = new Thickness(18,8,18,8), Style = (Style)FindResource("ActionButton"), Height = 36 };
+            buttons.Children.Add(cancel); buttons.Children.Add(send); footer.Children.Add(buttons);
+            var form = new StackPanel();
+            root.Children.Add(new ScrollViewer { Content = form, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+            form.Children.Add(new TextBlock { Text = "Send a notification", FontSize = 22, FontWeight = FontWeights.Bold });
+            form.Children.Add(new TextBlock { Text = "To: " + row.MachineName + " • " + row.UserName, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0,6,0,18) });
+            form.Children.Add(new TextBlock { Text = "Title", FontWeight = FontWeights.SemiBold });
+            var title = new TextBox { Text = "System update available", MaxLength = 100, Padding = new Thickness(10), Margin = new Thickness(0,6,0,14) };
+            form.Children.Add(title);
+            form.Children.Add(new TextBlock { Text = "Message", FontWeight = FontWeights.SemiBold });
+            var message = new TextBox
+            {
+                Text = "Hello, good day!\r\n\r\nThere is an update available for the Yakult system. Please save your work and restart the application when convenient.\r\n\r\nThank you!",
+                MaxLength = 500, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Height = 140,
+                Padding = new Thickness(10), Margin = new Thickness(0,6,0,4)
+            };
+            form.Children.Add(message);
+            var count = new TextBlock { HorizontalAlignment = HorizontalAlignment.Right, FontSize = 11 };
+            form.Children.Add(count);
+            form.Children.Add(new TextBlock { Text = "Recipient preview", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0,14,0,8) });
+            var previewTitle = new TextBlock { FontSize = 17, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap };
+            var previewMessage = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0,10,0,0) };
+            var preview = new StackPanel(); preview.Children.Add(previewTitle); preview.Children.Add(previewMessage);
+            form.Children.Add(new Border { Child = preview, Padding = new Thickness(16), Background = System.Windows.Media.Brushes.AliceBlue, CornerRadius = new CornerRadius(8) });
+            form.Children.Add(new TextBlock { Text = "Appears as a quiet notice in the open desktop app. Queued notices expire after 10 minutes. Updated clients display the custom title; older clients may show a maintenance heading.", FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0,12,0,0) });
+            Action updatePreview = () =>
+            {
+                previewTitle.Text = title.Text; previewMessage.Text = message.Text;
+                count.Text = message.Text.Length + " / 500 characters";
+                send.IsEnabled = !string.IsNullOrWhiteSpace(title.Text) && !string.IsNullOrWhiteSpace(message.Text);
+            };
+            title.TextChanged += (_,__) => updatePreview();
+            message.TextChanged += (_,__) => updatePreview();
+            updatePreview();
+            var sending = false;
+            dialog.Closing += (_, args) => { if (sending) args.Cancel = true; };
+            send.Click += async (_,__) =>
+            {
+                if (sending) return;
+                sending = true; send.IsEnabled = false; cancel.IsEnabled = false;
+                title.IsEnabled = false; message.IsEnabled = false; send.Content = "Queuing…";
+                try
+                {
+                    await _vm.SendMessageAsync(row, title.Text, message.Text);
+                    sending = false; dialog.DialogResult = true;
+                }
+                catch (Exception ex) { status.Text = ex.Message; }
+                finally
+                {
+                    sending = false; cancel.IsEnabled = true; title.IsEnabled = true; message.IsEnabled = true;
+                    send.Content = "Send to device"; updatePreview();
+                }
+            };
+            dialog.ShowDialog();
         }
 
         private async void StopButton_Click(object sender, RoutedEventArgs e)

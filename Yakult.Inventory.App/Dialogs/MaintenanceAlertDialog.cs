@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using Yakult.Inventory.App.Repositories;
@@ -17,10 +17,12 @@ namespace Yakult.Inventory.App.Dialogs
             var blue = ColorTranslator.FromHtml("#2471A3");
             var dimText = ColorTranslator.FromHtml("#8A94A8");
 
-            Text = "System Maintenance";
+            var noticeTitle = string.IsNullOrWhiteSpace(alert.Title) || alert.Title.Equals("STOP", StringComparison.OrdinalIgnoreCase)
+                ? "System Under Maintenance" : alert.Title;
+            Text = noticeTitle;
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.CenterScreen;
-            ClientSize = new Size(430, 400);
+            ClientSize = new Size(520, 480);
             BackColor = blue;
             Padding = new Padding(2);
             TopMost = true;
@@ -34,20 +36,20 @@ namespace Yakult.Inventory.App.Dialogs
 
             var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1 };
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             body.Controls.Add(layout);
 
             var titleRow = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 2 };
             titleRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             titleRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            var wrench = new Label { Text = "🔧", Font = new Font("Segoe UI", 30F), AutoSize = true, Margin = new Padding(0, 0, 12, 0) };
+            var wrench = new Label { Text = noticeTitle == "System Under Maintenance" ? "🔧" : "ℹ", Font = new Font("Segoe UI", 30F), AutoSize = true, Margin = new Padding(0, 0, 12, 0) };
             var title = new Label
             {
-                Text = "System Under Maintenance",
+                Text = noticeTitle,
                 Font = new Font("Segoe UI", 17F, FontStyle.Bold),
-                ForeColor = navy, AutoSize = false, Height = 60,
+                ForeColor = navy, AutoSize = false, Height = 85,
                 TextAlign = ContentAlignment.MiddleLeft, Dock = DockStyle.Fill
             };
             titleRow.Controls.Add(wrench, 0, 0);
@@ -57,10 +59,11 @@ namespace Yakult.Inventory.App.Dialogs
             string bodyText = !string.IsNullOrWhiteSpace(alert.Message)
                 ? alert.Message
                 : "This workstation has been flagged for scheduled maintenance by IT. Please save your work. No action is needed right now.";
-            var message = new Label
+            var message = new TextBox
             {
                 Text = bodyText, Font = new Font("Segoe UI", 11F), ForeColor = Color.FromArgb(60, 60, 60),
-                AutoSize = false, Height = 110, Dock = DockStyle.Top, Margin = new Padding(0, 14, 0, 0)
+                ReadOnly = true, Multiline = true, ScrollBars = ScrollBars.Vertical, BorderStyle = BorderStyle.None,
+                BackColor = Color.White, Dock = DockStyle.Fill, Margin = new Padding(0, 14, 0, 12)
             };
             layout.Controls.Add(message, 0, 1);
 

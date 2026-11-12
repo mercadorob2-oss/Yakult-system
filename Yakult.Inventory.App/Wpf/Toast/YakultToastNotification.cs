@@ -1,3 +1,4 @@
+using System;
 using ToastNotifications.Core;
 
 namespace Yakult.Inventory.App.Wpf.Toast
@@ -25,6 +26,7 @@ namespace Yakult.Inventory.App.Wpf.Toast
     {
         public string        Title { get; }
         public YakultToastKind Kind { get; }
+        public Action Activate { get; }
 
         // Must return the SAME instance on every access. The display pipeline (ItemsControl
         // layout passes, DataTemplate re-evaluation, etc.) reads DisplayPart more than once —
@@ -36,11 +38,12 @@ namespace Yakult.Inventory.App.Wpf.Toast
         public override NotificationDisplayPart DisplayPart =>
             _displayPart ?? (_displayPart = new YakultToastDisplayPart(this));
 
-        public YakultToastNotification(string title, string message, YakultToastKind kind, MessageOptions options)
+        public YakultToastNotification(string title, string message, YakultToastKind kind, MessageOptions options, Action activate = null)
             : base(message, options)
         {
             Title = title;
             Kind  = kind;
+            Activate = activate;
         }
     }
 }

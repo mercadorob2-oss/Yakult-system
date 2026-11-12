@@ -645,7 +645,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             var pnlCaseButtons = new FlowLayoutPanel { Dock = DockStyle.Fill };
             this.btnUpdateNotes = CreateButton("Update", Color.FromArgb(52, 152, 219), CallMonitoringIcons.Save);
             this.btnMarkAs = CreateButton("Mark As...", Color.FromArgb(52, 73, 94), CallMonitoringIcons.Edit);
-            this.btnReturnTempItem = CreateButton("Return Temp Item", Color.FromArgb(124, 58, 237), CallMonitoringIcons.Refresh);
+            this.btnReturnTempItem = CreateButton("Complete Temporary", Color.FromArgb(124, 58, 237), CallMonitoringIcons.Refresh);
             this.btnReturnTempItem.Visible = false;
             this.btnSyncSet = CreateButton("Sync Set", Color.FromArgb(46, 204, 113), CallMonitoringIcons.Refresh);
             this.btnEscalationOverride = CreateButton("Escalation Override", Color.FromArgb(230, 126, 34), CallMonitoringIcons.Alert);
@@ -3540,13 +3540,13 @@ this.cboCompany.SelectedIndexChanged += async (_, __) =>
                  var preview = await _callRepo.GetTemporaryReplacementReturnPreviewAsync(ticketId);
                  if (preview.NewItemId <= 0 || preview.Quantity <= 0)
                  {
-                     // Service-Only temporary: no parts were ever issued, so offer
-                     // a one-click close-out instead of a dead end.
-                     if (MessageBox.Show("No temporary parts were issued for this ticket (Service Only).\n\nMark it as Solved instead?", "No Temp Replacement", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+                      // Temporary service and pull-out resolutions have no issued
+                      // replacement item to return, so offer a follow-up close-out.
+                      if (MessageBox.Show("No temporary replacement item was issued for this ticket.\n\nMark the follow-up as complete and set the ticket to Solved?", "Complete Temporary Resolution", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                      {
                          var oldStatus = this._selectedTicket.Status;
-                         await _callRepo.SetTicketStatusAsync(ticketId, "Solved", changedByUserId, "Temporary service confirmed permanent.");
-                         RunNotification(async () => await _callEmail.NotifyStatusChangeAsync(ticketId, oldStatus, "Solved", "Temporary service confirmed permanent.", changedByUserId));
+                          await _callRepo.SetTicketStatusAsync(ticketId, "Solved", changedByUserId, "Temporary follow-up completed.");
+                          RunNotification(async () => await _callEmail.NotifyStatusChangeAsync(ticketId, oldStatus, "Solved", "Temporary follow-up completed.", changedByUserId));
                          await SafeRefreshTicketGridsAsync();
                          TrySelectTicketInSolvedGrid(ticketId);
                      }
@@ -3702,7 +3702,8 @@ this.cboCompany.SelectedIndexChanged += async (_, __) =>
                                changedByUserId,
                                dlg.OldItemConditionId,
                                dlg.OldItemConditionRemarks,
-                               dlg.OldItemRepairAction);
+                                dlg.OldItemRepairAction,
+                                dlg.IsPullOutOnly ? "Pull Out" : "Replacement");
                            markAsStatus = dlg.IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved";
                      }
                       else
@@ -3711,7 +3712,9 @@ this.cboCompany.SelectedIndexChanged += async (_, __) =>
                            markAsStatus = dlg.IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved";
                       }
                       
-                      var resolutionLabel = dlg.ResolutionType + (dlg.IsTemporaryReplacement ? " (Temporary)" : string.Empty);
+                       var resolutionLabel = dlg.IsPullOutOnly
+                           ? "Pull Out (Temporary)"
+                           : dlg.ResolutionType + (dlg.IsTemporaryReplacement ? " (Temporary)" : string.Empty);
                       var note = string.IsNullOrWhiteSpace(dlg.Remarks) ? $"Marked as: {resolutionLabel}" : $"Marked as: {resolutionLabel} | {dlg.Remarks}";
                      await _callRepo.SetTicketStatusAsync(ticketId, markAsStatus, changedByUserId, note);
                      RunNotification(async () => await _callEmail.NotifyStatusChangeAsync(ticketId, oldStatus, markAsStatus, dlg.Remarks, changedByUserId));

@@ -1,0 +1,8 @@
+[08:47:37] Verify started.
+[08:47:37] #< CLIXML
+[08:47:38] Verifying signed metadata and installer bytes...
+[08:47:38] Verification failed: Metadata signature is invalid.
+[08:47:38] Reading published feed (read-only; no permission probe or upload)...
+[08:47:38] Feed unavailable or invalid: Cannot find path 'C:\Users\russel.mercado\source\repos\Yakult-System-New\artifacts\release-desk-tests\81165474d69f4042878290dccdec8f69\latest.json' because it does not exist.
+[08:47:38] <Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[08:47:38] Verify finished with exit code 0.

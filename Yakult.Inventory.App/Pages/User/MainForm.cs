@@ -1459,6 +1459,7 @@ private void UpdateAdminMenuVisibility()
                         UpdateAdminMenuVisibility();
                         // App-wide presence beat so this PC shows up in Connected Devices.
                         Services.ItcmPresenceReporter.Start("Workspace");
+                        Services.DeviceMessengerNotifications.Instance.Start();
                         return true;
                     }
                     else

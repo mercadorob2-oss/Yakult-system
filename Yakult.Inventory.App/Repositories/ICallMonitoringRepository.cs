@@ -156,7 +156,7 @@ namespace Yakult.Inventory.App.Repositories
 
         Task<bool> DeleteTicketAsync(int ticketId, int? deletedByUserId);
         Task LogTicketResolutionAsync(int ticketId, string resolutionType, string remarks, int? changedByUserId);
-        Task ApplyTicketReplacementsAsync(int ticketId, IList<CallReplacementLine> lines, int changedByUserId, string createdByName);
+        Task ApplyTicketReplacementsAsync(int ticketId, IList<CallReplacementLine> lines, int changedByUserId, string createdByName, string resolutionType = "Replacement");
 
         Task ApplyTicketReplacementAsync(
             int ticketId,
@@ -167,7 +167,8 @@ namespace Yakult.Inventory.App.Repositories
             int? changedByUserId,
             int oldItemConditionId,
             string oldItemConditionRemarks,
-            string oldItemRepairAction);
+            string oldItemRepairAction,
+            string resolutionType = "Replacement");
 
         Task<(int NewItemId, int Quantity, string NewItemText, bool AlreadyReturned)> GetTemporaryReplacementReturnPreviewAsync(int ticketId);
         Task ReturnTemporaryReplacementAsync(int ticketId, int? changedByUserId);

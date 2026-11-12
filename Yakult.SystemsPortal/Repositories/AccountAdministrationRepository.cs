@@ -389,7 +389,10 @@ public sealed class AccountAdministrationRepository : IAccountAdministrationRepo
     {
         const string sql = @"
             SELECT
-                u.UserId, u.Name, ISNULL(u.EmailAddress, '') AS Email, ISNULL(e.Name, '') AS EmployeeName,
+                u.UserId, u.EmpId, u.Name, ISNULL(u.EmailAddress, '') AS Email, ISNULL(e.Name, '') AS EmployeeName,
+                ISNULL(e.EmployeeNumber, '') AS EmployeeNumber,
+                ISNULL(c.Name, '') AS CompanyName, ISNULL(b.Name, '') AS BranchName,
+                ISNULL(d.Name, '') AS DepartmentName, ISNULL(e.Position, '') AS Position, e.Active AS EmployeeIsActive,
                 ISNULL(u.IsActive, 1) AS IsActive, ISNULL(u.IsDeveloper, 0) AS IsDeveloper,
                 ISNULL(u.MustChangePassword, 0) AS MustChangePassword,
                 ISNULL((
@@ -400,6 +403,9 @@ public sealed class AccountAdministrationRepository : IAccountAdministrationRepo
                 ), '') AS Roles
             FROM dbo.[User] u
             LEFT JOIN dbo.Employee e ON e.EmpId = u.EmpId
+            LEFT JOIN dbo.Company c ON c.ComId = e.ComId
+            LEFT JOIN dbo.Branch b ON b.BranchId = e.BranchId
+            LEFT JOIN dbo.Department d ON d.DeptId = e.DeptId
             ORDER BY u.Name;";
 
         var results = new List<ManagedUserListItem>();
@@ -410,13 +416,20 @@ public sealed class AccountAdministrationRepository : IAccountAdministrationRepo
             results.Add(new ManagedUserListItem
             {
                 UserId = reader.GetInt32(0),
-                Username = reader.GetString(1),
-                Email = reader.GetString(2),
-                EmployeeName = reader.GetString(3),
-                IsActive = reader.GetBoolean(4),
-                IsDeveloper = reader.GetBoolean(5),
-                MustChangePassword = reader.GetBoolean(6),
-                Roles = reader.GetString(7)
+                EmployeeId = reader.IsDBNull(1) ? null : reader.GetInt32(1),
+                Username = reader.GetString(2),
+                Email = reader.GetString(3),
+                EmployeeName = reader.GetString(4),
+                EmployeeNumber = reader.GetString(5),
+                Company = reader.GetString(6),
+                Branch = reader.GetString(7),
+                Department = reader.GetString(8),
+                Position = reader.GetString(9),
+                EmployeeIsActive = reader.IsDBNull(10) ? null : reader.GetBoolean(10),
+                IsActive = reader.GetBoolean(11),
+                IsDeveloper = reader.GetBoolean(12),
+                MustChangePassword = reader.GetBoolean(13),
+                Roles = reader.GetString(14)
             });
         }
 

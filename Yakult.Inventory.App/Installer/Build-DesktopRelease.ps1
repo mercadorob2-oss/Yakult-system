@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)][string]$Version,
@@ -19,9 +19,16 @@ $databaseSettings = Get-Content -LiteralPath $DatabaseSettingsPath -Raw | Conver
 if ([string]::IsNullOrWhiteSpace([string]$databaseSettings.ConnectionStrings.DefaultConnection)) { throw 'The supplied database settings must contain ConnectionStrings.DefaultConnection.' }
 if ($Version -notmatch '^\d{1,5}\.\d{1,5}(\.\d{1,5}){0,2}$') { throw 'Use a version such as 1.6.0.0.' }
 $inputVersion = [version]$Version
+foreach ($part in @($inputVersion.Major,$inputVersion.Minor,$inputVersion.Build,$inputVersion.Revision)) { if ($part -gt 65534) { throw 'Version components must be at most 65534.' } }
+if ($ReleaseNotes.Length -gt 16000) { throw 'Release notes must be at most 16000 characters.' }
 $releaseVersion = [version]::new($inputVersion.Major,$inputVersion.Minor,[Math]::Max(0,$inputVersion.Build),[Math]::Max(0,$inputVersion.Revision)).ToString(4)
 if (-not $OutputDirectory) { $OutputDirectory = Join-Path $repoRoot "artifacts\desktop-releases\$releaseVersion" }
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
+$lockFolder = Join-Path $repoRoot 'artifacts\desktop-releases'
+[void][IO.Directory]::CreateDirectory($lockFolder)
+try { $buildLock = [IO.File]::Open((Join-Path $lockFolder '.build.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None) }
+catch { throw 'Another desktop release build is running for this checkout. Wait for it to finish before retrying.' }
+try {
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $buildOutput = Join-Path $OutputDirectory ('build-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $buildOutput -Force | Out-Null
@@ -60,3 +67,5 @@ $installer = Join-Path $OutputDirectory ($baseName + '.exe')
 Write-Host "Installer ready: $installer"
 if ($Publish) { & (Join-Path $PSScriptRoot 'Publish-DesktopRelease.ps1') -InstallerPath $installer -Version $releaseVersion -ReleaseNotes $ReleaseNotes -UpdateFolder $UpdateFolder }
 else { Write-Host 'Created locally. The shared update folder has not been changed.' }
+
+} finally { $buildLock.Dispose() }

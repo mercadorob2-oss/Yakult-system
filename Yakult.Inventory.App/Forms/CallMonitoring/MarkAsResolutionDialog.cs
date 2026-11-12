@@ -22,6 +22,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
         private RadioButton rdoServiceOnly;
         private RadioButton rdoReplacement;
+        private RadioButton rdoPullOut;
 
         private RadioButton rdoOldListed;
         private RadioButton rdoOldUnlisted;
@@ -40,6 +41,8 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
         private ComboBox cboNewCategory;
         private ComboBox cboNewItem;
+        private TableLayoutPanel newGrid;
+        private Label lblQuantity;
         private CheckBox chkTemporaryReplacement;
         private CheckBox chkTemporaryService;
         private ComboBox cboOldCondition;
@@ -74,6 +77,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
         public int Quantity { get; private set; } = 1;
         public string Remarks { get; private set; }
         public bool IsTemporaryReplacement { get; private set; }
+        public bool IsPullOutOnly => rdoPullOut != null && rdoPullOut.Checked;
 
         public bool UseUnlistedOldItem { get; private set; }
         public string UnlistedOldItemName { get; private set; }
@@ -153,12 +157,16 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             var rdoPanel = new FlowLayoutPanel { FlowDirection = FlowDirection.LeftToRight, AutoSize = true };
             rdoServiceOnly = new RadioButton { Text = "Service Only (No Parts)", AutoSize = true, Checked = true, Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
             rdoReplacement = new RadioButton { Text = "Replacement (Parts Used)", AutoSize = true, Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
+            rdoPullOut = new RadioButton { Text = "Pull out old item only (temporary follow-up)", AutoSize = true, Font = new Font("Segoe UI", 10F, FontStyle.Bold) };
             rdoServiceOnly.CheckedChanged += (_, __) => UpdateMode();
             rdoReplacement.CheckedChanged += (_, __) => UpdateMode();
+            rdoPullOut.CheckedChanged += (_, __) => UpdateMode();
             
             rdoPanel.Controls.Add(rdoServiceOnly);
             rdoPanel.Controls.Add(new Label { Width = 30 });
             rdoPanel.Controls.Add(rdoReplacement);
+            rdoPanel.Controls.Add(new Label { Width = 20 });
+            rdoPanel.Controls.Add(rdoPullOut);
             typeFlow.Controls.Add(rdoPanel);
 
             chkTemporaryService = new CheckBox { Text = "Temporary service (mark as Resolved (Temporary))", AutoSize = true, Margin = new Padding(0, 8, 0, 0) };
@@ -345,7 +353,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             
             lblNewItemStockHint = new Label { AutoSize = true, ForeColor = ModernUiHelper.ColorSuccess, Font = new Font("Segoe UI", 8.5F, FontStyle.Bold) };
             
-            var newGrid = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, Width = 840 };
+            newGrid = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, Width = 840 };
             newGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
             newGrid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
@@ -381,7 +389,8 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
             numQty = new NumericUpDown { Minimum = 1, Maximum = 999, Value = 1, Width = 100, Height = 28 };
             numQty.ValueChanged += (_, __) => RefreshPreviewIfNeeded();
-            newGrid.Controls.Add(ModernUiHelper.CreateLabel("Quantity:"), 0, 2);
+            lblQuantity = ModernUiHelper.CreateLabel("Quantity:");
+            newGrid.Controls.Add(lblQuantity, 0, 2);
             newGrid.Controls.Add(numQty, 1, 2);
 
             chkTemporaryReplacement = new CheckBox { Text = "Temporary replacement (mark as Resolved (Temporary))", AutoSize = true };
@@ -461,7 +470,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             this.AcceptButton = btnConfirm;
             this.CancelButton = btnCancel;
 
-            if (_stockHardwareItems.Count == 0)
+            if (_stockHardwareItems.Count == 0 && !IsPullOutOnly)
             {
                 rdoReplacement.Enabled = false;
                 rdoServiceOnly.Checked = true;
@@ -816,9 +825,22 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
         private void UpdateMode()
         {
-            var isReplacement = rdoReplacement.Checked;
+            var isReplacement = rdoReplacement.Checked || IsPullOutOnly;
             if (pnlReplacementSection != null)
                 pnlReplacementSection.Visible = isReplacement && _wizardStep == 1;
+            if (newGrid != null)
+            {
+                var showNewItem = !IsPullOutOnly;
+                for (var row = 0; row <= 1; row++)
+                {
+                    newGrid.GetControlFromPosition(0, row).Visible = showNewItem;
+                    newGrid.GetControlFromPosition(1, row).Visible = showNewItem;
+                }
+            }
+            if (lblQuantity != null)
+                lblQuantity.Text = IsPullOutOnly ? "Quantity pulled out:" : "Quantity:";
+            if (chkTemporaryReplacement != null)
+                chkTemporaryReplacement.Visible = !IsPullOutOnly;
             // Temporary service only applies to Service Only; the replacement
             // path has its own temporary checkbox inside its section.
             if (chkTemporaryService != null)
@@ -837,7 +859,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
         {
             if (_wizardStep == 0)
             {
-                _wizardStep = rdoReplacement.Checked ? 1 : 2;
+                _wizardStep = rdoReplacement.Checked || IsPullOutOnly ? 1 : 2;
                 if (_wizardStep == 2)
                     CaptureServiceOnly();
                 UpdateWizardStep();
@@ -865,7 +887,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
         private void UpdateWizardStep()
         {
-            var isReplacement = rdoReplacement.Checked;
+            var isReplacement = rdoReplacement.Checked || IsPullOutOnly;
 
             if (lblStepTitle != null)
             {
@@ -904,7 +926,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
             try
             {
-                if (rdoReplacement.Checked)
+                if (rdoReplacement.Checked || IsPullOutOnly)
                     ValidateAndCaptureReplacement();
                 else
                     CaptureServiceOnly();
@@ -932,14 +954,14 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
         private bool ValidateAndCaptureReplacement()
         {
-            if (_stockHardwareItems.Count == 0)
+            if (_stockHardwareItems.Count == 0 && !IsPullOutOnly)
             {
                 MessageBox.Show("No replacement stock items are available (Hardware with StockOnHand > 0).", "Mark As",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return false;
             }
 
-            if (cboNewItem.SelectedValue == null)
+            if (!IsPullOutOnly && cboNewItem.SelectedValue == null)
             {
                 MessageBox.Show("Select a replacement item.", "Mark As", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return false;
@@ -951,12 +973,12 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 return false;
             }
 
-            var newId = Convert.ToInt32(cboNewItem.SelectedValue);
+            var newId = IsPullOutOnly ? 0 : Convert.ToInt32(cboNewItem.SelectedValue);
             var conditionId = Convert.ToInt32(cboOldCondition.SelectedValue);
             var qty = (int)numQty.Value;
 
             var selectedNewItem = GetSelectedNewItem();
-            if (selectedNewItem != null && selectedNewItem.StockOnHand < 1)
+            if (!IsPullOutOnly && selectedNewItem != null && selectedNewItem.StockOnHand < 1)
             {
                 MessageBox.Show(
                     "The selected replacement item has no available stock.",
@@ -1047,7 +1069,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             NewItemId = newId;
             Quantity = qty;
             Remarks = (txtRemarks.Text ?? string.Empty).Trim();
-            IsTemporaryReplacement = chkTemporaryReplacement.Checked;
+            IsTemporaryReplacement = IsPullOutOnly || chkTemporaryReplacement.Checked;
             OldItemConditionId = conditionId;
             OldItemConditionRemarks = (txtConditionRemarks.Text ?? string.Empty).Trim();
             OldItemRepairAction = GetSelectedOldItemRepairAction();
@@ -1056,7 +1078,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
         private string BuildPreviewText()
         {
-            if (!rdoReplacement.Checked)
+            if (!rdoReplacement.Checked && !IsPullOutOnly)
             {
                 return
                     "Resolution: " + (IsTemporaryReplacement ? "Temporary Service" : "Service Only") + "\r\n" +
@@ -1080,20 +1102,22 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             var oldStockImpact = actionText.Equals("Unrepaired", StringComparison.OrdinalIgnoreCase) ? "0 (kept out of stock)" : "+" + Quantity;
 
             return
-                "Resolution: " + (IsTemporaryReplacement ? "Temporary Replacement" : "Permanent Replacement") + "\r\n" +
+                "Resolution: " + (IsPullOutOnly ? "Pull Out" : IsTemporaryReplacement ? "Temporary Replacement" : "Permanent Replacement") + "\r\n" +
                 "Status after save: " + (IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved") + "\r\n\r\n" +
                 "Old item:\r\n" +
                 "  " + oldItemText + "\r\n" +
                 "  Condition: " + conditionText + "\r\n" +
                 "  Action: " + actionText + "\r\n" +
                 "  Stock impact: " + oldStockImpact + "\r\n\r\n" +
-                "New item:\r\n" +
+                (IsPullOutOnly ? "Follow-up:\r\n  Old item pulled out; no replacement issued. Ticket remains Resolved (Temporary).\r\n\r\n" : "New item:\r\n" +
                 "  " + newItemText + "\r\n" +
                 "  Current stock: " + (newItem == null ? "-" : newItem.StockOnHand.ToString()) + "\r\n" +
                 "  Stock impact: -" + Quantity + "\r\n" +
-                "  Stock after save: " + (stockAfter.HasValue ? stockAfter.Value.ToString() : "-") + "\r\n\r\n" +
+                "  Stock after save: " + (stockAfter.HasValue ? stockAfter.Value.ToString() : "-") + "\r\n\r\n") +
                 "Follow-up:\r\n" +
-                (IsTemporaryReplacement
+                (IsPullOutOnly
+                    ? "  Complete the follow-up when the pulled-out item issue has been addressed."
+                    : IsTemporaryReplacement
                     ? "  This ticket remains Resolved (Temporary) until the replacement item is returned."
                     : "  No temporary return is required.") + "\r\n\r\n" +
                 "Remarks:\r\n" + ((txtRemarks.Text ?? string.Empty).Trim().Length == 0 ? "(None)" : (txtRemarks.Text ?? string.Empty).Trim());
@@ -1101,7 +1125,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
         private void Confirm()
         {
-            var isReplacement = rdoReplacement.Checked;
+            var isReplacement = rdoReplacement.Checked || IsPullOutOnly;
             var remarks = (txtRemarks.Text ?? string.Empty).Trim();
 
             if (!isReplacement)
@@ -1113,14 +1137,14 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 return;
             }
 
-            if (_stockHardwareItems.Count == 0)
+            if (_stockHardwareItems.Count == 0 && !IsPullOutOnly)
             {
                 MessageBox.Show("No replacement stock items are available (Hardware with StockOnHand > 0).", "Mark As",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            if (cboNewItem.SelectedValue == null)
+            if (!IsPullOutOnly && cboNewItem.SelectedValue == null)
             {
                 MessageBox.Show("Select a replacement item.", "Mark As", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
@@ -1132,12 +1156,12 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 return;
             }
 
-            var newId = Convert.ToInt32(cboNewItem.SelectedValue);
+            var newId = IsPullOutOnly ? 0 : Convert.ToInt32(cboNewItem.SelectedValue);
             var conditionId = Convert.ToInt32(cboOldCondition.SelectedValue);
             var qty = (int)numQty.Value;
 
             var selectedNewItem = GetSelectedNewItem();
-            if (selectedNewItem != null && selectedNewItem.StockOnHand < 1)
+            if (!IsPullOutOnly && selectedNewItem != null && selectedNewItem.StockOnHand < 1)
             {
                 MessageBox.Show(
                     "The selected replacement item has no available stock.",
@@ -1147,7 +1171,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 return;
             }
 
-            if (selectedNewItem != null && qty > selectedNewItem.StockOnHand)
+            if (!IsPullOutOnly && selectedNewItem != null && qty > selectedNewItem.StockOnHand)
             {
                 MessageBox.Show(
                     $"Quantity exceeds available stock.\r\nMake sure Expected: {selectedNewItem.StockOnHand} >= Requested: {qty}",
@@ -1168,7 +1192,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
                 }
 
                 var oldId = Convert.ToInt32(cboOldItemListed.SelectedValue);
-                if (oldId == newId)
+                if (!IsPullOutOnly && oldId == newId)
                 {
                     MessageBox.Show("Replaced item and replacement item must be different.", "Mark As",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -1228,7 +1252,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             NewItemId = newId;
             Quantity = qty;
             Remarks = remarks;
-            IsTemporaryReplacement = chkTemporaryReplacement.Checked;
+            IsTemporaryReplacement = IsPullOutOnly || chkTemporaryReplacement.Checked;
             OldItemConditionId = conditionId;
             OldItemConditionRemarks = (txtConditionRemarks.Text ?? string.Empty).Trim();
             OldItemRepairAction = GetSelectedOldItemRepairAction();
@@ -1239,7 +1263,7 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
 
         private bool ConfirmSummary()
         {
-            var isReplacement = rdoReplacement.Checked;
+            var isReplacement = rdoReplacement.Checked || IsPullOutOnly;
 
             if (!isReplacement)
             {
@@ -1260,12 +1284,16 @@ namespace Yakult.Inventory.App.Forms.CallMonitoring
             var conditionText = _conditions.FirstOrDefault(c => c != null && c.ConditionId == OldItemConditionId)?.ConditionName ?? OldItemConditionId.ToString();
             var actionText = string.IsNullOrWhiteSpace(OldItemRepairAction) ? "Repaired" : OldItemRepairAction.Trim();
             
-            var message =
-                "Confirm Replacement?\r\n\r\n" +
-                $"IN:  {oldItemText} (Condition: {conditionText})\r\n" +
-                $"Old Unit Action: {actionText}\r\n" +
-                $"OUT: {newItemText} (Qty: {Quantity})\r\n\r\n" +
-                $"Temporary: {(IsTemporaryReplacement ? "Yes" : "No")}";
+            var message = IsPullOutOnly
+                ? "Confirm Pull Out?\r\n\r\n" +
+                  $"Old item: {oldItemText} (Condition: {conditionText})\r\n" +
+                  $"Old Unit Action: {actionText}\r\n" +
+                  $"No new item will be issued.\r\n\r\nTicket status: Resolved (Temporary)"
+                : "Confirm Replacement?\r\n\r\n" +
+                  $"IN:  {oldItemText} (Condition: {conditionText})\r\n" +
+                  $"Old Unit Action: {actionText}\r\n" +
+                  $"OUT: {newItemText} (Qty: {Quantity})\r\n\r\n" +
+                  $"Temporary: {(IsTemporaryReplacement ? "Yes" : "No")}";
 
             return MessageBox.Show(message, "Confirm Inventory Movement", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
         }

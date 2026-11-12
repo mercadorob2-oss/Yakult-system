@@ -29,9 +29,16 @@ public sealed class AccountRequestListItem
 public sealed class ManagedUserListItem
 {
     public int UserId { get; init; }
+    public int? EmployeeId { get; init; }
     public string Username { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
     public string EmployeeName { get; init; } = string.Empty;
+    public string EmployeeNumber { get; init; } = string.Empty;
+    public string Company { get; init; } = string.Empty;
+    public string Branch { get; init; } = string.Empty;
+    public string Department { get; init; } = string.Empty;
+    public string Position { get; init; } = string.Empty;
+    public bool? EmployeeIsActive { get; init; }
     public bool IsActive { get; init; }
     public bool IsDeveloper { get; init; }
     public bool MustChangePassword { get; init; }

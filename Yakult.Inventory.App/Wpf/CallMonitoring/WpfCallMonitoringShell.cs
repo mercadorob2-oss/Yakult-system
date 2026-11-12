@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -423,7 +423,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 }
             };
 
-            // Outer layout: chrome header + WinForms content
+            _notificationOverlay.SizeChanged += (_, __) =>
+                _notificationDrawerBorder.Width = Math.Min(560, Math.Max(0, _notificationOverlay.ActualWidth));
+
+            // Outer layout: header and notification content
             var drawerLayout = new Grid();
             drawerLayout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             drawerLayout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -499,6 +502,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             };
             btnClose.MouseEnter += (_, __) => btnClose.Background = new SolidColorBrush(Color.FromArgb(70, 255, 255, 255));
             btnClose.MouseLeave += (_, __) => btnClose.Background = new SolidColorBrush(Color.FromArgb(40, 255, 255, 255));
+            btnClose.ToolTip = "Close notifications (Esc)";
             btnClose.Click += (_, __) => CloseNotificationsAnimated();
             Grid.SetColumn(btnClose, 2);
             headerGrid.Children.Add(btnClose);

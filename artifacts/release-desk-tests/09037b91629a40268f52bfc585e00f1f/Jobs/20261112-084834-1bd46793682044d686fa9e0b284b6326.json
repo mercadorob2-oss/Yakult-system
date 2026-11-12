@@ -1,0 +1,12 @@
+{
+    "Id":  "20261112-084834-1bd46793682044d686fa9e0b284b6326",
+    "Action":  "Verify",
+    "Version":  "1.2.3.4",
+    "Started":  "2026-11-12T08:48:34.2997614+08:00",
+    "Finished":  "2026-11-12T08:48:35.2870474+08:00",
+    "Status":  "Failed",
+    "ExitCode":  1,
+    "Destination":  "C:\\Users\\russel.mercado\\source\\repos\\Yakult-System-New\\artifacts\\release-desk-tests\\09037b91629a40268f52bfc585e00f1f",
+    "LogPath":  "C:\\Users\\russel.mercado\\source\\repos\\Yakult-System-New\\artifacts\\release-desk-tests\\09037b91629a40268f52bfc585e00f1f\\Jobs\\20261112-084834-1bd46793682044d686fa9e0b284b6326.log",
+    "ProcessId":  21604
+}

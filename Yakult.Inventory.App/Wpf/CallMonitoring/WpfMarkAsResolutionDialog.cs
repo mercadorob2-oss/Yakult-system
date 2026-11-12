@@ -24,6 +24,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private readonly RadioButton _serviceOnlyRadio;
         private readonly RadioButton _replacementRadio;
+        private readonly RadioButton _pullOutRadio;
         private readonly RadioButton _oldListedRadio;
         private readonly RadioButton _oldUnlistedRadio;
         private readonly RadioButton _oldActionRepairedRadio;
@@ -135,6 +136,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         public int Quantity { get; private set; } = 1;
         public string Remarks { get; private set; }
         public bool IsTemporaryReplacement { get; private set; }
+        public bool IsPullOutOnly => _pullOutRadio?.IsChecked == true;
         public bool UseUnlistedOldItem { get; private set; }
         public string UnlistedOldItemName { get; private set; }
         public string UnlistedOldItemDescription { get; private set; }
@@ -330,10 +332,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var typeRow = new StackPanel { Margin = new Thickness(0, 6, 0, 0) };
             _serviceOnlyRadio = new RadioButton { Content = "Service Only (No Parts)", GroupName = "ResolutionType" + radioScope, IsChecked = true, Margin = new Thickness(0, 0, 28, 0), FontWeight = FontWeights.SemiBold };
             _replacementRadio = new RadioButton { Content = "Replacement (Parts Used)", GroupName = "ResolutionType" + radioScope, FontWeight = FontWeights.SemiBold };
+            _pullOutRadio = new RadioButton { Content = "Pull out old item (no replacement yet)", GroupName = "ResolutionType" + radioScope, FontWeight = FontWeights.SemiBold };
             _serviceOnlyRadio.Checked += (_, __) => UpdateWizardStep();
             _replacementRadio.Checked += (_, __) => UpdateWizardStep();
+            _pullOutRadio.Checked += (_, __) => { _includeOldCheck.IsChecked = true; _includeNewCheck.IsChecked = false; UpdateWizardStep(); };
             typeRow.Children.Add(CreateChoiceCard(_serviceOnlyRadio, "Service only", "The issue was fixed without issuing or replacing an item."));
             typeRow.Children.Add(CreateChoiceCard(_replacementRadio, "Items used or collected", "Record old items collected, new items issued, or an old / new replacement."));
+            typeRow.Children.Add(CreateChoiceCard(_pullOutRadio, "Pull out for follow-up", "Collect and disposition the old item only. No new unit is issued; the ticket stays Resolved (Temporary)."));
             typeCard.Children.Add(typeRow);
             _typeHelpText = new TextBlock
             {
@@ -1079,7 +1084,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             if (_wizardStep == 0)
             {
-                _wizardStep = _replacementRadio.IsChecked == true ? 1 : 2;
+                _wizardStep = _replacementRadio.IsChecked == true || IsPullOutOnly ? 1 : 2;
                 if (_wizardStep == 2)
                     CaptureServiceOnly();
                 _mainScroll.ScrollToTop();
@@ -1111,15 +1116,26 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private void UpdateWizardStep()
         {
-            var isReplacement = _replacementRadio.IsChecked == true;
+            var isPullOut = IsPullOutOnly;
+            var isReplacement = _replacementRadio.IsChecked == true || isPullOut;
             var isServiceOnly = !isReplacement;
             var isTemporaryService = isServiceOnly && _temporaryServiceCheck != null && _temporaryServiceCheck.IsChecked == true;
 
-            var targetStatus = (isReplacement && _temporaryCheck.IsChecked == true) || isTemporaryService ? "Resolved (Temporary)" : "Solved";
+            _includeOldCheck.IsEnabled = !isPullOut;
+            _includeNewCheck.IsEnabled = !isPullOut;
+            if (isPullOut)
+            {
+                _includeOldCheck.IsChecked = true;
+                _includeNewCheck.IsChecked = false;
+            }
+
+            var targetStatus = isPullOut || (isReplacement && _temporaryCheck.IsChecked == true) || isTemporaryService ? "Resolved (Temporary)" : "Solved";
             _dialogTitle.Text = _allowBatch ? "Mark ticket resolution"
                 : IncludesOldItem && IncludesNewItem ? "Add old and new items"
                 : IncludesOldItem ? "Add old item" : "Add new item";
-            _dialogSubtitle.Text = isReplacement
+            _dialogSubtitle.Text = isPullOut
+                ? "Record the old unit being pulled out. No replacement stock will be issued, and the ticket remains temporary for follow-up."
+                : isReplacement
                 ? "Record old items collected, new items issued, or both. Add your notes, then review and save."
                 : "Tell us how the issue was fixed, then review and save your resolution.";
             _statusChipText.Text = targetStatus;
@@ -1133,12 +1149,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     ? "Step 2 of 3 - Old item / new item selection"
                     : (isServiceOnly ? "Step 2 of 2 - Confirmation" : "Step 3 of 3 - Confirmation and stock impact preview");
 
-            _typeHelpText.Text = isServiceOnly
+            _typeHelpText.Text = isPullOut
+                ? "Only the old item is collected and recorded. Choose its condition and disposition; no new item is issued."
+                : isServiceOnly
                 ? (_stockHardwareItems.Count == 0
                     ? "No new stock is available. You can still record old items collected, or choose Service only for a fix without items."
                     : "Choose this when the issue was fixed without parts. Add your service notes on the right.")
                 : "Next, choose whether to collect an old item, issue a new one, or record both. Add as many entries as needed.";
-            _remarksTitle.Text = isServiceOnly ? "Service notes *" : "Item notes *";
+            _remarksTitle.Text = isPullOut ? "Pull-out notes *" : isServiceOnly ? "Service notes *" : "Item notes *";
             _confirmButton.Content = _allowBatch ? "Save resolution" : "Add to resolution";
             _guidanceText.Text = !_allowBatch
                 ? "This entry will be added to your resolution. Stock changes are applied only when you save the main resolution."
@@ -1149,7 +1167,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     : "Add a short explanation of the fix. Choose temporary service if further follow-up is needed.";
             _oldDispositionCard.Visibility = isReplacement && IncludesOldItem && _wizardStep == 1 ? Visibility.Visible : Visibility.Collapsed;
             _itemsOverviewCard.Visibility = _allowBatch && isReplacement && _wizardStep > 0 ? Visibility.Visible : Visibility.Collapsed;
-            _addItemActions.Visibility = _wizardStep == 1 ? Visibility.Visible : Visibility.Collapsed;
+            _addItemActions.Visibility = _wizardStep == 1 && !isPullOut ? Visibility.Visible : Visibility.Collapsed;
             _nextButton.Content = _wizardStep == 1 || isServiceOnly ? "Review resolution →" : "Choose items →";
             for (var i = 0; i < _stepIndicators.Length; i++)
             {
@@ -1199,7 +1217,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             try
             {
-                if (_replacementRadio.IsChecked == true)
+                if (_replacementRadio.IsChecked == true || IsPullOutOnly)
                     ValidateAndCaptureReplacement(out _);
                 else
                     CaptureServiceOnly();
@@ -1311,7 +1329,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var lines = GetReplacementLines();
             var structuralError = CallReplacementLine.GetValidationError(lines);
             if (structuralError != null) return Invalid(structuralError, out message);
-            IsTemporaryReplacement = _temporaryCheck.IsChecked == true && lines.Any(x => x.HasNewItem);
+            IsTemporaryReplacement = IsPullOutOnly || (_temporaryCheck.IsChecked == true && lines.Any(x => x.HasNewItem));
             foreach (var group in lines.Where(x => x.HasNewItem).GroupBy(x => x.NewItemId))
             {
                 var item = _stockHardwareItems.FirstOrDefault(x => x.ItemId == group.Key);
@@ -1332,9 +1350,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private string BuildAllPreviewText()
         {
-            if (_replacementRadio.IsChecked != true) return BuildPreviewText();
+            if (_replacementRadio.IsChecked != true && !IsPullOutOnly) return BuildPreviewText();
             var lines = GetReplacementLines();
             var sb = new StringBuilder();
+            sb.AppendLine("Resolution: " + (IsPullOutOnly ? "Pull Out" : IsTemporaryReplacement ? "Temporary Replacement" : "Replacement"));
             sb.AppendLine("Status after save: " + (IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved"));
             sb.AppendLine("Old items: " + lines.Count(x => x.HasOldItem) + " | New items: " + lines.Count(x => x.HasNewItem));
             var number = 1;
@@ -1371,7 +1390,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             }
             if (!lines.Any(x => x.HasNewItem)) sb.AppendLine("No new items will be issued.");
             sb.AppendLine();
-            sb.AppendLine(IsTemporaryReplacement ? "Temporary return: only issued new items will be returned. Old-only entries are not returned again."
+            sb.AppendLine(IsPullOutOnly ? "Follow-up: old item pulled out; no replacement issued. Ticket remains Resolved (Temporary)."
+                : IsTemporaryReplacement ? "Temporary return: only issued new items will be returned. Old-only entries are not returned again."
                 : "No temporary return is required.");
             sb.AppendLine("Only entries containing both an old and new item perform a direct set swap.");
             sb.AppendLine("Ticket notes: " + Remarks);
@@ -1380,7 +1400,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private string BuildPreviewText()
         {
-            if (_replacementRadio.IsChecked == true) return BuildAllPreviewText();
+            if (_replacementRadio.IsChecked == true || IsPullOutOnly) return BuildAllPreviewText();
             return "Resolution: " + (IsTemporaryReplacement ? "Temporary service" : "Service only")
                 + "\r\nStatus after save: " + (IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved")
                 + "\r\n\r\nInventory impact: None\r\n\r\nNotes:\r\n" + Remarks;
@@ -1388,7 +1408,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private void Confirm()
         {
-            if (_replacementRadio.IsChecked == true)
+            if (_replacementRadio.IsChecked == true || IsPullOutOnly)
             {
                 if (!ValidateAndCaptureReplacement(out var message, commit: true))
                 {
@@ -1445,7 +1465,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
                 if (_wizardStep == 2)
                 {
-                    if (_replacementRadio.IsChecked == true)
+                    if (_replacementRadio.IsChecked == true || IsPullOutOnly)
                         ValidateAndCaptureReplacement(out _);
                     else
                         CaptureServiceOnly();
@@ -1460,7 +1480,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
         private string GetValidationMessage()
         {
-            if (_replacementRadio.IsChecked == true)
+            if (_replacementRadio.IsChecked == true || IsPullOutOnly)
             {
                 return ValidateAndCaptureReplacement(out var message) ? null : message;
             }

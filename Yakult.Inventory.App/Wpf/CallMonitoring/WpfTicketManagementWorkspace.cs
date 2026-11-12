@@ -2168,7 +2168,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             if (!AppSession.IsLoggedIn || AppSession.CurrentUserId <= 0)
             {
-                WpfItcmDialogService.ShowWarning(this, "You must be logged in to return temporary replacement items.", "Return Temp Item");
+                WpfItcmDialogService.ShowWarning(this, "You must be logged in to complete a temporary resolution.", "Complete Temporary Resolution");
                 return;
             }
 
@@ -2177,19 +2177,19 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 var preview = await _repository.GetTemporaryReplacementReturnPreviewAsync(_selectedTicket.TicketId);
                 if (preview.NewItemId <= 0 || preview.Quantity <= 0)
                 {
-                    // Service-Only temporary: no parts were ever issued, so offer
-                    // a one-click close-out instead of a dead end.
+                    // Temporary service and pull-out resolutions have no issued
+                    // replacement item to return, so offer a follow-up close-out.
                     var closeOut = WpfItcmDialogService.Confirm(
                         this,
-                        "No temporary parts were issued for this ticket (Service Only). Mark it as Solved instead?",
-                        "Return Temp Item",
+                        "No temporary replacement item was issued for this ticket. Mark the follow-up as complete and set the ticket to Solved?",
+                        "Complete Temporary Resolution",
                         "Mark Solved");
                     if (closeOut)
                     {
                         var oldStatus = _selectedTicket.Status;
-                        await _repository.SetTicketStatusAsync(_selectedTicket.TicketId, "Solved", AppSession.CurrentUserId, "Temporary service confirmed permanent.");
+                        await _repository.SetTicketStatusAsync(_selectedTicket.TicketId, "Solved", AppSession.CurrentUserId, "Temporary follow-up completed.");
                         new CallEmailNotificationService(_repository)
-                            .NotifyStatusChangeAsync(_selectedTicket.TicketId, oldStatus, "Solved", "Temporary service confirmed permanent.", AppSession.CurrentUserId)
+                            .NotifyStatusChangeAsync(_selectedTicket.TicketId, oldStatus, "Solved", "Temporary follow-up completed.", AppSession.CurrentUserId)
                             .FireAndForget(ex => System.Diagnostics.Debug.WriteLine("[Tickets] Temp close-out notification failed: " + ex));
                         await ReloadTicketsAsync(false, false, _selectedTicket.TicketId);
                     }
@@ -2198,14 +2198,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
                 if (preview.AlreadyReturned)
                 {
-                    WpfItcmDialogService.ShowInfo(this, "The temporary replacement item for this ticket was already returned.", "Return Temp Item");
+                    WpfItcmDialogService.ShowInfo(this, "The temporary replacement item for this ticket was already returned.", "Complete Temporary Resolution");
                     return;
                 }
 
                 var confirm = WpfItcmDialogService.Confirm(
                     this,
                     "Return " + preview.NewItemText + " (Qty: " + preview.Quantity + ")?",
-                    "Return Temp Item",
+                    "Complete Temporary Resolution",
                     "Return Item");
 
                 if (!confirm)
@@ -2218,7 +2218,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             }
             catch (Exception ex)
             {
-                WpfItcmDialogService.ShowError(this, ex.Message, "Return Temp Item");
+                WpfItcmDialogService.ShowError(this, ex.Message, "Complete Temporary Resolution");
             }
         }
 
@@ -2400,7 +2400,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                         foreach (var line in replacementLines) line.OldItemRepairAction = "Unrepaired";
                     }
                     await _repository.ApplyTicketReplacementsAsync(ticketId, replacementLines,
-                        AppSession.CurrentUserId, AppSession.CurrentUserName);
+                        AppSession.CurrentUserId, AppSession.CurrentUserName,
+                        dlg.IsPullOutOnly ? "Pull Out" : "Replacement");
 
                     if (!forwardToRepair)
                         markAsStatus = dlg.IsTemporaryReplacement ? "Resolved (Temporary)" : "Solved";
@@ -2417,7 +2418,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 }
 
                 var isTemporaryMark = !forwardToRepair && dlg.IsTemporaryReplacement;
-                var resolutionLabel = dlg.ResolutionType + (isTemporaryMark ? " (Temporary)" : string.Empty);
+                var resolutionLabel = dlg.IsPullOutOnly
+                    ? "Pull Out (Temporary)"
+                    : dlg.ResolutionType + (isTemporaryMark ? " (Temporary)" : string.Empty);
                 var note = string.IsNullOrWhiteSpace(dlg.Remarks)
                     ? "Marked as: " + resolutionLabel
                     : "Marked as: " + resolutionLabel + " | " + dlg.Remarks;
@@ -3713,7 +3716,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var advanced = new Expander { Header = "Advanced actions", IsExpanded = false, Foreground = InkBrush, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 2, 0, 0) };
             var advancedPanel = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
             reopenButton = CreateCompactActionButton("Reopen", false, true);
-            returnTempButton = CreateCompactActionButton("Return temp");
+            returnTempButton = CreateCompactActionButton("Complete temporary");
             syncSetButton = CreateCompactActionButton("Sync set");
             escalationOverrideButton = CreateCompactActionButton("Escalation override");
             advancedPanel.Children.Add(reopenButton); advancedPanel.Children.Add(returnTempButton); advancedPanel.Children.Add(syncSetButton); advancedPanel.Children.Add(escalationOverrideButton);
