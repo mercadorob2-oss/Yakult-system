@@ -68,7 +68,13 @@
             @foreach (var item in Model.Requests)
             {
                 var requestSearch = $"{item.EmployeeName} {item.EmployeeNumber} {item.WorkEmail} {item.Position} {item.Department} {item.Username} {item.Company} {item.Branch}".ToLowerInvariant();
-                <article class="request-card" data-status="@item.Status.ToLowerInvariant()" data-department="@item.Department" data-request-search="@requestSearch">
+                <article class="request-card" data-status="@item.Status.ToLowerInvariant()" data-department="@item.Department" data-request-search="@requestSearch"
+                         data-detail-kind="request" data-detail-name="@item.EmployeeName" data-detail-number="@item.EmployeeNumber"
+                         data-detail-email="@item.WorkEmail" data-detail-position="@item.Position" data-detail-department="@item.Department"
+                         data-detail-company="@item.Company" data-detail-branch="@item.Branch" data-detail-status="@item.Status"
+                         data-detail-username="@item.Username" data-detail-submitted="@item.SubmittedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")"
+                         data-detail-reviewed="@(item.ReviewedAt?.ToLocalTime().ToString("MMM d, yyyy h:mm tt") ?? "")"
+                         data-detail-reviewed-by="@(item.ReviewedBy ?? "")" data-detail-remarks="@(item.ReviewRemarks ?? "")">
                     <div class="request-card__person">
                         <span class="request-card__avatar request-card__avatar--blank" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5v.5H4v-.5z" /></svg></span>
                         <strong>@item.EmployeeName</strong>
@@ -86,6 +92,7 @@
                     </div>
                     <div class="request-card__review">
                         <span class="account-status-pill account-status-pill--@item.Status.ToLowerInvariant()">@item.Status</span>
+                        <button type="button" class="account-btn account-btn--details" data-view-employee-details>View details</button>
                         @if (item.Status == "Pending")
                         {
                             <div class="request-actions request-actions--stacked">
@@ -140,7 +147,12 @@
             var isPortalAdmin = roleList.Any(r => r.Equals("PortalAdmin", StringComparison.OrdinalIgnoreCase));
             var userSearch = $"{user.Username} {user.Email} {user.EmployeeName} {user.Roles}".ToLowerInvariant();
             var displayName = string.IsNullOrWhiteSpace(user.EmployeeName) ? user.Username : user.EmployeeName;
-            <article class="user-card" data-user-id="@user.UserId" data-user-search="@userSearch" data-user-active="@user.IsActive.ToString().ToLowerInvariant()" data-user-role="@selectedRole">
+            <article class="user-card" data-user-id="@user.UserId" data-user-search="@userSearch" data-user-active="@user.IsActive.ToString().ToLowerInvariant()" data-user-role="@selectedRole"
+                     data-detail-kind="user" data-detail-name="@user.EmployeeName" data-detail-number="@user.EmployeeNumber"
+                     data-detail-email="@user.Email" data-detail-position="@user.Position" data-detail-department="@user.Department"
+                     data-detail-company="@user.Company" data-detail-branch="@user.Branch" data-detail-status="@(user.IsActive ? "Active" : "Inactive")"
+                     data-detail-username="@user.Username" data-detail-roles="@user.Roles" data-detail-employee-active="@(user.EmployeeIsActive.HasValue ? (user.EmployeeIsActive.Value ? "Active" : "Inactive") : "")"
+                     data-detail-password="@(user.MustChangePassword ? "Change required" : "Configured")" data-detail-employee-id="@(user.EmployeeId?.ToString() ?? "")">
                 <header class="user-card__head">
                     <span class="user-card__avatar user-card__avatar--blank" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5v.5H4v-.5z" /></svg></span>
                     <div class="user-card__identity">
@@ -185,6 +197,7 @@
                             <button type="button" class="account-btn" data-reset-password="manual" disabled="@(user.IsDeveloper || !user.IsActive)">Manual</button>
                         </div>
                     </div>
+                    <button type="button" class="account-btn account-btn--details" data-view-employee-details>View details</button>
                     <button type="button" class="account-btn account-btn--approve" data-save-user disabled="@user.IsDeveloper">Save access</button>
                 </footer>
             </article>
@@ -239,6 +252,16 @@
 </div>
 </div>
 
+<div class="employee-details-backdrop" id="employeeDetailsModal" hidden>
+    <section class="employee-details-modal" role="dialog" aria-modal="true" aria-labelledby="employeeDetailsTitle">
+        <header class="employee-details-modal__head">
+            <div><span class="account-page-eyebrow">Employee profile</span><h2 id="employeeDetailsTitle">Employee details</h2></div>
+            <button type="button" class="employee-details-modal__close" aria-label="Close employee details">&times;</button>
+        </header>
+        <div class="employee-details-modal__content" id="employeeDetailsContent"></div>
+    </section>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
@@ -267,6 +290,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var userSearch = document.getElementById('userSearch');
     var userStatusFilter = document.getElementById('userStatusFilter');
     var userRoleFilter = document.getElementById('userRoleFilter');
+    var detailsModal = document.getElementById('employeeDetailsModal');
+    var detailsContent = document.getElementById('employeeDetailsContent');
+    var detailsClose = detailsModal?.querySelector('.employee-details-modal__close');
 
     document.querySelectorAll('[data-account-tab]').forEach(function(button){
         button.addEventListener('click', function(){
@@ -409,6 +435,109 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (e) {}
     applyRequestFilters();
     applyUserFilters(true);
+
+    function addProfileField(container, label, value) {
+        if (!value) return;
+        var item = document.createElement('div');
+        item.className = 'employee-profile-field';
+        var caption = document.createElement('span');
+        caption.textContent = label;
+        var text = document.createElement('strong');
+        text.textContent = value;
+        item.append(caption, text);
+        container.appendChild(item);
+    }
+
+    function addProfileSection(container, title, fields) {
+        var available = fields.filter(function(field) { return !!field[1]; });
+        if (!available.length) return;
+        var section = document.createElement('section');
+        section.className = 'employee-profile-section';
+        var heading = document.createElement('h3');
+        heading.textContent = title;
+        var grid = document.createElement('div');
+        grid.className = 'employee-profile-grid';
+        available.forEach(function(field) { addProfileField(grid, field[0], field[1]); });
+        section.append(heading, grid);
+        container.appendChild(section);
+    }
+
+    function openEmployeeDetails(card) {
+        if (!detailsModal || !detailsContent) return;
+        var data = card.dataset;
+        var name = data.detailName || data.detailUsername || 'Employee';
+        detailsContent.replaceChildren();
+
+        var layout = document.createElement('div');
+        layout.className = 'employee-profile-layout';
+        var identity = document.createElement('aside');
+        identity.className = 'employee-profile-identity';
+        var initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(function(part) { return part.charAt(0); }).join('').toUpperCase() || '—';
+        var avatar = document.createElement('div');
+        avatar.className = 'employee-profile-avatar';
+        avatar.textContent = initials;
+        var person = document.createElement('h3');
+        person.textContent = name;
+        var role = document.createElement('p');
+        role.textContent = data.detailPosition || (data.detailKind === 'user' ? 'Portal account' : 'Employee');
+        var badge = document.createElement('span');
+        badge.className = 'employee-profile-status' + (data.detailStatus === 'Active' || data.detailStatus === 'Approved' ? ' is-active' : '');
+        badge.textContent = data.detailStatus || 'Status unavailable';
+        identity.append(avatar, person, role, badge);
+        var summary = document.createElement('div');
+        summary.className = 'employee-profile-summary';
+        addProfileField(summary, 'EMPLOYEE NUMBER', data.detailNumber ? '#' + data.detailNumber : '—');
+        addProfileField(summary, 'DEPARTMENT', data.detailDepartment || '—');
+        addProfileField(summary, 'BRANCH', data.detailBranch || '—');
+        layout.append(identity, summary);
+
+        var sections = document.createElement('div');
+        sections.className = 'employee-profile-sections';
+        addProfileSection(sections, 'Employee information', [
+            ['Employee number', data.detailNumber], ['Work email', data.detailEmail],
+            ['Position', data.detailPosition], ['Department', data.detailDepartment],
+            ['Company', data.detailCompany], ['Branch', data.detailBranch],
+            ['Employee record', data.detailEmployeeActive]
+        ]);
+        if (data.detailKind === 'user') {
+            addProfileSection(sections, 'Portal account', [
+                ['Username', data.detailUsername], ['Account email', data.detailEmail],
+                ['Account status', data.detailStatus], ['Roles', data.detailRoles],
+                ['Password setup', data.detailPassword], ['Employee record ID', data.detailEmployeeId]
+            ]);
+        } else {
+            addProfileSection(sections, 'Account request', [
+                ['Requested username', data.detailUsername], ['Request status', data.detailStatus],
+                ['Submitted', data.detailSubmitted], ['Reviewed', data.detailReviewed],
+                ['Reviewed by', data.detailReviewedBy], ['Review remarks', data.detailRemarks]
+            ]);
+        }
+        layout.appendChild(sections);
+        detailsContent.appendChild(layout);
+        detailsModal.hidden = false;
+        document.body.classList.add('has-employee-details');
+        detailsClose?.focus();
+    }
+
+    function closeEmployeeDetails() {
+        if (!detailsModal || detailsModal.hidden) return;
+        detailsModal.hidden = true;
+        document.body.classList.remove('has-employee-details');
+    }
+
+    document.querySelectorAll('[data-view-employee-details]').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var card = button.closest('[data-detail-kind]');
+            if (card) openEmployeeDetails(card);
+        });
+    });
+    detailsClose?.addEventListener('click', closeEmployeeDetails);
+    detailsModal?.addEventListener('click', function(event) {
+        if (event.target === detailsModal) closeEmployeeDetails();
+    });
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && detailsModal && !detailsModal.hidden) closeEmployeeDetails();
+    });
 
     async function post(url, body) {
         var response = await fetch(url, {

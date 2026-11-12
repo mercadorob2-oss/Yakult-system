@@ -1176,7 +1176,7 @@ ORDER BY {orderBy};";
             int? changedByUserId,
             int oldItemConditionId,
             string oldItemConditionRemarks,
-            string oldItemRepairAction)
+            string oldItemRepairAction, string resolutionType = "Replacement")
         {
             using (var connection = new SqlConnection(GetConnectionString()))
             {
@@ -1184,7 +1184,8 @@ ORDER BY {orderBy};";
                 using (var tx = connection.BeginTransaction())
                 {
                     await ApplyTicketReplacementCoreAsync(connection, tx, ticketId, oldItemId, newItemId,
-                        quantity, remarks, changedByUserId, oldItemConditionId, oldItemConditionRemarks, oldItemRepairAction);
+                        quantity, remarks, changedByUserId, oldItemConditionId, oldItemConditionRemarks, oldItemRepairAction,
+                        resolutionType);
                     tx.Commit();
                 }
             }
@@ -1192,7 +1193,7 @@ ORDER BY {orderBy};";
 
         private async Task ApplyTicketReplacementCoreAsync(SqlConnection connection, SqlTransaction tx,
             int ticketId, int oldItemId, int newItemId, int quantity, string remarks, int? changedByUserId,
-            int oldItemConditionId, string oldItemConditionRemarks, string oldItemRepairAction)
+            int oldItemConditionId, string oldItemConditionRemarks, string oldItemRepairAction, string resolutionType)
         {
             if (oldItemId < 0) throw new ArgumentOutOfRangeException(nameof(oldItemId));
             if (newItemId < 0) throw new ArgumentOutOfRangeException(nameof(newItemId));
@@ -1233,7 +1234,9 @@ ORDER BY {orderBy};";
 VALUES (@Description, @EntryType, @Quantity, @NowUtc, @PostedBy, NULL, @ItemId);",
                     new
                     {
-                        Description = $"Call ticket replacement pullout (Ticket {ticketId})",
+                        Description = string.Equals(resolutionType, "Pull Out", StringComparison.OrdinalIgnoreCase)
+                            ? $"Call ticket pull-out (Ticket {ticketId})"
+                            : $"Call ticket replacement pullout (Ticket {ticketId})",
                         EntryType = oldEntryType,
                         Quantity = quantity,
                         PostedBy = changedByUserId.Value,
@@ -1319,7 +1322,9 @@ WHERE ItemId = @ItemId;",
 
             }
 
-            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ResolutionType", null, "Replacement", remarks);
+            var safeResolutionType = string.Equals(resolutionType, "Pull Out", StringComparison.OrdinalIgnoreCase)
+                ? "Pull Out" : "Replacement";
+            await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId, "ResolutionType", null, safeResolutionType, remarks);
 
             var snap = await GetTicketSnapshotAsync(connection, tx, ticketId);
             if (snap != null)
@@ -1552,7 +1557,7 @@ VALUES
         }
 
         public async Task ApplyTicketReplacementsAsync(int ticketId, IList<CallReplacementLine> lines,
-            int changedByUserId, string createdByName)
+            int changedByUserId, string createdByName, string resolutionType = "Replacement")
         {
             var validationError = CallReplacementLine.GetValidationError(lines);
             if (validationError != null) throw new ArgumentException(validationError);
@@ -1579,7 +1584,7 @@ VALUES
                         }
                         await ApplyTicketReplacementCoreAsync(connection, tx, ticketId, oldId, line.NewItemId,
                             line.Quantity, line.Remarks, changedByUserId, line.OldItemConditionId,
-                            line.OldItemConditionRemarks, line.OldItemRepairAction);
+                            line.OldItemConditionRemarks, line.OldItemRepairAction, resolutionType);
                         await InsertTicketHistoryAsync(connection, tx, ticketId, changedByUserId,
                             "ReplacementBatchItem", null, oldId + "," + line.NewItemId + "," + line.Quantity, batchId);
                     }

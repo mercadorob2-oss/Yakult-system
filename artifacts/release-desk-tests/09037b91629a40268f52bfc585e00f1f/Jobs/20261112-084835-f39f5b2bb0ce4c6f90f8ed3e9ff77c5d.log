@@ -1,0 +1,8 @@
+[08:48:35] Verify started.
+[08:48:36] #< CLIXML
+[08:48:36] Verifying signed metadata and installer bytes...
+[08:48:36] Signature, product, version, installer size and SHA256 verified.
+[08:48:36] Reading published feed (read-only; no permission probe or upload)...
+[08:48:36] Same release announced (remote installer not checked)
+[08:48:36] <Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04"><Obj S="progress" RefId="0"><TN RefId="0"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj><Obj S="progress" RefId="1"><TNRef RefId="0" /><MS><I64 N="SourceId">1</I64><PR N="Record"><AV>Preparing modules for first use.</AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>
+[08:48:36] Verify finished with exit code 0.

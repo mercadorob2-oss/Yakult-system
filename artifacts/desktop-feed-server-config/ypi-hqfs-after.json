@@ -1,0 +1,28 @@
+{
+  "ParentScreen": {
+    "Path": "E:\\YPI-HQFS\\My_Dept\\IT",
+    "Active": true,
+    "IncludeGroup": [
+      "Executable Files",
+      "System Files"
+    ]
+  },
+  "FeedException": {
+    "Path": "E:\\YPI-HQFS\\My_Dept\\IT\\ITDSharedFolder\\Russel\\Yakult_Desktop_Installer\\New Versions\\patch_versions",
+    "IncludeGroup": [
+      "Yakult Desktop Update Installers"
+    ],
+    "Description": "Allow Yakult desktop updater installer EXEs in this update-feed folder. Parent IT executable and system-file screens remain active."
+  },
+  "AllowedFiles": {
+    "Name": "Yakult Desktop Update Installers",
+    "IncludePattern": [
+      "YISP_PublishProbe_*.exe",
+      "YISP_Setup_*.exe"
+    ],
+    "ExcludePattern": null
+  },
+  "PSComputerName": "ypi-hqfs",
+  "RunspaceId": "ec5ca8eb-3da1-473c-943b-a02d8fb01e40",
+  "PSShowComputerName": true
+}

@@ -424,6 +424,7 @@ ORDER BY [Day];";
 SELECT
     Bucket =
         CASE
+            WHEN t.Status = 'Resolved (Temporary)' AND res.NewValue = 'Pull Out' THEN 'Temporary Pull Out'
             WHEN t.Status = 'Resolved (Temporary)' AND res.NewValue = 'Replacement' THEN 'Temporary Replacement'
             WHEN t.Status = 'Resolved (Temporary)' AND res.NewValue = 'Service Only' THEN 'Temporary Service'
             WHEN res.NewValue = 'Service Only' THEN 'Repair'
@@ -442,9 +443,10 @@ OUTER APPLY (
 WHERE res.HistoryId IS NOT NULL
   AND res.ChangedAt >= @FromUtc AND res.ChangedAt <= @ToUtc
   AND t.Status IN ('Solved', 'Resolved (Temporary)', 'Closed')
-  AND res.NewValue IN ('Service Only', 'Replacement')
+  AND res.NewValue IN ('Service Only', 'Replacement', 'Pull Out')
 GROUP BY
     CASE
+        WHEN t.Status = 'Resolved (Temporary)' AND res.NewValue = 'Pull Out' THEN 'Temporary Pull Out'
         WHEN t.Status = 'Resolved (Temporary)' AND res.NewValue = 'Replacement' THEN 'Temporary Replacement'
             WHEN t.Status = 'Resolved (Temporary)' AND res.NewValue = 'Service Only' THEN 'Temporary Service'
         WHEN res.NewValue = 'Service Only' THEN 'Repair'
@@ -557,6 +559,7 @@ WHERE res.HistoryId IS NOT NULL
   AND v.Status IN ('Solved', 'Resolved (Temporary)', 'Closed')
   AND (
         CASE
+            WHEN v.Status = 'Resolved (Temporary)' AND res.NewValue = 'Pull Out' THEN 'Temporary Pull Out'
             WHEN v.Status = 'Resolved (Temporary)' AND res.NewValue = 'Replacement' THEN 'Temporary Replacement'
             WHEN v.Status = 'Resolved (Temporary)' AND res.NewValue = 'Service Only' THEN 'Temporary Service'
             WHEN res.NewValue = 'Service Only' THEN 'Repair'

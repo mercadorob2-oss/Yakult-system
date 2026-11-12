@@ -52,6 +52,9 @@ namespace Yakult.Inventory.App.Wpf.Portal
         private TextBlock _resultLabel;
         private TextBlock _emptyResults;
         private TextBlock _supportReference;
+        private TextBlock _messengerBadgeText;
+        private Border _messengerBadge;
+        private Button _messengerHeadsetButton;
         private Grid _workspace;
         private Grid _body;
         private StackPanel _secondary;
@@ -108,8 +111,12 @@ namespace Yakult.Inventory.App.Wpf.Portal
             Content = _rootGrid;
             PreviewKeyDown += HandleShortcut;
             DesktopUpdateService.Instance.Changed += OnDesktopUpdateChanged;
-            Closed += (_, __) => DesktopUpdateService.Instance.Changed -= OnDesktopUpdateChanged;
+            DeviceMessengerNotifications.Instance.PendingCountChanged += UpdateMessengerBadge;
+            UpdateMessengerBadge(DeviceMessengerNotifications.Instance.PendingCount);
+            Closed += (_, __) => { DesktopUpdateService.Instance.Changed -= OnDesktopUpdateChanged; ItcmPresenceReporter.Stop("HomeDashboard"); DeviceMessengerNotifications.Instance.PendingCountChanged -= UpdateMessengerBadge; };
             Loaded += async (_, __) => {
+                ItcmPresenceReporter.Start("HomeDashboard");
+                DeviceMessengerNotifications.Instance.Start();
                 var completion = DesktopUpdateService.Instance.TakeCompletionMessage();
                 if (completion != null) ShowDesktopUpdates(completion);
                 await DesktopUpdateService.Instance.CheckAsync();
@@ -688,7 +695,24 @@ namespace Yakult.Inventory.App.Wpf.Portal
             _secondary.Children.Add(_recentPanel);
 
             var help = new StackPanel();
-            help.Children.Add(MakeIcon("headset", Accent, 23));
+            var messengerHeadset = new Button { Content = MakeIcon("headset", Accent, 26), Style = ActionStyle,
+                Background = Tint, Padding = new Thickness(12), HorizontalAlignment = HorizontalAlignment.Left,
+                ToolTip = "Double-click to open Device Messenger and see connected machines and users" };
+            AutomationProperties.SetName(messengerHeadset, "Device Messenger. Double-click to open, or press Enter.");
+            messengerHeadset.MouseDoubleClick += (_,e) => { e.Handled = true; WpfDeviceMessengerWindow.OpenMessenger(); };
+            messengerHeadset.PreviewKeyDown += (_,e) => { if (e.Key == Key.Enter || e.Key == Key.Space) { e.Handled = true; WpfDeviceMessengerWindow.OpenMessenger(); } };
+            _messengerHeadsetButton = messengerHeadset;
+            var headsetHost = new Grid { HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0,4,8,0) };
+            headsetHost.Children.Add(messengerHeadset);
+            _messengerBadgeText = Label("",10,Brushes.White,FontWeights.Bold);
+            _messengerBadgeText.HorizontalAlignment = HorizontalAlignment.Center;
+            _messengerBadge = new Border { Child = _messengerBadgeText, Background = Accent, CornerRadius = new CornerRadius(11),
+                BorderBrush = Brushes.White, BorderThickness = new Thickness(2), MinWidth = 22, Height = 22,
+                Padding = new Thickness(4,0,4,0), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(0,-5,-7,0), IsHitTestVisible = false, Visibility = Visibility.Collapsed };
+            headsetHost.Children.Add(_messengerBadge);
+            help.Children.Add(headsetHost);
+            help.Children.Add(Label("Double-click the headset to message active users.", 11, Muted, FontWeights.Normal, new Thickness(0,8,0,0)));
             help.Children.Add(Label("Need a hand?", 16, Ink, FontWeights.SemiBold, new Thickness(0, 12, 0, 6)));
             help.Children.Add(Label("Your IT team is here to help with system access and technical concerns.", 12, Muted));
             var email = Label(ContactEmail(), 12, Accent, FontWeights.SemiBold);
@@ -706,6 +730,18 @@ namespace Yakult.Inventory.App.Wpf.Portal
             tip.Children.Add(Label("A LITTLE SHORTCUT", 10, Muted, FontWeights.SemiBold));
             tip.Children.Add(Label("Press Ctrl + K to find a system, or use Tab and Enter to navigate.", 12, Muted, FontWeights.Normal, new Thickness(0, 7, 0, 0)));
             _secondary.Children.Add(tip);
+        }
+
+        private void UpdateMessengerBadge(int count)
+        {
+            if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(() => UpdateMessengerBadge(count))); return; }
+            if (_messengerBadge == null) return;
+            _messengerBadgeText.Text = count > 99 ? "99+" : count.ToString();
+            _messengerBadge.Visibility = count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            _messengerHeadsetButton.ToolTip = count > 0
+                ? count + " pending messages. Double-click to open Device Messenger."
+                : "Double-click to open Device Messenger and see connected machines and users";
+            AutomationProperties.SetName(_messengerHeadsetButton, "Device Messenger. " + count + " pending messages. Double-click or press Enter to open.");
         }
 
         private void RenderSystems()

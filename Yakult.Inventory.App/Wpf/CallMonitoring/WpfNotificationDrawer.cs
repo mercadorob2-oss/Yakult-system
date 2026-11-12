@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -63,7 +63,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 {
                     _items = new List<TicketNotification>();
                     AttentionCountChanged?.Invoke(0);
-                    ShowEmpty("Call Monitoring tables missing.\nRun DB scripts then refresh.");
+                    ShowEmpty("Notifications are not available yet.\nContact your administrator to enable Call Monitoring.");
                     return;
                 }
                 var t1 = _repo.GetOverdueDaysAsync(defaultDays: 3);
@@ -78,6 +78,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _mutedIds.RemoveWhere(id => !active.Contains(id));
                 foreach (var k in _snoozed.Where(x => !active.Contains(x.Key) || x.Value <= DateTime.Now).Select(x => x.Key).ToList())
                     _snoozed.Remove(k);
+                _lastRefreshed = DateTime.Now;
                 ApplyFlags();
                 AttentionCountChanged?.Invoke(_items.Count(IsAttention));
                 if (!token.IsCancellationRequested) Dispatcher.Invoke(Render);
@@ -86,7 +87,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             {
                 _items = new List<TicketNotification>();
                 AttentionCountChanged?.Invoke(0);
-                ShowEmpty("Failed to load.\n" + ex.Message);
+                System.Diagnostics.Debug.WriteLine("[Notifications] " + ex);
+                ShowEmpty("Couldn’t load notifications.\nUse Refresh to try again.");
             }
             finally { SetLoading(false); Interlocked.Exchange(ref _refreshGate, 0); }
         }
@@ -112,6 +114,13 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private StackPanel _ticketList;
         private TextBlock  _lblEmpty;
         private TextBlock  _lblFooter;
+        private TextBlock _summary;
+        private TextBlock _searchHint;
+        private CheckBox _unreadOnly;
+        private Button _refreshButton;
+        private Button _bulkButton;
+        private DateTime? _lastRefreshed;
+        private int _matchingCount;
 
         // ── Colors ────────────────────────────────────────────────────────────
         private static readonly Color CBorder   = Color.FromRgb(226,232,240);
@@ -164,11 +173,18 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 VerticalAlignment=VerticalAlignment.Center, Foreground=new SolidColorBrush(CTextSec), Margin=new Thickness(0,0,6,0) });
             _txtSearch = new TextBox { Background=Brushes.Transparent, BorderThickness=new Thickness(0),
                 VerticalAlignment=VerticalAlignment.Center, FontSize=12.5,
-                Foreground=new SolidColorBrush(CTextSec), Text="Search tickets...", Padding=new Thickness(0) };
-            _txtSearch.GotFocus  += (_,__) => { if (_txtSearch.Text=="Search tickets...") { _txtSearch.Text=""; _txtSearch.Foreground=new SolidColorBrush(CTextPri); } };
-            _txtSearch.LostFocus += (_,__) => { if (string.IsNullOrWhiteSpace(_txtSearch.Text)) { _txtSearch.Text="Search tickets..."; _txtSearch.Foreground=new SolidColorBrush(CTextSec); } };
-            _txtSearch.TextChanged += (_,__) => Render();
+                Foreground=new SolidColorBrush(CTextSec), Text="", Padding=new Thickness(0) };
+            _searchHint = new TextBlock { Text="Search ticket, issue, location or person", FontSize=12,
+                Foreground=new SolidColorBrush(CTextSec), IsHitTestVisible=false, VerticalAlignment=VerticalAlignment.Center };
+            Grid.SetColumn(_searchHint, 1); sg.Children.Add(_searchHint);
+            _txtSearch.TextChanged += (_,__) => { _searchHint.Visibility = string.IsNullOrEmpty(_txtSearch.Text) ? Visibility.Visible : Visibility.Collapsed; Render(); };
             Grid.SetColumn(_txtSearch, 1); sg.Children.Add(_txtSearch);
+            sg.ColumnDefinitions.Add(new ColumnDefinition { Width=GridLength.Auto });
+            var clearSearch = ActionBtn("Clear", CTextSec);
+            clearSearch.ToolTip = "Clear search";
+            clearSearch.Click += (_,__) => { _txtSearch.Clear(); _txtSearch.Focus(); };
+            Grid.SetColumn(clearSearch, 2); sg.Children.Add(clearSearch);
+            _txtSearch.KeyDown += (_,e) => { if (e.Key==Key.Escape && _txtSearch.Text.Length>0) { _txtSearch.Clear(); e.Handled=true; } };
             searchBorder.Child = sg;
 
             _cboSort = new ComboBox { Margin=new Thickness(0,0,0,8), FontSize=12, Padding=new Thickness(8,4,8,4) };
@@ -179,11 +195,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             _pnlChips = new WrapPanel { Margin=new Thickness(0,0,0,8) };
 
-            var bulkBtn = new Button { Content="Bulk actions \u25be", FontSize=11,
+            var bulkBtn = new Button { Content="Actions on results \u25be", FontSize=11,
                 Background=new SolidColorBrush(Colors.White), BorderBrush=new SolidColorBrush(CBorder),
                 BorderThickness=new Thickness(1), Padding=new Thickness(10,4,10,4),
                 Cursor=Cursors.Hand, HorizontalAlignment=HorizontalAlignment.Left };
             var bm = new ContextMenu();
+            _bulkButton = bulkBtn;
             var ma = new MenuItem { Header="Assign to me" };      ma.Click += async (_,__) => await BulkAssignAsync();
             var mb = new MenuItem { Header="Set In Progress" };   mb.Click += async (_,__) => await BulkInProgressAsync();
             var mc = new MenuItem { Header="Mark Read" };         mc.Click += (_,__) => BulkMarkRead();
@@ -192,8 +209,31 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             bulkBtn.Click += (_,__) => { bm.PlacementTarget=bulkBtn; bm.IsOpen=true; };
 
             var cs = new StackPanel();
-            cs.Children.Add(searchBorder); cs.Children.Add(_cboSort);
-            cs.Children.Add(_pnlChips);    cs.Children.Add(bulkBtn);
+            var overview = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+            overview.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            overview.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            _summary = new TextBlock { Text="Your ticket activity", FontSize=14, FontWeight=FontWeights.SemiBold,
+                Foreground=new SolidColorBrush(CTextPri), VerticalAlignment=VerticalAlignment.Center, TextWrapping=TextWrapping.Wrap };
+            overview.Children.Add(_summary);
+            _refreshButton = ActionBtn("Refresh", CBrand);
+            _refreshButton.ToolTip = "Load the latest ticket activity";
+            _refreshButton.Click += async (_,__) => await RefreshAsync();
+            Grid.SetColumn(_refreshButton, 1); overview.Children.Add(_refreshButton);
+            cs.Children.Add(overview);
+            cs.Children.Add(searchBorder);
+            cs.Children.Add(_pnlChips);
+            var tools = new Grid();
+            tools.ColumnDefinitions.Add(new ColumnDefinition { Width=new GridLength(1, GridUnitType.Star) });
+            tools.ColumnDefinitions.Add(new ColumnDefinition { Width=GridLength.Auto });
+            _cboSort.Margin = new Thickness(0, 0, 10, 0);
+            _cboSort.ToolTip = "Choose the order within each notification group";
+            tools.Children.Add(_cboSort);
+            Grid.SetColumn(bulkBtn, 1); tools.Children.Add(bulkBtn);
+            cs.Children.Add(tools);
+            _unreadOnly = new CheckBox { Content="Unread only", FontSize=12, Margin=new Thickness(0,10,0,0) };
+            _unreadOnly.Checked += (_,__) => Render();
+            _unreadOnly.Unchecked += (_,__) => Render();
+            cs.Children.Add(_unreadOnly);
             ctrlHost.Child = cs;
             Grid.SetRow(ctrlHost, 0); root.Children.Add(ctrlHost);
 
@@ -234,7 +274,17 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             bma.Click += (_,__) => MarkAllAsRead();
             Grid.SetColumn(bma, 2);
             fg.Children.Add(_lblFooter); fg.Children.Add(bva); fg.Children.Add(bma);
-            footer.Child = fg;
+            fg.Children.Remove(_lblFooter);
+            Grid.SetColumn(bva, 0);
+            bva.HorizontalAlignment = HorizontalAlignment.Left;
+            bva.Margin = new Thickness(0);
+            Grid.SetColumn(bma, 2);
+            _lblFooter.TextWrapping = TextWrapping.Wrap;
+            _lblFooter.Margin = new Thickness(0, 0, 0, 8);
+            var footerStack = new StackPanel();
+            footerStack.Children.Add(_lblFooter);
+            footerStack.Children.Add(fg);
+            footer.Child = footerStack;
             Grid.SetRow(footer, 2); root.Children.Add(footer);
 
             Content = root;
@@ -263,23 +313,29 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (hasQ)
                 view = view.Where(x => { var t=x?.Ticket; return t!=null&&(Ci(t.TicketCode,q)||Ci(t.Issue,q)||Ci(t.Company,q)||Ci(t.Branch,q)||Ci(t.Department,q)||Ci(t.CallerName,q)||Ci(t.ResponsiblePerson,q)); });
 
-            var rows = ApplySort(view).Take(120).ToList();
+            if (_unreadOnly?.IsChecked == true) view = view.Where(x => x.IsUnread);
+            var matching = ApplySort(view).ToList();
+            _matchingCount = matching.Count;
+            var rows = matching.Take(120).ToList();
+            if (_summary != null) _summary.Text = Count(FeedFilter.Attention) + " need attention  /  " + _items.Count(x => x.IsUnread) + " unread";
             _currentView = rows;
+            _bulkButton.IsEnabled = rows.Count > 0 && _refreshButton.IsEnabled;
             _ticketList.Children.Clear();
 
             if (rows.Count == 0)
             {
-                _lblEmpty.Text = _items.Count==0 ? "No notifications." : "No matches for current filter.";
+                _lblEmpty.Text = _items.Count==0 ? "You’re all caught up.\nNew ticket activity will appear here." : "No matching tickets.\nTry another filter or clear your search.";
                 _lblEmpty.Visibility = Visibility.Visible;
             }
             else
             {
                 _lblEmpty.Visibility = Visibility.Collapsed;
-                AddGroup("NEEDS ACTION NOW", rows.Where(x=>ResolveGroup(x)==FeedGroup.NeedsActionNow).ToList());
-                AddGroup("ASSIGNED TO ME",   rows.Where(x=>ResolveGroup(x)==FeedGroup.AssignedToMe).ToList());
-                AddGroup("RECENTLY UPDATED", rows.Where(x=>ResolveGroup(x)==FeedGroup.RecentlyUpdated).ToList());
+                AddGroup("Needs attention", rows.Where(x=>ResolveGroup(x)==FeedGroup.NeedsActionNow).ToList());
+                AddGroup("Assigned to you",   rows.Where(x=>ResolveGroup(x)==FeedGroup.AssignedToMe).ToList());
+                AddGroup("Recent activity", rows.Where(x=>ResolveGroup(x)==FeedGroup.RecentlyUpdated).ToList());
             }
             UpdateFooter(rows);
+
             RebuildChips();
         }
 
@@ -296,7 +352,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var t = n?.Ticket;
             var card = new Border { Background=new SolidColorBrush(Colors.White),
                 BorderBrush=new SolidColorBrush(CBorder), BorderThickness=new Thickness(1),
-                CornerRadius=new CornerRadius(10), Margin=new Thickness(0,0,0,8), Cursor=Cursors.Hand, ClipToBounds=true };
+                CornerRadius=new CornerRadius(10), Margin=new Thickness(0,0,0,8), ClipToBounds=true };
             card.MouseEnter += (_,__) => { card.Effect=new DropShadowEffect{Color=WpfThemeResources.TextDark,BlurRadius=10,ShadowDepth=0,Opacity=0.12}; card.BorderBrush=new SolidColorBrush(Color.FromRgb(148,163,184)); };
             card.MouseLeave += (_,__) => { card.Effect=null; card.BorderBrush=new SolidColorBrush(CBorder); };
 
@@ -323,8 +379,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
 
             // Issue
             if (!string.IsNullOrWhiteSpace(t?.Issue))
-                body.Children.Add(new TextBlock { Text=t.Issue, FontSize=11.5, Foreground=new SolidColorBrush(CTextSec),
-                    TextTrimming=TextTrimming.CharacterEllipsis, Margin=new Thickness(0,2,0,6), TextWrapping=TextWrapping.NoWrap });
+                body.Children.Add(new TextBlock { Text=t.Issue, FontSize=13, FontWeight=FontWeights.SemiBold, Foreground=new SolidColorBrush(CTextPri),
+                    MaxHeight=58, ToolTip=t.Issue, Margin=new Thickness(0,5,0,8), TextWrapping=TextWrapping.Wrap });
 
             // Tags
             var tags = new WrapPanel { Margin=new Thickness(0,0,0,6) };
@@ -335,21 +391,37 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var sta = (t?.Status??"").Trim();
             if (!string.IsNullOrEmpty(sta)) tags.Children.Add(BuildTag(sta, StaColor(sta)));
             var idle = t!=null ? IdleDays(t) : 0;
-            if (n.IsToday)   tags.Children.Add(BuildTag("Due today",   COrange));
-            if (n.IsOverdue && _overdueDays>0) tags.Children.Add(BuildTag($"Breached {idle}d", CRed));
-            if (n.IsPinned)  tags.Children.Add(BuildTag("\ud83d\udccc Pinned", CGray));
-            if (n.IsMuted)   tags.Children.Add(BuildTag("\ud83d\udd07 Muted",  CGray));
+            if (n.IsToday)   tags.Children.Add(BuildTag("SLA due today",   COrange));
+            if (n.IsOverdue && _overdueDays>0) tags.Children.Add(BuildTag($"Overdue • {idle}d idle", CRed));
+            if (n.IsPinned)  tags.Children.Add(BuildTag("\ud83d\udccc Pinned", CTextSec));
+            if (n.IsMuted)   tags.Children.Add(BuildTag("\ud83d\udd07 Muted",  CTextSec));
+            if (n.IsSnoozed && n.SnoozedUntil.HasValue)
+                tags.Children.Add(BuildTag("Snoozed until " + n.SnoozedUntil.Value.ToString("h:mm tt"), CTextSec));
             if (tags.Children.Count>0) body.Children.Add(tags);
 
-            // Actions
-            var acts = new WrapPanel { Margin=new Thickness(0,0,0,6) };
             var tid = t?.TicketId ?? 0;
-            var bo = ActionBtn("Open \u2192", CBrand);   bo.Click += async (_,__) => await SafeOpen(tid);
-            var bm2 = ActionBtn("Modify",   CTextSec);  bm2.Click += async (_,__) => await SafeOpen(tid);
-            var bp = ActionBtn(n.IsPinned?"Unpin":"\ud83d\udccc Pin", CTextSec);   bp.Click += (_,__) => TogglePin(tid);
-            var bmt = ActionBtn(n.IsMuted?"Unmute":"\ud83d\udd07 Mute", CTextSec); bmt.Click += (_,__) => ToggleMute(tid);
-            acts.Children.Add(bo); acts.Children.Add(bm2); acts.Children.Add(bp); acts.Children.Add(bmt);
-            body.Children.Add(acts);
+            var acts = new Grid { Margin=new Thickness(0,10,0,0) };
+            acts.ColumnDefinitions.Add(new ColumnDefinition { Width=new GridLength(1,GridUnitType.Star) });
+            acts.ColumnDefinitions.Add(new ColumnDefinition { Width=GridLength.Auto });
+            var open = ActionBtn("Open ticket →", CBrand);
+            open.HorizontalAlignment = HorizontalAlignment.Left;
+            open.Padding = new Thickness(12,7,12,7);
+            open.Click += async (_,__) => await SafeOpen(tid);
+            acts.Children.Add(open);
+            var more = ActionBtn("More •••", CTextSec);
+            more.ToolTip = "Read status, pin, mute and snooze";
+            var menu = new ContextMenu();
+            var read = new MenuItem { Header=n.IsUnread ? "Mark as read" : "Mark as unread" };
+            read.Click += (_,__) => { if (n.IsUnread) _readIds.Add(tid); else _readIds.Remove(tid); Render(); };
+            var pin = new MenuItem { Header=n.IsPinned ? "Unpin ticket" : "Pin ticket" };
+            pin.Click += (_,__) => TogglePin(tid);
+            var mute = new MenuItem { Header=n.IsMuted ? "Unmute ticket" : "Mute attention alerts" };
+            mute.Click += (_,__) => ToggleMute(tid);
+            var snooze = new MenuItem { Header=n.IsSnoozed ? "Show ticket now" : "Snooze for 2 hours" };
+            snooze.Click += (_,__) => { if (n.IsSnoozed) _snoozed.Remove(tid); else _snoozed[tid]=DateTime.Now.AddHours(2); Render(); };
+            menu.Items.Add(read); menu.Items.Add(pin); menu.Items.Add(mute); menu.Items.Add(snooze);
+            more.Click += (_,__) => { menu.PlacementTarget=more; menu.IsOpen=true; };
+            Grid.SetColumn(more,1); acts.Children.Add(more);
 
             // Meta
             var meta = new List<string>();
@@ -363,6 +435,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             body.Children.Add(new TextBlock { Text=$"{assignee} \u2022 Updated {ago}", FontSize=10.5,
                 Foreground=new SolidColorBrush(CTextSec), TextTrimming=TextTrimming.CharacterEllipsis });
 
+            body.Children.Add(acts);
             Grid.SetColumn(body,1); row.Children.Add(body);
             card.Child = row;
             return card;
@@ -374,12 +447,24 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (_pnlChips==null) return;
             _pnlChips.Children.Clear();
             Chip($"Attention ({Count(FeedFilter.Attention)})", FeedFilter.Attention);
-            Chip($"Overdue ({Count(FeedFilter.Overdue)})",     FeedFilter.Overdue);
-            Chip($"Unassigned ({Count(FeedFilter.Unassigned)})",FeedFilter.Unassigned);
-            Chip($"Assigned to me ({Count(FeedFilter.AssignedToMe)})", FeedFilter.AssignedToMe);
-            Chip($"Critical/High ({Count(FeedFilter.Urgent)})",FeedFilter.Urgent);
-            Chip($"Today ({Count(FeedFilter.Today)})",         FeedFilter.Today);
+            Chip($"Mine ({Count(FeedFilter.AssignedToMe)})", FeedFilter.AssignedToMe);
             Chip($"All ({Count(FeedFilter.All)})",             FeedFilter.All);
+            var extra = ActionBtn("More filters ▾", CTextSec);
+            var filters = new ContextMenu();
+            foreach (var pair in new[] {
+                new { Label="Overdue", Filter=FeedFilter.Overdue },
+                new { Label="Unassigned", Filter=FeedFilter.Unassigned },
+                new { Label="Critical / High", Filter=FeedFilter.Urgent },
+                new { Label="Due today", Filter=FeedFilter.Today } })
+            {
+                var filter = pair.Filter;
+                var item = new MenuItem { Header=pair.Label + " (" + Count(filter) + ")", IsCheckable=true, IsChecked=_filter==filter };
+                item.Click += (_,__) => { _filter=filter; Render(); };
+                filters.Items.Add(item);
+                if (_filter==filter) extra.Content=pair.Label + " ▾";
+            }
+            extra.Click += (_,__) => { filters.PlacementTarget=extra; filters.IsOpen=true; };
+            _pnlChips.Children.Add(extra);
         }
         private void Chip(string label, FeedFilter f)
         {
@@ -534,10 +619,14 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private async Task SafeOpen(int id)
         {
             if (id<=0||OpenTicketAsync==null) return;
-            _readIds.Add(id);
-            var item = _items.FirstOrDefault(x=>(x.Ticket?.TicketId??0)==id);
-            if (item!=null) item.IsUnread=false;
-            try { await OpenTicketAsync(id); }
+            try
+            {
+                await OpenTicketAsync(id);
+                _readIds.Add(id);
+                var item = _items.FirstOrDefault(x=>(x.Ticket?.TicketId??0)==id);
+                if (item!=null) item.IsUnread=false;
+                Render();
+            }
             catch (Exception ex) { System.Windows.MessageBox.Show(ex.Message,"Open Ticket Failed",MessageBoxButton.OK,MessageBoxImage.Error); }
         }
 
@@ -645,13 +734,20 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         {
             if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(()=>SetLoading(on)); return; }
             _cboSort.IsEnabled = !on; _txtSearch.IsEnabled = !on; _pnlChips.IsEnabled = !on;
-            _lblFooter.Text = on ? "Loading\u2026" : "Stateless feed \u2022 refresh for latest";
+            _unreadOnly.IsEnabled = !on;
+            _bulkButton.IsEnabled = !on && _currentView.Count > 0;
+            _refreshButton.IsEnabled = !on;
+            _refreshButton.Content = on ? "Refreshing…" : "Refresh";
+            if (on) _lblFooter.Text = "Loading ticket activity…";
+            else if (_currentView != null) UpdateFooter(_currentView);
         }
 
         private void ShowEmpty(string msg)
         {
             if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(()=>ShowEmpty(msg)); return; }
             _ticketList.Children.Clear();
+            _currentView.Clear();
+            _summary.Text = "Ticket activity unavailable";
             _lblEmpty.Text = msg; _lblEmpty.Visibility = Visibility.Visible;
         }
 
@@ -660,8 +756,11 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var total   = _items?.Count??0;
             var muted   = _items?.Count(x=>x.IsMuted)??0;
             var snoozed = _items?.Count(x=>x.IsSnoozed)??0;
-            _lblFooter.Text = total<=0 ? "Stateless feed \u2022 refresh for latest"
+            _lblFooter.ToolTip = "Read, pin, mute and snooze choices apply for this app session.";
+            _lblFooter.Text = total<=0 ? "No active tickets"
                 : $"Showing {vis?.Count??0} of {total} \u2022 muted {muted} \u2022 snoozed {snoozed}";
+            if (_matchingCount > 120) _lblFooter.Text += " • First 120 matches; refine your search";
+            if (_lastRefreshed.HasValue) _lblFooter.Text += " • Updated " + _lastRefreshed.Value.ToString("h:mm tt");
         }
     }
 }
