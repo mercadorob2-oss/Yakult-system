@@ -115,6 +115,17 @@ class SignOffParityTest {
     }
 
     // ── Humanize + meta ordering ──
+    @Test fun pullOutLabelAndFollowUpUseLatestResolution() {
+        val pullOut = listOf(history("ResolutionType", "", "Pull Out"))
+        assertEquals("TEMPORARY PULL OUT", SignOffParity.resolutionTypeLabel("Resolved (Temporary)", pullOut))
+        assertEquals("PULL OUT", SignOffParity.resolutionTypeLabel("Solved", pullOut))
+        assertTrue(SignOffParity.canCompletePullOut("Resolved (Temporary)", pullOut))
+        assertFalse(SignOffParity.canCompletePullOut("Solved", pullOut))
+        assertFalse(SignOffParity.canCompletePullOut("Reopened", pullOut))
+        assertFalse(SignOffParity.canCompletePullOut("Resolved (Temporary)", emptyList()))
+        val replacement = listOf(history("ResolutionType", "", "Replacement")) + pullOut
+        assertFalse(SignOffParity.canCompletePullOut("Resolved (Temporary)", replacement))
+    }
 
     @Test
     fun humanizeResolutionLines() {

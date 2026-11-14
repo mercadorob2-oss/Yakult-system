@@ -184,6 +184,8 @@ namespace Yakult.Inventory.App.Pages.User
             string kind = alert == null ? null : (alert.AlertKind ?? "");
             if (string.Equals(kind, Repositories.AdminAlertKinds.Bsod, StringComparison.OrdinalIgnoreCase))
                 Dialogs.FakeBsodForm.ShowAlert();
+            else if (string.Equals(kind, Repositories.AdminAlertKinds.CustomImage, StringComparison.OrdinalIgnoreCase))
+                Dialogs.CustomImagePopupForm.ShowAlert(alert);
             else if (string.Equals(kind, Repositories.AdminAlertKinds.Maintenance, StringComparison.OrdinalIgnoreCase))
                 Dialogs.MaintenanceAlertDialog.ShowAlert(alert);
             else if (string.Equals(kind, Repositories.AdminAlertKinds.ScreenLock, StringComparison.OrdinalIgnoreCase))

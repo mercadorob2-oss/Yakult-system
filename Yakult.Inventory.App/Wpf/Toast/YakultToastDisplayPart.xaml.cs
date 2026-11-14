@@ -1,4 +1,4 @@
-using System.Windows.Media;
+﻿using System.Windows.Media;
 using System.Windows.Input;
 using ToastNotifications.Core;
 
@@ -26,6 +26,16 @@ namespace Yakult.Inventory.App.Wpf.Toast
 
             TitleBlock.Text   = notification.Title;
             MessageBlock.Text = notification.Message;
+            if (notification.Compact)
+            {
+                Width = 300;
+                IconCircle.Width = IconCircle.Height = 28;
+                IconGlyph.Width = IconGlyph.Height = 28;
+                IconGlyph.FontSize = 13;
+                CardGrid.Margin = new System.Windows.Thickness(10,8,8,8);
+                TitleBlock.FontSize = 12;
+                MessageBlock.FontSize = 11;
+            }
 
             ApplyKindStyle(notification.Kind);
 

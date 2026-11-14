@@ -51,10 +51,7 @@
           "title": "Hardware Deployment Process",
           "imageUrl": "/media/company-policies/pdf-source-hardware-e48ad44f86.png",
           "altText": "Hardware Deployment Process showing IT Specialist, Department, and IT Secretary lanes.",
-          "paths": [
-            "START → Received Hardware → Approved for Deployment? No returns to the approval decision. Yes → Confirm Location & Assign FA No. If Applicable → To Deploy (Create Transmittal Form) → B → Deploy → Received Transmittal Form Copy → File Transmittal Form → Add/Update Item Monitoring → END.",
-            "Received Hardware → A → Add/Update Item Monitoring → END."
-          ],
+          "paths": [],
           "sourceNote": ""
         }
       ]
@@ -150,8 +147,8 @@
         },
         {
           "type": "flowchart",
-          "title": "Screenshot 3 | Registration form",
-          "imageUrl": "/media/company-policies/guest-wifi-step-3-f1b6577734.png",
+          "title": "Figure 3 | Registration form",
+          "imageUrl": "/media/company-policies/guest-registration-word-step-3-9570599175.png",
           "altText": "Registration form",
           "paths": [
             "On the registration screen, provide the guest email address and the email address of an authorized sponsor who can approve guest internet access."
@@ -160,9 +157,9 @@
         },
         {
           "type": "flowchart",
-          "title": "Screenshot 4 | Completed sample registration fields",
-          "imageUrl": "/media/company-policies/guest-wifi-step-4-26bfdb7cca.png",
-          "altText": "Completed sample registration fields",
+          "title": "Figure 4 | Completed registration ready to submit",
+          "imageUrl": "/media/company-policies/guest-registration-word-step-4-9b07b0dbb7.png",
+          "altText": "Completed registration ready to submit",
           "paths": [
             "Check that both email addresses are correct, then select Register. The sponsor must be the person authorized to approve the guest request.\n\n**Example**\n\n**Requester email:** itd.support@yakult.ph\n\n**Sponsor email:** IT.support@yakult.ph"
           ],
@@ -171,7 +168,7 @@
         {
           "type": "flowchart",
           "title": "Screenshot 5 | Pending sponsor approval",
-          "imageUrl": "/media/company-policies/guest-wifi-step-5-7e1093d9cf.png",
+          "imageUrl": "/media/company-policies/guest-wifi-step-6-d0c9fe4ff8.png",
           "altText": "Pending sponsor approval",
           "paths": [
             "The portal displays Waiting for approval. Internet access is not yet authorized. The guest should wait for the nominated sponsor to review the request."
@@ -181,7 +178,7 @@
         {
           "type": "flowchart",
           "title": "Screenshot 6 | Sponsor approval granted",
-          "imageUrl": "/media/company-policies/guest-wifi-step-6-d0c9fe4ff8.png",
+          "imageUrl": "/media/company-policies/guest-wifi-step-5-7e1093d9cf.png",
           "altText": "Sponsor approval granted",
           "paths": [
             "Once the screen displays Request approved, select Continue to proceed with connecting to the guest network."

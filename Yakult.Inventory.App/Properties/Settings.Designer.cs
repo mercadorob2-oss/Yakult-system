@@ -719,5 +719,29 @@ namespace Yakult.Inventory.App.Properties {
                 this["ITContactReference"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Normal")]
+        public string DeviceMessenger_PopupSize {
+            get { return ((string)(this["DeviceMessenger_PopupSize"])); }
+            set { this["DeviceMessenger_PopupSize"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DeviceMessenger_HidePopupPreview {
+            get { return ((bool)(this["DeviceMessenger_HidePopupPreview"])); }
+            set { this["DeviceMessenger_HidePopupPreview"] = value; }
+        }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DeviceMessenger_CompactWindow {
+            get { return ((bool)(this["DeviceMessenger_CompactWindow"])); }
+            set { this["DeviceMessenger_CompactWindow"] = value; }
+        }
     }
 }

@@ -13,6 +13,7 @@ namespace Yakult.Inventory.App.Repositories
         public const string Bsod = "Bsod";
         public const string Maintenance = "Maintenance";
         public const string ScreenLock = "ScreenLock";
+        public const string CustomImage = "CustomImage";
     }
 
     public sealed class AdminAlertDto
@@ -23,6 +24,7 @@ namespace Yakult.Inventory.App.Repositories
         public string CreatedByName { get; set; }
         public DateTime CreatedAt { get; set; }
         public string AlertKind { get; set; }
+        public byte[] ImageData { get; set; }
     }
 
     /// <summary>
@@ -68,7 +70,7 @@ namespace Yakult.Inventory.App.Repositories
             }
         }
 
-        public int SendStopAlert(string targetMachine, string targetUser, int createdBy, string createdByName, string title = "STOP", string message = null, int expireMinutes = 10, string alertKind = AdminAlertKinds.StopSound)
+        public int SendStopAlert(string targetMachine, string targetUser, int createdBy, string createdByName, string title = "STOP", string message = null, int expireMinutes = 10, string alertKind = AdminAlertKinds.StopSound, byte[] imageData = null)
         {
             try
             {
@@ -76,17 +78,11 @@ namespace Yakult.Inventory.App.Repositories
                 {
                     con.Open();
                     if (!TablesExist(con)) return 0;
-                    try
-                    {
-                        return InsertBroadcast(con, targetMachine, targetUser, createdBy, createdByName, title, message, expireMinutes, alertKind, withKind: true);
-                    }
-                    catch (SqlException)
-                    {
-                        // Pre-AlertKind schema: only the classic STOP exists there.
-                        if (!string.Equals(alertKind, AdminAlertKinds.StopSound, StringComparison.OrdinalIgnoreCase))
-                            return 0;
-                        return InsertBroadcast(con, targetMachine, targetUser, createdBy, createdByName, title, message, expireMinutes, alertKind, withKind: false);
-                    }
+                    bool hasKind = ColumnExists(con, "AlertKind");
+                    bool hasImage = ColumnExists(con, "ImageData");
+                    if (imageData != null && !hasImage) return 0;
+                    if (!hasKind && !string.Equals(alertKind, AdminAlertKinds.StopSound, StringComparison.OrdinalIgnoreCase)) return 0;
+                    return InsertBroadcast(con, targetMachine, targetUser, createdBy, createdByName, title, message, expireMinutes, alertKind, imageData, hasKind, hasImage);
                 }
             }
             catch (Exception ex)
@@ -96,23 +92,22 @@ namespace Yakult.Inventory.App.Repositories
             }
         }
 
-        private static int InsertBroadcast(SqlConnection con, string targetMachine, string targetUser, int createdBy, string createdByName, string title, string message, int expireMinutes, string alertKind, bool withKind)
+        private static bool ColumnExists(SqlConnection con, string columnName)
         {
-            string sql = withKind
-                ? @"
-                    INSERT INTO dbo.AdminAlertBroadcast
-                        (Title, Message, TargetMachine, TargetUser, CreatedBy, CreatedByName, ExpiresAt, AlertKind)
-                    VALUES
-                        (@Title, @Message, @TargetMachine, @TargetUser, @CreatedBy, @CreatedByName,
-                         DATEADD(minute, @ExpireMinutes, SYSUTCDATETIME()), @AlertKind);
-                    SELECT CAST(SCOPE_IDENTITY() AS INT);"
-                : @"
-                    INSERT INTO dbo.AdminAlertBroadcast
-                        (Title, Message, TargetMachine, TargetUser, CreatedBy, CreatedByName, ExpiresAt)
-                    VALUES
-                        (@Title, @Message, @TargetMachine, @TargetUser, @CreatedBy, @CreatedByName,
-                         DATEADD(minute, @ExpireMinutes, SYSUTCDATETIME()));
-                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
+            using (var cmd = new SqlCommand("SELECT CASE WHEN COL_LENGTH('dbo.AdminAlertBroadcast', @ColumnName) IS NULL THEN 0 ELSE 1 END;", con))
+            {
+                cmd.Parameters.AddWithValue("@ColumnName", columnName);
+                return Convert.ToInt32(cmd.ExecuteScalar()) == 1;
+            }
+        }
+
+        private static int InsertBroadcast(SqlConnection con, string targetMachine, string targetUser, int createdBy, string createdByName, string title, string message, int expireMinutes, string alertKind, byte[] imageData, bool withKind, bool withImage)
+        {
+            string columns = "Title, Message, TargetMachine, TargetUser, CreatedBy, CreatedByName, ExpiresAt";
+            string values = "@Title, @Message, @TargetMachine, @TargetUser, @CreatedBy, @CreatedByName, DATEADD(minute, @ExpireMinutes, SYSUTCDATETIME())";
+            if (withKind) { columns += ", AlertKind"; values += ", @AlertKind"; }
+            if (withImage) { columns += ", ImageData"; values += ", @ImageData"; }
+            string sql = "INSERT INTO dbo.AdminAlertBroadcast (" + columns + ") VALUES (" + values + "); SELECT CAST(SCOPE_IDENTITY() AS INT);";
             using (var cmd = new SqlCommand(sql, con))
             {
                 cmd.Parameters.AddWithValue("@Title", string.IsNullOrEmpty(title) ? (object)"STOP" : (object)title);
@@ -124,6 +119,8 @@ namespace Yakult.Inventory.App.Repositories
                 cmd.Parameters.AddWithValue("@ExpireMinutes", expireMinutes);
                 if (withKind)
                     cmd.Parameters.AddWithValue("@AlertKind", (object)(string.IsNullOrEmpty(alertKind) ? AdminAlertKinds.StopSound : alertKind));
+                if (withImage)
+                    cmd.Parameters.Add("@ImageData", System.Data.SqlDbType.VarBinary, -1).Value = (object)imageData ?? DBNull.Value;
                 return Convert.ToInt32(cmd.ExecuteScalar());
             }
         }
@@ -147,18 +144,13 @@ namespace Yakult.Inventory.App.Repositories
                                   AND a.MachineName = @MachineName
                                   AND a.UserName = @UserName)
                         ORDER BY b.BroadcastId;";
-                    string sql = "SELECT b.BroadcastId, b.Title, b.Message, b.CreatedByName, b.CreatedAt, b.AlertKind FROM dbo.AdminAlertBroadcast b" + where;
-                    try
-                    {
-                        ReadPendingAlerts(con, sql, machineName, userName, withKind: true, list);
-                    }
-                    catch (SqlException)
-                    {
-                        // Pre-AlertKind schema: same query without the column.
-                        list.Clear();
-                        sql = "SELECT b.BroadcastId, b.Title, b.Message, b.CreatedByName, b.CreatedAt FROM dbo.AdminAlertBroadcast b" + where;
-                        ReadPendingAlerts(con, sql, machineName, userName, withKind: false, list);
-                    }
+                    bool withKind = ColumnExists(con, "AlertKind");
+                    bool withImage = ColumnExists(con, "ImageData");
+                    string fields = "b.BroadcastId, b.Title, b.Message, b.CreatedByName, b.CreatedAt";
+                    if (withKind) fields += ", b.AlertKind";
+                    if (withImage) fields += ", b.ImageData";
+                    ReadPendingAlerts(con, "SELECT " + fields + " FROM dbo.AdminAlertBroadcast b" + where,
+                        machineName, userName, withKind, withImage, list);
                 }
             }
             catch (Exception ex)
@@ -168,7 +160,7 @@ namespace Yakult.Inventory.App.Repositories
             return list;
         }
 
-        private static void ReadPendingAlerts(SqlConnection con, string sql, string machineName, string userName, bool withKind, List<AdminAlertDto> list)
+        private static void ReadPendingAlerts(SqlConnection con, string sql, string machineName, string userName, bool withKind, bool withImage, List<AdminAlertDto> list)
         {
             using (var cmd = new SqlCommand(sql, con))
             {
@@ -185,7 +177,8 @@ namespace Yakult.Inventory.App.Repositories
                             Message = reader.IsDBNull(2) ? null : reader.GetString(2),
                             CreatedByName = reader.IsDBNull(3) ? "" : reader.GetString(3),
                             CreatedAt = reader.IsDBNull(4) ? DateTime.MinValue : reader.GetDateTime(4),
-                            AlertKind = withKind && !reader.IsDBNull(5) ? reader.GetString(5) : AdminAlertKinds.StopSound
+                            AlertKind = withKind && !reader.IsDBNull(5) ? reader.GetString(5) : AdminAlertKinds.StopSound,
+                            ImageData = withImage && !reader.IsDBNull(withKind ? 6 : 5) ? (byte[])reader.GetValue(withKind ? 6 : 5) : null
                         });
                     }
                 }

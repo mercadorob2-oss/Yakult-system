@@ -72,10 +72,10 @@
                                 <div class="it-info-procedure">
                                     @if (!string.IsNullOrWhiteSpace(block.Title)) { <h3>@block.Title</h3> }
                                     <ol class="@(screenshots.Count > 0 ? "policy-paired-steps" : "")">@for (var step = 0; step < block.Items.Count; step++) {
-                                        <li><div class="policy-step-copy">@Html.SafeMarkdown(block.Items[step])</div>
-                                        @if (screenshots.Count > 0) {
-                                            paired.Add(screenshots[step]);
-                                            @await Html.PartialAsync("_CompanyPolicyImage", new CompanyPolicyImageViewModel(screenshots[step], block.Items[step]))
+                                        <li value="@(step + 1)"><div class="policy-step-copy">@Html.SafeMarkdown(block.Items[step])</div>
+                                        @if (screenshots.TryGetValue(step + 1, out var screenshot)) {
+                                            paired.Add(screenshot);
+                                            @await Html.PartialAsync("_CompanyPolicyImage", new CompanyPolicyImageViewModel(screenshot, block.Items[step]))
                                         }</li>
                                     }</ol>
                                 </div>

@@ -81,11 +81,14 @@ namespace Yakult.Inventory.App.Services
                 new YakultToastNotification(title, message ?? string.Empty, kind, DismissibleOptions())));
 
         public Action ShowActionableInfo(string title, string message, Action activate)
+            => ShowActionableInfo(title, message, activate, false);
+
+        public Action ShowActionableInfo(string title, string message, Action activate, bool compact)
         {
             YakultToastNotification notification = null;
             Dispatch(() =>
             {
-                notification = new YakultToastNotification(title, message, YakultToastKind.Info, DismissibleOptions(), activate);
+                notification = new YakultToastNotification(title, message, YakultToastKind.Info, DismissibleOptions(), activate, compact);
                 _notifier.Notify(() => notification);
             });
             return () => Dispatch(() => notification?.Close());

@@ -1,0 +1,178 @@
+
+> Configure project :app
+WARNING: The option setting 'android.usesSdkInManifest.disallowed=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.sdk.defaultTargetSdkToCompileSdkIfUnset=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.enableAppCompileTimeRClass=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.builtInKotlin=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.newDsl=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.r8.optimizedResourceShrinking=false' is deprecated.
+The current default is 'true'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The option setting 'android.defaults.buildfeatures.resvalues=true' is deprecated.
+The current default is 'false'.
+It will be removed in version 10.0 of the Android Gradle plugin.
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+WARNING: The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDevDebugBuild UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDevDebugBuildConfig UP-TO-DATE
+> Task :app:checkDevDebugAarMetadata UP-TO-DATE
+> Task :app:processDevDebugNavigationResources UP-TO-DATE
+> Task :app:compileDevDebugNavigationResources UP-TO-DATE
+> Task :app:generateDevDebugResValues UP-TO-DATE
+> Task :app:mapDevDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDevDebugResources UP-TO-DATE
+> Task :app:mergeDevDebugResources UP-TO-DATE
+> Task :app:packageDevDebugResources UP-TO-DATE
+> Task :app:parseDevDebugLocalResources UP-TO-DATE
+> Task :app:createDevDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDevDebug UP-TO-DATE
+> Task :app:processDevDebugMainManifest UP-TO-DATE
+> Task :app:processDevDebugManifest UP-TO-DATE
+> Task :app:processDevDebugManifestForPackage UP-TO-DATE
+> Task :app:processDevDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDevDebug UP-TO-DATE
+> Task :app:preDevDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDevDebugUnitTest UP-TO-DATE
+> Task :app:mergeDevDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDevDebugAssets UP-TO-DATE
+> Task :app:mergeDevDebugAssets UP-TO-DATE
+> Task :app:compressDevDebugAssets UP-TO-DATE
+> Task :app:checkDevDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarDevDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexDevDebug UP-TO-DATE
+> Task :app:mergeLibDexDevDebug UP-TO-DATE
+> Task :app:mergeDevDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDevDebugNativeLibs UP-TO-DATE
+> Task :app:stripDevDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDevDebug UP-TO-DATE
+> Task :app:writeDevDebugAppMetadata UP-TO-DATE
+> Task :app:writeDevDebugSigningConfigVersions UP-TO-DATE
+> Task :app:preProdDebugBuild UP-TO-DATE
+> Task :app:mergeProdDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateProdDebugBuildConfig UP-TO-DATE
+> Task :app:checkProdDebugAarMetadata UP-TO-DATE
+> Task :app:processProdDebugNavigationResources UP-TO-DATE
+> Task :app:compileProdDebugNavigationResources UP-TO-DATE
+> Task :app:generateProdDebugResValues UP-TO-DATE
+> Task :app:mapProdDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateProdDebugResources UP-TO-DATE
+> Task :app:mergeProdDebugResources UP-TO-DATE
+> Task :app:packageProdDebugResources UP-TO-DATE
+> Task :app:parseProdDebugLocalResources UP-TO-DATE
+> Task :app:createProdDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksProdDebug UP-TO-DATE
+> Task :app:processProdDebugMainManifest UP-TO-DATE
+> Task :app:processProdDebugManifest UP-TO-DATE
+> Task :app:processProdDebugManifestForPackage UP-TO-DATE
+> Task :app:processProdDebugResources UP-TO-DATE
+> Task :app:kaptGenerateStubsDevDebugKotlin
+> Task :app:kaptGenerateStubsProdDebugKotlin
+
+> Task :app:kaptDevDebugKotlin
+warning: The following options were not recognized by any processor: '[room.schemaLocation, kapt.kotlin.generated, room.incremental, room.expandProjection]'
+
+> Task :app:kaptProdDebugKotlin
+warning: The following options were not recognized by any processor: '[room.schemaLocation, kapt.kotlin.generated, room.incremental, room.expandProjection]'
+
+> Task :app:compileDevDebugKotlin
+
+> Task :app:compileDevDebugJavaWithJavac
+Java compiler version 21 has deprecated support for compiling with source/target version 8.
+Try one of the following options:
+    1. [Recommended] Use Java toolchain with a lower language version
+    2. Set a higher source/target version
+    3. Use a lower version of the JDK running the build (if you're not using Java toolchain)
+For more details on how to configure these settings, see https://developer.android.com/build/jdks.
+To suppress this warning, set android.javaCompile.suppressSourceTargetDeprecationWarning=true in gradle.properties.
+
+> Task :app:compileDevDebugJavaWithJavac UP-TO-DATE
+> Task :app:hiltSyncDevDebug
+> Task :app:hiltAggregateDepsDevDebug UP-TO-DATE
+> Task :app:hiltJavaCompileDevDebug NO-SOURCE
+> Task :app:compileProdDebugKotlin
+> Task :app:processDevDebugJavaRes UP-TO-DATE
+> Task :app:transformDevDebugClassesWithAsm
+> Task :app:bundleDevDebugClassesToRuntimeJar
+> Task :app:mergeDevDebugJavaResource UP-TO-DATE
+> Task :app:bundleDevDebugClassesToCompileJar
+> Task :app:dexBuilderDevDebug
+> Task :app:kaptGenerateStubsDevDebugUnitTestKotlin
+> Task :app:mergeProjectDexDevDebug
+> Task :app:packageDevDebug
+> Task :app:createDevDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDevDebug
+> Task :app:javaPreCompileProdDebug UP-TO-DATE
+
+> Task :app:compileProdDebugJavaWithJavac UP-TO-DATE
+Java compiler version 21 has deprecated support for compiling with source/target version 8.
+Try one of the following options:
+    1. [Recommended] Use Java toolchain with a lower language version
+    2. Set a higher source/target version
+    3. Use a lower version of the JDK running the build (if you're not using Java toolchain)
+For more details on how to configure these settings, see https://developer.android.com/build/jdks.
+To suppress this warning, set android.javaCompile.suppressSourceTargetDeprecationWarning=true in gradle.properties.
+
+> Task :app:generateProdDebugAssets UP-TO-DATE
+> Task :app:mergeProdDebugAssets UP-TO-DATE
+> Task :app:compressProdDebugAssets UP-TO-DATE
+> Task :app:checkProdDebugDuplicateClasses UP-TO-DATE
+> Task :app:desugarProdDebugFileDependencies UP-TO-DATE
+> Task :app:mergeExtDexProdDebug UP-TO-DATE
+> Task :app:mergeLibDexProdDebug UP-TO-DATE
+> Task :app:processProdDebugJavaRes UP-TO-DATE
+> Task :app:mergeProdDebugJavaResource UP-TO-DATE
+> Task :app:hiltSyncProdDebug
+> Task :app:kaptDevDebugUnitTestKotlin
+> Task :app:hiltAggregateDepsProdDebug UP-TO-DATE
+> Task :app:hiltJavaCompileProdDebug NO-SOURCE
+> Task :app:compileDevDebugUnitTestKotlin
+> Task :app:compileDevDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDevDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:hiltSyncDevDebugUnitTest
+> Task :app:transformProdDebugClassesWithAsm
+> Task :app:hiltAggregateDepsDevDebugUnitTest UP-TO-DATE
+> Task :app:hiltJavaCompileDevDebugUnitTest NO-SOURCE
+> Task :app:transformDevDebugUnitTestClassesWithAsm
+> Task :app:dexBuilderProdDebug
+> Task :app:testDevDebugUnitTest
+> Task :app:mergeProdDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeProdDebugNativeLibs UP-TO-DATE
+> Task :app:stripProdDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningProdDebug UP-TO-DATE
+> Task :app:writeProdDebugAppMetadata UP-TO-DATE
+> Task :app:writeProdDebugSigningConfigVersions UP-TO-DATE
+> Task :app:mergeProjectDexProdDebug
+> Task :app:packageProdDebug
+> Task :app:createProdDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleProdDebug
+
+BUILD SUCCESSFUL in 1m 37s
+92 actionable tasks: 21 executed, 71 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.2.1/userguide/configuration_cache_enabling.html

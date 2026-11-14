@@ -5,14 +5,18 @@ namespace Yakult.SystemsPortal.Models;
 /// <summary>Presentation decisions only; the saved policy is never rewritten.</summary>
 public static class CompanyPolicyPresentation
 {
-    public static List<CompanyPolicyBlock> PairedScreenshots(CompanyPolicySection section, CompanyPolicyBlock steps)
+    public static Dictionary<int, CompanyPolicyBlock> PairedScreenshots(CompanyPolicySection section, CompanyPolicyBlock steps)
     {
         if (section.Id != "guest-internet" || steps.Type != "steps") return [];
         var start = section.Blocks.IndexOf(steps) + 1;
-        var screenshots = section.Blocks.Skip(start).Take(steps.Items.Count).ToList();
-        return screenshots.Count == steps.Items.Count && screenshots.Select((block, i) =>
-            block.Type == "flowchart" && block.Title.StartsWith($"Screenshot {i + 1} |", StringComparison.Ordinal)).All(x => x)
-            ? screenshots : [];
+        var screenshots = new Dictionary<int, CompanyPolicyBlock>();
+        foreach (var block in section.Blocks.Skip(start).TakeWhile(block => block.Type == "flowchart"))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(block.Title, @"^(?:Screenshot|Figure) (\d+) \|");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out var number) && number >= 1 && number <= steps.Items.Count)
+                screenshots.TryAdd(number, block);
+        }
+        return screenshots;
     }
 
     public static bool IsCallout(CompanyPolicyBlock block) =>

@@ -94,9 +94,10 @@ public sealed class CompanyPolicyDocument
                 }
                 break;
             case "flowchart":
-                if (!IsPolicyImageUrl(block.ImageUrl)) throw new ArgumentException($"Choose a valid uploaded diagram for '{sectionTitle}'.");
-                Required(block.AltText, 300, "Diagram alt text");
-                ValidateStrings(block.Paths, 30, 3_000, "Diagram path description", sectionTitle);
+                if (!string.IsNullOrWhiteSpace(block.ImageUrl) && !IsPolicyImageUrl(block.ImageUrl)) throw new ArgumentException($"Choose a valid uploaded diagram for '{sectionTitle}'.");
+                Max(block.AltText, 300, "Diagram alt text");
+                if (block.Paths is { Count: > 0 })
+                    ValidateStrings(block.Paths, 30, 3_000, "Diagram path description", sectionTitle);
                 Max(block.SourceNote, 2_000, "Diagram source note");
                 break;
         }

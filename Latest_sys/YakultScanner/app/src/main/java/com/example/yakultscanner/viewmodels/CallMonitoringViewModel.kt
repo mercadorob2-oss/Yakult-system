@@ -322,6 +322,18 @@ class CallMonitoringViewModel @Inject constructor(
         }
     }
 
+    fun completePullOut(ticketId: Int) {
+        if (_actionState.value is ActionUiState.Loading) return
+        viewModelScope.launch {
+            _actionState.value = ActionUiState.Loading
+            try {
+                handleActionResponse(repository.completePullOut(ticketId))
+            } catch (e: Exception) {
+                _actionState.value = ActionUiState.Error("Network error: ${e.message}")
+            }
+        }
+    }
+
     fun updatePriority(ticketId: Int, newPriority: String, userId: Int? = null) {
         viewModelScope.launch {
             _actionState.value = ActionUiState.Loading

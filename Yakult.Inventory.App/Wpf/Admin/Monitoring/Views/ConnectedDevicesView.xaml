@@ -131,7 +131,7 @@
         <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource YakultBorderBrush}" BorderThickness="0,0,0,1" Padding="18,14,18,12">
             <StackPanel>
                 <TextBlock Text="Connected Devices" FontSize="18" FontWeight="Bold" Foreground="{StaticResource YakultPrimaryBrush}"/>
-                <TextBlock Text="Send an update notice or custom message to an online desktop. Notices are checked about every 20 seconds while the app is open."
+                <TextBlock Text="Send a message or targeted alert to an online desktop, including a dismissible full-screen image. Alerts are checked about every 20 seconds while the app is open."
                            FontSize="10" Foreground="{StaticResource YakultTextMutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
@@ -250,13 +250,13 @@
                                         ElementStyle="{StaticResource CellText}"/>
                     <DataGridTextColumn Header="Last seen" Binding="{Binding LastSeenDisplay}" Width="170" IsReadOnly="True"
                                         ElementStyle="{StaticResource CellText}"/>
-                    <DataGridTemplateColumn Header="Actions" Width="190">
+                    <DataGridTemplateColumn Header="Actions" Width="200">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Content="Message" Style="{StaticResource ActionButton}" Height="28"
                                             IsEnabled="{Binding Online}" ToolTip="Compose a notification for this device" Click="MessageButton_Click"/>
-                                    <Button Content="Alerts" Style="{StaticResource DangerButton}" Click="StopButton_Click"/>
+                                    <Button Content="Alert…" Style="{StaticResource DangerButton}" IsEnabled="{Binding Online}" ToolTip="Open alert options" Click="StopButton_Click"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
