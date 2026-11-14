@@ -401,6 +401,9 @@
     <Compile Include="Dialogs\AdminAlertDialog.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Dialogs\CustomImagePopupForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Dialogs\FakeBsodForm.cs">
       <SubType>Form</SubType>
     </Compile>

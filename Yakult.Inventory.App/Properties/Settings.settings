@@ -188,5 +188,14 @@
     <Setting Name="ITContactReference" Type="System.String" Scope="User">
       <Value Profile="(Default)">IT Helpdesk - Mon-Fri 8AM-5PM</Value>
     </Setting>
+    <Setting Name="DeviceMessenger_CompactWindow" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="DeviceMessenger_PopupSize" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Normal</Value>
+    </Setting>
+    <Setting Name="DeviceMessenger_HidePopupPreview" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

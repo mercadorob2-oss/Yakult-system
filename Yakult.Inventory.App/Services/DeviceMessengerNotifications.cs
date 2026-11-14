@@ -21,8 +21,8 @@ namespace Yakult.Inventory.App.Services
         private bool _polling;
         private Action _closePopup;
         internal Func<bool> IsMessengerReading = () => WpfDeviceMessengerWindow.IsReadingMessages;
-        internal Func<string,string,Action,Action> ShowPopup = (title, message, activate) =>
-            ToastNotificationService.Instance.ShowActionableInfo(title, message, activate);
+        internal Func<string,string,Action,bool,Action> ShowPopup = (title, message, activate, compact) =>
+            ToastNotificationService.Instance.ShowActionableInfo(title, message, activate, compact);
         public int PendingCount { get; private set; }
         public event Action<int> PendingCountChanged;
         private DeviceMessengerNotifications()
@@ -83,7 +83,9 @@ namespace Yakult.Inventory.App.Services
                 var senders = fresh.Select(x => x.SenderMachine + "\n" + x.SenderUser).Distinct(StringComparer.OrdinalIgnoreCase).Count();
                 var title = senders > 1 ? fresh.Count + " new messages from " + senders + " people"
                     : fresh.Count == 1 ? "Message from " + latest.SenderUser : fresh.Count + " messages from " + latest.SenderUser;
-                var preview = (latest.Body ?? "").Replace("\r", " ").Replace("\n", " ");
+                var preview = Properties.Settings.Default.DeviceMessenger_HidePopupPreview
+                    ? "New message · preview hidden"
+                    : (latest.Body ?? "").Replace("\r", " ").Replace("\n", " ");
                 if (preview.Length > 120) preview = preview.Substring(0,120) + "…";
                 var peer = new MessengerDevice { MachineName = latest.SenderMachine, UserName = latest.SenderUser };
                 ClosePopup();
@@ -92,7 +94,7 @@ namespace Yakult.Inventory.App.Services
                     {
                         if (generation == _generation && AppSession.IsLoggedIn && AppSession.CurrentUserId == userId)
                             WpfDeviceMessengerWindow.OpenMessenger(peer);
-                    });
+                    }, string.Equals(Properties.Settings.Default.DeviceMessenger_PopupSize,"Small",StringComparison.OrdinalIgnoreCase));
             }
             catch (Exception ex) { Debug.WriteLine("[DeviceMessengerNotifications] " + ex.Message); }
             finally { _polling = false; }

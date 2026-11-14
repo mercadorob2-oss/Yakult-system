@@ -79,6 +79,7 @@ import com.example.yakultscanner.ui.components.ItcmStepProgress
 import com.example.yakultscanner.ui.components.ItcmSurfaceCard
 import com.example.yakultscanner.ui.components.ItcmUi
 import com.example.yakultscanner.utils.validateResolutionEntries
+import com.example.yakultscanner.utils.resolutionIsTemporary
 import com.example.yakultscanner.utils.FetchAssetResult
 import com.example.yakultscanner.utils.exactSerialMatches
 import com.example.yakultscanner.utils.resolveFetchAsset
@@ -110,6 +111,7 @@ fun ItcmResolutionScreen(
 
     var wizardStep by rememberSaveable { mutableStateOf(0) }
     var isReplacement by rememberSaveable { mutableStateOf(false) }
+    var isPullOut by rememberSaveable { mutableStateOf(false) }
     var useUnlisted by rememberSaveable { mutableStateOf(false) }
     var oldCategoryFilter by rememberSaveable { mutableStateOf("All Categories") }
     var newCategoryFilter by rememberSaveable { mutableStateOf("All Categories") }
@@ -216,9 +218,10 @@ fun ItcmResolutionScreen(
         remarks = remarks
     )
     val allEntries = entries + if (includeOld || includeNew) listOf(currentEntry) else emptyList()
-    val validationMessage = validateResolutionEntries(allEntries, stockItems)
+    val validationMessage = validateResolutionEntries(allEntries, stockItems, pullOut = isPullOut)
     val detailValid = validationMessage == null
-    val effectiveTemporary = isTemporary && (!isReplacement || allEntries.any { (it.newItemId ?: 0) > 0 })
+    val resolutionType = if (isPullOut) "Pull Out" else if (isReplacement) "Replacement" else "Service Only"
+    val effectiveTemporary = resolutionIsTemporary(resolutionType, isTemporary, allEntries)
     fun addEntry(old: Boolean, new: Boolean) {
         if (includeOld || includeNew) entriesJson = Gson().toJson(entries + currentEntry)
         includeOld = old; includeNew = new
@@ -257,7 +260,7 @@ fun ItcmResolutionScreen(
         repairForwardState is RepairForwardUiState.PreviewLoading || repairForwardState is RepairForwardUiState.CreateLoading
     val totalSteps = if (isReplacement) 3 else 2
     val displayStep = if (isReplacement) wizardStep + 1 else if (wizardStep == 2) 2 else 1
-    val stepLabels = if (isReplacement) listOf("Resolution type", "Replacement details", "Review") else listOf("Resolution type", "Review")
+    val stepLabels = if (isReplacement) listOf("Resolution type", if (isPullOut) "Pull-out details" else "Replacement details", "Review") else listOf("Resolution type", "Review")
 
     LaunchedEffect(ticketId) { viewModel.loadResolutionLookups() }
     LaunchedEffect(oldSerialQuery, outItems, useUnlisted, isReplacement) {
@@ -404,7 +407,7 @@ fun ItcmResolutionScreen(
                                 viewModel.applyResolution(
                                     ResolutionRequest(
                                         ticketId = ticketId,
-                                        resolutionType = if (isReplacement) "Replacement" else "Service Only",
+                                        resolutionType = resolutionType,
                                         userId = UserSession.currentUser?.userId,
                                         remarks = remarks,
                                         isTemporary = effectiveTemporary,
@@ -442,8 +445,14 @@ fun ItcmResolutionScreen(
                 if (wizardStep == 0) {
                     ItcmResolutionTypeStep(
                         isReplacement = isReplacement,
+                        isPullOut = isPullOut,
                         remarks = remarks,
-                        onReplacementChanged = { isReplacement = it },
+                        onReplacementChanged = { isReplacement = it; isPullOut = false },
+                        onPullOutSelected = {
+                            isPullOut = true; isReplacement = true
+                            includeOld = true; includeNew = false; selectedNewItem = null
+                            entriesJson = "[]"; forwardToRepair = false
+                        },
                         onRemarksChanged = { remarks = it },
                         isTemporary = isTemporary,
                         onTemporaryChanged = { isTemporary = it }
@@ -451,13 +460,15 @@ fun ItcmResolutionScreen(
                 }
                 if (wizardStep == 1 && isReplacement) {
                     ItcmSurfaceCard {
-                        ItcmSectionHeading("Item entries", "Collect old items and issue new items independently. Add both for a direct replacement.")
+                        ItcmSectionHeading(if (isPullOut) "Pull out old item" else "Item entries",
+                            if (isPullOut) "Collect the old unit without issuing replacement stock. The ticket stays temporary for follow-up."
+                            else "Collect old items and issue new items independently. Add both for a direct replacement.")
                         entries.forEachIndexed { index, entry ->
                             Text("Entry ${index + 1}: " + resolutionEntrySummary(entry, outItems, stockItems), color = ItcmUi.Ink)
                             TextButton(onClick = { editEntry(index) }, enabled = detailValid) { Text("Edit entry ${index + 1}") }
                             TextButton(onClick = { entriesJson = Gson().toJson(entries.filterIndexed { i, _ -> i != index }) }) { Text("Remove entry ${index + 1}") }
                         }
-                        if (allEntries.any { (it.newItemId ?: 0) > 0 } || includeNew) {
+                        if (!isPullOut && (allEntries.any { (it.newItemId ?: 0) > 0 } || includeNew)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Checkbox(checked = isTemporary, onCheckedChange = { isTemporary = it })
                                 Text("Temporary issue (return later)")
@@ -465,11 +476,11 @@ fun ItcmResolutionScreen(
                         }
                         Text("Current entry ${entries.size + 1}", fontWeight = FontWeight.Bold)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = includeOld, onCheckedChange = { includeOld = it })
+                            Checkbox(checked = includeOld, onCheckedChange = { includeOld = it }, enabled = !isPullOut)
                             Text("Collect old item")
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = includeNew, onCheckedChange = { includeNew = it })
+                            Checkbox(checked = includeNew, onCheckedChange = { includeNew = it }, enabled = !isPullOut)
                             Text("Issue new item")
                         }
                     }
@@ -567,21 +578,24 @@ fun ItcmResolutionScreen(
                         remarks = remarks,
                         onRemarksChanged = { remarks = it },
                         stockOnHand = selectedNewItemStock,
-                        selectedQty = qty
+                        selectedQty = qty,
+                        isPullOut = isPullOut
                     )
                     validationMessage?.let { Text(it, color = ItcmUi.Critical) }
-                    Text("Keep the current entry and add another:", color = ItcmUi.Ink)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = { addEntry(true, false) }, enabled = detailValid) { Text("+ Old") }
-                        OutlinedButton(onClick = { addEntry(false, true) }, enabled = detailValid) { Text("+ New") }
-                        OutlinedButton(onClick = { addEntry(true, true) }, enabled = detailValid) { Text("+ Both") }
+                    if (!isPullOut) {
+                        Text("Keep the current entry and add another:", color = ItcmUi.Ink)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = { addEntry(true, false) }, enabled = detailValid) { Text("+ Old") }
+                            OutlinedButton(onClick = { addEntry(false, true) }, enabled = detailValid) { Text("+ New") }
+                            OutlinedButton(onClick = { addEntry(true, true) }, enabled = detailValid) { Text("+ Both") }
+                        }
                     }
 
                 }
                 if (wizardStep == 2) {
                     if (isReplacement) {
                         ItcmSurfaceCard {
-                            ItcmSectionHeading("Review all item entries")
+                            ItcmSectionHeading(if (isPullOut) "Review Pull Out" else "Review all item entries")
                             ItcmStatusChip(if (effectiveTemporary) "Resolved (Temporary)" else "Solved")
                             allEntries.forEachIndexed { index, entry ->
                                 Text("Entry ${index + 1}", fontWeight = FontWeight.Bold, color = ItcmUi.Ink)
@@ -598,7 +612,8 @@ fun ItcmResolutionScreen(
                                 val total = lines.sumOf { (it.quantity ?: 0).toLong() }
                                 Text("${item?.displayText}: issue $total; stock after ${(item?.stockOnHand ?: 0) - total}", color = ItcmUi.Ink)
                             }
-                            Text(if (effectiveTemporary) "Only issued new items will be returned. Collected old items will not be returned again." else "No temporary return required.", color = ItcmUi.Muted)
+                            Text(if (isPullOut) "No replacement stock will be issued. Complete the follow-up later to mark this ticket Solved."
+                                else if (effectiveTemporary) "Only issued new items will be returned. Collected old items will not be returned again." else "No temporary return required.", color = ItcmUi.Muted)
                         }
                     } else {
                     ItcmResolutionReviewStep(
@@ -707,8 +722,10 @@ fun ItcmResolutionScreen(
 @Composable
 private fun ItcmResolutionTypeStep(
     isReplacement: Boolean,
+    isPullOut: Boolean,
     remarks: String,
     onReplacementChanged: (Boolean) -> Unit,
+    onPullOutSelected: () -> Unit,
     onRemarksChanged: (String) -> Unit,
     isTemporary: Boolean,
     onTemporaryChanged: (Boolean) -> Unit
@@ -721,10 +738,16 @@ private fun ItcmResolutionTypeStep(
         onClick = { onReplacementChanged(false) }
     )
     ItcmChoiceCard(
-        selected = isReplacement,
+        selected = isReplacement && !isPullOut,
         title = "Replacement",
         description = "Record the old item, condition, replacement stock, and follow-up.",
         onClick = { onReplacementChanged(true) }
+    )
+    ItcmChoiceCard(
+        selected = isPullOut,
+        title = "Pull Out",
+        description = "Collect the old item without a replacement. Keep the ticket Resolved (Temporary) for follow-up.",
+        onClick = onPullOutSelected
     )
     if (!isReplacement) {
         ItcmSurfaceCard {
@@ -735,7 +758,7 @@ private fun ItcmResolutionTypeStep(
         }
     }
     ItcmSurfaceCard {
-        ItcmSectionHeading(if (isReplacement) "Replacement remarks" else "Service notes", "Required before the resolution can be confirmed.")
+        ItcmSectionHeading(if (isPullOut) "Pull-out notes" else if (isReplacement) "Replacement remarks" else "Service notes", "Required before the resolution can be confirmed.")
         OutlinedTextField(
             value = remarks,
             onValueChange = onRemarksChanged,
@@ -804,9 +827,10 @@ private fun ItcmReplacementDetailsStep(
     remarks: String,
     onRemarksChanged: (String) -> Unit,
     stockOnHand: Int,
-    selectedQty: Int
+    selectedQty: Int,
+    isPullOut: Boolean = false
 ) {
-    ItcmSectionHeading("Replacement details", "Record inventory movement and the old item’s next state.")
+    ItcmSectionHeading(if (isPullOut) "Pull-out details" else "Replacement details", "Record inventory movement and the old item’s next state.")
     if (includeOld) ItcmSurfaceCard {
         ItcmSectionHeading("Old item", "Identify the unit being pulled out.")
         ItcmChoiceCard(
@@ -892,7 +916,7 @@ private fun ItcmReplacementDetailsStep(
         OutlinedTextField(
             value = quantity,
             onValueChange = onQuantityChanged,
-            label = { Text("Quantity *") },
+            label = { Text(if (isPullOut) "Quantity pulled out *" else "Quantity *") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -904,14 +928,14 @@ private fun ItcmReplacementDetailsStep(
         }
     }
     ItcmSurfaceCard {
-        ItcmSectionHeading("Resolution remarks", "Required before confirmation.")
+        ItcmSectionHeading(if (isPullOut) "Pull-out notes" else "Resolution remarks", "Required before confirmation.")
         OutlinedTextField(
             value = remarks,
             onValueChange = onRemarksChanged,
             modifier = Modifier.fillMaxWidth(),
             minLines = 4,
             maxLines = 6,
-            placeholder = { Text("Summarize the replacement and outcome…") },
+            placeholder = { Text(if (isPullOut) "Describe the pulled-out unit and required follow-up…" else "Summarize the replacement and outcome…") },
             shape = RoundedCornerShape(16.dp)
         )
     }

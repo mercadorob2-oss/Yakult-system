@@ -171,6 +171,7 @@ object SignOffParity {
             it.fieldName?.trim().equals("ResolutionType", ignoreCase = true)
         }?.newValue?.trim().orEmpty()
         return when {
+            tempNow && resVal.equals("Pull Out", ignoreCase = true) -> "TEMPORARY PULL OUT"
             tempNow && resVal.equals("Service Only", ignoreCase = true) -> "TEMPORARY SERVICE"
             tempNow && resVal.isBlank() -> "TEMPORARY"
             tempNow -> "TEMPORARY REPLACEMENT"
@@ -178,6 +179,11 @@ object SignOffParity {
             else -> resVal.uppercase()
         }
     }
+
+    fun canCompletePullOut(status: String?, history: List<CallTicketHistoryDto>): Boolean =
+        status?.trim().equals("Resolved (Temporary)", ignoreCase = true) && history.firstOrNull {
+            it.fieldName?.trim().equals("ResolutionType", ignoreCase = true)
+        }?.newValue?.trim().equals("Pull Out", ignoreCase = true)
 
     /**
      * Desktop resolution meta: history Resolution* lines plus Resolution /

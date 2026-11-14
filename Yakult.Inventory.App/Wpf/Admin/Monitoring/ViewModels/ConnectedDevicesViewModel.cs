@@ -158,6 +158,35 @@ namespace Yakult.Inventory.App.WPF.Admin.Monitoring.ViewModels
             return message;
         }
 
+        public async Task SendAlertAsync(ConnectedDeviceRow row, string alertKind, string title, string message, byte[] imageData = null)
+        {
+            if (!(Session.AppSession.IsDeveloper || Session.AppSession.IsSuperAdmin || Session.AppSession.IsAdmin))
+                throw new UnauthorizedAccessException("Admin privileges are required to send alerts.");
+            if (row == null || !row.Online || string.IsNullOrWhiteSpace(row.MachineName) || string.IsNullOrWhiteSpace(row.UserName))
+                throw new InvalidOperationException("Select an online device with a signed-in user.");
+            if (string.IsNullOrWhiteSpace(alertKind)) throw new ArgumentException("Choose an alert type.");
+            title = (title ?? string.Empty).Trim();
+            message = (message ?? string.Empty).Trim();
+            if (title.Length > 100 || message.Length > 500)
+                throw new ArgumentException("Alert titles are limited to 100 characters and messages to 500 characters.");
+            if (string.Equals(alertKind, AdminAlertKinds.CustomImage, StringComparison.OrdinalIgnoreCase))
+            {
+                if (imageData == null || imageData.Length == 0 || imageData.Length > 8 * 1024 * 1024)
+                    throw new ArgumentException("Choose a PNG or JPEG image no larger than 8 MB.");
+            }
+            else imageData = null;
+
+            int id = await Task.Run(() => new AdminAlertRepository().SendStopAlert(
+                row.MachineName, row.UserName, Session.AppSession.CurrentUserId,
+                Session.AppSession.CurrentUserName, title: string.IsNullOrWhiteSpace(title) ? "STOP" : title,
+                message: message, expireMinutes: 10, alertKind: alertKind, imageData: imageData));
+            if (id <= 0)
+                throw new InvalidOperationException(imageData != null
+                    ? "The image alert could not be queued. Apply Migration_AdminAlertBroadcast_AddImageData.sql and verify the database connection."
+                    : "The alert could not be queued. Check the connection and the device-alert database setup.");
+            StatusMessage = "Alert queued for " + row.MachineName + " / " + row.UserName + ". It expires after 10 minutes.";
+        }
+
         public async Task SendMessageAsync(ConnectedDeviceRow row, string title, string message)
         {
             if (!(Session.AppSession.IsDeveloper || Session.AppSession.IsSuperAdmin || Session.AppSession.IsAdmin))

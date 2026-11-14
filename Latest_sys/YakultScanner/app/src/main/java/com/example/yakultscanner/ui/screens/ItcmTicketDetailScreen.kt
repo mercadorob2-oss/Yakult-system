@@ -105,6 +105,7 @@ fun ItcmTicketDetailScreen(
     val context = LocalContext.current
 
     var activeSheet by remember { mutableStateOf<ItcmDetailSheet?>(null) }
+    var showCompletePullOut by remember(ticketId) { mutableStateOf(false) }
     var noteText by remember { mutableStateOf("") }
     var selectedStatus by remember { mutableStateOf("") }
     var selectedPriority by remember { mutableStateOf("") }
@@ -122,6 +123,7 @@ fun ItcmTicketDetailScreen(
             is ActionUiState.Success -> {
                 snackbarHostState.showSnackbar(state.message)
                 activeSheet = null
+                showCompletePullOut = false
                 noteText = ""
                 reopenReason = ""
                 viewModel.resetActionState()
@@ -183,8 +185,24 @@ fun ItcmTicketDetailScreen(
             else -> Unit
         }
     }
+    val canCompletePullOut = SignOffParity.canCompletePullOut(ticket?.status,
+        (detailState as? TicketDetailUiState.Success)?.response?.history.orEmpty())
+    if (showCompletePullOut) {
+        AlertDialog(
+            onDismissRequest = { if (!isActionLoading) showCompletePullOut = false },
+            title = { Text("Complete pull-out follow-up?") },
+            text = { Text("Mark this ticket Solved after confirming the follow-up is complete. No items will be issued or returned to stock.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.completePullOut(ticketId) }, enabled = !isActionLoading) { Text("Mark Solved") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCompletePullOut = false }, enabled = !isActionLoading) { Text("Cancel") }
+            }
+        )
+    }
     val primaryAction = ticket?.let {
         when {
+            canCompletePullOut -> ItcmPrimaryAction("Complete Follow-up") { showCompletePullOut = true }
             it.status.equals("Pending", ignoreCase = true) -> ItcmPrimaryAction("Start Work") {
                 viewModel.updateStatus(ticketId, "In Progress", userId = UserSession.currentUser?.userId)
             }
@@ -328,6 +346,7 @@ fun ItcmTicketDetailScreen(
                     selectedPriority = activeTicket.priority ?: "Medium"
                     activeSheet = ItcmDetailSheet.UpdatePriority
                 },
+                onReopen = if (canCompletePullOut) ({ activeSheet = ItcmDetailSheet.Reopen }) else null,
                 onExport = {
                     activeSheet = null
                     isExportLoading = true
@@ -571,12 +590,14 @@ private fun ItcmMoreActionsSheet(
     onAddNote: () -> Unit,
     onUpdateStatus: () -> Unit,
     onUpdatePriority: () -> Unit,
+    onReopen: (() -> Unit)?,
     onExport: () -> Unit
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = ItcmUi.Surface) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             ItcmSectionHeading("More actions", ticket.ticketCode)
             ItcmActionRow("Add note", "Record an internal update", onAddNote)
+            onReopen?.let { ItcmActionRow("Reopen Ticket", "Start another round of work", it) }
             if (!isFinalTicketStatus(ticket.status)) {
                 ItcmActionRow("Update status", "Move the ticket through its existing workflow", onUpdateStatus)
                 ItcmActionRow("Update priority", "Change urgency for the team", onUpdatePriority)

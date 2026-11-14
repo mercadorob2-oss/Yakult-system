@@ -104,6 +104,10 @@ class CallMonitoringRepository {
         }
     }
 
+    suspend fun completePullOut(ticketId: Int): Response<CallTicketActionResponse> = withContext(Dispatchers.IO) {
+        apiService.callTicketAction(CallTicketActionRequest(action = "completepullout", ticketId = ticketId))
+    }
+
     suspend fun updatePriority(
         ticketId: Int,
         newPriority: String,

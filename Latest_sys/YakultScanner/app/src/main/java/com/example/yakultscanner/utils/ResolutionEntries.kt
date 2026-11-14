@@ -3,7 +3,7 @@ package com.example.yakultscanner.utils
 import com.example.yakultscanner.api.CallItemLookupDto
 import com.example.yakultscanner.api.ResolutionLineRequest
 
-fun validateResolutionEntries(lines: List<ResolutionLineRequest>, stock: List<CallItemLookupDto>): String? {
+fun validateResolutionEntries(lines: List<ResolutionLineRequest>, stock: List<CallItemLookupDto>, pullOut: Boolean = false): String? {
     if (lines.isEmpty() || lines.size > 100) return "Add between 1 and 100 item entries."
     val oldIds = mutableSetOf<Int>()
     val serials = mutableSetOf<String>()
@@ -11,6 +11,7 @@ fun validateResolutionEntries(lines: List<ResolutionLineRequest>, stock: List<Ca
         val prefix = "Entry ${index + 1}: "
         val hasOld = line.useUnlistedOldItem == true || (line.oldItemId ?: 0) > 0
         val hasNew = (line.newItemId ?: 0) > 0
+        if (pullOut && (!hasOld || hasNew)) return prefix + "Pull Out requires an old item and cannot issue a new item."
         if (!hasOld && !hasNew) return prefix + "Select an old item, a new item, or both."
         if ((line.quantity ?: 0) <= 0) return prefix + "Enter a positive quantity."
         if (line.remarks.isNullOrBlank()) return prefix + "Add notes before reviewing."
@@ -30,3 +31,6 @@ fun validateResolutionEntries(lines: List<ResolutionLineRequest>, stock: List<Ca
     }
     return null
 }
+
+fun resolutionIsTemporary(type: String, temporary: Boolean, lines: List<ResolutionLineRequest>): Boolean =
+    type == "Pull Out" || (temporary && (type == "Service Only" || lines.any { (it.newItemId ?: 0) > 0 }))

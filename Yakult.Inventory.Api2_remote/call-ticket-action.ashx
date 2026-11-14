@@ -138,19 +138,67 @@ public class CallTicketActionHandler : IHttpHandler {
                         ItcmActionEmailHelper.TrySendAssignmentEmailAsync(Cs(),ticketId,userId);
                     return;
                 }
+                if(action=="completepullout"){
+                    const string completionNote="Temporary pull-out follow-up completed.";
+                    using(var tx=con.BeginTransaction()){
+                        try{
+                            string lockedStatus;
+                            using(var cmd=new SqlCommand("SELECT Status FROM dbo.CallTicket WITH (UPDLOCK,HOLDLOCK) WHERE TicketId=@Id",con,tx)){
+                                cmd.Parameters.Add("@Id",SqlDbType.Int).Value=ticketId;
+                                lockedStatus=Convert.ToString(cmd.ExecuteScalar());
+                            }
+                            string latestType;
+                            using(var cmd=new SqlCommand("SELECT TOP 1 NewValue FROM dbo.CallTicketHistory WHERE TicketId=@Id AND FieldName='ResolutionType' ORDER BY ChangedAt DESC,HistoryId DESC",con,tx)){
+                                cmd.Parameters.Add("@Id",SqlDbType.Int).Value=ticketId;
+                                latestType=Convert.ToString(cmd.ExecuteScalar());
+                            }
+                            if(!CanCompletePullOut(lockedStatus,latestType)){
+                                tx.Rollback(); Err(c,409,"Only a temporary Pull Out can be completed here. Refresh the ticket."); return;
+                            }
+                            using(var cmd=new SqlCommand("dbo.sp_Call_SetTicketStatus",con,tx)){
+                                cmd.CommandType=CommandType.StoredProcedure;
+                                cmd.Parameters.Add("@TicketId",SqlDbType.Int).Value=ticketId;
+                                cmd.Parameters.Add("@NewStatus",SqlDbType.NVarChar).Value="Solved";
+                                cmd.Parameters.Add("@ChangedByUserId",SqlDbType.Int).Value=actor.UserId;
+                                cmd.ExecuteNonQuery();
+                            }
+                            using(var cmd=new SqlCommand("INSERT dbo.CallTicketNote(TicketId,NoteType,NoteText,CreatedByUserId)VALUES(@Id,'Solution',@Note,@Uid)",con,tx)){
+                                cmd.Parameters.Add("@Id",SqlDbType.Int).Value=ticketId;
+                                cmd.Parameters.Add("@Note",SqlDbType.NVarChar).Value=completionNote;
+                                cmd.Parameters.Add("@Uid",SqlDbType.Int).Value=actor.UserId;
+                                cmd.ExecuteNonQuery();
+                            }
+                            tx.Commit();
+                            Ok(c,new{success=true,message="Pull-out follow-up completed. Ticket marked Solved."});
+                            ItcmActionEmailHelper.TrySendStatusUpdateEmailAsync(Cs(),ticketId,lockedStatus,"Solved",completionNote,userId);
+                        }catch{
+                            try{tx.Rollback();}catch{}
+                            Err(c,503,"Pull-out follow-up could not be completed");
+                        }
+                    }
+                    return;
+                }
                 if(action=="resolution"){
                     string resolutionType=body.ContainsKey("resolutionType")?body["resolutionType"].ToString():"";
                     if(string.IsNullOrWhiteSpace(resolutionType)){Err(c,400,"resolutionType is required");return;}
-                    if(resolutionType!="Service Only"&&resolutionType!="Replacement"){Err(c,400,"resolutionType must be 'Service Only' or 'Replacement'");return;}
+                    if(resolutionType!="Service Only"&&resolutionType!="Replacement"&&resolutionType!="Pull Out"){Err(c,400,"resolutionType must be 'Service Only', 'Replacement', or 'Pull Out'");return;}
+                    bool isPullOut=resolutionType=="Pull Out";
+                    if(isPullOut && (string.Equals(currentTicketStatus,"Resolved (Temporary)",StringComparison.OrdinalIgnoreCase)
+                        ||string.Equals(currentTicketStatus,"Solved",StringComparison.OrdinalIgnoreCase)
+                        ||string.Equals(currentTicketStatus,"Closed",StringComparison.OrdinalIgnoreCase))){
+                        Err(c,409,"Reopen the ticket before recording another Pull Out.");return;
+                    }
 
                     string remarks=ReadText(body,"remarks");
                     if(string.IsNullOrWhiteSpace(remarks)){Err(c,400,"Resolution notes are required");return;}
                     bool isTemporary=false; if(body.ContainsKey("isTemporary")) bool.TryParse(body["isTemporary"].ToString(),out isTemporary);
+                    if(isPullOut) isTemporary=true;
                     int? forwardedRepairTicketId=null, forwardedOldItemId=null, forwardedRepairItemId=null;
                     string forwardedRepairTicketCode=null, parentOutcome=null;
                     if(body.ContainsKey("forwardedRepairTicketId")&&body["forwardedRepairTicketId"]!=null){int v;if(int.TryParse(body["forwardedRepairTicketId"].ToString(),out v)&&v>0)forwardedRepairTicketId=v;}
                     if(body.ContainsKey("forwardedOldItemId")&&body["forwardedOldItemId"]!=null){int v;if(int.TryParse(body["forwardedOldItemId"].ToString(),out v)&&v>0)forwardedOldItemId=v;}
                     bool isForwardedToRepair=forwardedRepairTicketId.HasValue;
+                    if(isPullOut && (isForwardedToRepair || forwardedOldItemId.HasValue)){Err(c,400,"Pull Out cannot use repair-forwarding fields");return;}
                     if(isForwardedToRepair){
                         parentOutcome=body.ContainsKey("parentOutcome")&&body["parentOutcome"]!=null?body["parentOutcome"].ToString().Trim():"";
                         if(parentOutcome!="Forwarded to Repair"&&parentOutcome!="Solved"&&parentOutcome!="Resolved (Temporary)"){Err(c,400,"parentOutcome must be Forwarded to Repair, Solved, or Resolved (Temporary)");return;}
@@ -168,7 +216,7 @@ public class CallTicketActionHandler : IHttpHandler {
                         var forwardSuffix="Forwarded to Repair Ticket "+(forwardedRepairTicketCode??forwardedRepairTicketId.Value.ToString())+" | IT Call outcome: "+parentOutcome;
                         remarks=string.IsNullOrWhiteSpace(remarks)?forwardSuffix:remarks.Trim()+" | "+forwardSuffix;
                     }
-                    var resolutionStatus=isForwardedToRepair?parentOutcome:(isTemporary?"Resolved (Temporary)":"Solved");
+                    var resolutionStatus=isForwardedToRepair?parentOutcome:GetResolutionStatus(resolutionType,isTemporary,true);
                     if(!IsStatusTransitionAllowed(currentTicketStatus,resolutionStatus)){
                         Err(c,409,"This ticket cannot be resolved from its current status. Reopen a final ticket first.");return;
                     }
@@ -179,7 +227,7 @@ public class CallTicketActionHandler : IHttpHandler {
                     if(forwardedOldItemId.HasValue) useUnlisted=false;
 
                     List<Dictionary<string,object>> replacementLines = null;
-                    if(resolutionType=="Replacement") {
+                    if(resolutionType=="Replacement" || isPullOut) {
                         try {
                             if(!body.ContainsKey("lines")) {
                                 if(!body.ContainsKey("quantity")) body["quantity"]=1;
@@ -191,12 +239,12 @@ public class CallTicketActionHandler : IHttpHandler {
                             foreach(var entry in replacementLines ?? new List<Dictionary<string,object>>()) {
                                 if(entry!=null && string.IsNullOrWhiteSpace(ReadText(entry,"remarks"))) entry["remarks"]=remarks;
                             }
-                            var validationError = ValidateReplacementLines(replacementLines);
+                            var validationError = isPullOut ? ValidatePullOutLines(replacementLines) : ValidateReplacementLines(replacementLines);
                             if(validationError != null) { Err(c,400,validationError); return; }
                             if(isForwardedToRepair && body.ContainsKey("lines")) { Err(c,400,"Batch repair forwarding is not supported"); return; }
-                            if(!replacementLines.Any(x => ReadInt(x,"newItemId") > 0)) {
-                                isTemporary=false;
-                                resolutionStatus="Solved";
+                            if(!isForwardedToRepair) {
+                                resolutionStatus=GetResolutionStatus(resolutionType,isTemporary,replacementLines.Any(x => ReadInt(x,"newItemId") > 0));
+                                isTemporary=resolutionStatus=="Resolved (Temporary)";
                             }
                         } catch { Err(c,400,"Invalid replacement entries"); return; }
                     }
@@ -432,8 +480,9 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                     textValue=textCmd.ExecuteScalar();
                                     newText=textValue==null||textValue==DBNull.Value?"":textValue.ToString();
                                 }
-                                using(var hCmd=new SqlCommand("INSERT dbo.CallTicketHistory(TicketId,FieldName,NewValue,Note,ChangedByUserId)VALUES(@Tid,'ResolutionType','Replacement',@Note,@Uid)",con,tx)){
+                                using(var hCmd=new SqlCommand("INSERT dbo.CallTicketHistory(TicketId,FieldName,NewValue,Note,ChangedByUserId)VALUES(@Tid,'ResolutionType',@ResolutionType,@Note,@Uid)",con,tx)){
                                     hCmd.Parameters.Add("@Tid",SqlDbType.Int).Value=ticketId;
+                                    hCmd.Parameters.Add("@ResolutionType",SqlDbType.NVarChar).Value=resolutionType;
                                     hCmd.Parameters.Add("@Note",SqlDbType.NVarChar).Value=(object)lineRemarks??DBNull.Value;
                                     hCmd.Parameters.Add("@Uid",SqlDbType.Int).Value=userId==null?(object)DBNull.Value:(object)userId.Value;
                                     hCmd.ExecuteNonQuery();
@@ -449,7 +498,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                     hCmd.Parameters["@Field"].Value="ReplacementOldItemConditionId"; hCmd.Parameters["@Value"].Value=oldItemConditionId.Value.ToString(); hCmd.ExecuteNonQuery();
                                     hCmd.Parameters["@Field"].Value="ReplacementOldItemRepairAction"; hCmd.Parameters["@Value"].Value=oldItemRepairAction; hCmd.ExecuteNonQuery();
                                 }
-                                string replacementNote="Replacement swap completed.\r\nOld: "+oldText+"\r\nNew: "+newText+"\r\nOld ConditionId: "+oldItemConditionId.Value+"\r\nQty: "+quantity+(string.IsNullOrWhiteSpace(lineRemarks)?"":"\r\n\r\nRemarks: "+lineRemarks);
+                                string replacementNote=(isPullOut?"Old item pulled out. No replacement issued; temporary follow-up required.":"Replacement swap completed.")+"\r\nOld: "+oldText+"\r\nNew: "+newText+"\r\nOld ConditionId: "+oldItemConditionId.Value+"\r\nQty: "+quantity+(string.IsNullOrWhiteSpace(lineRemarks)?"":"\r\n\r\nRemarks: "+lineRemarks);
                                 using(var nCmd=new SqlCommand("INSERT dbo.CallTicketNote(TicketId,NoteType,NoteText,CreatedByUserId)VALUES(@Tid,'Replacement',@Note,@Uid)",con,tx)){
                                     nCmd.Parameters.Add("@Tid",SqlDbType.Int).Value=ticketId;
                                     nCmd.Parameters.Add("@Note",SqlDbType.NVarChar).Value=replacementNote;
@@ -468,7 +517,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                                 InsertReplacementHistory(con,tx,ticketId,userId,"ReplacementBatchId",batchId,null);
 
                                 // Status update
-                                string newStatus=isForwardedToRepair?parentOutcome:(isTemporary?"Resolved (Temporary)":"Solved");
+                                string newStatus=resolutionStatus;
                                 using(var sCmd=new SqlCommand("dbo.sp_Call_SetTicketStatus",con,tx){CommandType=CommandType.StoredProcedure}){
                                     sCmd.Parameters.Add("@TicketId",SqlDbType.Int).Value=ticketId;
                                     sCmd.Parameters.Add("@NewStatus",SqlDbType.NVarChar).Value=newStatus;
@@ -480,6 +529,7 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
                             tx.Commit();
                             string msg=isForwardedToRepair
                                 ? "Repair Ticket "+(forwardedRepairTicketCode??forwardedRepairTicketId.Value.ToString())+" remains linked. IT Call outcome: "+parentOutcome+"."
+                                : isPullOut ? "Old item pulled out. Ticket remains Resolved (Temporary) for follow-up."
                                 : (resolutionType=="Service Only"
                                     ? (isTemporary?"Ticket resolved as Service Only (Temporary).":"Ticket resolved as Service Only.")
                                     : (isTemporary?"Ticket resolved as Replacement (Temporary).":"Ticket resolved as Replacement."));
@@ -511,6 +561,21 @@ SELECT CAST(SCOPE_IDENTITY() AS INT)",con,tx)){
     }
     static bool ReadBool(Dictionary<string,object> entry,string key) {
         bool value; return bool.TryParse(ReadText(entry,key),out value) && value;
+    }
+    static bool CanCompletePullOut(string status,string resolutionType) {
+        return string.Equals((status??"").Trim(),"Resolved (Temporary)",StringComparison.OrdinalIgnoreCase)
+            && string.Equals((resolutionType??"").Trim(),"Pull Out",StringComparison.OrdinalIgnoreCase);
+    }
+    static string GetResolutionStatus(string resolutionType,bool temporary,bool hasNewItem) {
+        return resolutionType=="Pull Out" || (temporary && (resolutionType=="Service Only" || hasNewItem))
+            ? "Resolved (Temporary)" : "Solved";
+    }
+    static string ValidatePullOutLines(List<Dictionary<string,object>> lines) {
+        var error=ValidateReplacementLines(lines);
+        if(error!=null) return error;
+        if(lines.Any(x => ReadInt(x,"newItemId")!=0 || (!ReadBool(x,"useUnlistedOldItem") && ReadInt(x,"oldItemId")<=0)))
+            return "Pull Out requires old items only. No replacement item can be issued.";
+        return null;
     }
     static string ValidateReplacementLines(List<Dictionary<string,object>> lines) {
         if(lines==null || lines.Count==0 || lines.Count>100) return "Add between 1 and 100 item entries.";

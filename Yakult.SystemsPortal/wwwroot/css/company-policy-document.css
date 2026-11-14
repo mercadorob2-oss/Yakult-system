@@ -33,7 +33,7 @@
 .company-policy-reader .it-info-points li,.company-policy-reader .it-info-procedure li,.company-policy-reader .it-info-detail-card>div {font-size:16px;line-height:1.75}
 .company-policy-reader .it-info-procedure>ol>li {display:grid;grid-template-columns:28px minmax(0,1fr);gap:14px}
 .company-policy-reader .policy-step-copy>p {margin:0 0 10px}
-.company-policy-reader .it-info-procedure>ol>li::before {grid-column:1;grid-row:1}
+.company-policy-reader .it-info-procedure>ol>li::before {grid-column:1;grid-row:1;content:attr(value)}
 .company-policy-reader .policy-step-copy {grid-column:2;grid-row:1;min-width:0}
 .company-policy-reader .policy-paired-steps>li>.company-policy-flowchart {grid-column:2;margin:4px 0 16px;min-width:0}
 .company-policy-reader .company-policy-flowchart {margin:24px 0;border:1px solid var(--it-line,#d9e1e9);border-radius:12px;background:#fff;overflow:hidden}

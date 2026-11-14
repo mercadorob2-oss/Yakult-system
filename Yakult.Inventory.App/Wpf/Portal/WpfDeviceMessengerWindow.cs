@@ -31,6 +31,9 @@ namespace Yakult.Inventory.App.Wpf.Portal
         private TextBlock _deviceCount, _peerTitle, _peerStatus, _status, _count;
         private Button _send;
         private TextBlock _draftHint, _peerInitials;
+        private ComboBox _popupSize;
+        private CheckBox _hidePopupPreview, _compactWindow;
+        private ColumnDefinition _sidebarColumn;
         private Border _presenceDot;
         private static readonly Brush Ink = Brush("#202A3C"), Muted = Brush("#66758A"), Accent = Brush("#B92335");
         private static Brush Brush(string value) => (Brush)new BrushConverter().ConvertFromString(value);
@@ -52,6 +55,7 @@ namespace Yakult.Inventory.App.Wpf.Portal
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             FontFamily = new FontFamily("Segoe UI"); Background = Brushes.White;
             BuildLayout();
+            ApplyWindowSize();
             AppSession.SessionCleared += OnSessionCleared;
             Loaded += async (_,__) => { Services.ItcmPresenceReporter.Start("DeviceMessenger"); Services.DeviceMessengerNotifications.Instance.Start(); await RefreshAsync(); if (!_closed) _timer.Start(); };
             _timer.Tick += async (_,__) => await RefreshAsync();
@@ -113,7 +117,8 @@ namespace Yakult.Inventory.App.Wpf.Portal
         private void BuildLayout()
         {
             var root = new Grid { Background = Brushes.White };
-            root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(286) });
+            _sidebarColumn = new ColumnDefinition { Width = new GridLength(286) };
+            root.ColumnDefinitions.Add(_sidebarColumn);
             root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1,GridUnitType.Star) }); Content = root;
             var sidebar = new DockPanel { Margin = new Thickness(16,24,16,16) };
             root.Children.Add(new Border { Background = Brushes.White, BorderBrush = Brush("#E8ECF2"), BorderThickness = new Thickness(0,0,1,0), Child = sidebar });
@@ -147,6 +152,15 @@ namespace Yakult.Inventory.App.Wpf.Portal
             var conversation = new DockPanel(); Grid.SetColumn(conversation,1); root.Children.Add(conversation);
             var header = new StackPanel(); DockPanel.SetDock(header,Dock.Top); conversation.Children.Add(header);
             var person = new DockPanel { Margin = new Thickness(24,22,24,18) };
+            var settingsButton = Button("\uE713");
+            settingsButton.FontFamily = new FontFamily("Segoe MDL2 Assets");
+            settingsButton.FontSize = 16; settingsButton.Width = 38; settingsButton.Height = 38;
+            settingsButton.Padding = new Thickness(0);
+            settingsButton.VerticalAlignment = VerticalAlignment.Center;
+            settingsButton.Margin = new Thickness(12,0,0,0);
+            settingsButton.ToolTip = "Messenger settings";
+            System.Windows.Automation.AutomationProperties.SetName(settingsButton,"Messenger settings");
+            DockPanel.SetDock(settingsButton,Dock.Right); person.Children.Add(settingsButton);
             var headAvatar = new Grid { Width = 44, Height = 44, Margin = new Thickness(0,0,13,0) };
             _peerInitials = Text("…",15,Accent); _peerInitials.FontWeight = FontWeights.SemiBold; _peerInitials.VerticalAlignment = VerticalAlignment.Center; _peerInitials.HorizontalAlignment = HorizontalAlignment.Center;
             headAvatar.Children.Add(new Border { Background = Brush("#F8E7EB"), CornerRadius = new CornerRadius(22), Child = _peerInitials });
@@ -155,7 +169,9 @@ namespace Yakult.Inventory.App.Wpf.Portal
             DockPanel.SetDock(headAvatar,Dock.Left); person.Children.Add(headAvatar);
             var details = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             _peerTitle = Text("Your conversations",19); _peerTitle.FontWeight = FontWeights.SemiBold; details.Children.Add(_peerTitle);
+            _peerTitle.TextWrapping = TextWrapping.NoWrap; _peerTitle.TextTrimming = TextTrimming.CharacterEllipsis;
             _peerStatus = Text("Choose someone from the device list",12,Muted); _peerStatus.Margin = new Thickness(0,4,0,0); details.Children.Add(_peerStatus); person.Children.Add(details);
+            _peerStatus.TextWrapping = TextWrapping.NoWrap; _peerStatus.TextTrimming = TextTrimming.CharacterEllipsis;
             header.Children.Add(person);
             header.Children.Add(new Border { Background = Brush("#F7F8FB"), BorderBrush = Brush("#E8ECF2"), BorderThickness = new Thickness(0,1,0,1), Padding = new Thickness(24,10,24,10),
                 ToolTip = "Double-click removes the message from your view. It is deleted after both participants dismiss it. Closing this window keeps pending messages.",
@@ -166,16 +182,16 @@ namespace Yakult.Inventory.App.Wpf.Portal
             var editor = new Grid();
             _draft = new TextBox { Height = 68, MaxLength = 1000, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, BorderThickness = new Thickness(0), Background = Brushes.Transparent,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(14,12,14,8), FontSize = 13, IsEnabled = false,
-                ToolTip = "Write a message. Ctrl+Enter sends; Enter starts a new line." };
+                ToolTip = "Write a message. Enter sends; Shift+Enter starts a new line." };
             _draftHint = Text("Write a message…",13,Muted); _draftHint.Margin = new Thickness(14,12,0,0); _draftHint.IsHitTestVisible = false;
             editor.Children.Add(_draft); editor.Children.Add(_draftHint);
             _draft.TextChanged += (_,__) => UpdateComposer();
-            _draft.PreviewKeyDown += async (_,e) => { if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Control) != 0) { e.Handled = true; await SendAsync(); } };
+            _draft.PreviewKeyDown += async (_,e) => { if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0) { e.Handled = true; await SendAsync(); } };
             var editorStack = new StackPanel(); editorStack.Children.Add(editor);
             var actions = new DockPanel { Margin = new Thickness(14,0,10,10) };
             _send = Button("Send  ↗",true); _send.IsEnabled = false; _send.Padding = new Thickness(18,9,18,9);
             _send.Click += async (_,__) => await SendAsync(); DockPanel.SetDock(_send,Dock.Right); actions.Children.Add(_send);
-            _count = Text("0 / 1,000  ·  Ctrl+Enter to send",10,Muted); _count.VerticalAlignment = VerticalAlignment.Center; actions.Children.Add(_count); editorStack.Children.Add(actions);
+            _count = Text("0 / 1,000  ·  Enter to send · Shift+Enter for a new line",10,Muted); _count.VerticalAlignment = VerticalAlignment.Center; actions.Children.Add(_count); editorStack.Children.Add(actions);
             var editorFrame = new Border { Child = editorStack, Background = Brushes.White, BorderBrush = Brush("#DDE3EC"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(14) };
             _draft.GotKeyboardFocus += (_,__) => editorFrame.BorderBrush = Accent;
             _draft.LostKeyboardFocus += (_,__) => editorFrame.BorderBrush = Brush("#DDE3EC");
@@ -187,6 +203,65 @@ namespace Yakult.Inventory.App.Wpf.Portal
             var emptyIcon = Text("↗",34,Accent); emptyIcon.HorizontalAlignment = HorizontalAlignment.Center; empty.Children.Add(emptyIcon);
             var emptyTitle = Text("A quick conversation starts here",19); emptyTitle.FontWeight = FontWeights.SemiBold; emptyTitle.TextAlignment = TextAlignment.Center; emptyTitle.Margin = new Thickness(0,14,0,8); empty.Children.Add(emptyTitle);
             var emptyText = Text("Choose a person and machine to send a temporary message.",13,Muted); emptyText.TextAlignment = TextAlignment.Center; emptyText.MaxWidth = 280; empty.Children.Add(emptyText); _messages.Children.Add(empty);
+            var settingsPanel = BuildSettingsPanel(() => settingsButton.Focus());
+            Grid.SetColumn(settingsPanel,1); Panel.SetZIndex(settingsPanel,10); root.Children.Add(settingsPanel);
+            root.SizeChanged += (_,__) => settingsPanel.MaxHeight = Math.Max(100,root.ActualHeight - 94);
+            settingsButton.Click += (_,__) =>
+            {
+                settingsPanel.Visibility = settingsPanel.IsVisible ? Visibility.Collapsed : Visibility.Visible;
+                if (settingsPanel.IsVisible) _compactWindow.Focus();
+            };
+            root.PreviewMouseDown += (_,__) =>
+            {
+                if (settingsPanel.IsVisible && !settingsPanel.IsMouseOver && !settingsButton.IsMouseOver && !_popupSize.IsDropDownOpen)
+                    settingsPanel.Visibility = Visibility.Collapsed;
+            };
+            PreviewKeyDown += (_,e) =>
+            {
+                if (e.Key == Key.Escape && settingsPanel.IsVisible && !_popupSize.IsDropDownOpen)
+                {
+                    settingsPanel.Visibility = Visibility.Collapsed;
+                    settingsButton.Focus(); e.Handled = true;
+                }
+            };
+        }
+        private Border BuildSettingsPanel(Action restoreFocus)
+        {
+            var content = new StackPanel();
+            var title = Text("Messenger settings",17); title.FontWeight = FontWeights.SemiBold; content.Children.Add(title);
+            var description = Text("Personalize Messenger on this desktop.",12,Muted);
+            description.Margin = new Thickness(0,6,0,18); content.Children.Add(description);
+            var windowLabel = Text("WINDOW SIZE",10,Muted); windowLabel.FontWeight = FontWeights.SemiBold; content.Children.Add(windowLabel);
+            _compactWindow = new CheckBox { Content = "Use smaller Messenger window", FontSize = 12, Foreground = Ink,
+                Margin = new Thickness(0,10,0,6), IsChecked = Properties.Settings.Default.DeviceMessenger_CompactWindow };
+            _compactWindow.Checked += (_,__) => { ApplyWindowSize(); SavePopupPreferences(); };
+            _compactWindow.Unchecked += (_,__) => { ApplyWindowSize(); SavePopupPreferences(); };
+            content.Children.Add(_compactWindow);
+            content.Children.Add(Text("Switch between a compact chat window and the full-size layout.",11,Muted));
+            var popupLabel = Text("POPUP MESSAGES",10,Muted); popupLabel.FontWeight = FontWeights.SemiBold;
+            popupLabel.Margin = new Thickness(0,20,0,10); content.Children.Add(popupLabel);
+            var sizeLabel = Text("Popup size",12); sizeLabel.Margin = new Thickness(0,0,0,7); content.Children.Add(sizeLabel);
+            _popupSize = new ComboBox { Height = 32, FontSize = 12, VerticalContentAlignment = VerticalAlignment.Center,
+                ItemsSource = new[] { "Normal size", "Small size" }, SelectedIndex = string.Equals(Properties.Settings.Default.DeviceMessenger_PopupSize,"Small",StringComparison.OrdinalIgnoreCase) ? 1 : 0,
+                ToolTip = "Choose the size of incoming message popups." };
+            System.Windows.Automation.AutomationProperties.SetName(_popupSize,"Popup size");
+            _popupSize.SelectionChanged += (_,__) => SavePopupPreferences(); content.Children.Add(_popupSize);
+            _hidePopupPreview = new CheckBox { Content = "Hide message text", FontSize = 12, Foreground = Ink, Margin = new Thickness(0,18,0,6),
+                IsChecked = Properties.Settings.Default.DeviceMessenger_HidePopupPreview,
+                ToolTip = "Show the sender and a new-message notice without revealing the message contents." };
+            _hidePopupPreview.Checked += (_,__) => SavePopupPreferences(); _hidePopupPreview.Unchecked += (_,__) => SavePopupPreferences();
+            content.Children.Add(_hidePopupPreview);
+            content.Children.Add(Text("Keep message contents private in popup notifications.",11,Muted));
+            var note = Text("Changes save automatically.",11,Muted); note.Margin = new Thickness(0,18,0,12); content.Children.Add(note);
+            var panel = new Border { Child = new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }, Width = 300, Padding = new Thickness(20), Margin = new Thickness(16,78,24,16),
+                HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Visibility = Visibility.Collapsed,
+                Background = Brushes.White, BorderBrush = Brush("#DDE3EC"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(14),
+                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 18, ShadowDepth = 4, Opacity = .15 } };
+            var done = Button("Done"); done.HorizontalAlignment = HorizontalAlignment.Right;
+            done.Click += (_,__) => { panel.Visibility = Visibility.Collapsed; restoreFocus(); };
+            content.Children.Add(done);
+            return panel;
         }
         private async Task SelectPeerAsync(MessengerDevice peer)
         {
@@ -251,10 +326,26 @@ namespace Yakult.Inventory.App.Wpf.Portal
             if (_send == null) return;
             _send.IsEnabled = !_sending && _selected?.Online == true && !string.IsNullOrWhiteSpace(_draft.Text);
             _draft.IsEnabled = !_sending && _selected != null;
-            _count.Text = _draft.Text.Length + " / 1,000  ·  Ctrl+Enter to send";
+            _count.Text = _draft.Text.Length + " / 1,000  ·  Enter to send · Shift+Enter for a new line";
             _draftHint.Visibility = _draft.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
             _draftHint.Text = _selected == null ? "Choose someone to write to…" : "Write a message…";
             _count.Foreground = _draft.Text.Length >= 900 ? Brush("#9A6700") : Muted;
+        }
+        private void SavePopupPreferences()
+        {
+            if (_popupSize == null || _hidePopupPreview == null) return;
+            Properties.Settings.Default.DeviceMessenger_CompactWindow = _compactWindow.IsChecked == true;
+            Properties.Settings.Default.DeviceMessenger_PopupSize = _popupSize.SelectedIndex == 1 ? "Small" : "Normal";
+            Properties.Settings.Default.DeviceMessenger_HidePopupPreview = _hidePopupPreview.IsChecked == true;
+            try { Properties.Settings.Default.Save(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine("[DeviceMessenger] Could not save popup preferences: " + ex.Message); }
+        }
+        private void ApplyWindowSize()
+        {
+            var compact = _compactWindow.IsChecked == true;
+            if (WindowState != WindowState.Normal) WindowState = WindowState.Normal;
+            MinWidth = compact ? 680 : 760; MinHeight = compact ? 500 : 540;
+            Width = compact ? 720 : 1020; Height = compact ? 560 : 720;
+            _sidebarColumn.Width = new GridLength(compact ? 220 : 286);
         }
         private async Task RefreshAsync()
         {

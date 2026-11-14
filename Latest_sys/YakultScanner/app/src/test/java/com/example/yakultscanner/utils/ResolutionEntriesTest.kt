@@ -15,6 +15,21 @@ class ResolutionEntriesTest {
     @Test fun acceptsOldOnlyWithNoReplacementStock() {
         assertNull(validateResolutionEntries(listOf(old()), emptyList()))
     }
+    @Test fun pullOutRequiresOldItemsWithoutIssuingStock() {
+        assertNull(validateResolutionEntries(listOf(old()), emptyList(), pullOut = true))
+        assertNull(validateResolutionEntries(listOf(old(1), old(2)), emptyList(), pullOut = true))
+        assertNotNull(validateResolutionEntries(listOf(new()), stock, pullOut = true))
+        assertNotNull(validateResolutionEntries(listOf(old().copy(newItemId = 10)), stock, pullOut = true))
+        assertNotNull(validateResolutionEntries(listOf(old().copy(oldItemConditionId = null)), emptyList(), pullOut = true))
+        assertNotNull(validateResolutionEntries(listOf(old().copy(remarks = "")), emptyList(), pullOut = true))
+    }
+    @Test fun pullOutAlwaysStaysTemporaryButOldOnlyReplacementDoesNot() {
+        assertTrue(resolutionIsTemporary("Pull Out", false, listOf(old())))
+        assertFalse(resolutionIsTemporary("Replacement", true, listOf(old())))
+        assertTrue(resolutionIsTemporary("Replacement", true, listOf(old(), new())))
+        assertFalse(resolutionIsTemporary("Replacement", false, listOf(old(), new())))
+        assertTrue(resolutionIsTemporary("Service Only", true, emptyList()))
+    }
     @Test fun acceptsNewOnlyWithoutOldCondition() {
         assertNull(validateResolutionEntries(listOf(new()), stock))
     }

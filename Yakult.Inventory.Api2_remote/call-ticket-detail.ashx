@@ -105,7 +105,7 @@ FROM dbo.CallTicketHistory h
 LEFT JOIN dbo.[User] u ON u.UserId=h.ChangedByUserId
 LEFT JOIN dbo.Employee e ON e.EmpId=u.EmpId
 WHERE h.TicketId=@TicketId
-ORDER BY h.ChangedAt DESC",con)){
+ORDER BY h.ChangedAt DESC,h.HistoryId DESC",con)){
                     cmd.Parameters.Add("@TicketId",SqlDbType.Int).Value=ticketId;
                     using(var r=cmd.ExecuteReader()){
                         while(r.Read()){

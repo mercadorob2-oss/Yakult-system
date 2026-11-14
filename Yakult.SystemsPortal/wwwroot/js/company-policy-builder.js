@@ -196,7 +196,7 @@
         const status = make('span', 'policy-upload-status', 'Files stay in the portal media folder.');
         uploadLabel.appendChild(status);
         card.appendChild(uploadLabel);
-        card.appendChild(field('Image alt text (required)', block.altText, value => { block.altText = value; }, false, 'Describe the diagram for employees using a screen reader.'));
+        card.appendChild(field('Image alt text (optional)', block.altText, value => { block.altText = value; }, false, 'Describe the diagram for employees using a screen reader.'));
         card.appendChild(field('Source note (optional)', block.sourceNote, value => { block.sourceNote = value; }, true, 'For example, source document and page.'));
         card.appendChild(field('Readable paths (one path per line)', (block.paths || []).join('\n'), value => { block.paths = newlineValues(value); }, true, 'Describe each branch, role lane, and decision path.'));
         if (block.imageUrl) {
@@ -420,7 +420,7 @@
                 if (['bullets', 'steps'].includes(block.type) && !(block.items || []).some(x => x.trim())) return 'Add at least one list item in “' + section.title + '”.';
                 if (block.type === 'process' && (!(block.stages || []).length || block.stages.some(stage => !stage.owner?.trim() || !stage.title?.trim() || !(stage.points || []).some(x => x.trim())))) return 'Complete each process stage in “' + section.title + '”.';
                 if (block.type === 'cards' && (!(block.cards || []).length || block.cards.some(entry => !entry.label?.trim() || !entry.title?.trim() || !entry.text?.trim()))) return 'Complete each role card in “' + section.title + '”.';
-                if (block.type === 'flowchart' && (!block.imageUrl?.startsWith('/media/company-policies/') || !block.altText?.trim() || !(block.paths || []).some(x => x.trim()))) return 'Choose a diagram and add alt text and readable path descriptions in “' + section.title + '”.';
+                if (block.type === 'flowchart' && block.imageUrl && !block.imageUrl.startsWith('/media/company-policies/')) return 'Choose an uploaded diagram in “' + section.title + '”.';
             }
         }
         return '';
