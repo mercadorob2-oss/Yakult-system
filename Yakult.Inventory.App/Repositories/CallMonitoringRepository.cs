@@ -768,6 +768,10 @@ ORDER BY rn;";
                     where += "\n AND DATEDIFF(DAY, CreatedAt, GETDATE()) >= @MinAgeDays";
                 }
 
+                var classificationExpression = await CallSchemaGate.ColumnExistsAsync(connection, "dbo.CallTicket", "Classification")
+                    ? "detail.Classification" : "CAST(NULL AS nvarchar(100))";
+                var deviceExpression = await CallSchemaGate.ColumnExistsAsync(connection, "dbo.CallTicket", "DeviceName")
+                    ? "detail.DeviceName" : "CAST(NULL AS nvarchar(150))";
                 var sql = $@"
 WITH TicketRows AS
 (
@@ -778,10 +782,11 @@ WITH TicketRows AS
     FROM dbo.vw_Call_TicketList
     {where}
 )
-SELECT *
-FROM TicketRows
-WHERE rn BETWEEN @StartRow AND @EndRow
-ORDER BY rn;";
+SELECT r.*, {classificationExpression} AS Classification, {deviceExpression} AS DeviceName
+FROM TicketRows r
+LEFT JOIN dbo.CallTicket detail ON detail.TicketId = r.TicketId
+WHERE r.rn BETWEEN @StartRow AND @EndRow
+ORDER BY r.rn;";
 
                 var rows = (await connection.QueryAsync<CallTicketListItem>(
                     sql,
@@ -853,20 +858,32 @@ WHERE TicketSource = 'Portal'
         public async Task<CallTicketListItem> GetTicketByIdAsync(int ticketId)
         {
             if (ticketId <= 0) throw new ArgumentOutOfRangeException(nameof(ticketId));
-
-            const string sql = @"SELECT TOP 1 * FROM dbo.vw_Call_TicketList WHERE TicketId = @TicketId;";
             using (var connection = new SqlConnection(GetConnectionString()))
             {
+                CallTicketListItem ticket;
                 try
                 {
-                    return await connection.QuerySingleOrDefaultAsync<CallTicketListItem>(sql, new { TicketId = ticketId });
+                    ticket = await connection.QuerySingleOrDefaultAsync<CallTicketListItem>(
+                        "SELECT TOP 1 * FROM dbo.vw_Call_TicketList WHERE TicketId = @TicketId;", new { TicketId = ticketId });
                 }
                 catch
                 {
-                    // Fallback if the view doesn't exist in older environments.
-                    const string fallbackSql = @"SELECT TOP 1 TicketId, TicketCode, Issue, NULL AS Department, NULL AS ResponsiblePerson, 0 AS TicketAgeDays, LastContactAt, Status, Priority, CallerName, IssueType, CreatedAt, UpdatedAt, SolvedAt FROM dbo.CallTicket WHERE TicketId = @TicketId;";
-                    return await connection.QuerySingleOrDefaultAsync<CallTicketListItem>(fallbackSql, new { TicketId = ticketId });
+                    // Fallback if the view does not exist in older environments.
+                    ticket = await connection.QuerySingleOrDefaultAsync<CallTicketListItem>(
+                        "SELECT TOP 1 TicketId, TicketCode, Issue, NULL AS Department, NULL AS ResponsiblePerson, 0 AS TicketAgeDays, LastContactAt, Status, Priority, CallerName, IssueType, CreatedAt, UpdatedAt, SolvedAt FROM dbo.CallTicket WHERE TicketId = @TicketId;", new { TicketId = ticketId });
                 }
+                if (ticket != null)
+                {
+                    var hasClassification = await CallSchemaGate.ColumnExistsAsync(connection, "dbo.CallTicket", "Classification");
+                    var hasDeviceName = await CallSchemaGate.ColumnExistsAsync(connection, "dbo.CallTicket", "DeviceName");
+                    var metadata = await connection.QuerySingleOrDefaultAsync<CallTicketListItem>(
+                        "SELECT " + (hasClassification ? "Classification" : "CAST(NULL AS nvarchar(100)) AS Classification") + ", " +
+                        (hasDeviceName ? "DeviceName" : "CAST(NULL AS nvarchar(150)) AS DeviceName") +
+                        " FROM dbo.CallTicket WHERE TicketId = @TicketId;", new { TicketId = ticketId });
+                    ticket.Classification = metadata?.Classification;
+                    ticket.DeviceName = metadata?.DeviceName;
+                }
+                return ticket;
             }
         }
 

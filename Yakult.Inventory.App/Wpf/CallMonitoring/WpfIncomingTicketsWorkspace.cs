@@ -608,7 +608,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 AutoGenerateColumns = false,
                 IsReadOnly = true,
                 SelectionMode = DataGridSelectionMode.Extended,
-                RowHeight = 74,
+                RowHeight = double.NaN,
+                MinRowHeight = 96,
                 Background = Brushes.White,
                 BorderThickness = new Thickness(0),
                 HeadersVisibility = DataGridHeadersVisibility.Column,
@@ -687,10 +688,12 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             var root = new FrameworkElementFactory(typeof(StackPanel));
             root.SetValue(StackPanel.MarginProperty, new Thickness(4, 8, 10, 6));
             var issue = new FrameworkElementFactory(typeof(TextBlock));
-            issue.SetBinding(TextBlock.TextProperty, new Binding("Issue"));
+            issue.SetBinding(TextBlock.TextProperty, new Binding("IssueDescription"));
             issue.SetValue(TextBlock.FontWeightProperty, FontWeights.SemiBold);
             issue.SetValue(TextBlock.ForegroundProperty, Brush(15, 23, 42));
-            issue.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+            issue.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
+            issue.SetValue(FrameworkElement.MaxHeightProperty, 112.0);
+            issue.SetBinding(FrameworkElement.ToolTipProperty, new Binding("IssueDescription"));
             root.AppendChild(issue);
             var metadata = new FrameworkElementFactory(typeof(TextBlock));
             metadata.SetBinding(TextBlock.TextProperty, new Binding { Path = new PropertyPath("CallerName"), StringFormat = "Requester: {0}" });
@@ -784,7 +787,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             headGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var headerCopy = new StackPanel();
             _inspectorTicketCode = new TextBlock { Text = "Loading…", FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White };
-            _inspectorIssue = new TextBlock { Margin = new Thickness(0, 5, 0, 0), FontSize = 12, Foreground = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)), TextWrapping = TextWrapping.Wrap, MaxHeight = 38 };
+            _inspectorIssue = new TextBlock { Margin = new Thickness(0, 5, 0, 0), FontSize = 12, Foreground = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)), TextWrapping = TextWrapping.Wrap };
             headerCopy.Children.Add(_inspectorTicketCode);
             headerCopy.Children.Add(_inspectorIssue);
             headGrid.Children.Add(headerCopy);
@@ -867,7 +870,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 var detail = detailsTask.Result ?? ticket;
                 _selectedTicket = detail;
                 _inspectorTicketCode.Text = detail.TicketCode ?? detail.TicketId.ToString();
-                _inspectorIssue.Text = string.IsNullOrWhiteSpace(detail.Issue) ? "No issue description supplied." : detail.Issue.Trim();
+                _inspectorIssue.Text = string.IsNullOrWhiteSpace(detail.IssueDescription) ? "No issue description supplied." : detail.IssueDescription;
                 _inspectorStatus.Text = string.IsNullOrWhiteSpace(detail.Status) ? "PENDING" : detail.Status.Trim().ToUpperInvariant();
                 _inspectorRequester.Text = string.IsNullOrWhiteSpace(detail.CallerName) ? "Not provided" : detail.CallerName.Trim();
                 _inspectorLocation.Text = string.Join(" • ", new[] { detail.Department, detail.Branch }.Where(x => !string.IsNullOrWhiteSpace(x)));
@@ -1625,7 +1628,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             grid.Columns.Add(new DataGridTextColumn
             {
                 Header = "Issue",
-                Binding = new Binding("Issue"),
+                Binding = new Binding("IssueDescription"),
                 Width = new DataGridLength(2, DataGridLengthUnitType.Star),
                 ElementStyle = CreateCellStyle(TextTrimming.CharacterEllipsis)
             });

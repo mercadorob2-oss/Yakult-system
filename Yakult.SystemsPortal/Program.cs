@@ -57,6 +57,7 @@ builder.Services.AddSingleton<IEmployeeResourceCatalog, EmployeeResourceDemoCata
 builder.Services.AddScoped<IDemoModeService, DemoModeService>();
 builder.Services.AddScoped<IAccountAdministrationRepository, AccountAdministrationRepository>();
 builder.Services.AddScoped<IHelpItRepository, HelpItRepository>();
+builder.Services.AddScoped<IHelpItNotificationService, HelpItNotificationService>();
 builder.Services.AddScoped<IConnectionPageAccessGate, ConnectionPageAccessGate>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

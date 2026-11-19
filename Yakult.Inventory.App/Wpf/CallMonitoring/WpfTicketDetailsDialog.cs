@@ -36,6 +36,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
         private readonly Border _statusBadge;
         private readonly TextBlock _statusText;
         private readonly TextBlock _callerText;
+        private readonly TextBlock _classificationText;
+        private readonly TextBlock _deviceNameText;
         private readonly TextBlock _departmentText;
         private readonly TextBlock _assigneeText;
         private readonly TextBlock _priorityText;
@@ -251,6 +253,9 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             detailsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             detailsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             detailsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            detailsGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            _classificationText = AddDetailCell(detailsGrid, 3, 0, "CLASSIFICATION", "-");
+            _deviceNameText = AddDetailCell(detailsGrid, 3, 1, "DEVICE / APPLICATION", "-");
             _callerText = AddDetailCell(detailsGrid, 0, 0, "CALLER", "-");
             _departmentText = AddDetailCell(detailsGrid, 0, 1, "DEPARTMENT", "-");
             _assigneeText = AddDetailCell(detailsGrid, 1, 0, "ASSIGNED TO", "-");
@@ -416,6 +421,8 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                 _statusBadge.Background = GetStatusBackground(ticket.Status);
                 _statusText.Foreground = GetStatusForeground(ticket.Status);
 
+                _classificationText.Text = ticket.Classification ?? "-";
+                _deviceNameText.Text = ticket.DeviceName ?? "-";
                 _callerText.Text = ticket.CallerName ?? "-";
                 _departmentText.Text = ticket.Department ?? "-";
                 _assigneeText.Text = string.IsNullOrWhiteSpace(ticket.ResponsiblePerson) ? "(Unassigned)" : ticket.ResponsiblePerson.Trim();
@@ -425,7 +432,7 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
                     priorityChip.Background = GetPriorityBackground(ticket.Priority);
                 _lastContactText.Text = ticket.LastContactAt.HasValue ? GetTimeAgo(ticket.LastContactAt.Value) : "Never";
                 _createdText.Text = ToLocalString(ticket.CreatedAt);
-                _issueBox.Text = ticket.Issue ?? string.Empty;
+                _issueBox.Text = ticket.IssueDescription;
 
                 var isFinal = IsFinalStatus(ticket.Status);
                 SetActionButtons(true, isFinal);
@@ -529,8 +536,10 @@ namespace Yakult.Inventory.App.Wpf.CallMonitoring
             if (ticket.LastContactAt.HasValue)
                 sb.AppendLine("Last Contact: " + ToLocalString(ticket.LastContactAt.Value));
             sb.AppendLine();
-            sb.AppendLine("Issue:");
-            sb.AppendLine(ticket.Issue ?? string.Empty);
+            sb.AppendLine("Classification: " + (_loadedTicket.Classification ?? "-"));
+            sb.AppendLine("Device / application: " + (_loadedTicket.DeviceName ?? "-"));
+            sb.AppendLine("Concern:");
+            sb.AppendLine(ticket.IssueDescription);
             return sb.ToString();
         }
 

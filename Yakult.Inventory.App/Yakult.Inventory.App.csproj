@@ -1532,6 +1532,7 @@
     <Compile Include="Models\CallMonitoring\CallEmailSettingsItem.cs" />
     <Compile Include="Models\CallMonitoring\CallEmailTemplateItem.cs" />
     <Compile Include="Models\CallMonitoring\CallTicketContactEmailResolution.cs" />
+    <Compile Include="Models\CallMonitoring\CallTicketDescription.cs" />
     <Compile Include="Models\CallMonitoring\CallTicketNotificationData.cs" />
     <Compile Include="Models\CallMonitoring\CallDepartmentSmtpProfileItem.cs" />
     <Compile Include="Models\CallMonitoring\CallEmailLogItem.cs" />

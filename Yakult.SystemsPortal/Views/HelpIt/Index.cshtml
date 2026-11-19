@@ -4,11 +4,11 @@
     ViewData["Title"] = "Submit an IT Ticket";
 }
 
-<header class="section-hero">
+<header class="section-hero help-it-hero">
     <div class="portal-container">
         <span class="portal-eyebrow">IT Help Center</span>
         <h1>Submit an IT ticket</h1>
-        <p>Describe the issue, review the details, and explicitly confirm before anything is sent to the IT Call Monitoring queue.</p>
+        <p>Tell us what needs attention. Review your request, then send it to IT Support.</p>
         <div class="portal-cta-row" style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
             <a class="portal-button portal-button--light" asp-controller="HelpIt" asp-action="Tracker">Track a ticket <span aria-hidden="true">→</span></a>
         </div>
@@ -16,7 +16,8 @@
 </header>
 
 <section class="portal-container help-it-layout">
-    <div class="help-it-card">
+    <div class="help-it-card help-it-intake-card">
+        <div class="help-it-section-heading"><span aria-hidden="true">1</span><div><h2>Your details</h2><p>Help IT find you and the affected location.</p></div></div>
         @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
         {
             <div class="help-it-alert help-it-alert--error" role="alert">@Model.ErrorMessage</div>
@@ -27,7 +28,7 @@
             <div class="help-it-caller-summary help-it-caller-summary--anon">
                 <div class="help-it-field" style="margin-bottom: 0;">
                     <label for="callerNameInput">Your name <span class="help-it-required">*</span></label>
-                    <input form="helpItTicketForm" type="text" id="callerNameInput" name="CallerNameInput" value="@Model.Request.CallerNameInput" required placeholder="So IT knows who to follow up with" />
+                    <input form="helpItTicketForm" type="text" id="callerNameInput" name="CallerNameInput" value="@Model.Request.CallerNameInput" maxlength="150" autocomplete="name" required placeholder="So IT knows who to follow up with" />
                     <span class="help-it-muted">You're not signed in, so enter the location where the problem happened. IT will use this to route your ticket.</span>
                 </div>
             </div>
@@ -75,7 +76,7 @@
                 }
                 else
                 {
-                    <p class="help-it-org-help">Choose a department, a branch, or both. Some employee records have only one of these values.</p>
+                    <p class="help-it-org-help">Choose the affected location. Select a department, a branch, or both.</p>
                 }
             </div>
         }
@@ -106,22 +107,44 @@
             <input id="helpItConfirmedSubmission" type="hidden" name="ConfirmedSubmission" value="false" />
             <input id="helpItConfirmedRepeatSubmission" type="hidden" name="ConfirmedRepeatSubmission" value="false" />
 
-            <div class="help-it-field">
-                <label for="issue">Describe the issue <span class="help-it-required">*</span></label>
-                <textarea id="issue" name="Issue" rows="6" required placeholder="What's going on? Include what you were doing, any error messages, and when it started.">@Model.Request.Issue</textarea>
+            <div class="help-it-section-heading"><span aria-hidden="true">2</span><div><h2>How can we help?</h2><p>Fields marked <span class="help-it-required">*</span> are required.</p></div></div>
+            <div class="help-it-field-pair">
+                <div class="help-it-field">
+                    <label for="issueType">Issue Type <span class="help-it-required">*</span></label>
+                    <select id="issueType" name="IssueType" required aria-describedby="issueTypeHint">
+                        <option value="">Choose an issue type</option>
+                        @foreach (var option in HelpItSubmitViewModel.IssueTypeOptions)
+                        {
+                            <option value="@option" selected="@(Model.Request.IssueType == option)">@option</option>
+                        }
+                    </select>
+                    <span class="help-it-field-hint" id="issueTypeHint">For example, Hardware for a computer problem.</span>
+                </div>
+                <div class="help-it-field">
+                    <label for="classification">Classification <span class="help-it-required">*</span></label>
+                    <select id="classification" name="Classification" required aria-describedby="classificationHint">
+                        <option value="">Choose an issue type first</option>
+                        @if (HelpItSubmitViewModel.Classifications.TryGetValue(Model.Request.IssueType ?? "", out var classifications))
+                        {
+                            @foreach (var option in classifications)
+                            {
+                                <option value="@option" selected="@(Model.Request.Classification == option)">@option</option>
+                            }
+                        }
+                    </select>
+                    <span class="help-it-field-hint" id="classificationHint">Choose the equipment or service affected.</span>
+                </div>
             </div>
-
             <div class="help-it-field">
-                <label for="issueType">Issue type</label>
-                <select id="issueType" name="IssueType">
-                    <option value="">Select a type (optional)</option>
-                    @foreach (var option in HelpItSubmitViewModel.IssueTypeOptions)
-                    {
-                        <option value="@option" selected="@(Model.Request.IssueType == option)">@option</option>
-                    }
-                </select>
+                <label for="deviceName"><span id="deviceNameLabel">Device or application name</span> <span id="deviceNameRequired" class="help-it-required" hidden>*</span><span id="deviceNameOptional" class="help-it-optional"> (optional)</span></label>
+                <input id="deviceName" name="DeviceName" value="@Model.Request.DeviceName" maxlength="150" placeholder="e.g. YPI-HQ-PC001 or the application name" aria-describedby="deviceNameHint" />
+                <span class="help-it-field-hint" id="deviceNameHint">For a computer or laptop, enter its computer name. For other issues, add a name if you know it.</span>
             </div>
-
+            <div class="help-it-field">
+                <label for="issue">Concern <span class="help-it-required">*</span></label>
+                <textarea id="issue" name="Issue" rows="6" required maxlength="2000" aria-describedby="concernHint concernCount" placeholder="What happened? When did it start? Include any error message and what you have already tried.">@Model.Request.Issue</textarea>
+                <div class="help-it-concern-meta"><span class="help-it-field-hint" id="concernHint">Please do not include passwords or verification codes.</span><span id="concernCount">0 / 2,000</span></div>
+            </div>
             <button type="submit" class="portal-button help-it-submit">
                 Review ticket <span aria-hidden="true">→</span>
             </button>
@@ -130,10 +153,10 @@
     </div>
 
     <aside class="help-it-side-panel">
-        <h2>What happens next</h2>
+        <span class="portal-eyebrow">IT Support</span><h2>What happens next</h2>
         <ol>
             <li>Review your request and contact information in the confirmation dialog.</li>
-            <li>After you explicitly confirm, your ticket is added to the IT Call Monitoring queue.</li>
+            <li>Your ticket is saved in the IT queue and an email notification is sent to IT Support.</li>
             <li>An IT staff member reviews it, sets the priority, and assigns it to themselves.</li>
             <li>You can check progress anytime on the <a asp-controller="HelpIt" asp-action="Tracker">ticket tracker</a>.</li>
         </ol>
@@ -154,8 +177,10 @@
             <p id="helpItReviewDescription">Nothing has been sent yet. Check the details below, then explicitly confirm to create the ticket.</p>
 
             <dl class="help-it-review-details">
-                <div><dt>Issue summary</dt><dd id="helpItReviewIssue" class="help-it-review-issue"></dd></div>
-                <div><dt>Issue type</dt><dd id="helpItReviewIssueType"></dd></div>
+                <div><dt>Concern</dt><dd id="helpItReviewIssue" class="help-it-review-issue"></dd></div>
+                <div><dt>Issue Type</dt><dd id="helpItReviewIssueType"></dd></div>
+                <div><dt>Classification</dt><dd id="helpItReviewClassification"></dd></div>
+                <div><dt>Device / application name</dt><dd id="helpItReviewDeviceName"></dd></div>
                 <div><dt>Requester</dt><dd id="helpItReviewRequester"></dd></div>
                 <div><dt>Company / department / branch</dt><dd id="helpItReviewOrganization"></dd></div>
                 @if (Model.RequiresContactEmail || Model.ShowOrganizationPicker)
@@ -219,11 +244,13 @@
             <div class="help-it-success-mark" aria-hidden="true">✓</div>
             <span class="portal-eyebrow">IT Help Center</span>
             <h2 id="helpItSuccessTitle">Your ticket was submitted</h2>
-            <p>IT has received your request. Keep this ticket code to check its status and updates.</p>
-            <div class="help-it-success-code"><span>Ticket code</span><strong id="helpItSuccessCode"></strong></div>
+            <p>Your request is saved in the IT queue. Keep this ticket code to check its progress.</p><p id="helpItNotificationMessage" class="help-it-notification" role="status"></p>
+            <div class="help-it-success-code"><span>Ticket code</span><strong id="helpItSuccessCode"></strong><button type="button" class="help-it-copy" id="helpItCopyCode">Copy code</button><span id="helpItCopyStatus" role="status"></span></div>
             <dl class="help-it-review-details">
-                <div><dt>Issue summary</dt><dd id="helpItSuccessIssue"></dd></div>
-                <div><dt>Issue type</dt><dd id="helpItSuccessIssueType"></dd></div>
+                <div><dt>Concern</dt><dd id="helpItSuccessIssue"></dd></div>
+                <div><dt>Issue Type</dt><dd id="helpItSuccessIssueType"></dd></div>
+                <div><dt>Classification</dt><dd id="helpItSuccessClassification"></dd></div>
+                <div><dt>Device / application name</dt><dd id="helpItSuccessDeviceName"></dd></div>
                 <div><dt>Requester</dt><dd id="helpItSuccessRequester"></dd></div>
                 <div><dt>Company / department / branch</dt><dd id="helpItSuccessOrganization"></dd></div>
                 <div><dt>Contact email</dt><dd id="helpItSuccessContact"></dd></div>
@@ -242,6 +269,27 @@
 </div>
 
 <style>
+    .help-it-hero { padding-block: 36px 30px; border-bottom: 1px solid var(--portal-line); background: var(--portal-soft); }
+    .help-it-hero h1 { font-size: clamp(2rem, 5vw, 3rem); }
+    .help-it-layout { padding-block: 30px 64px; }
+    .help-it-intake-card { box-shadow: 0 8px 30px rgba(15,31,50,.04); }
+    .help-it-section-heading { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 22px; }
+    .help-it-section-heading > span { display: grid; place-items: center; flex: 0 0 32px; height: 32px; border-radius: 50%; background: var(--portal-red-soft); color: var(--portal-red-dark); font-weight: 800; }
+    .help-it-section-heading h2 { margin: 0 0 4px; color: var(--portal-navy); font-size: 1.15rem; }
+    .help-it-section-heading p { margin: 0; color: var(--portal-muted); font-size: .85rem; }
+    .help-it-form { border-top: 1px solid var(--portal-line); padding-top: 24px; }
+    .help-it-field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .help-it-field-hint { display: block; margin-top: 7px; color: var(--portal-muted); font-size: .78rem; line-height: 1.5; }
+    .help-it-concern-meta { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    #concernCount { flex-shrink: 0; color: var(--portal-muted); font-size: .75rem; font-variant-numeric: tabular-nums; }
+    .help-it-field textarea { resize: vertical; min-height: 150px; }
+    .help-it-notification { padding: 12px; border-radius: 8px; background: var(--portal-soft); font-size: .85rem; }
+    .help-it-copy { padding: 8px 12px; border: 1px solid var(--portal-line); border-radius: 8px; background: #fff; cursor: pointer; font: inherit; }
+    .help-it-review-actions { padding-block: 12px; background: #fff; }
+    .help-it-optional { color: var(--portal-muted); font-size: .8rem; font-weight: 400; }
+    .help-it-field :focus-visible, .help-it-copy:focus-visible { outline: 2px solid var(--portal-red); outline-offset: 3px; }
+    @@media (max-width: 620px) { .help-it-field-pair { grid-template-columns: 1fr; gap: 0; } .help-it-organization-picker { grid-template-columns: 1fr !important; } .help-it-concern-meta { flex-wrap: wrap; } .help-it-success-code { flex-wrap: wrap; } .help-it-intake-card { padding: 20px !important; } }
+
     .help-it-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .9fr); gap: 28px; align-items: start; }
     @@media (max-width: 860px) { .help-it-layout { grid-template-columns: 1fr; } }
     .help-it-card { padding: 28px; border: 1px solid rgba(15,23,42,.08); border-radius: 16px; background: #fff; }
@@ -286,7 +334,7 @@
     .help-it-review-contact-field { padding: 14px; border: 1px solid #f0c7c9; border-radius: 10px; background: #fff8f8; }
     .help-it-review-contact-field input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid var(--portal-line); border-radius: 8px; color: var(--portal-ink); font: inherit; }
     .help-it-review-contact-field input:focus { border-color: var(--portal-red); outline: 0; box-shadow: 0 0 0 3px rgba(215,25,32,.12); }
-    .help-it-review-contact-field span, .help-it-review-source { display: block; margin-top: 4px; color: var(--portal-muted); font-size: .72rem; }
+    .help-it-review-contact-field dd > span, .help-it-review-source { display: block; margin-top: 4px; color: var(--portal-muted); font-size: .72rem; }
     .help-it-review-error { margin: 16px 0 0; padding: 10px 12px; border: 1px solid #efb3b5; border-radius: 8px; background: #fff1f1; color: var(--portal-red-dark); font-size: .8rem; font-weight: 750; }
     .help-it-review-next-step { margin: 20px 0; padding: 12px 14px; border-left: 3px solid var(--portal-red); background: var(--portal-red-soft); color: var(--portal-ink); font-size: .84rem; }
     .help-it-repeat-warning { margin: 18px 0 0; padding: 12px 14px; border: 1px solid #f0c7c9; border-radius: 10px; background: #fff8f8; color: var(--portal-ink); font-size: .84rem; }
@@ -309,6 +357,49 @@
 
         var issue = document.getElementById('issue');
         var issueType = document.getElementById('issueType');
+        var classification = document.getElementById('classification');
+        var deviceName = document.getElementById('deviceName');
+        var classificationCatalog = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(HelpItSubmitViewModel.Classifications));
+        var savedTicket = null;
+        var submitting = false;
+        function updateDeviceLabel() {
+            var computer = classification.value === 'Computer' || classification.value === 'Laptop';
+            deviceName.required = computer;
+            document.getElementById('deviceNameLabel').textContent = computer ? 'Computer Name' : 'Device or application name';
+            document.getElementById('deviceNameRequired').hidden = !computer;
+            document.getElementById('deviceNameOptional').hidden = computer;
+            deviceName.placeholder = computer ? 'e.g. YPI-HQ-PC001' : 'e.g. device name or application name';
+            updateConcernCount();
+        }
+        function updateClassifications() {
+            var previous = classification.value;
+            classification.replaceChildren(new Option(issueType.value ? 'Choose a classification' : 'Choose an issue type first', ''));
+            (classificationCatalog[issueType.value] || []).forEach(function (value) { classification.add(new Option(value, value)); });
+            if ((classificationCatalog[issueType.value] || []).indexOf(previous) >= 0) classification.value = previous;
+            classification.disabled = !issueType.value;
+            updateDeviceLabel();
+        }
+        issueType.addEventListener('change', updateClassifications);
+        classification.addEventListener('change', updateDeviceLabel);
+        updateClassifications();
+        function updateConcernCount() {
+            var lines = [];
+            if (issueType.value) lines.push('Issue Type: ' + issueType.value);
+            if (classification.value) lines.push('Classification: ' + classification.value);
+            if (deviceName.value.trim()) lines.push((classification.value === 'Computer' || classification.value === 'Laptop' ? 'Computer Name: ' : 'Device / application name: ') + deviceName.value.trim());
+            var prefixLength = lines.length ? (lines.join('\n') + '\n\nConcern:\n').length : 0;
+            var maximum = Math.max(0, 2000 - prefixLength);
+            issue.maxLength = maximum;
+            issue.setCustomValidity(issue.value.length > maximum ? 'Please shorten the concern to fit the available space.' : '');
+            document.getElementById('concernCount').textContent = issue.value.length.toLocaleString() + ' / ' + maximum.toLocaleString();
+        }
+        deviceName.addEventListener('input', updateConcernCount);
+        issue.addEventListener('input', updateConcernCount);
+        updateConcernCount();
+        document.getElementById('helpItCopyCode').addEventListener('click', async function () {
+            try { await navigator.clipboard.writeText(savedTicket.ticketCode); document.getElementById('helpItCopyStatus').textContent = 'Copied'; }
+            catch (_) { document.getElementById('helpItCopyStatus').textContent = 'Select the ticket code to copy it.'; }
+        });
         var caller = document.getElementById('callerNameInput');
         var companySelect = document.getElementById('companyId');
         var departmentSelect = document.getElementById('departmentId');
@@ -337,6 +428,7 @@
         var signedInCaller = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CallerName));
         var signedInOrganizationLabel = @Html.Raw(System.Text.Json.JsonSerializer.Serialize($"{Model.CompanyName ?? "—"} / {Model.DepartmentName ?? "—"} / {Model.BranchName ?? "—"}"));
         var previousFocus = null;
+        var reviewButton = form.querySelector('button[type="submit"]');
         var focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
         function setSelectOptions(select, placeholder, items, valueKey, textKey) {
@@ -424,7 +516,10 @@
             }
             if (contactEmail) {
                 contactEmail.hidden = !!email || !allowFallback;
-                contactEmail.required = !email && allowFallback;
+                // This field lives in the review dialog. It must not block the
+                // browser's validation before the dialog can be opened.
+                contactEmail.required = false;
+                contactEmail.disabled = overlay.hidden || !!email || !allowFallback;
                 if (email) contactEmail.value = '';
             }
             if (contactEmailLabel) contactEmailLabel.hidden = !!email || !requiresContactEmail || !allowFallback;
@@ -436,11 +531,15 @@
             var sequence = ++contactLookupSequence;
             if (!companySelect.value || (!departmentSelect.value && !branchSelect.value)) {
                 contactLookupPending = false;
+                reviewButton.disabled = false;
+                reviewButton.textContent = 'Review ticket →';
                 setContactEmailState('', '', 'Select a department or branch to look up its contact email.', false);
                 return;
             }
 
             contactLookupPending = true;
+            reviewButton.disabled = true;
+            reviewButton.textContent = 'Checking contact…';
             setContactEmailState('', '', 'Looking up the organization contact email…', false);
             try {
                 var formData = new FormData();
@@ -461,7 +560,11 @@
             } catch (error) {
                 if (sequence === contactLookupSequence) setContactEmailState('', '', error && error.message ? error.message : 'Unable to look up the contact email. Enter one for this ticket.');
             } finally {
-                if (sequence === contactLookupSequence) contactLookupPending = false;
+                if (sequence === contactLookupSequence) {
+                    contactLookupPending = false;
+                    reviewButton.disabled = false;
+                    reviewButton.textContent = 'Review ticket →';
+                }
             }
         }
 
@@ -500,28 +603,40 @@
         function text(id, value) { document.getElementById(id).textContent = value || '—'; }
         function showError(message) { reviewError.textContent = message; reviewError.hidden = !message; }
         function closeDialog() {
+            if (submitting) return;
             overlay.hidden = true;
+            if (contactEmail) contactEmail.disabled = true;
+            document.body.style.overflow = "";
             if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
         }
         function openReview() {
             previousFocus = document.activeElement;
+            document.body.style.overflow = "hidden";
+            if (savedTicket) { overlay.hidden = false; showSuccess(savedTicket); return; }
             reviewPanel.hidden = false;
             successPanel.hidden = true;
             showError('');
             if (repeatCheckbox) repeatCheckbox.checked = false;
             text('helpItReviewIssue', issue.value.trim());
             text('helpItReviewIssueType', issueType.value || 'Not specified');
+            text('helpItReviewClassification', classification.value);
+            text('helpItReviewDeviceName', deviceName.value.trim() || 'Not provided');
             text('helpItReviewRequester', caller ? caller.value.trim() : signedInCaller);
             text('helpItReviewOrganization', organizationLabel());
             overlay.hidden = false;
+            if (contactEmail) contactEmail.disabled = !requiresContactEmail;
             (contactEmail && !contactEmail.hidden ? contactEmail : confirmButton).focus();
         }
         function showSuccess(ticket) {
+            savedTicket = ticket;
+            document.getElementById("helpItNotificationMessage").textContent = ticket.notificationMessage || "";
             reviewPanel.hidden = true;
             successPanel.hidden = false;
             text('helpItSuccessCode', ticket.ticketCode);
             text('helpItSuccessIssue', ticket.issue);
             text('helpItSuccessIssueType', ticket.issueType || 'Not specified');
+            text('helpItSuccessClassification', ticket.classification);
+            text('helpItSuccessDeviceName', ticket.deviceName || 'Not provided');
             text('helpItSuccessRequester', ticket.callerName);
             text('helpItSuccessOrganization', (ticket.company || '—') + ' / ' + (ticket.department || '—') + ' / ' + (ticket.branch || '—'));
             text('helpItSuccessContact', ticket.contactEmail || '—');
@@ -535,7 +650,8 @@
         form.addEventListener('submit', function (event) {
             event.preventDefault();
             if (contactLookupPending) return;
-            if (!validateOrganizationSelection() || !form.reportValidity()) return;
+            var organizationValid = validateOrganizationSelection();
+            if (!form.reportValidity() || !organizationValid) return;
             openReview();
         });
         closeButton.addEventListener('click', closeDialog);
@@ -546,13 +662,14 @@
             if (overlay.hidden) return;
             if (event.key === 'Escape') { closeDialog(); return; }
             if (event.key !== 'Tab') return;
-            var focusable = Array.prototype.slice.call(overlay.querySelectorAll(focusableSelector));
+            var focusable = Array.prototype.slice.call(overlay.querySelectorAll(focusableSelector)).filter(function (item) { return item.getClientRects().length > 0; });
             if (!focusable.length) { event.preventDefault(); closeButton.focus(); return; }
             var first = focusable[0], last = focusable[focusable.length - 1];
             if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
             else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
         });
         confirmButton.addEventListener('click', async function () {
+            if (submitting || savedTicket) return;
             if (requiresContactEmail && contactEmail && (!contactEmail.value.trim() || !contactEmail.checkValidity())) {
                 showError('Enter a valid department or branch contact email before submitting.');
                 contactEmail.focus();
@@ -566,6 +683,8 @@
             }
 
             showError('');
+            submitting = true;
+            overlay.setAttribute('aria-busy', 'true');
             confirmButton.disabled = true;
             confirmButton.textContent = 'Submitting…';
             confirmed.value = 'true';
@@ -589,6 +708,9 @@
                 showError(error && error.message ? error.message : 'Unable to submit the ticket right now.');
                 confirmButton.disabled = false;
                 confirmButton.innerHTML = 'Confirm &amp; submit ticket <span aria-hidden="true">→</span>';
+            } finally {
+                submitting = false;
+                overlay.removeAttribute('aria-busy');
             }
         });
     })();

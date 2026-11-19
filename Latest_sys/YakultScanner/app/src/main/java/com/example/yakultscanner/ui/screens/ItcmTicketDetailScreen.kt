@@ -519,6 +519,8 @@ private fun ItcmTicketFacts(ticket: CallTicketDetail?) {
             "Branch" to ticket?.branch,
             "Assigned to" to ticket?.assignedTo,
             "Issue type" to ticket?.issueType,
+            "Classification" to ticket?.classification,
+            "Device / application" to ticket?.deviceName,
             "Created" to ticket?.createdAt,
             "Solved" to ticket?.solvedAt
         ).filter { !it.second.isNullOrBlank() }

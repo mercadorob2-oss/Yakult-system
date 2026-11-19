@@ -40,8 +40,8 @@ public interface IHelpItRepository
     Task<HelpItTicketContactEmail> GetOrganizationContactEmailAsync(int? companyId, int? departmentId, int? branchId);
 
     /// <summary>
-    /// Indicates whether the database has the ticket-scoped fallback contact-email
-    /// column required for a requester-provided address.
+    /// Indicates whether ticket source, contact email, classification, and device
+    /// storage are available before the new portal form creates a ticket.
     /// </summary>
     Task<bool> CanStoreTicketContactEmailAsync();
 
