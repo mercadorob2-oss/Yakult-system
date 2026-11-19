@@ -1,0 +1,101 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const base = 'http://127.0.0.1:5194';
+const output = path.resolve('artifacts/help-it');
+
+(async () => {
+    fs.mkdirSync(output, { recursive: true });
+    const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_BROWSER || undefined });
+    try {
+        const context = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
+        const page = await context.newPage();
+        await page.request.post(base + '/fixture/reset');
+        const errors = [];
+        page.on('pageerror', e => errors.push(e.message));
+        await page.goto(base + '/HelpIt');
+        assert.equal(await page.locator('#classification').isDisabled(), true);
+        await page.locator('#callerNameInput').fill('Example Employee');
+        await page.locator('#companyId').selectOption('1');
+        await page.locator('#departmentId').selectOption('2');
+        await page.locator('#branchId').selectOption('3');
+        await page.locator('#issueType').selectOption('Hardware');
+        await page.locator('#classification').selectOption('Computer');
+        assert.equal(await page.locator('#deviceName').getAttribute('required'), '');
+        await page.locator('#deviceName').fill('YPI-TEST-PC001');
+        await page.locator('#issue').fill('Computer will not start.\nPower light turns on, but the screen stays blank.');
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.screenshot({ path: path.join(output, 'desktop-form.png'), fullPage: true });
+        await page.getByRole('button', { name: 'Review ticket' }).click();
+        assert.equal(await page.locator('#helpItReviewClassification').innerText(), 'Computer');
+        assert.equal(await page.locator('#helpItReviewDeviceName').innerText(), 'YPI-TEST-PC001');
+        assert.equal((await (await page.request.get(base + '/fixture/state')).json()).created, 0);
+        await page.locator('#helpItContactEmail').fill('requester@example.invalid');
+        await page.screenshot({ path: path.join(output, 'desktop-review.png') });
+        await page.locator('#helpItReviewConfirm').click();
+        await page.locator('#helpItSuccessPanel').waitFor({ state: 'visible' });
+        assert.equal(await page.locator('#helpItSuccessCode').innerText(), 'TCK-000001');
+        assert.match(await page.locator('#helpItNotificationMessage').innerText(), /notified/);
+        await page.screenshot({ path: path.join(output, 'desktop-success.png') });
+        await page.locator('#helpItSuccessClose').click();
+        await page.getByRole('button', { name: 'Review ticket' }).click();
+        assert.equal(await page.locator('#helpItSuccessPanel').isVisible(), true);
+        assert.deepEqual(await (await page.request.get(base + '/fixture/state')).json(), { created: 1, notifications: 1 });
+        await page.locator('#helpItSuccessDetails').click();
+        assert.match(await page.locator('.help-it-summary-grid').innerText(), /Computer/);
+        assert.match(await page.locator('.help-it-summary-grid').innerText(), /YPI-TEST-PC001/);
+
+        await page.goto(base + '/HelpIt');
+        const token = await page.locator('#helpItTicketForm input[name="__RequestVerificationToken"]').inputValue();
+        const form = { __RequestVerificationToken: token, ConfirmedSubmission: 'true', ConfirmedRepeatSubmission: 'true',
+            CompanyId: '1', DepartmentId: '2', CallerNameInput: 'Example Employee', IssueType: 'Hardware',
+            Classification: 'Computer', DeviceName: 'TEST-PC', Issue: 'Does not start', ContactEmail: 'requester@example.invalid' };
+        const submit = data => page.request.post(base + '/HelpIt/Create', { form: { ...form, ...data }, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        assert.equal((await submit({ ConfirmedSubmission: 'false' })).status(), 400);
+        assert.equal((await submit({ ConfirmedRepeatSubmission: 'false' })).status(), 400);
+        assert.equal((await submit({ Classification: 'VPN' })).status(), 400);
+        assert.equal((await submit({ DeviceName: '' })).status(), 400);
+        assert.equal((await submit({ Issue: 'x'.repeat(2001) })).status(), 400);
+        assert.equal((await submit({ Issue: 'x'.repeat(1990) })).status(), 400); // Metadata also uses the existing description capacity.
+        assert.equal((await submit({ DeviceName: 'x'.repeat(151) })).status(), 400);
+        assert.equal((await submit({ ContactEmail: 'invalid' })).status(), 400);
+        assert.equal((await submit({ CompanyId: '999' })).status(), 400);
+        await page.request.post(base + '/fixture/ready/false');
+        assert.equal((await submit({})).status(), 503);
+        assert.equal((await (await page.request.get(base + '/fixture/state')).json()).created, 1);
+        await page.request.post(base + '/fixture/ready/true');
+        await page.request.post(base + '/fixture/mail/true');
+        const response = await submit({ IssueType: 'Software', Classification: 'Business application', DeviceName: '' });
+        assert.equal(response.status(), 200);
+        const ticket = await response.json();
+        assert.equal(ticket.notificationSent, false);
+        assert.match(ticket.notificationMessage, /saved/);
+        assert.equal(ticket.ticketCode, 'TCK-000002');
+        assert.deepEqual(await (await page.request.get(base + '/fixture/state')).json(), { created: 2, notifications: 2 });
+
+        const mobile = await context.newPage();
+        await mobile.setViewportSize({ width: 390, height: 844 });
+        await mobile.goto(base + '/HelpIt');
+        await mobile.locator('#issueType').selectOption('Hardware');
+        await mobile.locator('#classification').selectOption('Computer');
+        await mobile.locator('#issueType').selectOption('Network');
+        assert.equal(await mobile.locator('#classification').inputValue(), '');
+        assert.equal(await mobile.locator('#deviceName').getAttribute('required'), null);
+        assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+        await mobile.screenshot({ path: path.join(output, 'mobile-form.png'), fullPage: true });
+        await mobile.locator('#callerNameInput').fill('Example Employee');
+        await mobile.locator('#companyId').selectOption('1');
+        await mobile.locator('#departmentId').selectOption('2');
+        await mobile.locator('#classification').selectOption('Internet');
+        await mobile.locator('#issue').fill('Internet connection drops during work.');
+        await mobile.getByRole('button', { name: 'Review ticket' }).click();
+        await mobile.locator('#helpItReviewPanel').waitFor({ state: 'visible' });
+        assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+        await mobile.screenshot({ path: path.join(output, 'mobile-review.png') });
+        await mobile.keyboard.press('Escape');
+        assert.equal(await mobile.locator('#helpItReviewDialog').isHidden(), true);
+        assert.deepEqual(errors, []);
+        console.log('PASS: desktop/mobile form, review and explicit confirmation, detail display, duplicate click protection, validation, missing schema, and nonfatal email failure.');
+    } finally { await browser.close(); }
+})().catch(e => { console.error(e); process.exitCode = 1; });

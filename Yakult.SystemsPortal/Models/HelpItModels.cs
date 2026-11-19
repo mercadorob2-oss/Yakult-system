@@ -9,6 +9,8 @@ public sealed class CreateHelpItTicketRequest
 {
     public string Issue { get; set; } = string.Empty;
     public string? IssueType { get; set; }
+    public string? Classification { get; set; }
+    public string? DeviceName { get; set; }
 
     /// <summary>
     /// Selected by anonymous and independent Active Directory submissions. Portal
@@ -97,6 +99,8 @@ public sealed class HelpItTicketSummary
     public string? Branch { get; init; }
     public string Issue { get; init; } = string.Empty;
     public string? IssueType { get; init; }
+    public string? Classification { get; init; }
+    public string? DeviceName { get; init; }
     public string Status { get; init; } = string.Empty;
     public string Priority { get; init; } = string.Empty;
     public string CallerName { get; init; } = string.Empty;
@@ -163,6 +167,17 @@ public sealed class HelpItSubmitViewModel
         "High",
         "Critical"
     };
+
+    // Keep the catalog in one place for browser options and server validation.
+    public static readonly IReadOnlyDictionary<string, string[]> Classifications =
+        new Dictionary<string, string[]>
+        {
+            ["Hardware"] = new[] { "Computer", "Laptop", "Printer / Scanner", "Monitor", "Peripheral", "Other hardware" },
+            ["Software"] = new[] { "Business application", "Microsoft Office", "Operating system", "Other software" },
+            ["Network"] = new[] { "Internet", "Wi-Fi", "LAN / Network", "VPN", "Other network" },
+            ["Account/Access"] = new[] { "Email", "Windows account", "System access", "Shared folder", "Other access" },
+            ["Other"] = new[] { "General IT assistance" }
+        };
 }
 
 public sealed class HelpItTrackerViewModel

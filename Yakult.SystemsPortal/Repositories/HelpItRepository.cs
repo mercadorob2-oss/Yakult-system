@@ -328,7 +328,9 @@ WHERE (SELECT COUNT(*) FROM MatchingEmployees) = 1;";
         using var con = new SqlConnection(_connectionStringProvider.GetConnectionString());
         await con.OpenAsync();
         return await HasColumnAsync(con, "dbo.CallTicket", "TicketSource")
-            && await HasColumnAsync(con, "dbo.CallTicket", "ContactEmail");
+            && await HasColumnAsync(con, "dbo.CallTicket", "ContactEmail")
+            && await HasColumnAsync(con, "dbo.CallTicket", "Classification")
+            && await HasColumnAsync(con, "dbo.CallTicket", "DeviceName");
     }
 
     public async Task<HelpItTicketSummary> CreateTicketAsync(
@@ -358,7 +360,11 @@ WHERE (SELECT COUNT(*) FROM MatchingEmployees) = 1;";
         cmd.Parameters.AddWithValue("@ComId", (object?)companyId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@DeptId", (object?)departmentId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("@CallerName", callerName.Trim());
-        cmd.Parameters.AddWithValue("@Issue", request.Issue.Trim());
+        var description = Yakult.Inventory.App.Models.CallMonitoring.CallTicketDescription.Format(
+            request.IssueType, request.Classification, request.DeviceName, request.Issue);
+        if (description.Length > 2000)
+            throw new ArgumentException("Please shorten the concern so the complete ticket fits within 2,000 characters.");
+        cmd.Parameters.AddWithValue("@Issue", description);
         cmd.Parameters.AddWithValue("@ProvidedSolution", DBNull.Value);
         cmd.Parameters.AddWithValue("@IssueType", string.IsNullOrWhiteSpace(request.IssueType) ? (object)DBNull.Value : request.IssueType.Trim());
         cmd.Parameters.AddWithValue("@Priority", priority);
@@ -377,36 +383,64 @@ WHERE (SELECT COUNT(*) FROM MatchingEmployees) = 1;";
         if (await HasParameterAsync(con, "dbo.sp_Call_CreateTicket", "@TicketSource"))
             cmd.Parameters.AddWithValue("@TicketSource", "Portal");
 
+        // The existing procedure uses a nested transaction. Its COMMIT leaves
+        // this outer transaction open until metadata and contact are also saved.
+        using var transaction = con.BeginTransaction();
+        cmd.Transaction = transaction;
         try
         {
-            HelpItTicketSummary ticket;
+            int ticketId;
             using (var reader = await cmd.ExecuteReaderAsync())
             {
                 if (!await reader.ReadAsync())
-                    throw new InvalidOperationException("The ticket could not be created. The stored procedure did not return a result.");
-
-                ticket = new HelpItTicketSummary
-                {
-                    TicketId = reader.GetInt32(reader.GetOrdinal("TicketId")),
-                    TicketCode = reader.IsDBNull(reader.GetOrdinal("TicketCode")) ? string.Empty : reader.GetString(reader.GetOrdinal("TicketCode")),
-                    Status = reader.IsDBNull(reader.GetOrdinal("Status")) ? string.Empty : reader.GetString(reader.GetOrdinal("Status")),
-                    Priority = reader.IsDBNull(reader.GetOrdinal("Priority")) ? string.Empty : reader.GetString(reader.GetOrdinal("Priority")),
-                    CreatedAt = reader.IsDBNull(reader.GetOrdinal("CreatedAt")) ? DateTime.UtcNow : reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-                    Issue = request.Issue.Trim(),
-                    IssueType = request.IssueType,
-                    CallerName = callerName.Trim()
-                };
+                    throw new InvalidOperationException("The ticket could not be created.");
+                ticketId = reader.GetInt32(reader.GetOrdinal("TicketId"));
             }
 
-            // The portal is the authoritative origin for this request. Some deployed
-            // procedure revisions declare @TicketSource but did not persist it, so
-            // repair only a missing value and never overwrite another source.
-            await EnsurePortalTicketSourceAsync(con, ticket.TicketId);
+            const string saveSql = @"
+                UPDATE dbo.CallTicket
+                SET Classification = @Classification, DeviceName = @DeviceName,
+                    ContactEmail = @ContactEmail, TicketSource = 'Portal'
+                WHERE TicketId = @TicketId;
+                SELECT t.TicketId, t.TicketCode, t.Status, t.Priority, t.CreatedAt,
+                       c.Name AS Company, d.Name AS Department, b.Name AS Branch
+                FROM dbo.CallTicket t
+                LEFT JOIN dbo.Company c ON c.ComId = t.ComId
+                LEFT JOIN dbo.Department d ON d.DeptId = t.DeptId
+                LEFT JOIN dbo.Branch b ON b.BranchId = t.BranchId
+                WHERE t.TicketId = @TicketId;";
+            using var save = new SqlCommand(saveSql, con, transaction);
+            save.Parameters.Add("@TicketId", SqlDbType.Int).Value = ticketId;
+            save.Parameters.Add("@Classification", SqlDbType.NVarChar, 100).Value = request.Classification!.Trim();
+            save.Parameters.Add("@DeviceName", SqlDbType.NVarChar, 150).Value =
+                string.IsNullOrWhiteSpace(request.DeviceName) ? DBNull.Value : request.DeviceName.Trim();
+            save.Parameters.Add("@ContactEmail", SqlDbType.NVarChar, 255).Value = request.ContactEmail!.Trim();
+            HelpItTicketSummary ticket;
+            using (var reader = await save.ExecuteReaderAsync())
+            {
+                if (!await reader.ReadAsync()) throw new InvalidOperationException("The ticket could not be saved.");
+                ticket = new HelpItTicketSummary
+                {
+                    TicketId = ticketId,
+                    TicketCode = GetString(reader, "TicketCode"),
+                    Status = GetString(reader, "Status"),
+                    Priority = GetString(reader, "Priority"),
+                    CreatedAt = GetDateTime(reader, "CreatedAt") ?? DateTime.UtcNow,
+                    Company = GetNullableString(reader, "Company"),
+                    Department = GetNullableString(reader, "Department"),
+                    Branch = GetNullableString(reader, "Branch"),
+                    Issue = request.Issue.Trim(), IssueType = request.IssueType,
+                    Classification = request.Classification.Trim(),
+                    DeviceName = request.DeviceName?.Trim(), CallerName = callerName.Trim()
+                };
+            }
+            transaction.Commit();
             return ticket;
         }
-        catch (SqlException ex)
+        catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create Help IT ticket for caller {CallerName}.", callerName);
+            try { transaction.Rollback(); } catch (InvalidOperationException) { /* SQL may have already rolled back. */ }
+            _logger.LogError(ex, "Failed to create Help IT ticket.");
             throw new InvalidOperationException("Unable to submit the ticket. Please try again or contact IT directly.", ex);
         }
     }
@@ -681,10 +715,13 @@ WHERE (SELECT COUNT(*) FROM MatchingEmployees) = 1;";
         // Details are intentionally available for every valid ticket source.
         // Ticket-code validation above remains the boundary for malformed or
         // missing identifiers, and the lookup stays parameterized.
-        const string ticketSql = @"
+        var classificationSelect = await HasColumnAsync(con, "dbo.CallTicket", "Classification") ? "t.Classification" : "CAST(NULL AS nvarchar(100))";
+        var deviceSelect = await HasColumnAsync(con, "dbo.CallTicket", "DeviceName") ? "t.DeviceName" : "CAST(NULL AS nvarchar(150))";
+        var ticketSql = $@"
             SELECT t.TicketId, t.TicketCode, c.Name AS Company, d.Name AS Department,
                    b.Name AS Branch, t.Issue, t.IssueType, t.Status, t.Priority,
-                   t.CallerName, t.CreatedAt, t.SolvedAt
+                   t.CallerName, t.CreatedAt, t.SolvedAt,
+                   {classificationSelect} AS Classification, {deviceSelect} AS DeviceName
             FROM dbo.CallTicket t
             LEFT JOIN dbo.Company c ON c.ComId = t.ComId
             LEFT JOIN dbo.Department d ON d.DeptId = t.DeptId
@@ -708,6 +745,8 @@ WHERE (SELECT COUNT(*) FROM MatchingEmployees) = 1;";
                 Branch = GetNullableString(reader, "Branch"),
                 Issue = GetString(reader, "Issue"),
                 IssueType = GetNullableString(reader, "IssueType"),
+                Classification = GetNullableString(reader, "Classification"),
+                DeviceName = GetNullableString(reader, "DeviceName"),
                 Status = GetString(reader, "Status"),
                 Priority = GetString(reader, "Priority"),
                 CallerName = GetString(reader, "CallerName"),

@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <Compile Remove="Setup\**" />
+    <Compile Include="..\Yakult.Inventory.App\Models\CallMonitoring\CallTicketDescription.cs" Link="Models\CallTicketDescription.cs" />
     <Content Remove="Setup\**" />
   </ItemGroup>
 

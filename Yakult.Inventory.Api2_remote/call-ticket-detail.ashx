@@ -31,6 +31,8 @@ public class CallTicketDetailHandler : IHttpHandler {
         try {
             using(var con=new SqlConnection(Cs())){
                 con.Open();
+                var classificationSelect = ColumnExists(con,"Classification") ? "t.Classification" : "CAST(NULL AS nvarchar(100))";
+                var deviceNameSelect = ColumnExists(con,"DeviceName") ? "t.DeviceName" : "CAST(NULL AS nvarchar(150))";
                 // Ticket detail
                 using(var cmd=new SqlCommand(@"
 SELECT t.TicketId,t.TicketCode,t.ComId,COALESCE(c.Name,'') AS Company,
@@ -43,6 +45,7 @@ SELECT t.TicketId,t.TicketCode,t.ComId,COALESCE(c.Name,'') AS Company,
                      WHEN ISNULL(b.IsDistributor,0)=1 THEN b.Name+' (Distributor)'
                      ELSE b.Name END,'') AS Branch,
        t.CallerName,t.Issue,t.ProvidedSolution,t.IssueType,t.Priority,t.Status,
+       " + classificationSelect + @" AS Classification, " + deviceNameSelect + @" AS DeviceName,
        COALESCE(e.Name,'') AS AssignedTo,
        t.CreatedAt,t.UpdatedAt,t.SolvedAt
 FROM dbo.CallTicket t
@@ -63,6 +66,8 @@ WHERE t.TicketId=@TicketId",con)){
                                 callerName=r["CallerName"]==DBNull.Value?(string)null:r["CallerName"].ToString(),
                                 issue=r["Issue"]==DBNull.Value?(string)null:r["Issue"].ToString(),
                                 providedSolution=r["ProvidedSolution"]==DBNull.Value?(string)null:r["ProvidedSolution"].ToString(),
+                                classification=r["Classification"]==DBNull.Value?(string)null:r["Classification"].ToString(),
+                                deviceName=r["DeviceName"]==DBNull.Value?(string)null:r["DeviceName"].ToString(),
                                 issueType=r["IssueType"]==DBNull.Value?(string)null:r["IssueType"].ToString(),
                                 priority=r["Priority"]==DBNull.Value?(string)null:r["Priority"].ToString(),
                                 status=r["Status"]==DBNull.Value?(string)null:r["Status"].ToString(),
@@ -123,6 +128,13 @@ ORDER BY h.ChangedAt DESC,h.HistoryId DESC",con)){
             }
         } catch(Exception ex){Err(c,500,"Failed to load ticket detail: "+ex.Message);return;}
         Ok(c,new{success=true,ticket=ticket,notes=notes,history=history});
+    }
+
+    static bool ColumnExists(SqlConnection connection, string name) {
+        using(var cmd=new SqlCommand("SELECT COUNT(*) FROM sys.columns WHERE object_id=OBJECT_ID('dbo.CallTicket') AND name=@Name",connection)) {
+            cmd.Parameters.Add("@Name",SqlDbType.NVarChar,128).Value=name;
+            return Convert.ToInt32(cmd.ExecuteScalar())>0;
+        }
     }
 
     public bool IsReusable{get{return false;}}

@@ -33,10 +33,22 @@
                 <span class="help-it-priority">@Model.Ticket.Priority priority</span>
             </div>
             <div class="help-it-detail__issue">
-                <span class="help-it-detail__label">Issue</span>
+                <span class="help-it-detail__label">Concern</span>
                 <p>@Model.Ticket.Issue</p>
             </div>
+            @if (TempData["HelpItNotificationMessage"] is string notificationMessage)
+            {
+                <p role="status">@notificationMessage</p>
+            }
             <dl class="help-it-summary-grid">
+                @if (!string.IsNullOrWhiteSpace(Model.Ticket.Classification))
+                {
+                    <div><dt>Classification</dt><dd>@Model.Ticket.Classification</dd></div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Ticket.DeviceName))
+                {
+                    <div><dt>Device / application name</dt><dd>@Model.Ticket.DeviceName</dd></div>
+                }
                 <div><dt>Issue type</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.IssueType) ? "Not specified" : Model.Ticket.IssueType)</dd></div>
                 <div><dt>Caller</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.CallerName) ? "Not specified" : Model.Ticket.CallerName)</dd></div>
                 <div><dt>Company</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.Company) ? "—" : Model.Ticket.Company)</dd></div>

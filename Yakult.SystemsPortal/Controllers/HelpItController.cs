@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Yakult.SystemsPortal.Models;
 using Yakult.SystemsPortal.Repositories;
+using Yakult.SystemsPortal.Services;
 
 namespace Yakult.SystemsPortal.Controllers;
 
@@ -29,15 +30,18 @@ public sealed class HelpItController : Controller
     private readonly IHelpItRepository _helpItRepository;
     private readonly IPortalCardRepository _portalCardRepository;
     private readonly ILogger<HelpItController> _logger;
+    private readonly IHelpItNotificationService _notifications;
 
     public HelpItController(
         IHelpItRepository helpItRepository,
         IPortalCardRepository portalCardRepository,
-        ILogger<HelpItController> logger)
+        ILogger<HelpItController> logger,
+        IHelpItNotificationService notifications)
     {
         _helpItRepository = helpItRepository;
         _portalCardRepository = portalCardRepository;
         _logger = logger;
+        _notifications = notifications;
     }
 
     [HttpGet]
@@ -98,6 +102,21 @@ public sealed class HelpItController : Controller
             return await SubmissionFailureAsync(request, "Please describe the issue before submitting.");
         }
 
+        request.IssueType = request.IssueType?.Trim();
+        request.Classification = request.Classification?.Trim();
+        request.DeviceName = request.DeviceName?.Trim();
+        if (!ModelState.IsValid
+            || request.Issue.Trim().Length > 2000
+            || !HelpItSubmitViewModel.Classifications.TryGetValue(request.IssueType ?? "", out var classifications)
+            || !classifications.Contains(request.Classification ?? "", StringComparer.Ordinal)
+            || (request.DeviceName?.Length ?? 0) > 150)
+            return await SubmissionFailureAsync(request, "Select an issue type and matching classification. Keep the concern within 2,000 characters and the name within 150 characters.");
+        if ((request.Classification == "Computer" || request.Classification == "Laptop") && string.IsNullOrWhiteSpace(request.DeviceName))
+            return await SubmissionFailureAsync(request, "Enter the computer or laptop name so IT can identify the device.");
+        if (Yakult.Inventory.App.Models.CallMonitoring.CallTicketDescription.Format(
+                request.IssueType, request.Classification, request.DeviceName, request.Issue).Length > 2000)
+            return await SubmissionFailureAsync(request, "Please shorten the concern so the complete ticket fits within 2,000 characters.");
+
         var isAuthenticated = User.Identity?.IsAuthenticated == true;
         var isIndependentAdUser = User.HasClaim("AuthenticationSource", "ActiveDirectory");
         var (companyId, departmentId, branchId, sessionCallerName, userId) = GetCurrentUserContext();
@@ -138,6 +157,9 @@ public sealed class HelpItController : Controller
             return await SubmissionFailureAsync(request, "Please enter your name before submitting.");
         }
 
+        if (callerName.Length > 150)
+            return await SubmissionFailureAsync(request, "Keep the requester name within 150 characters.");
+
         var organizationContact = await _helpItRepository.GetOrganizationContactEmailAsync(companyId, departmentId, branchId);
         var requiresFallbackContact = string.IsNullOrWhiteSpace(organizationContact.Email);
         var fallbackContactEmail = (request.ContactEmail ?? string.Empty).Trim();
@@ -152,11 +174,14 @@ public sealed class HelpItController : Controller
 
         if (!await _helpItRepository.CanStoreTicketContactEmailAsync())
         {
+            _logger.LogWarning("Help IT submission blocked: contact email or classification storage is not installed.");
             return await SubmissionFailureAsync(
                 request,
-                "Ticket contact email storage is not ready yet. Please ask IT to apply the ContactEmail database migration before submitting.",
+                "Ticket submission is temporarily unavailable. Please contact IT Support directly.",
                 StatusCodes.Status503ServiceUnavailable);
         }
+
+        request.ContactEmail = requiresFallbackContact ? fallbackContactEmail : organizationContact.Email;
 
         try
         {
@@ -192,18 +217,20 @@ public sealed class HelpItController : Controller
             HttpContext.Session.SetInt32(SessionTicketCountKey, (HttpContext.Session.GetInt32(SessionTicketCountKey) ?? 0) + 1);
             HttpContext.Session.SetString(SessionLastTicketCodeKey, ticket.TicketCode);
 
-            var ticketContactEmail = requiresFallbackContact ? fallbackContactEmail : organizationContact.Email;
-            if (!string.IsNullOrWhiteSpace(ticketContactEmail)
-                && (!await _helpItRepository.CanStoreTicketContactEmailAsync()
-                    || !await _helpItRepository.SetPortalTicketContactEmailAsync(ticket.TicketCode, ticketContactEmail)))
+            var detailsUrl = Url.RouteUrl("HelpItTicketDetails", new { ticketCode = ticket.TicketCode }, protocol: Request.Scheme)!;
+            HelpItNotificationResult notification;
+            try
             {
-                throw new InvalidOperationException("The newly submitted ticket could not be assigned its contact email.");
+                notification = await _notifications.NotifyAsync(ticket, request.ContactEmail!, detailsUrl);
             }
-
+            catch (Exception notificationException)
+            {
+                _logger.LogError(notificationException, "Notification failed for saved ticket {TicketCode}.", ticket.TicketCode);
+                notification = new(false, "Your ticket is saved. The email notification is unavailable; you do not need to submit again.");
+            }
             if (IsDialogSubmission())
             {
-                var ticketDetails = await _helpItRepository.GetPortalTicketDetailsAsync(ticket.TicketCode);
-                var confirmationTicket = ticketDetails?.Ticket ?? ticket;
+                var confirmationTicket = ticket;
                 var contactEmail = requiresFallbackContact ? fallbackContactEmail : organizationContact.Email;
                 var contactEmailSource = requiresFallbackContact
                     ? "Email provided for this ticket"
@@ -214,6 +241,10 @@ public sealed class HelpItController : Controller
                     ticketCode = confirmationTicket.TicketCode,
                     issue = confirmationTicket.Issue,
                     issueType = confirmationTicket.IssueType,
+                    classification = confirmationTicket.Classification,
+                    deviceName = confirmationTicket.DeviceName,
+                    notificationSent = notification.Sent,
+                    notificationMessage = notification.Message,
                     callerName = confirmationTicket.CallerName,
                     company = confirmationTicket.Company,
                     department = confirmationTicket.Department,
@@ -227,6 +258,7 @@ public sealed class HelpItController : Controller
                 });
             }
 
+            TempData["HelpItNotificationMessage"] = notification.Message;
             return RedirectToRoute("HelpItTicketDetails", new { ticketCode = ticket.TicketCode });
         }
         catch (Exception ex)

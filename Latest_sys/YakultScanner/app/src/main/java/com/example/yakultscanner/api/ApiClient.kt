@@ -976,6 +976,8 @@ data class CallTicketDetail(
     @SerializedName("callerName") val callerName: String? = null,
     @SerializedName("issue") val issue: String? = null,
     @SerializedName("providedSolution") val providedSolution: String? = null,
+    @SerializedName("classification") val classification: String? = null,
+    @SerializedName("deviceName") val deviceName: String? = null,
     @SerializedName("issueType") val issueType: String? = null,
     @SerializedName("priority") val priority: String? = null,
     @SerializedName("status") val status: String? = null,

@@ -22,6 +22,9 @@ namespace Yakult.Inventory.App.Models.CallMonitoring
         public string Priority { get; set; }
         public string CallerName { get; set; }
         public string IssueType { get; set; }
+        public string Classification { get; set; }
+        public string DeviceName { get; set; }
+        public string IssueDescription => CallTicketDescription.ForDisplay(IssueType, Classification, DeviceName, Issue);
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public DateTime? SolvedAt { get; set; }
