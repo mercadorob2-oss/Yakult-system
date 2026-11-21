@@ -1,6 +1,47 @@
 @model ContentListViewModel
-@{ Layout = "_PublicLayout"; ViewData["Title"] = Model.Title; }
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = Model.Title;
+    var isHelpCenter = Model.Title == "IT Help Center";
+}
 
+@if (isHelpCenter)
+{
+    <link rel="stylesheet" href="~/css/it-help-center.css" asp-append-version="true" />
+    <header class="it-help-hero">
+        <div class="portal-container it-help-hero__grid">
+            <div class="it-help-hero__copy">
+                <a class="it-help-back" asp-controller="Public" asp-action="Index">← Employee portal</a>
+                <span class="it-help-eyebrow">YOUR IT SUPPORT DESK</span>
+                <h1>Less downtime.<br /><span>More getting things done.</span></h1>
+                <p>Welcome to the IT Help Center. Get help with your devices, accounts, and everyday technology—all in one place.</p>
+                <div class="it-help-hero__actions">
+                    <a class="it-help-primary" asp-controller="HelpIt" asp-action="Index">Submit an IT ticket <span aria-hidden="true">↗</span></a>
+                    <a class="it-help-secondary" asp-controller="HelpIt" asp-action="Tracker">Track a ticket <span aria-hidden="true">→</span></a>
+                </div>
+                <a class="it-help-library-link" href="#help-resources">Looking for a quick answer? Browse support guides <span aria-hidden="true">↓</span></a>
+            </div>
+            <aside class="it-help-desk" aria-labelledby="help-desk-title">
+                <div class="it-help-desk__top"><span class="it-help-desk__symbol" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M10 27v-5a14 14 0 0 1 28 0v5M10 25H7v10h7V25h-4Zm28 0h3v10h-7V25h4ZM38 35c0 5-5 7-12 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 40h6v4h-6z" fill="currentColor"/></svg></span><span>HERE TO HELP</span></div>
+                <h2 id="help-desk-title">A clear path to support.</h2>
+                <p>From the first report to the latest update, know what comes next.</p>
+                <ol class="it-help-journey">
+                    <li><span>01</span><div><strong>Tell us what happened</strong><p>Share the issue and the location affected.</p></div></li>
+                    <li><span>02</span><div><strong>We take it from here</strong><p>IT reviews and assigns your request.</p></div></li>
+                    <li><span>03</span><div><strong>Stay in the loop</strong><p>Use your ticket code to check progress.</p></div></li>
+                </ol>
+                <div class="it-help-desk__note"><span aria-hidden="true">i</span> Keep your ticket code handy for follow-ups.</div>
+            </aside>
+        </div>
+    </header>
+    <nav class="portal-container it-help-shortcuts" aria-label="IT Help quick actions">
+        <a asp-controller="HelpIt" asp-action="Index"><span class="it-help-shortcuts__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M8 3h8l4 4v14H4V3h4Zm7 0v5h5M8 13h8m-8 4h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Report an issue</strong><small>Something isn’t working? Start here.</small></span><span class="it-help-shortcuts__arrow" aria-hidden="true">↗</span></a>
+        <a asp-controller="HelpIt" asp-action="Tracker"><span class="it-help-shortcuts__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="10" cy="10" r="6" stroke="currentColor" stroke-width="1.7"/><path d="m15 15 6 6M7 10h6m-3-3v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span><strong>Check your ticket</strong><small>See updates and who’s handling it.</small></span><span class="it-help-shortcuts__arrow" aria-hidden="true">↗</span></a>
+        <a href="#help-resources"><span class="it-help-shortcuts__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Zm0 0v15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span><strong>Find a solution</strong><small>Explore guides and troubleshooting.</small></span><span class="it-help-shortcuts__arrow" aria-hidden="true">↓</span></a>
+    </nav>
+}
+else
+{
 <header class="section-hero">
     <div class="portal-container">
         <span class="portal-eyebrow">@(Model.Eyebrow ?? "Employee portal")</span>
@@ -14,17 +55,18 @@
                 <button type="submit">Search</button>
             </form>
         }
-        @if (Model.Title == "IT Help Center")
-        {
-            <div class="portal-cta-row" style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
-                <a class="portal-button" asp-controller="HelpIt" asp-action="Index">Submit an IT ticket <span aria-hidden="true">→</span></a>
-                <a class="portal-button portal-button--ghost" asp-controller="HelpIt" asp-action="Tracker">Track a ticket</a>
-            </div>
-        }
     </div>
 </header>
+}
 
-<section class="portal-container portal-listing">
+<section id="@(isHelpCenter ? "help-resources" : null)" class="portal-container portal-listing @(isHelpCenter ? "it-help-resources" : null)">
+    @if (isHelpCenter)
+    {
+        <header class="it-help-resources__heading">
+            <div><span class="it-help-eyebrow">A LITTLE GUIDANCE GOES A LONG WAY</span><h2>Help at your fingertips</h2><p>Practical answers for everyday IT questions.</p></div>
+            <span class="it-help-resources__label">SUPPORT LIBRARY <span aria-hidden="true">↙</span></span>
+        </header>
+    }
 
     @if (Model.AvailableTypes.Count > 1)
     {
@@ -49,7 +91,14 @@
     }
     @if (Model.Items.Count == 0 && Model.Services.Count == 0)
     {
-        <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No published resources found</h2><p>@(Model.Query != null ? "Try a different search term or browse one of the portal sections." : "Content will appear here after it has been reviewed and published.")</p><a asp-action="Index">Return to the employee portal</a></div>
+        @if (isHelpCenter)
+        {
+            <div class="it-help-library-empty"><span class="it-help-library-empty__mark" aria-hidden="true">?</span><div><h3>@(string.IsNullOrWhiteSpace(Model.SelectedType) ? "Need a hand? We’re here to help." : "No guides of this type yet.")</h3><p>Support guides will appear here as they’re published. You can submit a ticket whenever you need assistance.</p></div><a asp-controller="HelpIt" asp-action="Index">Ask IT for help <span aria-hidden="true">→</span></a></div>
+        }
+        else
+        {
+            <div class="portal-empty portal-empty--large"><span aria-hidden="true">○</span><h2>No published resources found</h2><p>@(Model.Query != null ? "Try a different search term or browse one of the portal sections." : "Content will appear here after it has been reviewed and published.")</p><a asp-action="Index">Return to the employee portal</a></div>
+        }
     }
     else
     {
