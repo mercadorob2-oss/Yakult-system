@@ -2,6 +2,18 @@
 @using Yakult.SystemsPortal.Extensions
 @{ Layout = "_PublicLayout"; ViewData["Title"] = "Services & Portals"; }
 @functions {
+    string PhilippineTime(DateTime value)
+    {
+        var utc = value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(value, DateTimeKind.Utc) : value.ToUniversalTime();
+        return TimeZoneInfo.ConvertTimeFromUtc(utc, TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila")).ToString("MMM d, yyyy h:mm tt");
+    }
+    string ActionLabel(PortalServiceActionViewModel action) => action.Kind switch
+    {
+        "Web" or "Login" => "Open application",
+        "Rdp" => "Remote Desktop",
+        _ => action.Label
+    };
+    string AccessType(PortalSystemLink system) => system.IsRdpDownload && system.IsInstallerDownload ? "Remote Desktop / Windows installer" : system.IsRdpDownload ? "Remote Desktop" : system.IsInstallerDownload ? "Windows installer" : "Web application";
     string ThemeClass(string theme) => theme.ToLowerInvariant() switch
     {
         "inventory" => "inventory",
@@ -25,11 +37,16 @@
     </div>
 </header>
 
-<main class="portal-container launcher-main">
+<section class="portal-container launcher-main services-directory" aria-label="Services and portals directory">
+    <div class="service-view-tabs" role="tablist" aria-label="Service display">
+        <button type="button" id="serviceListTab" role="tab" aria-selected="true" aria-controls="serviceViewPanel" data-service-view="list">☰ <span>List</span></button>
+        <button type="button" id="serviceCompactTab" role="tab" aria-selected="false" aria-controls="serviceViewPanel" tabindex="-1" data-service-view="compact">▦ <span>Compact squares</span></button>
+    </div>
+    <div id="serviceViewPanel" role="tabpanel" aria-labelledby="serviceListTab">
     <div class="service-directory-toolbar" aria-label="Find a service">
-        <label for="serviceDirectorySearch">Find a service</label>
+        <label for="serviceDirectorySearch">Find an available service</label>
         <div>
-            <input id="serviceDirectorySearch" type="search" autocomplete="off" placeholder="Search by service name, description, or type" />
+            <input id="serviceDirectorySearch" type="search" autocomplete="off" placeholder="Search name, description, or access type" />
             <select id="serviceDirectoryStatus" aria-label="Filter services by status">
                 <option value="all">All available services</option>
                 <option value="operational">Operational</option>
@@ -38,26 +55,32 @@
             </select>
         </div>
     </div>
-    <p class="service-directory-no-results" id="serviceDirectoryNoResults" hidden>No available services match your search. Try a different name or status.</p>
+    <div class="service-directory-results"><p id="serviceDirectoryResultCount" role="status" aria-live="polite">Showing @Model.ActiveSystems.Count of @Model.ActiveSystems.Count available services</p><button type="button" class="service-directory-reset" data-reset-service-filters>Clear filters</button></div>
+    <div class="service-directory-no-results" id="serviceDirectoryNoResults" hidden><strong>No available services match your search</strong><p>Try another name or status, or reset your filters.</p><button type="button" class="service-directory-reset" data-reset-service-filters>Show all available services</button></div>
     @if (Model.ActiveSystems.Count > 0)
     {
         <div class="service-directory-list" aria-label="Available employee applications">
             @foreach (var card in Model.ActiveSystems)
             {
                 var theme = ThemeClass(card.System.Theme);
-                <article class="service-directory-row service-directory-row--@theme" data-service-row data-service-state="@card.StatusKind" data-service-search="@($"{card.System.Name} {card.System.Description} {card.System.Badge} {card.StatusLabel}".ToLowerInvariant())">
+                <article class="service-directory-row service-directory-row--@theme" data-service-row data-service-state="@card.StatusKind" data-service-search="@($"{card.System.Name} {card.System.Description} {card.System.Badge} {card.StatusLabel} {AccessType(card.System)}".ToLowerInvariant())">
                     <span class="service-directory-row__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">@Html.IconSvg(card.System.Icon)</svg></span>
                     <div class="service-directory-row__body">
                         <small>@(string.IsNullOrWhiteSpace(card.System.Badge) ? "Yakult application" : card.System.Badge)</small>
                         <strong>@card.System.Name</strong>
                         <span>@card.System.Description</span>
+                        <span class="service-directory-row__access">@AccessType(card.System)</span>
                         @if (card.StatusKind == "maintenance" && card.System.MaintenanceEndUtc.HasValue)
                         {
-                            <p class="service-directory-row__timing">Expected availability: @card.System.MaintenanceEndUtc.Value.ToUniversalTime().ToString("MMM d, yyyy h:mm tt") UTC</p>
+                            <p class="service-directory-row__timing">Expected availability: @PhilippineTime(card.System.MaintenanceEndUtc.Value) PHT</p>
+                        }
+                        else if (card.StatusKind == "maintenance")
+                        {
+                            <p class="service-directory-row__timing">A return time has not been announced.</p>
                         }
                         @if (card.System.LastHealthCheckedAt.HasValue)
                         {
-                            <span class="service-directory-row__freshness">Last status check: @card.System.LastHealthCheckedAt.Value.ToUniversalTime().ToString("MMM d, yyyy h:mm tt") UTC</span>
+                            <span class="service-directory-row__freshness">Last status check: @PhilippineTime(card.System.LastHealthCheckedAt.Value) PHT</span>
                         }
                         @if (card.StatusKind == "maintenance" && !string.IsNullOrWhiteSpace(card.System.MaintenanceNote))
                         {
@@ -71,7 +94,7 @@
                             var requiresItConfirm = action.Kind is "Rdp" or "Installer";
                             if (action.IsEnabled)
                             {
-                                <a class="service-directory-action service-directory-action--@action.Kind.ToLowerInvariant()" data-track="Service" data-track-key="@($"{card.System.CardKey}:{action.Kind}")" data-it-launch="@(requiresItConfirm ? "true" : null)" data-it-launch-kind="@(requiresItConfirm ? action.Kind : null)" href="@action.Url" target="@(action.OpensNewWindow ? "_blank" : null)" rel="@(action.OpensNewWindow ? "noopener noreferrer" : null)">@(action.Kind == "Login" ? "Open application" : action.Label) <span aria-hidden="true">@(action.OpensNewWindow ? "↗" : "→")</span></a>
+                                <a class="service-directory-action service-directory-action--@action.Kind.ToLowerInvariant()" data-track="Service" data-track-key="@($"{card.System.CardKey}:{action.Kind}")" data-it-launch="@(requiresItConfirm ? "true" : null)" data-it-launch-kind="@(requiresItConfirm ? action.Kind : null)" href="@action.Url" target="@(action.OpensNewWindow ? "_blank" : null)" rel="@(action.OpensNewWindow ? "noopener noreferrer" : null)" aria-label="@($"{ActionLabel(action)}: {card.System.Name}{(action.OpensNewWindow ? " (opens in a new tab)" : "")}")">@ActionLabel(action) <span aria-hidden="true">@(action.OpensNewWindow ? "↗" : "→")</span></a>
                             }
                             else
                             {
@@ -113,6 +136,7 @@
             </div>
         </section>
     }
+    </div>
     <aside class="launcher-help">
         <div>
             <span class="launcher-help__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 2-3 4"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></span>
@@ -145,7 +169,7 @@
             </div>
         </form>
     </dialog>
-</main>
+</section>
 
 <script>
     (() => {
@@ -232,24 +256,58 @@
         const search = document.getElementById('serviceDirectorySearch');
         const status = document.getElementById('serviceDirectoryStatus');
         const noResults = document.getElementById('serviceDirectoryNoResults');
-        const rows = () => Array.from(document.querySelectorAll('[data-service-row]'));
+        const count = document.getElementById('serviceDirectoryResultCount');
+        const rows = Array.from(document.querySelectorAll('[data-service-row]'));
+        const directory = document.querySelector('.services-directory');
+        const viewPanel = document.getElementById('serviceViewPanel');
+        const viewTabs = Array.from(document.querySelectorAll('[data-service-view]'));
+        function setView(tab) {
+            directory.classList.toggle('services-directory--compact', tab.dataset.serviceView === 'compact');
+            viewTabs.forEach(item => {
+                const selected = item === tab;
+                item.setAttribute('aria-selected', String(selected));
+                item.tabIndex = selected ? 0 : -1;
+            });
+            viewPanel.setAttribute('aria-labelledby', tab.id);
+        }
+        viewTabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => setView(tab));
+            tab.addEventListener('keydown', event => {
+                let next;
+                if (event.key === 'ArrowRight') next = viewTabs[(index + 1) % viewTabs.length];
+                else if (event.key === 'ArrowLeft') next = viewTabs[(index + viewTabs.length - 1) % viewTabs.length];
+                else if (event.key === 'Home') next = viewTabs[0];
+                else if (event.key === 'End') next = viewTabs[viewTabs.length - 1];
+                if (!next) return;
+                event.preventDefault();
+                setView(next);
+                next.focus();
+            });
+        });
 
         function applyServiceFilters() {
-            const term = (search?.value || '').trim().toLowerCase();
+            const terms = (search?.value || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
             const selectedStatus = status?.value || 'all';
             let visible = 0;
-            rows().forEach(function (row) {
+            rows.forEach(function (row) {
                 const state = row.dataset.serviceState || 'other';
-                const matchesSearch = !term || (row.dataset.serviceSearch || '').includes(term);
+                const matchesSearch = terms.every(term => (row.dataset.serviceSearch || '').includes(term));
                 const matchesStatus = selectedStatus === 'all'
                     || state === selectedStatus
                     || (selectedStatus === 'other' && state !== 'operational' && state !== 'maintenance');
                 row.hidden = !(matchesSearch && matchesStatus);
                 if (!row.hidden) visible++;
             });
-            if (noResults) noResults.hidden = visible !== 0;
+            if (noResults) noResults.hidden = rows.length === 0 || visible !== 0;
+            if (count) count.textContent = `Showing ${visible} of ${rows.length} available services`;
         }
 
+        document.querySelectorAll('[data-reset-service-filters]').forEach(button => button.addEventListener('click', () => {
+            search.value = '';
+            status.value = 'all';
+            applyServiceFilters();
+            search.focus();
+        }));
         search?.addEventListener('input', applyServiceFilters);
         status?.addEventListener('change', applyServiceFilters);
         applyServiceFilters();

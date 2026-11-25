@@ -2,84 +2,178 @@
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = $"Ticket {Model.Ticket.TicketCode}";
-    string StatusPillClass(string status) => (status ?? string.Empty).Trim().ToLowerInvariant() switch
+    var ticket = Model.Ticket;
+    var status = ticket.Status.Trim().ToLowerInvariant();
+    var isResolved = status is "solved" or "closed";
+    var stage = isResolved ? 2 : status is "pending" or "open" ? 0 : 1;
+    var knownStatus = status is "pending" or "open" or "in progress" or "escalated" or "forwarded to repair" or "reopened" or "resolved (temporary)" or "solved" or "closed";
+    var tone = isResolved ? "success" : status is "escalated" or "reopened" or "resolved (temporary)" ? "attention" : "active";
+    var explanation = status switch
     {
-        "solved" or "resolved (temporary)" or "closed" => "is-operational",
-        "open" or "in progress" or "escalated" => "is-maintenance",
-        _ => "is-offline"
+        "pending" or "open" => "Your request is in the queue, awaiting IT action.",
+        "in progress" => "IT is working on your request. Check the activity below for updates.",
+        "escalated" => "Your request has been escalated for further attention.",
+        "forwarded to repair" => "Your request has been forwarded for repair. Follow its updates below.",
+        "reopened" => "Your request is open again and needs further IT attention.",
+        "resolved (temporary)" => "A temporary resolution is recorded. This is not a final resolution.",
+        "solved" => "Your request has been marked as solved. Review the latest activity for details.",
+        "closed" => "This ticket is closed. Review its details and activity below.",
+        _ => "Review the recorded status and latest activity for your request."
+    };
+    var events = Model.Timeline.OrderByDescending(item => item.OccurredAt).ToList();
+    var latestAt = events.Select(item => item.OccurredAt).Append(ticket.CreatedAt).Append(ticket.SolvedAt ?? ticket.CreatedAt).Max();
+    // SQL DATETIME2 timestamps are UTC but arrive with an unspecified Kind.
+    var displayZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Manila");
+    DateTime Utc(DateTime value) => value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(value, DateTimeKind.Utc) : value.ToUniversalTime();
+    string DisplayDate(DateTime value) => TimeZoneInfo.ConvertTimeFromUtc(Utc(value), displayZone).ToString("MMM d, yyyy · h:mm tt");
+    string ValueOrDash(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
+    string EventTitle(string title) => title switch
+    {
+        "Status updated" => "Status changed",
+        "AssignedToEmpId updated" or "AssignedTo updated" => "Assignment updated",
+        "Priority updated" => "Priority changed",
+        "NoteAdded updated" => "Note added",
+        "Created updated" => "Ticket created",
+        _ => System.Text.RegularExpressions.Regex.Replace(title, "(?<=[a-z0-9])(?=[A-Z])", " ")
     };
 }
-
-<section class="section-hero">
+<link rel="stylesheet" href="~/css/ticket-status.css" asp-append-version="true" />
+<section class="ticket-page" aria-labelledby="ticket-heading">
     <div class="portal-container">
-        <span class="portal-eyebrow">IT Help Center</span>
-        <h1>Ticket status</h1>
-        <p>Review the current status and updates for your Help IT request.</p>
-    </div>
-</section>
-
-<section class="portal-container help-it-detail" aria-labelledby="ticket-heading">
-    <div class="help-it-detail__topline">
-        <a class="article-back" asp-controller="HelpIt" asp-action="Tracker">← Back to ticket tracker</a>
-        <span class="admin-status-pill @StatusPillClass(Model.Ticket.Status)">@Model.Ticket.Status</span>
-    </div>
-    <div class="help-it-detail__grid">
-        <article class="help-it-card">
-            <div class="help-it-detail__heading">
-                <div>
-                    <span class="portal-eyebrow">Ticket</span>
-                    <h2 id="ticket-heading">@Model.Ticket.TicketCode</h2>
-                </div>
-                <span class="help-it-priority">@Model.Ticket.Priority priority</span>
+        <nav class="ticket-breadcrumb" aria-label="Breadcrumb"><a asp-controller="HelpIt" asp-action="Tracker">← Ticket tracker</a><span aria-hidden="true">/</span><span>Ticket status</span></nav>
+        <header class="ticket-header">
+            <div>
+                <span class="portal-eyebrow">IT Help Center</span>
+                <h1 id="ticket-heading">Ticket status</h1>
+                <div class="ticket-reference"><strong>@ticket.TicketCode</strong><button type="button" id="copy-ticket" data-code="@ticket.TicketCode" aria-label="Copy ticket code">Copy code</button><span id="copy-feedback" role="status" aria-live="polite"></span></div>
             </div>
-            <div class="help-it-detail__issue">
-                <span class="help-it-detail__label">Concern</span>
-                <p>@Model.Ticket.Issue</p>
+            <div class="ticket-actions">
+                <a class="portal-button portal-button--outline" href="@Url.RouteUrl("HelpItTicketDetails", new { ticketCode = ticket.TicketCode })">↻ Refresh status</a>
+                <button class="ticket-print" type="button" id="print-ticket">Print ticket</button>
             </div>
-            @if (TempData["HelpItNotificationMessage"] is string notificationMessage)
-            {
-                <p role="status">@notificationMessage</p>
-            }
-            <dl class="help-it-summary-grid">
-                @if (!string.IsNullOrWhiteSpace(Model.Ticket.Classification))
-                {
-                    <div><dt>Classification</dt><dd>@Model.Ticket.Classification</dd></div>
-                }
-                @if (!string.IsNullOrWhiteSpace(Model.Ticket.DeviceName))
-                {
-                    <div><dt>Device / application name</dt><dd>@Model.Ticket.DeviceName</dd></div>
-                }
-                <div><dt>Issue type</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.IssueType) ? "Not specified" : Model.Ticket.IssueType)</dd></div>
-                <div><dt>Caller</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.CallerName) ? "Not specified" : Model.Ticket.CallerName)</dd></div>
-                <div><dt>Company</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.Company) ? "—" : Model.Ticket.Company)</dd></div>
-                <div><dt>Department</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.Department) ? "—" : Model.Ticket.Department)</dd></div>
-                <div><dt>Branch</dt><dd>@(string.IsNullOrWhiteSpace(Model.Ticket.Branch) ? "—" : Model.Ticket.Branch)</dd></div>
-                <div><dt>Submitted</dt><dd>@Model.Ticket.CreatedAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</dd></div>
-                <div><dt>Solved</dt><dd>@(Model.Ticket.SolvedAt.HasValue ? Model.Ticket.SolvedAt.Value.ToLocalTime().ToString("MMM d, yyyy h:mm tt") : "Not yet solved")</dd></div>
-            </dl>
-        </article>
-
-        <aside class="help-it-card help-it-timeline" aria-labelledby="timeline-heading">
-            <div class="help-it-detail__heading">
-                <h2 id="timeline-heading">Updates</h2>
-                <span class="help-it-muted">@Model.Timeline.Count event@(Model.Timeline.Count == 1 ? "" : "s")</span>
+        </header>
+        @if (TempData["HelpItNotificationMessage"] is string notificationMessage)
+        {
+            <div class="ticket-notice" role="status">@notificationMessage</div>
+        }
+        <section class="ticket-status-card ticket-status-card--@tone" aria-labelledby="current-status-heading">
+            <div class="ticket-status-main">
+                <span class="ticket-status-symbol" aria-hidden="true">@(isResolved ? "✓" : "◷")</span>
+                <div><span class="ticket-label">Current status</span><h2 id="current-status-heading">@(string.IsNullOrWhiteSpace(ticket.Status) ? "Not specified" : ticket.Status)</h2><p>@explanation</p></div>
+                <span class="ticket-priority @(ticket.Priority is "High" or "Critical" ? "ticket-priority--high" : "")">@(string.IsNullOrWhiteSpace(ticket.Priority) ? "Priority not specified" : $"{ticket.Priority} priority")</span>
             </div>
-            @if (Model.Timeline.Count == 0)
+            @if (knownStatus)
             {
-                <div class="help-it-empty"><strong>No updates yet</strong><span>We’ll show ticket activity here as IT works on your request.</span></div>
-            }
-            else
-            {
-                <ol class="help-it-timeline__list">
-                    @foreach (var item in Model.Timeline)
+                <ol class="ticket-progress" aria-label="Current ticket stage, not a complete status history">
+                    @for (var i = 0; i < 3; i++)
                     {
-                        <li class="help-it-timeline__event help-it-timeline__event--@item.Kind">
-                            <span class="help-it-timeline__dot" aria-hidden="true"></span>
-                            <div><strong>@item.Title</strong><time datetime="@item.OccurredAt.ToUniversalTime().ToString("O")">@item.OccurredAt.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</time>@if (!string.IsNullOrWhiteSpace(item.Detail)) { <p>@item.Detail</p> }</div>
-                        </li>
+                        var label = i == 0 ? "Submitted" : i == 1 ? "IT handling" : "Resolved / closed";
+                        <li class="@(i <= stage ? "is-reached" : "") @(i == stage ? "is-current" : "")" aria-current="@(i == stage ? "step" : null)"><span aria-hidden="true">@(i < stage ? "✓" : (i + 1).ToString())</span><strong>@label</strong>@if (i == stage) { <small>Current stage</small> }</li>
                     }
                 </ol>
             }
-        </aside>
+            <div class="ticket-status-foot"><span>Latest recorded activity <strong>@DisplayDate(latestAt) PHT</strong></span><span>Refresh to check for new updates</span></div>
+        </section>
+        <div class="ticket-columns">
+            <div class="ticket-details-column">
+                <article class="ticket-panel" aria-labelledby="concern-heading">
+                    <div class="ticket-panel-heading"><span class="ticket-section-number" aria-hidden="true">01</span><h2 id="concern-heading">Your request</h2></div>
+                    <div class="ticket-concern">@ticket.Issue</div>
+                    <dl class="ticket-facts ticket-facts--request">
+                        <div><dt>Issue type</dt><dd>@ValueOrDash(ticket.IssueType)</dd></div>
+                        <div><dt>Classification</dt><dd>@ValueOrDash(ticket.Classification)</dd></div>
+                        @if (!string.IsNullOrWhiteSpace(ticket.DeviceName))
+                        {
+                            <div class="ticket-facts-wide"><dt>Device / application</dt><dd>@ticket.DeviceName</dd></div>
+                        }
+                    </dl>
+                </article>
+                <article class="ticket-panel" aria-labelledby="details-heading">
+                    <div class="ticket-panel-heading"><span class="ticket-section-number" aria-hidden="true">02</span><h2 id="details-heading">Ticket details</h2></div>
+                    <dl class="ticket-facts">
+                        <div><dt>Requested by</dt><dd>@ValueOrDash(ticket.CallerName)</dd></div>
+                        <div><dt>Company</dt><dd>@ValueOrDash(ticket.Company)</dd></div>
+                        <div><dt>Department</dt><dd>@ValueOrDash(ticket.Department)</dd></div>
+                        <div><dt>Branch</dt><dd>@ValueOrDash(ticket.Branch)</dd></div>
+                        <div><dt>Submitted</dt><dd><time datetime="@Utc(ticket.CreatedAt).ToString("O")">@DisplayDate(ticket.CreatedAt)</time></dd></div>
+                        <div><dt>@(status == "resolved (temporary)" ? "Temporary resolution recorded" : "Resolution recorded")</dt><dd>@(ticket.SolvedAt.HasValue ? DisplayDate(ticket.SolvedAt.Value) : "No resolution recorded")</dd></div>
+                    </dl>
+                    <p class="ticket-timezone">All times are in Philippine Time (PHT, UTC+8).</p>
+                </article>
+                <div class="ticket-help"><strong>Have a separate IT concern?</strong><p>Create a new ticket so IT can track each issue separately.</p><a asp-controller="HelpIt" asp-action="Index">Submit a new ticket <span aria-hidden="true">→</span></a></div>
+            </div>
+            <section class="ticket-panel ticket-activity" aria-labelledby="activity-heading">
+                <div class="ticket-panel-heading"><span class="ticket-section-number" aria-hidden="true">03</span><h2 id="activity-heading">Ticket activity</h2><span class="ticket-event-count">@events.Count</span></div>
+                <p class="ticket-activity-caption">Latest updates first <span aria-hidden="true">·</span> Philippine Time</p>
+                @if (events.Count == 0)
+                {
+                    <div class="ticket-empty"><span aria-hidden="true">◷</span><h3>No activity recorded yet</h3><p>Your ticket details are shown on this page. Updates will appear here as they are recorded.</p></div>
+                }
+                else
+                {
+                    <ol class="ticket-events" id="ticket-events">
+                        @for (var index = 0; index < events.Count; index++)
+                        {
+                            var item = events[index];
+                            <li class="ticket-event @(index == 0 ? "ticket-event--latest" : "")">
+                                <span class="ticket-event-dot" aria-hidden="true"></span>
+                                <div class="ticket-event-body">
+                                    @if (index == 0) { <span class="ticket-latest-label">Latest update</span> }
+                                    <h3>@EventTitle(item.Title)</h3>
+                                    <time datetime="@Utc(item.OccurredAt).ToString("O")">@DisplayDate(item.OccurredAt)</time>
+                                    @if (!string.IsNullOrWhiteSpace(item.Detail)) { <p>@item.Detail</p> }
+                                </div>
+                            </li>
+                        }
+                    </ol>
+                    @if (events.Count > 10)
+                    {
+                        <div class="ticket-history-controls" id="ticket-history-controls" hidden>
+                            <span id="ticket-history-count" role="status" aria-live="polite"></span>
+                            <button type="button" id="ticket-history-more" aria-controls="ticket-events">Show older updates</button>
+                        </div>
+                    }
+                }
+            </section>
+        </div>
     </div>
 </section>
+@section Scripts {
+    <script>
+        (() => {
+            const copyButton = document.getElementById('copy-ticket');
+            copyButton.addEventListener('click', async () => {
+                const feedback = document.getElementById('copy-feedback');
+                try {
+                    await navigator.clipboard.writeText(copyButton.dataset.code);
+                    feedback.textContent = 'Code copied';
+                } catch {
+                    feedback.textContent = 'Select the ticket code to copy it.';
+                }
+            });
+            document.getElementById('print-ticket').addEventListener('click', () => window.print());
+            const historyControls = document.getElementById('ticket-history-controls');
+            if (historyControls) {
+                const entries = Array.from(document.querySelectorAll('#ticket-events > li'));
+                const moreButton = document.getElementById('ticket-history-more');
+                const historyCount = document.getElementById('ticket-history-count');
+                let shown = 10;
+                const updateHistory = () => {
+                    entries.forEach((entry, index) => { entry.hidden = index >= shown; });
+                    historyCount.textContent = `Showing ${Math.min(shown, entries.length)} of ${entries.length} updates`;
+                    moreButton.hidden = shown >= entries.length;
+                };
+                moreButton.addEventListener('click', () => {
+                    const firstNewEntry = entries[shown];
+                    shown += 10;
+                    updateHistory();
+                    // Keep keyboard navigation at the newly revealed activity.
+                    firstNewEntry.tabIndex = -1;
+                    firstNewEntry.focus({ preventScroll: true });
+                });
+                updateHistory();
+                historyControls.hidden = false;
+            }
+        })();
+    </script>
+}
