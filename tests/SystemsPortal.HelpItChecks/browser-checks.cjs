@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const base = 'http://127.0.0.1:5194';
-const output = path.resolve('artifacts/help-it');
+const output = path.resolve('artifacts/help-it-domain-login');
 
 (async () => {
     fs.mkdirSync(output, { recursive: true });
@@ -14,9 +14,71 @@ const output = path.resolve('artifacts/help-it');
         await page.request.post(base + '/fixture/reset');
         const errors = [];
         page.on('pageerror', e => errors.push(e.message));
+        await page.goto(base + '/Public/Help');
+        const helpPageUrl = page.url();
+        const loginDialog = page.getByRole('dialog', { name: 'Log in to submit a ticket' });
+        assert.equal(await loginDialog.count(), 0);
+        await page.getByRole('link', { name: 'Submit an IT ticket' }).click();
+        await loginDialog.waitFor({ state: 'visible' });
+        assert.equal(page.url(), helpPageUrl);
+        assert.match(await page.locator('h1').innerText(), /Less downtime/);
+        const domainLogin = page.getByRole('link', { name: 'Log in with your domain account' });
+        assert.match(await domainLogin.getAttribute('href'), /\/Home\/WindowsLogin\?returnUrl=/);
+        assert.equal(await page.locator('#helpItTicketForm').count(), 0);
+        const checkDialogCentered = async () => {
+            const bounds = await loginDialog.boundingBox();
+            const viewport = page.viewportSize();
+            assert.ok(Math.abs(bounds.x + bounds.width / 2 - viewport.width / 2) < 2);
+            assert.ok(Math.abs(bounds.y + bounds.height / 2 - viewport.height / 2) < 2);
+        };
+        await checkDialogCentered();
+        await page.screenshot({ path: path.join(output, 'desktop-login.png'), fullPage: true });
+        await page.setViewportSize({ width: 390, height: 844 });
+        await checkDialogCentered();
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+        await page.screenshot({ path: path.join(output, 'mobile-login.png'), fullPage: true });
+        await page.setViewportSize({ width: 1440, height: 1100 });
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#ticketLoginDialog').isVisible(), false);
+        await page.getByRole('link', { name: 'Submit an IT ticket' }).click();
+        await page.getByRole('button', { name: 'Close login dialog' }).click();
+        assert.equal(page.url(), helpPageUrl);
+        assert.equal(await page.locator('#ticketLoginDialog').isVisible(), false);
         await page.goto(base + '/HelpIt');
+        await loginDialog.waitFor({ state: 'visible' });
+        assert.match(page.url(), /\/Public\/Help$/);
+        const checkBlocked = async () => {
+            const csrf = (await (await page.request.get(base + '/fixture/antiforgery')).json()).token;
+            for (const action of ['Create', 'ResolveContactEmail']) {
+                const blocked = await page.request.post(base + '/HelpIt/' + action, {
+                    form: { __RequestVerificationToken: csrf, ConfirmedSubmission: 'true', Issue: 'Must not be saved' },
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                assert.equal(blocked.status(), 401);
+                assert.equal((await blocked.json()).loginUrl, '/HelpIt/Login');
+            }
+            assert.deepEqual(await (await page.request.get(base + '/fixture/state')).json(), { created: 0, notifications: 0 });
+        };
+        await checkBlocked();
+        const blockedFormToken = (await (await page.request.get(base + '/fixture/antiforgery')).json()).token;
+        const blockedForm = await page.request.post(base + '/HelpIt/Create', {
+            form: { __RequestVerificationToken: blockedFormToken }, maxRedirects: 0
+        });
+        assert.equal(blockedForm.status(), 302);
+        assert.equal(blockedForm.headers().location, '/HelpIt/Login');
+        await page.goto(base + '/HelpIt/Tracker');
+        assert.equal(await page.locator('h1').count(), 1);
+        await page.request.post(base + '/fixture/login/portal');
+        await page.goto(base + '/HelpIt');
+        await loginDialog.waitFor({ state: 'visible' });
+        assert.match(page.url(), /\/Public\/Help$/);
+        await checkBlocked();
+        await page.request.post(base + '/fixture/login/domain');
+        await page.goto(base + '/HelpIt/Login');
+        assert.doesNotMatch(page.url(), /\/Login$/);
         assert.equal(await page.locator('#classification').isDisabled(), true);
-        await page.locator('#callerNameInput').fill('Example Employee');
+        assert.equal(await page.locator('#callerNameInput').count(), 0);
+        assert.match(await page.locator('.help-it-caller-summary').innerText(), /Example Domain Employee/);
         await page.locator('#companyId').selectOption('1');
         await page.locator('#departmentId').selectOption('2');
         await page.locator('#branchId').selectOption('3');
@@ -36,6 +98,7 @@ const output = path.resolve('artifacts/help-it');
         await page.locator('#helpItReviewConfirm').click();
         await page.locator('#helpItSuccessPanel').waitFor({ state: 'visible' });
         assert.equal(await page.locator('#helpItSuccessCode').innerText(), 'TCK-000001');
+        assert.match(await page.locator('#helpItSuccessPanel').innerText(), /Example Domain Employee/);
         assert.match(await page.locator('#helpItNotificationMessage').innerText(), /notified/);
         await page.screenshot({ path: path.join(output, 'desktop-success.png') });
         await page.locator('#helpItSuccessClose').click();
@@ -43,8 +106,8 @@ const output = path.resolve('artifacts/help-it');
         assert.equal(await page.locator('#helpItSuccessPanel').isVisible(), true);
         assert.deepEqual(await (await page.request.get(base + '/fixture/state')).json(), { created: 1, notifications: 1 });
         await page.locator('#helpItSuccessDetails').click();
-        assert.match(await page.locator('.help-it-summary-grid').innerText(), /Computer/);
-        assert.match(await page.locator('.help-it-summary-grid').innerText(), /YPI-TEST-PC001/);
+        assert.match(await page.locator('.ticket-facts--request').innerText(), /Computer/);
+        assert.match(await page.locator('.ticket-facts--request').innerText(), /YPI-TEST-PC001/);
 
         await page.goto(base + '/HelpIt');
         const token = await page.locator('#helpItTicketForm input[name="__RequestVerificationToken"]').inputValue();
@@ -84,7 +147,6 @@ const output = path.resolve('artifacts/help-it');
         assert.equal(await mobile.locator('#deviceName').getAttribute('required'), null);
         assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
         await mobile.screenshot({ path: path.join(output, 'mobile-form.png'), fullPage: true });
-        await mobile.locator('#callerNameInput').fill('Example Employee');
         await mobile.locator('#companyId').selectOption('1');
         await mobile.locator('#departmentId').selectOption('2');
         await mobile.locator('#classification').selectOption('Internet');
@@ -96,6 +158,14 @@ const output = path.resolve('artifacts/help-it');
         await mobile.keyboard.press('Escape');
         assert.equal(await mobile.locator('#helpItReviewDialog').isHidden(), true);
         assert.deepEqual(errors, []);
-        console.log('PASS: desktop/mobile form, review and explicit confirmation, detail display, duplicate click protection, validation, missing schema, and nonfatal email failure.');
+        await page.request.post(base + '/fixture/login/linked');
+        await page.goto(base + '/HelpIt');
+        assert.equal(await page.locator('#helpItTicketForm').count(), 1);
+        assert.equal(await page.locator('#companyId').count(), 0);
+        await page.request.post(base + '/fixture/logout');
+        await page.goto(base + '/HelpIt');
+        await loginDialog.waitFor({ state: 'visible' });
+        assert.match(page.url(), /\/Public\/Help$/);
+        console.log('PASS: ticket links open a dismissible domain-login dialog without leaving the existing UI; direct access and submissions remain gated; domain access, desktop/mobile submission, validation, and email failure handling pass.');
     } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

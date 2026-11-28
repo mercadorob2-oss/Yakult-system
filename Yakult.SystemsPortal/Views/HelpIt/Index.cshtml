@@ -701,6 +701,14 @@
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 var payload = await response.json().catch(function () { return {}; });
+                if (response.status === 401 && payload.loginUrl) {
+                    if (window.showTicketLoginDialog) window.showTicketLoginDialog();
+                    else window.location.assign(payload.loginUrl);
+                    confirmed.value = 'false';
+                    confirmButton.disabled = false;
+                    confirmButton.innerHTML = 'Confirm &amp; submit ticket <span aria-hidden="true">→</span>';
+                    return;
+                }
                 if (!response.ok) throw new Error(payload.error || 'Unable to submit the ticket right now.');
                 showSuccess(payload);
             } catch (error) {

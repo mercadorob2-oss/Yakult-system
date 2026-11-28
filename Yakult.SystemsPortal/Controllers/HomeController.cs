@@ -89,7 +89,7 @@ public sealed class HomeController : Controller
             _logger.LogWarning("Windows sign-in rejected for an identity outside the allowed domains: {IdentityName}", identityName);
             await LogWindowsSignInAuditAsync(identityName, null, succeeded: false, "Account domain is not allowed.");
             TempData["WindowsLoginError"] = "Your Windows account is not in an approved Yakult domain. Contact IT.";
-            return RedirectToAction(nameof(Login), new { returnUrl });
+            return RedirectAfterWindowsLoginFailure(returnUrl);
         }
 
         try
@@ -101,7 +101,7 @@ public sealed class HomeController : Controller
             {
                 await LogWindowsSignInAuditAsync(identityName, null, succeeded: false, "Windows account identifier was unavailable.");
                 TempData["WindowsLoginError"] = "Windows did not provide a security identifier for this account. Contact IT.";
-                return RedirectToAction(nameof(Login), new { returnUrl });
+                return RedirectAfterWindowsLoginFailure(returnUrl);
             }
 
             var result = await _userRepository.AuthenticateWindowsAccountAsync(securityIdentifier);
@@ -137,10 +137,10 @@ public sealed class HomeController : Controller
             {
                 await LogWindowsSignInAuditAsync(identityName, null, succeeded: false, "Windows sign-in was rejected by portal account validation.");
                 TempData["WindowsLoginError"] = result.ErrorMessage ?? "Unable to sign in with this Yakult portal account.";
-                return RedirectToAction(nameof(Login), new { returnUrl });
+                return RedirectAfterWindowsLoginFailure(returnUrl);
             }
 
-            await SignInPortalUserAsync(result, rememberMe: false);
+            await SignInPortalUserAsync(result, rememberMe: false, domainAuthenticated: true);
             await LogWindowsSignInAuditAsync(identityName, result.UserId, succeeded: true, "Linked Windows account sign-in succeeded.");
             if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return LocalRedirect(returnUrl);
@@ -151,8 +151,16 @@ public sealed class HomeController : Controller
             _logger.LogError(ex, "Windows sign-in failed for identity {IdentityName}", identityName);
             await LogWindowsSignInAuditAsync(identityName, null, succeeded: false, "Windows sign-in processing failed.");
             TempData["WindowsLoginError"] = "Unable to sign in with your Windows account right now. Please contact IT.";
-            return RedirectToAction(nameof(Login), new { returnUrl });
+            return RedirectAfterWindowsLoginFailure(returnUrl);
         }
+    }
+
+    private IActionResult RedirectAfterWindowsLoginFailure(string? returnUrl)
+    {
+        var ticketFormUrl = Url.Action(nameof(HelpItController.Index), "HelpIt");
+        return string.Equals(returnUrl, ticketFormUrl, StringComparison.OrdinalIgnoreCase)
+            ? RedirectToAction(nameof(HelpItController.Login), "HelpIt")
+            : RedirectToAction(nameof(Login), new { returnUrl });
     }
 
     private async Task LogWindowsSignInAuditAsync(string identityName, int? userId, bool succeeded, string notes)
@@ -641,7 +649,7 @@ public sealed class HomeController : Controller
         }
     }
 
-    private async Task SignInPortalUserAsync(AuthResult result, bool rememberMe)
+    private async Task SignInPortalUserAsync(AuthResult result, bool rememberMe, bool domainAuthenticated = false)
     {
         var claims = new List<Claim>
         {
@@ -649,6 +657,9 @@ public sealed class HomeController : Controller
             new Claim(ClaimTypes.Name, result.Name),
             new Claim(ClaimTypes.Email, result.Email)
         };
+
+        if (domainAuthenticated)
+            claims.Add(new Claim("DomainAuthenticated", "true"));
 
         foreach (var role in result.Roles)
         {

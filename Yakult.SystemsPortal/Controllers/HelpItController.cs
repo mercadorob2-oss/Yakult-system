@@ -9,17 +9,13 @@ using Yakult.SystemsPortal.Services;
 namespace Yakult.SystemsPortal.Controllers;
 
 /// <summary>
-/// Public-facing "Help IT" ticketing feature: lets anyone submit IT support tickets
+/// Employee "Help IT" ticketing feature: lets domain-authenticated employees submit IT support tickets
 /// that land in the same dbo.CallTicket queue used by the ITCM desktop app, and
 /// track their status. Tickets are created unassigned; assignment and status
 /// changes remain exclusively in the desktop app.
 ///
-/// NOTE: the pages and submission endpoint are intentionally anonymous-accessible
-/// (no portal login required) per product decision. This means submissions from
-/// anonymous visitors carry no verified employee identity - CallerName is
-/// whatever the visitor types in, and CreatedByUserId is null. There is currently
-/// no rate limiting/CAPTCHA on ticket creation, so this endpoint is exposed to
-/// spam/abuse without additional protections.
+/// Submission and contact lookup require a verified domain sign-in. Tracking
+/// and ticket details remain accessible without signing in.
 /// </summary>
 [AllowAnonymous]
 public sealed class HelpItController : Controller
@@ -47,14 +43,40 @@ public sealed class HelpItController : Controller
     [HttpGet]
     public async Task<IActionResult> Index()
     {
+        if (RequireDomainLogin() is { } loginRequired) return loginRequired;
         ViewData["Title"] = "Help IT";
         return View(await BuildSubmitViewModelAsync());
+    }
+
+    [HttpGet]
+    public IActionResult Login()
+    {
+        if (HasDomainLogin()) return RedirectToAction(nameof(Index));
+        return RedirectToAction("Help", "Public", new { ticketLogin = "true" });
+    }
+
+    private bool HasDomainLogin() => User.Identity?.IsAuthenticated == true
+        && (User.HasClaim("AuthenticationSource", "ActiveDirectory")
+            || User.HasClaim("DomainAuthenticated", "true"));
+
+    private IActionResult? RequireDomainLogin()
+    {
+        if (HasDomainLogin()) return null;
+        var loginUrl = Url.Action(nameof(Login), "HelpIt");
+        return IsDialogSubmission()
+            ? StatusCode(StatusCodes.Status401Unauthorized, new
+            {
+                error = "Log in to your domain account to submit a ticket.",
+                loginUrl
+            })
+            : RedirectToAction(nameof(Login));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ResolveContactEmail(int? companyId, int? departmentId, int? branchId)
     {
+        if (RequireDomainLogin() is { } loginRequired) return loginRequired;
         if (!companyId.HasValue || (!departmentId.HasValue && !branchId.HasValue))
             return BadRequest(new { error = "Select a company and a department or branch first." });
 
@@ -78,6 +100,7 @@ public sealed class HelpItController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateHelpItTicketRequest request)
     {
+        if (RequireDomainLogin() is { } loginRequired) return loginRequired;
         ViewData["Title"] = "Help IT";
 
         // A normal form post is intentionally not enough to create a ticket. The
@@ -117,11 +140,10 @@ public sealed class HelpItController : Controller
                 request.IssueType, request.Classification, request.DeviceName, request.Issue).Length > 2000)
             return await SubmissionFailureAsync(request, "Please shorten the concern so the complete ticket fits within 2,000 characters.");
 
-        var isAuthenticated = User.Identity?.IsAuthenticated == true;
         var isIndependentAdUser = User.HasClaim("AuthenticationSource", "ActiveDirectory");
         var (companyId, departmentId, branchId, sessionCallerName, userId) = GetCurrentUserContext();
 
-        if (!isAuthenticated || isIndependentAdUser)
+        if (isIndependentAdUser)
         {
             if (!request.CompanyId.HasValue
                 || (!request.DepartmentId.HasValue && !request.BranchId.HasValue))
@@ -148,9 +170,7 @@ public sealed class HelpItController : Controller
             branchId = selectedOrganization.BranchId;
         }
 
-        var callerName = isAuthenticated
-            ? sessionCallerName
-            : (request.CallerNameInput ?? string.Empty).Trim();
+        var callerName = sessionCallerName;
 
         if (string.IsNullOrWhiteSpace(callerName))
         {

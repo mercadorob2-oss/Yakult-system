@@ -45,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -71,12 +72,18 @@ import com.example.yakultscanner.api.ApiClient
 import com.example.yakultscanner.api.ApiResult
 import com.example.yakultscanner.api.SerialLookupItemDto
 import com.example.yakultscanner.api.safeApiCall
+import com.example.yakultscanner.data.model.DispatchItem
+import com.google.gson.Gson
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 private sealed interface DispatchItemDetailsUiState {
     data object Loading : DispatchItemDetailsUiState
-    data class Success(val item: SerialLookupItemDto) : DispatchItemDetailsUiState
+    data class Success(
+        val item: SerialLookupItemDto,
+        val fromDispatch: Boolean = false,
+        val lookupMessage: String? = null
+    ) : DispatchItemDetailsUiState
     data object NotFound : DispatchItemDetailsUiState
     data class Error(val message: String) : DispatchItemDetailsUiState
 }
@@ -99,16 +106,40 @@ fun DispatchItemDetailsScreen(
     serialNumber: String,
     setCode: String?,
     dispatchStatus: String?,
-    assignedEmployee: String?
+    assignedEmployee: String?,
+    dispatchItemJson: String? = null
 ) {
+    val dispatchItem = remember(dispatchItemJson) {
+        dispatchItemJson?.let { json ->
+            runCatching { Gson().fromJson(json, DispatchItem::class.java) }.getOrNull()
+        }
+    }
+    val lookupSerial = dispatchItem?.let { it.serialNumber?.trim().orEmpty() } ?: serialNumber.trim()
+    val dispatchDetails = remember(dispatchItem) {
+        dispatchItem?.let { item ->
+            SerialLookupItemDto(
+                itemId = item.id,
+                serialNumber = item.serialNumber,
+                name = item.description ?: item.type,
+                description = item.description,
+                modelNumber = item.modelNumber,
+                itemType = item.type,
+                category = item.category
+            )
+        }
+    }
     var reloadKey by remember { mutableIntStateOf(0) }
-    var uiState by remember(serialNumber) {
+    var uiState by remember(lookupSerial, dispatchItemJson) {
         mutableStateOf<DispatchItemDetailsUiState>(DispatchItemDetailsUiState.Loading)
     }
 
-    LaunchedEffect(serialNumber, reloadKey) {
+    LaunchedEffect(lookupSerial, dispatchItemJson, reloadKey) {
+        if (lookupSerial.isBlank() && dispatchDetails != null) {
+            uiState = DispatchItemDetailsUiState.Success(dispatchDetails, fromDispatch = true)
+            return@LaunchedEffect
+        }
         uiState = DispatchItemDetailsUiState.Loading
-        uiState = when (val result = safeApiCall { ApiClient.service.serialLookup(serialNumber) }) {
+        val resultState = when (val result = safeApiCall { ApiClient.service.serialLookup(lookupSerial) }) {
             is ApiResult.Success -> {
                 val item = result.data.item
                 if (result.data.found && item != null) {
@@ -126,6 +157,18 @@ fun DispatchItemDetailsScreen(
             is ApiResult.UnknownError -> DispatchItemDetailsUiState.Error(
                 result.message ?: "We couldn't load this inventory item."
             )
+        }
+        uiState = if (dispatchDetails != null && resultState !is DispatchItemDetailsUiState.Success) {
+            DispatchItemDetailsUiState.Success(
+                dispatchDetails,
+                fromDispatch = true,
+                lookupMessage = when (resultState) {
+                    is DispatchItemDetailsUiState.Error -> resultState.message
+                    else -> "No matching inventory record was found."
+                }
+            )
+        } else {
+            resultState
         }
     }
 
@@ -190,10 +233,14 @@ fun DispatchItemDetailsScreen(
             is DispatchItemDetailsUiState.Success -> {
                 DispatchItemDetailsContent(
                     item = state.item,
-                    serialNumber = serialNumber,
+                    serialNumber = lookupSerial,
                     setCode = setCode,
                     dispatchStatus = dispatchStatus,
                     assignedEmployee = assignedEmployee,
+                    dispatchItem = dispatchItem,
+                    fromDispatch = state.fromDispatch,
+                    lookupMessage = state.lookupMessage,
+                    onRetryLookup = { reloadKey++ },
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -208,6 +255,10 @@ private fun DispatchItemDetailsContent(
     setCode: String?,
     dispatchStatus: String?,
     assignedEmployee: String?,
+    dispatchItem: DispatchItem?,
+    fromDispatch: Boolean,
+    lookupMessage: String?,
+    onRetryLookup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -216,7 +267,7 @@ private fun DispatchItemDetailsContent(
     val description = item.description?.trim()?.takeIf {
         it.isNotEmpty() && !it.equals(name, ignoreCase = true)
     }
-    val resolvedSerial = item.serialNumber.orDisplay(serialNumber)
+    val resolvedSerial = item.serialNumber.orDisplay(serialNumber.orDisplay("Not recorded"))
     val warranty = item.warrantyPresentation()
 
     Box(
@@ -247,12 +298,26 @@ private fun DispatchItemDetailsContent(
                 name = name,
                 description = description,
                 serialNumber = resolvedSerial,
-                active = item.active,
+                active = if (fromDispatch) null else item.active,
+                canCopySerial = !item.serialNumber.isNullOrBlank() || serialNumber.isNotBlank(),
                 onCopySerial = {
                     clipboardManager.setText(AnnotatedString(resolvedSerial))
                     Toast.makeText(context, "Serial number copied", Toast.LENGTH_SHORT).show()
                 }
             )
+
+            if (fromDispatch) {
+                DetailPanel(title = "Dispatch information", icon = Icons.Filled.Info, accent = DispatchRed) {
+                    Text(
+                        text = lookupMessage?.let { "$it Showing the details recorded in this dispatch." }
+                            ?: "Showing the details recorded in this dispatch. No serial number is recorded for this item.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (lookupMessage != null && serialNumber.isNotBlank()) {
+                        TextButton(onClick = onRetryLookup) { Text("Try loading inventory details again") }
+                    }
+                }
+            }
 
             QuickFacts(
                 itemType = item.itemType.orDisplay("Not encoded"),
@@ -262,10 +327,19 @@ private fun DispatchItemDetailsContent(
 
             InventoryOverview(item = item)
 
-            WarrantyPanel(
-                item = item,
-                presentation = warranty
-            )
+            if (!fromDispatch) {
+                WarrantyPanel(item = item, presentation = warranty)
+            }
+
+            dispatchItem?.let { dispatched ->
+                DetailPanel(title = "Item in this dispatch", icon = Icons.Filled.Inventory2, accent = DispatchRed) {
+                    DetailPairGrid("Quantity", dispatched.quantity.toString(), "Status", dispatched.status.orDisplay("Not recorded"))
+                    if (!dispatched.computerName.isNullOrBlank() || !dispatched.ipAddress.isNullOrBlank()) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f))
+                        DetailPairGrid("Computer name", dispatched.computerName.orDisplay("Not recorded"), "IP address", dispatched.ipAddress.orDisplay("Not recorded"))
+                    }
+                }
+            }
 
             DispatchContextPanel(
                 setCode = setCode.orDisplay("Not recorded"),
@@ -281,7 +355,8 @@ private fun ItemIdentityHero(
     name: String,
     description: String?,
     serialNumber: String,
-    active: Boolean,
+    active: Boolean?,
+    canCopySerial: Boolean,
     onCopySerial: () -> Unit
 ) {
     Card(
@@ -340,14 +415,14 @@ private fun ItemIdentityHero(
                         )
                     }
                 }
-                AssetStatusPill(active = active)
+                active?.let { AssetStatusPill(active = it) }
             }
 
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .clickable(onClick = onCopySerial),
+                    .clickable(enabled = canCopySerial, onClick = onCopySerial),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.64f),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
@@ -357,7 +432,7 @@ private fun ItemIdentityHero(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Icon(
+                    if (canCopySerial) Icon(
                         imageVector = Icons.Filled.ContentCopy,
                         contentDescription = "Copy serial number",
                         modifier = Modifier.size(18.dp),
@@ -375,7 +450,7 @@ private fun ItemIdentityHero(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    Text(
+                    if (canCopySerial) Text(
                         text = "COPY",
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
                         color = DispatchRed
