@@ -505,15 +505,14 @@ fun DispatchDetailsScreen(
                         itemEdits = itemEdits,
                         onItemEditChange = viewModel::updateItemEdit,
                         onOpenItemDetails = { item ->
-                            val serial = item.serialNumber?.trim().orEmpty()
-                            if (serial.isNotEmpty()) {
-                                val setCode = displaySet.setCode?.trim().orEmpty()
-                                val status = displaySet.status?.trim().orEmpty()
-                                val employee = displaySet.employee?.trim().orEmpty()
-                                navController.navigate(
-                                    "dispatch_item_details/${android.net.Uri.encode(serial)}?setCode=${android.net.Uri.encode(setCode)}&dispatchStatus=${android.net.Uri.encode(status)}&employee=${android.net.Uri.encode(employee)}"
-                                )
-                            }
+                            val serial = item.serialNumber?.trim().orEmpty().ifBlank { "_" }
+                            val setCode = displaySet.setCode?.trim().orEmpty()
+                            val status = displaySet.status?.trim().orEmpty()
+                            val employee = displaySet.employee?.trim().orEmpty()
+                            val itemJson = com.google.gson.Gson().toJson(item)
+                            navController.navigate(
+                                "dispatch_item_details/${android.net.Uri.encode(serial)}?setCode=${android.net.Uri.encode(setCode)}&dispatchStatus=${android.net.Uri.encode(status)}&employee=${android.net.Uri.encode(employee)}&item=${android.net.Uri.encode(itemJson)}"
+                            )
                         },
                         modifier = Modifier.padding(paddingValues),
                         registerDispatcherSignatureView = { dispatcherSignatureView = it },
@@ -1103,7 +1102,7 @@ fun DispatchDetailsContent(
                 item = item,
                 editState = editState,
                 onReportIssueClick = { selected -> activeIssueEditState = selected },
-                onOpenDetails = if (item.serialNumber.isNullOrBlank()) null else { { onOpenItemDetails(item) } },
+                onOpenDetails = { onOpenItemDetails(item) },
                 readOnly = readOnly || hasUploadedRecord,
                 processedUpdate = processedUpdate
             )
@@ -1137,7 +1136,7 @@ fun DispatchDetailsContent(
                     item = item,
                     editState = editState,
                     onReportIssueClick = { },
-                    onOpenDetails = if (item.serialNumber.isNullOrBlank()) null else { { onOpenItemDetails(item) } },
+                    onOpenDetails = { onOpenItemDetails(item) },
                     readOnly = true,
                     processedUpdate = processedUpdate
                 )
@@ -1785,7 +1784,8 @@ fun ItemCard(
                 item = item,
                 editState = editState,
                 processedUpdate = processedUpdate,
-                showReportIssueHint = false
+                showReportIssueHint = false,
+                onOpenDetails = onOpenDetails
             )
         }
     } else {

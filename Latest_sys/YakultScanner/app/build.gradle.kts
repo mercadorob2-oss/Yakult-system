@@ -14,7 +14,7 @@ android {
         applicationId = "com.example.yakultscanner"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
+        versionCode = 1coul
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

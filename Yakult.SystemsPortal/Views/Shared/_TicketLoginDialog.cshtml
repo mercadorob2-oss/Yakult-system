@@ -1,0 +1,127 @@
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    var needsDomainLogin = User.Identity?.IsAuthenticated != true
+        || !(User.HasClaim("AuthenticationSource", "ActiveDirectory") || User.HasClaim("DomainAuthenticated", "true"));
+    var autoOpen = Context.Request.Query["ticketLogin"] == "true";
+    var loginError = autoOpen ? TempData["WindowsLoginError"] as string : null;
+}
+<dialog id="ticketLoginDialog" class="ticket-login-dialog" aria-labelledby="ticketLoginTitle" aria-describedby="ticketLoginDescription">
+    <header class="ticket-login-dialog__header">
+        <form method="dialog" class="ticket-login-dialog__close-form">
+            <button type="submit" class="ticket-login-dialog__close" aria-label="Close login dialog">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+            </button>
+        </form>
+        <div class="ticket-login-dialog__identity">
+            <span class="ticket-login-dialog__symbol" aria-hidden="true">
+                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 10 4v8c0 7-10 14-10 14S6 22 6 15V7l10-4Z" /><rect x="11" y="13" width="10" height="8" rx="2" /><path d="M13 13v-2a3 3 0 0 1 6 0v2m-3 3v2" /></svg>
+            </span>
+            <div><span class="ticket-login-dialog__eyebrow">YAKULT EMPLOYEE PORTAL</span><span class="ticket-login-dialog__service">IT Help Center</span></div>
+        </div>
+        <h2 id="ticketLoginTitle">Log in to<br /><span>submit a ticket.</span></h2>
+        <p id="ticketLoginDescription">A quick sign-in helps IT identify you and follow up on your request.</p>
+    </header>
+    <div class="ticket-login-dialog__body">
+        <span class="ticket-login-dialog__label">HERE’S WHAT HAPPENS NEXT</span>
+        <ol class="ticket-login-dialog__steps">
+            <li><span class="ticket-login-dialog__step-number" aria-hidden="true">01</span><div><strong>Sign in with your domain account</strong><p>Use the Yakult Windows account signed in on this computer.</p></div></li>
+            <li><span class="ticket-login-dialog__step-number" aria-hidden="true">02</span><div><strong>Tell us what needs attention</strong><p>You’ll go straight to the ticket form after signing in.</p></div></li>
+        </ol>
+        @if (!string.IsNullOrWhiteSpace(loginError))
+        {
+            <p class="ticket-login-dialog__error" role="alert">@loginError</p>
+        }
+        @if (Configuration.GetValue<bool>("WindowsAuthentication:Enabled"))
+        {
+            <a class="portal-button ticket-login-dialog__login" asp-controller="Home" asp-action="WindowsLogin" asp-route-returnUrl="@Url.Action("Index", "HelpIt")">
+                <svg class="ticket-login-dialog__windows" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M2 3h9v8H2zM13 3h9v8h-9zM2 13h9v8H2zM13 13h9v8h-9z" /></svg>
+                <span>Log in with your domain account</span>
+                <svg class="ticket-login-dialog__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6" /></svg>
+            </a>
+        }
+        else
+        {
+            <p class="ticket-login-dialog__error" role="alert">Domain sign-in is currently unavailable. Please contact IT Support directly.</p>
+        }
+        <p class="ticket-login-dialog__hint">Your ticket is created only after you review and submit it.</p>
+    </div>
+    <footer class="ticket-login-dialog__footer"><span>Already have a ticket?</span><a asp-controller="HelpIt" asp-action="Tracker">Track its status <span aria-hidden="true">→</span></a></footer>
+</dialog>
+<style>
+    .ticket-login-dialog { position: fixed; inset: 0; margin: auto; box-sizing: border-box; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 0; border: 1px solid rgba(255,255,255,.7); border-radius: 24px; background: #fff; color: #14263c; box-shadow: 0 32px 100px rgba(15,23,42,.28); }
+    .ticket-login-dialog::backdrop { background: rgba(15,26,42,.58); backdrop-filter: blur(5px); }
+    .ticket-login-dialog__header { position: relative; overflow: hidden; padding: 32px 36px 28px; border-bottom: 1px solid #f0e5e2; background: radial-gradient(ellipse at 100% 0, #f9dad7 0, transparent 65%), linear-gradient(120deg, #fffaf6, #fff3f1); }
+    .ticket-login-dialog__identity { display: flex; align-items: center; gap: 12px; padding-right: 24px; }
+    .ticket-login-dialog__symbol { display: grid; place-items: center; flex: 0 0 46px; height: 46px; border: 1px solid #efd2ce; border-radius: 14px; color: #ac1c24; background: rgba(255,255,255,.8); box-shadow: 0 4px 12px #9c30200a; }
+    .ticket-login-dialog__symbol svg { width: 30px; height: 30px; }
+    .ticket-login-dialog__eyebrow { display: block; color: #963b3d; font-size: .59rem; font-weight: 800; letter-spacing: .12em; }
+    .ticket-login-dialog__service { display: block; margin-top: 4px; color: #463d42; font-size: .83rem; font-weight: 700; }
+    .ticket-login-dialog h2 { margin: 24px 0 12px; color: #14263c; font-size: 2rem; font-weight: 750; line-height: 1.14; letter-spacing: -.035em; }
+    .ticket-login-dialog h2 span { color: #b51822; }
+    .ticket-login-dialog p { margin: 0; color: #657080; line-height: 1.65; }
+    .ticket-login-dialog__header > p { max-width: 360px; font-size: .86rem; }
+    .ticket-login-dialog__body { padding: 26px 36px 24px; }
+    .ticket-login-dialog__label { color: #7b818a; font-size: .59rem; font-weight: 800; letter-spacing: .12em; }
+    .ticket-login-dialog__steps { list-style: none; margin: 18px 0 24px; padding: 0; }
+    .ticket-login-dialog__steps li { position: relative; display: flex; gap: 13px; padding-bottom: 22px; }
+    .ticket-login-dialog__steps li:last-child { padding-bottom: 0; }
+    .ticket-login-dialog__steps li:first-child::after { content: ''; position: absolute; width: 1px; background: #e6e9ed; top: 36px; bottom: 6px; left: 15px; }
+    .ticket-login-dialog__step-number { display: grid; place-items: center; flex: 0 0 31px; height: 31px; border: 1px solid #eadbd9; border-radius: 50%; background: #fff8f6; color: #ad2630; font-size: .64rem; font-weight: 800; }
+    .ticket-login-dialog__steps strong { display: block; margin: 1px 0 4px; color: #25364b; font-size: .83rem; font-weight: 750; }
+    .ticket-login-dialog__steps p { font-size: .76rem; }
+    .ticket-login-dialog .ticket-login-dialog__login { display: flex; gap: 12px; width: 100%; box-sizing: border-box; min-height: 54px; padding: 14px 16px; border: 1px solid #ce1720; border-radius: 11px; background: #d71920; color: #fff; font-size: .78rem; font-weight: 750; box-shadow: 0 5px 12px #b518221c; text-decoration: none; }
+    .ticket-login-dialog .ticket-login-dialog__login:hover { background: #b51822; border-color: #b51822; }
+    .ticket-login-dialog__windows { flex: 0 0 20px; height: 20px; }
+    .ticket-login-dialog__login > span { flex: 1; }
+    .ticket-login-dialog__arrow { flex: 0 0 18px; height: 18px; }
+    .ticket-login-dialog .ticket-login-dialog__hint { margin: 12px auto 0; max-width: 330px; font-size: .67rem; text-align: center; color: #737b87; }
+    .ticket-login-dialog__footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 7px; padding: 17px 24px; border-top: 1px solid #edf0f3; background: #f8fafc; font-size: .72rem; color: #687487; }
+    .ticket-login-dialog .ticket-login-dialog__footer a { color: #a51c25; font-weight: 750; text-decoration: none; }
+    .ticket-login-dialog__footer a:hover { text-decoration: underline; }
+    .ticket-login-dialog__footer a span { margin-left: 5px; }
+    .ticket-login-dialog__close-form { position: absolute; right: 12px; top: 12px; }
+    .ticket-login-dialog__close { display: grid; place-items: center; width: 44px; height: 44px; padding: 11px; border: 0; border-radius: 50%; background: rgba(255,255,255,.5); color: #7b5558; cursor: pointer; }
+    .ticket-login-dialog__close:hover { background: #fff; color: #a51c25; }
+    .ticket-login-dialog__close svg { width: 22px; height: 22px; }
+    .ticket-login-dialog :focus-visible { outline: 3px solid #a51c25; outline-offset: 3px; }
+    .ticket-login-dialog .ticket-login-dialog__error { margin-bottom: 16px; padding: 12px; border: 1px solid #fecaca; border-radius: 8px; color: #991b1b; background: #fef2f2; font-size: .8rem; }
+    body:has(.ticket-login-dialog[open]) { overflow: hidden; }
+    @@media (max-width: 480px) {
+        .ticket-login-dialog { border-radius: 20px; }
+        .ticket-login-dialog__header { padding: 26px 24px 24px; }
+        .ticket-login-dialog__body { padding: 22px 24px; }
+        .ticket-login-dialog h2 { font-size: 1.85rem; }
+        .ticket-login-dialog__eyebrow { font-size: .53rem; }
+        .ticket-login-dialog .ticket-login-dialog__login { gap: 9px; padding-inline: 12px; font-size: .72rem; }
+    }
+</style>
+<script>
+    (() => {
+        const dialog = document.getElementById('ticketLoginDialog');
+        const needsLogin = @Json.Serialize(needsDomainLogin);
+        const ticketPath = @Json.Serialize(Url.Action("Index", "HelpIt"));
+        const normalizePath = path => path.replace(/\/+$/, '').toLowerCase();
+        const ticketPaths = new Set([ticketPath, @Json.Serialize(Url.Content("~/HelpIt")), @Json.Serialize(Url.Content("~/HelpIt/Index"))].map(normalizePath));
+        window.showTicketLoginDialog = () => { if (!dialog.open) dialog.showModal(); };
+        document.addEventListener('click', event => {
+            if (!needsLogin || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+            const link = event.target.closest('a[href]');
+            if (!link) return;
+            const target = new URL(link.href, window.location.href);
+            if (target.origin !== window.location.origin || !ticketPaths.has(normalizePath(target.pathname))) return;
+            event.preventDefault();
+            window.showTicketLoginDialog();
+        });
+        dialog.addEventListener('click', event => {
+            if (event.target !== dialog) return;
+            const bounds = dialog.getBoundingClientRect();
+            if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
+        });
+        if (@Json.Serialize(autoOpen)) {
+            window.showTicketLoginDialog();
+            const current = new URL(window.location.href);
+            current.searchParams.delete('ticketLogin');
+            window.history.replaceState(null, '', current);
+        }
+    })();
+</script>

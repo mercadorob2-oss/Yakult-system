@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 using Microsoft.Extensions.Logging.Abstractions;
 using Yakult.SystemsPortal.Controllers;
 using Yakult.SystemsPortal.Models;
@@ -25,6 +29,7 @@ var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions { ContentRootPath = root, WebRootPath = Path.Combine(root, "wwwroot") });
 builder.Configuration.Sources.Clear();
 builder.Configuration.AddInMemoryCollection();
+builder.Configuration["WindowsAuthentication:Enabled"] = "true";
 builder.WebHost.UseUrls("http://127.0.0.1:5194");
 builder.Services.AddControllersWithViews().AddApplicationPart(typeof(HelpItController).Assembly);
 builder.Services.AddSingleton<IControllerActivator, FixtureActivator>();
@@ -34,7 +39,7 @@ builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();
 builder.Services.AddSingleton<IDemoModeService, DemoModeService>();
 builder.Services.Configure<PortalOptions>(_ => { });
-builder.Services.AddAuthentication().AddCookie();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
 builder.Services.AddAuthorization();
 var app = builder.Build();
 app.UseStaticFiles();
@@ -42,6 +47,22 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapGet("/fixture/antiforgery", (HttpContext context, IAntiforgery antiforgery) => new { token = antiforgery.GetAndStoreTokens(context).RequestToken });
+app.MapPost("/fixture/login/{kind}", async (string kind, HttpContext context) =>
+{
+    var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, "42"), new(ClaimTypes.Name, "Example Domain Employee") };
+    if (kind == "domain") claims.Add(new("AuthenticationSource", "ActiveDirectory"));
+    if (kind == "linked") claims.Add(new("DomainAuthenticated", "true"));
+    if (kind != "domain")
+    {
+        claims.Add(new("CompanyId", "1"));
+        claims.Add(new("DepartmentId", "2"));
+        claims.Add(new("BranchId", "3"));
+    }
+    await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+        new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)));
+});
+app.MapPost("/fixture/logout", async (HttpContext context) => await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme));
 app.MapGet("/fixture/state", (FixtureRepository repo, FixtureNotifications mail) => new { created = repo.Created, notifications = mail.Attempts });
 app.MapPost("/fixture/reset", (FixtureRepository repo, FixtureNotifications mail) => { repo.Reset(); mail.Reset(); });
 app.MapPost("/fixture/ready/{ready:bool}", (bool ready, FixtureRepository repo) => repo.Ready = ready);
@@ -57,9 +78,12 @@ if ((await disabled.NotifyAsync(sample, "requester@example.invalid", "/Ticket/De
     throw new Exception("Unconfigured email must not report success.");
 app.Run();
 
-sealed class FixtureActivator(FixtureRepository repo, FixtureNotifications mail) : IControllerActivator
+sealed class FixtureActivator(FixtureRepository repo, FixtureNotifications mail, IDemoModeService demo, IWebHostEnvironment environment) : IControllerActivator
 {
-    public object Create(ControllerContext context) => new HelpItController(repo, null!, NullLogger<HelpItController>.Instance, mail);
+    public object Create(ControllerContext context) => context.ActionDescriptor.ControllerTypeInfo.AsType() == typeof(PublicController)
+        ? new PublicController(null!, null!, null!, null!, null!, demo,
+            Microsoft.Extensions.Options.Options.Create(new PortalOptions()), NullLogger<PublicController>.Instance, environment)
+        : new HelpItController(repo, null!, NullLogger<HelpItController>.Instance, mail);
     public void Release(ControllerContext context, object controller) { }
 }
 

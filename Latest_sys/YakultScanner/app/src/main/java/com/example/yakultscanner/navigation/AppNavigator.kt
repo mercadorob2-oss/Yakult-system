@@ -171,12 +171,13 @@ fun AppNavigator(
                 )
             }
             composable(
-                route = "dispatch_item_details/{serialNumber}?setCode={setCode}&dispatchStatus={dispatchStatus}&employee={employee}",
+                route = "dispatch_item_details/{serialNumber}?setCode={setCode}&dispatchStatus={dispatchStatus}&employee={employee}&item={item}",
                 arguments = listOf(
                     navArgument("serialNumber") { type = NavType.StringType },
                     navArgument("setCode") { type = NavType.StringType; nullable = true; defaultValue = null },
                     navArgument("dispatchStatus") { type = NavType.StringType; nullable = true; defaultValue = null },
-                    navArgument("employee") { type = NavType.StringType; nullable = true; defaultValue = null }
+                    navArgument("employee") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("item") { type = NavType.StringType; nullable = true; defaultValue = null }
                 )
             ) { backStackEntry ->
                 DispatchItemDetailsScreen(
@@ -184,7 +185,8 @@ fun AppNavigator(
                     serialNumber = backStackEntry.arguments?.getString("serialNumber") ?: "",
                     setCode = backStackEntry.arguments?.getString("setCode"),
                     dispatchStatus = backStackEntry.arguments?.getString("dispatchStatus"),
-                    assignedEmployee = backStackEntry.arguments?.getString("employee")
+                    assignedEmployee = backStackEntry.arguments?.getString("employee"),
+                    dispatchItemJson = backStackEntry.arguments?.getString("item")
                 )
             }
             composable("history") {
